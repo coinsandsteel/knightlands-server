@@ -25,10 +25,14 @@ class PlayerController {
         this._socket.on("set-zones", this._setZones.bind(this));
         this._socket.on("set-quests", this._setQuests.bind(this));
 
-        // player functions
+        // service functions
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
-        this._socket.on(Operations.EngageQuest, this._engageQuest.bind(this));
+
+        // game functions
+        this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
+        this._socket.on(Operations.ApplyStats, this._gameHandler(this._applyStats.bind(this)));
+        this._socket.on(Operations.ResetStat, this._gameHandler(this._resetStats.bind(this)));
     }
 
     get address() {
@@ -124,7 +128,23 @@ class PlayerController {
         respond();
     }
 
-    async _engageQuest(data, respond) {
+    _gameHandler(handler) {
+        return async (data, respond) => {
+            let user = await this._loadUser(this.address);
+
+            let error = await handler(user, data);
+            if (error) {
+                respond(error);
+                return;
+            }
+
+            let changes = await user.commitChanges();
+
+            respond(null, changes);
+        }
+    }
+
+    async _engageQuest(user, data) {
         let quests = this._db.collection(Collections.Quests);
 
         // quests exists?
@@ -133,19 +153,15 @@ class PlayerController {
         });
 
         if (!quest) {
-            respond("no such quest");
-            return;
+            return "no such quest";
         }
-
-        let user = await this._loadUser(this.address);
 
         // get saved progress or create default
         let questProgress = user.getQuestProgress(quest._id);
 
         // quest is still not complete?
         if (questProgress.hits >= quest.hits) {
-            respond("quest is finished");
-            return;
+            return "quest is finished";
         }
 
         // calculate hits
@@ -159,12 +175,11 @@ class PlayerController {
         // make sure user has enough energy 
         let energyRequired = hits * quest.energy;
         if (energyRequired > user.getTimerValue(CharacterStats.Energy)) {
-            respond("not enough energy");
-            return;
+            return "not enough energy";
         }
 
         // remove energy, and assign exp with gold
-        user.modifyTimerValue(CharacterStats.Energy, energyRequired);
+        user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
         user.addExperience(hits * quest.exp);
 
         // gold is randomized in 20% range
@@ -180,17 +195,15 @@ class PlayerController {
 
         user.addSoftCurrency(softCurrencyGained);
 
-        let result = {
-            energy: user.getTimerValue(CharacterStats.Energy),
-            exp: user.exp,
-            level: user.level,
-            softCurrency: user.softCurrency
-        };
+        return null;
+    }
 
-        // save
-        // await user.saveAfterQuest(quest._id);
+    async _applyStats(user, data) {
+        return user.applyStats(data);
+    }
 
-        respond(null, result);
+    async _resetStats(user, data) {
+        return user.resetStats();
     }
 }
 

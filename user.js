@@ -1,6 +1,20 @@
 const CharacterStats = require("./knightlands-shared/character_stat");
+const Experience = require("./knightlands-shared/experience");
 const uuidv4 = require('uuid/v4');
+const cloneDeep = require('lodash.clonedeep');
+
 const DefaultRegenTimeSeconds = 120;
+
+const DefaultStats = {
+    health: 100,
+    attack: 5,
+    criticalChance: 2,
+    energy: 30,
+    stamina: 5,
+    honor: 1,
+    luck: 0,
+    defense: 0
+};
 
 const Collections = {
     Users: "users",
@@ -26,6 +40,10 @@ class User {
         return data;
     }
 
+    get id() {
+        return this._data._id;
+    }
+
     get nonce() {
         return this._data.nonce;
     }
@@ -47,50 +65,49 @@ class User {
     }
 
     updateProgress(questId, hits) {
-        this.getQuestProgress(questId).hits = hits;
+        let questProgress = this.getQuestProgress(questId);
+        questProgress.hits += hits;
+    }
+
+    addSoftCurrency(value) {
+        this._data.softCurrency += value;
     }
 
     // returns levels gained
     addExperience(exp) {
         let character = this._data.character;
         let levelBeforeExp = character.level;
-        while (exp > 0) {
-            let toNextLevel = 15 * character.level;
-            if (toNextLevel <= exp) {
+
+        character.exp += exp;
+        while (true) {
+            let toNextLevel = Experience.getRequiredExperience(character.level) - character.exp;
+            if (toNextLevel <= character.exp) {
                 character.level++;
-                exp -= toNextLevel;
+                character.exp -= toNextLevel;
+                character.freeAttributePoints += 5;
+                character.stats[CharacterStats.Honor] += 1;
+                this.getTimer(CharacterStats.Energy).value = character.stats[CharacterStats.Energy];
+                this.getTimer(CharacterStats.Stamina).value = character.stats[CharacterStats.Stamina];
+            } else {
+                break;
             }
         }
 
         return character.level - levelBeforeExp;
     }
 
-
-    // TODO make a transactional way of modifying delta of the model
-    async saveAfterQuest(questId) {
-        let updateQuery = {
-            $set: {
-                "character.timers.energy.value": this.energy,
-                "character.exp": this.exp,
-                "softCurrency": this.softCurrency
-            }
-        };
-        updateQuery.$set[`questProgress.${questId}`] = this.getQuestProgress(questId);
-
-        let users = this._db.collection(Collections.Users);
-        await users.updateOne({
-            _id: this.id
-        }, updateQuery);
+    getTimer(stat) {
+        return this._data.character.timers[stat];
     }
 
     getTimerValue(stat) {
         this._advanceTimer(stat);
-        return this._data.character.timers[stat].value;
+        return this.getTimer(stat).value;
     }
 
     modifyTimerValue(stat, value) {
         this._advanceTimer(stat);
-        this._data.character.timers[stat].value += value;
+        this.getTimer(stat).value += value;
     }
 
     _advanceTimers() {
@@ -103,13 +120,19 @@ class User {
         let now = Math.floor(new Date().getTime() / 1000); // milliseconds to seconds
         let character = this._data.character;
         let timer = character.timers[stat];
+
+        if (character.stats[stat] <= timer.value) {
+            timer.lastRegenTime = now;
+            return;
+        }
+
         let timePassed = now - timer.lastRegenTime;
         let valueRenerated = Math.floor(timePassed / DefaultRegenTimeSeconds);
         timer.value += valueRenerated;
         // clamp to max value
         timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
         // adjust regen time to accomodate rounding
-        timer.regenTime += valueRenerated * DefaultRegenTimeSeconds;
+        timer.lastRegenTime += valueRenerated * DefaultRegenTimeSeconds;
     }
 
     async generateNewNonce() {
@@ -143,6 +166,7 @@ class User {
         }
 
         this._data = userData;
+        this._originalData = cloneDeep(userData);
 
         this._advanceTimers();
 
@@ -155,8 +179,150 @@ class User {
             progress = {
                 hits: 0
             };
+            this._data.questsProgress[questId] = progress;
         }
+
         return progress;
+    }
+
+    applyStats(stats) {
+        let totalPointsSpent = 0;
+        for (let i in stats) {
+            if (!Number.isInteger(stats[i])) {
+                return `incorrect stat ${i}`;
+            }
+
+            if (!this._data.character.attributes.hasOwnProperty(i)) {
+                return `incorrect stat ${i}`;;
+            }
+
+            totalPointsSpent += stats[i];
+            this._data.character.attributes[i] += stats[i];
+        }
+
+        // if not enough points 
+        if (totalPointsSpent > this._data.character.freeAttributePoints) {
+            return "not enough attribute points";
+        }
+
+        this._data.character.freeAttributePoints -= totalPointsSpent;
+        this._calculateFinalStats();
+
+        return null;
+    }
+
+    _calculateFinalStats() {
+        let finalStats = Object.assign({}, DefaultStats);
+        for (let i in this._data.character.attributes) {
+            finalStats[i] += this._data.character.attributes[i];
+        }
+
+        // apply items
+
+        let oldStats = this._data.character.stats;
+        this._data.character.stats = finalStats;
+
+        // correct timers
+        for (let i in this._data.character.timers) {
+            let timer = this._data.character.timers[i];
+            if (timer.value < finalStats[i]) {
+                //find relative increase
+                let relativeChange = finalStats[i] / oldStats[i];
+                timer.value = Math.floor(timer.value * relativeChange);
+            }
+
+            if (timer.value > finalStats[i]) {
+                timer.value = finalStats[i];
+            }
+        }
+    }
+
+    resetStats() {
+        for (let i in this._data.character.attributes) {
+            this._data.character.freeAttributePoints += this._data.character.attributes[i];
+            this._data.character.attributes[i] = 0;
+        }
+
+        this._calculateFinalStats();
+
+        return null;
+    }
+
+    // iterate over original data and latest, compare and build diff object
+    _detectChanges(oldObj, newObj, changes) {
+        let fieldsDetected = false;
+        for (let i in newObj) {
+            if (i == "_id") {
+                continue;
+            }
+
+            if (typeof (newObj[i]) == "object") {
+                if (!oldObj.hasOwnProperty(i)) {
+                    changes[i] = newObj[i];
+                    fieldsDetected = true;
+                } else {
+                    let innerChanges = {};
+                    if (this._detectChanges(oldObj[i], newObj[i], innerChanges)) {
+                        fieldsDetected = true;
+                        changes[i] = innerChanges;
+                    }
+                }
+            } else {
+                if (!oldObj.hasOwnProperty(i) || oldObj[i] !== newObj[i]) {
+                    changes[i] = newObj[i];
+                    fieldsDetected = true;
+                }
+            }
+        }
+
+        return fieldsDetected;
+    }
+
+    async commitChanges() {
+        let changes = {};
+        this._detectChanges(this._originalData, this._data, changes);
+
+        let users = this._db.collection(Collections.Users);
+        let query = {};
+        this._buildUpdateQuery(changes, query);
+
+        await users.updateOne({
+            _id: this.id
+        }, {
+            $set: query
+        });
+
+        return changes;
+    }
+
+    // builds flat update query for mongodb from diff
+    _buildPaths(key, changes, paths = {}) {
+        for (let i in changes) {
+            if (typeof (changes[i]) == "object") {
+                let innerPath = this._buildPaths(i, changes[i]);
+                for (let j in innerPath) {
+                    paths[`${key}.${j}`] = innerPath[j];
+                }
+            } else {
+                paths[`${key}.${i}`] = changes[i];
+            }
+        }
+
+        return paths;
+    }
+
+    // create mongodb update query from diff object
+    _buildUpdateQuery(changes, query) {
+        for (let i in changes) {
+            if (typeof (changes[i]) == "object") {
+                let paths = this._buildPaths(i, changes[i]);
+                for (let j in paths) {
+                    query[j] = paths[j];
+                }
+            } else {
+                query[i] = changes[i];
+            }
+        }
     }
 
     _validateUser(user) {
@@ -181,16 +347,7 @@ class User {
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
-                stats: {
-                    health: 100,
-                    attack: 5,
-                    criticalChance: 2,
-                    energy: 30,
-                    stamina: 5,
-                    honor: 1,
-                    luck: 0,
-                    defense: 0
-                },
+                stats: Object.assign({}, DefaultStats),
                 attributes: {
                     health: 0,
                     attack: 0,
@@ -201,7 +358,8 @@ class User {
                 },
                 buffs: [],
                 inventory: [],
-                equipment: {}
+                equipment: {},
+                freeAttributePoints: 0
             };
 
             user.character = character;
