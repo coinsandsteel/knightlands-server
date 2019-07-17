@@ -172,16 +172,6 @@ class PlayerController {
 
         user.updateProgress(quest._id, hits);
 
-        // make sure user has enough energy 
-        let energyRequired = hits * quest.energy;
-        if (energyRequired > user.getTimerValue(CharacterStats.Energy)) {
-            return "not enough energy";
-        }
-
-        // remove energy, and assign exp with gold
-        user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
-        user.addExperience(hits * quest.exp);
-
         // gold is randomized in 20% range
         const randRange = 0.2;
         let minGold = quest.gold * (1 - randRange);
@@ -189,6 +179,13 @@ class PlayerController {
         let softCurrencyGained = 0;
 
         while (hits-- > 0) {
+            // make sure user has enough energy 
+            if (quest.energy > user.getTimerValue(CharacterStats.Energy)) {
+                return "not enough energy";
+            }
+
+            user.modifyTimerValue(CharacterStats.Energy, -quest.energy);
+            user.addExperience(quest.exp);
             softCurrencyGained += Math.floor((minGold + Math.random() * (maxGold - minGold)));
             // TODO roll items
         }

@@ -77,10 +77,11 @@ class User {
     addExperience(exp) {
         let character = this._data.character;
         let levelBeforeExp = character.level;
-
-        character.exp += exp;
-        while (true) {
-            let toNextLevel = Experience.getRequiredExperience(character.level) - character.exp;
+        let maxLevel = 100;
+        character.exp += exp * 1;
+        while (maxLevel-- > 0) {
+            let toNextLevel = Experience.getRequiredExperience(character.level);
+            console.log("character.exp", character.exp, "character.level", character.level, "toNextLevel", toNextLevel);
             if (toNextLevel <= character.exp) {
                 character.level++;
                 character.exp -= toNextLevel;
@@ -225,13 +226,7 @@ class User {
         // correct timers
         for (let i in this._data.character.timers) {
             let timer = this._data.character.timers[i];
-            if (timer.value < finalStats[i]) {
-                //find relative increase
-                let relativeChange = finalStats[i] / oldStats[i];
-                timer.value = Math.floor(timer.value * relativeChange);
-            }
-
-            if (timer.value > finalStats[i]) {
+            if (timer.value == oldStats[i]) {
                 timer.value = finalStats[i];
             }
         }
