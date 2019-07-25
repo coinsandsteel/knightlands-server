@@ -1,29 +1,28 @@
 const User = require("./user");
+const Random = require("./random");
 const Operations = require("./knightlands-shared/operations");
-const CharacterStats = require("./knightlands-shared/character_stat");
-
-const TronWeb = require('tronweb')
+import CharacterStats from "./knightlands-shared/character_stat";
+const Unit = require("./combat/unit");
+const TronWeb = require("tronweb");
+const LootGenerator = require("./lootGenerator");
 
 const tronWeb = new TronWeb({
     fullHost: 'https://api.trongrid.io',
     privateKey: 'da146374a75310b9666e834ee4ad0866d6f4035967bfc76217c5a495fff9f0d0'
 });
 
-const Collections = {
-    Users: "users",
-    Zones: "zones",
-    Quests: "quests"
-};
+const {
+    Collections
+} = require("./database");
 
 class PlayerController {
-    constructor(socket, db) {
-        this._socket = socket
-        this._db = db
+    constructor(socket, db, lootGenerator) {
+        this._socket = socket;
+        this._db = db;
+        this._lootGenerator = lootGenerator;
 
         // admin functions
         this._socket.on(Operations.GetQuestData, this._getQuestData.bind(this));
-        this._socket.on("set-zones", this._setZones.bind(this));
-        this._socket.on("set-quests", this._setQuests.bind(this));
 
         // service functions
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
@@ -31,8 +30,11 @@ class PlayerController {
 
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
-        this._socket.on(Operations.ApplyStats, this._gameHandler(this._applyStats.bind(this)));
-        this._socket.on(Operations.ResetStat, this._gameHandler(this._resetStats.bind(this)));
+        this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
+        this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
+        this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
+        this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
+        this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
     }
 
     get address() {
@@ -54,8 +56,8 @@ class PlayerController {
 
         // if no signed message - generate new nonce and return it back to client
         if (!data.message) {
-            await user.generateNewNonce();
-            respond(null, user.nonce);
+            let nonce = await user.generateNonce();
+            respond(null, nonce);
         } else {
             // if signed message is presented - verify message
             try {
@@ -68,7 +70,7 @@ class PlayerController {
 
                     respond(null, "success");
                 } else {
-                    throw new Exception();
+                    throw "sign verifiction failed";
                 }
             } catch (exc) {
                 console.log(exc);
@@ -79,128 +81,295 @@ class PlayerController {
 
     async _handleGetUserInfo(data, respond) {
         let user = await this._loadUser(this.address);
-        respond(null, user.serializeForClient());
+        let response = user.serializeForClient();
+        response.inventory = await user.loadInventory();
+        respond(null, response);
+    }
+
+    async getExpTable() {
+        let table = await this._db.collection(Collections.ExpTable).findOne({
+            _id: 1
+        });
+        return table.table;
     }
 
     async _loadUser(address) {
-        let user = new User(address, this._db);
-        return await user.load();
+        let expTable = await this.getExpTable();
+        let user = new User(address, this._db, expTable);
+
+        await user.load();
+
+        return user;
     }
 
 
-    async _getQuestData(data, respond) {
+    async _getQuestData(_, respond) {
         let zones = await this._db.collection(Collections.Zones).find({}).toArray();
-        let quests = await this._db.collection(Collections.Quests).find({}).toArray();
-        respond(null, {
-            zones,
-            quests
-        });
-    }
-
-    async _setZones(data, respond) {
-        let col = this._db.collection(Collections.Zones);
-        data.zones.forEach(async zone => {
-            await col.updateOne({
-                _id: zone.zone
-            }, {
-                $set: zone
-            }, {
-                upsert: true
-            });
-        });
-
-        respond();
-    }
-
-    async _setQuests(data, respond) {
-        let col = this._db.collection(Collections.Quests);
-
-        data.quests.forEach(async quest => {
-            await col.updateOne({
-                _id: quest.level
-            }, {
-                $set: quest
-            }, {
-                upsert: true
-            });
-        });
-
-        respond();
+        respond(null, zones);
     }
 
     _gameHandler(handler) {
         return async (data, respond) => {
             let user = await this._loadUser(this.address);
 
-            let error = await handler(user, data);
-            if (error) {
+            try {
+                await handler(user, data);
+                let changes = await user.commitChanges();
+
+                respond(null, changes);
+            } catch (error) {
+                console.log(error);
                 respond(error);
-                return;
             }
-
-            let changes = await user.commitChanges();
-
-            respond(null, changes);
         }
     }
 
     async _engageQuest(user, data) {
-        let quests = this._db.collection(Collections.Quests);
+        if (!Number.isInteger(data.stage)) {
+            throw "missing zone stage";
+        }
 
-        // quests exists?
-        let quest = await quests.findOne({
-            _id: data.questId
+        if (!Number.isInteger(data.zone)) {
+            throw "missing zone";
+        }
+
+        if (!Number.isInteger(data.questIndex)) {
+            throw "missin quest index";
+        }
+
+        const zones = this._db.collection(Collections.Zones);
+        let zone = await zones.findOne({
+            _id: data.zone
         });
 
+        if (!zone) {
+            throw "incorrect zone";
+        }
+
+        if (zone.quests.length <= data.questIndex) {
+            throw "incorrect quest";
+        }
+
+        // quests exists?
+        let quest = zone.quests[data.questIndex];
+
         if (!quest) {
-            return "no such quest";
+            throw "incorrect quest";
         }
 
-        // get saved progress or create default
-        let questProgress = user.getQuestProgress(quest._id);
+        let isBoss = quest.boss;
+        quest = quest.stages[data.stage];
 
-        // quest is still not complete?
-        if (questProgress.hits >= quest.hits) {
-            return "quest is finished";
+        if (!quest) {
+            throw "incorrect stage";
         }
 
-        // calculate hits
-        let hits = 1;
-        if (data.max) {
-            hits = quest.hits - questProgress.hits;
+        // check if previous zone was completed on the same stage
+        let previousZone = await zones.findOne({
+            _id: data.zone - 1
+        });
+
+        if (previousZone && !user.isZoneCompleted(previousZone._id, data.stage)) {
+            throw "complete previous zone";
         }
 
-        user.updateProgress(quest._id, hits);
+        if (isBoss) {
+            let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
 
-        // gold is randomized in 20% range
-        const randRange = 0.2;
-        let minGold = quest.gold * (1 - randRange);
-        let maxGold = quest.gold * (1 + randRange);
-        let softCurrencyGained = 0;
-
-        while (hits-- > 0) {
-            // make sure user has enough energy 
-            if (quest.energy > user.getTimerValue(CharacterStats.Energy)) {
-                return "not enough energy";
+            if (!bossProgress.unlocked) {
+                throw "not allowed";
             }
 
-            user.modifyTimerValue(CharacterStats.Energy, -quest.energy);
-            user.addExperience(quest.exp);
-            softCurrencyGained += Math.floor((minGold + Math.random() * (maxGold - minGold)));
-            // TODO roll items
-        }
+            if (!user.enoughHp) {
+                throw "not enough health";
+            }
 
-        user.addSoftCurrency(softCurrencyGained);
+            let bossData = quest;
+            let unitStats = {};
+            unitStats[CharacterStats.Health] = bossData.health - bossProgress.damageRecieved;
+            unitStats[CharacterStats.Attack] = bossData.attack;
+            unitStats[CharacterStats.Defense] = bossData.defense;
+            let bossUnit = new Unit(unitStats, bossData);
+
+            let playerUnit = user.getCombatUnit();
+
+            while (user.enoughHp && bossUnit.isAlive) {
+                // exp and gold are calculated based on damage inflicted
+                let playerDamageDealt = playerUnit.attack(bossUnit);
+                bossUnit.attack(playerUnit);
+
+                bossProgress.exp += bossData.exp * (playerDamageDealt / bossUnit.getMaxHealth());
+                let expGained = Math.floor(bossProgress.exp);
+                bossProgress.exp -= expGained;
+                user.addExperience(expGained);
+
+                bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (playerDamageDealt / bossUnit.getMaxHealth());
+                let softCurrencyGained = Math.floor(bossProgress.gold);
+                bossProgress.gold -= softCurrencyGained;
+                user.addSoftCurrency(softCurrencyGained);
+
+                // if just 1 hit 
+                if (data.max !== true) {
+                    break;
+                }
+            }
+
+            // override to save in database
+            bossProgress.damageRecieved = bossUnit.getMaxHealth() - bossUnit.getHealth();
+            if (bossProgress.damageRecieved > bossUnit.getMaxHealth()) {
+                bossProgress.damageRecieved = bossUnit.getMaxHealth();
+            }
+
+            if (!bossUnit.isAlive) {
+                user.setZoneCompletedFirstTime(data.zone, data.stage);
+
+                let lootGenerator = new LootGenerator(this._db);
+                let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, data.stage + 1);
+
+                if (items) {
+                    await user.addLoot(items);
+                }
+            }
+        } else {
+            // get saved progress or create default
+            let questProgress = user.getQuestProgress(data.zone, data.questIndex, data.stage);
+            if (!questProgress) {
+                throw "not allowed to engage";
+            }
+
+            // quest is still not complete?
+            if (questProgress.hits >= quest.hits) {
+                throw "quest is finished";
+            }
+
+            // calculate hits
+            let hits = 1;
+            if (data.max) {
+                hits = quest.hits - questProgress.hits;
+            }
+
+            let energyLeft = user.getTimerValue(CharacterStats.Energy);
+            // make sure user has enough energy
+            if (quest.energy > energyLeft) {
+                throw "not enough energy";
+            }
+
+            let energyRequired = hits * quest.energy;
+            // if user asks for more than 1 hit and doesn't have enough energy - let him perform as many hits as energy allows
+            if (energyLeft < energyRequired) {
+                hits = Math.floor(energyLeft / quest.energy);
+                energyRequired = hits * quest.energy;
+            }
+
+            questProgress.hits += hits;
+
+            user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
+
+            let softCurrencyGained = 0;
+
+            let lootGenerator = new LootGenerator(this._db);
+            let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, hits);
+
+            if (items) {
+                await user.addLoot(items);
+            }
+
+            while (hits-- > 0) {
+                user.addExperience(quest.exp);
+                softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
+            }
+
+            user.addSoftCurrency(softCurrencyGained);
+
+            // check if all previous quests are finished
+            let allQuestsFinished = true;
+            for (let index = 0; index < zone.quests.length; index++) {
+                const quest = zone.quests[index];
+                let questProgress = user.getQuestProgress(data.zone, data.questIndex, data.stage);
+                if (!questProgress || questProgress.hits < quest.stages[data.stage].hits) {
+                    allQuestsFinished = false;
+                    break;
+                }
+            }
+
+            if (allQuestsFinished) {
+                // unlock final boss
+                let bossProgress = user.getQuestBossProgress(data.zone, data.stage);
+                bossProgress.unlocked = true;
+            }
+        }
 
         return null;
     }
 
-    async _applyStats(user, data) {
-        return user.applyStats(data);
+    async _attackQuestBoss(user, data) {
+        if (!Number.isInteger(data.stage)) {
+            throw "missing zone stage";
+        }
+
+        let zones = this._db.collection(Collections.Zones);
+        let zone = await zones.findOne({
+            _id: data.zone
+        });
+
+        if (!zone) {
+            throw "incorrect zone";
+        }
+
+        // check if player has enough stamina for requested hits
+        let staminaRequired = data.hits;
+        if (user.getTimerValue(CharacterStats.Stamina) < staminaRequired) {
+            throw "not enough stamina";
+        }
+
+        user.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
+
+
+        // // quest boss exp and gold is based on
+        // user.addExperience(quest.exp);
+        // let softCurrencyGained = Math.floor((quest.minGold + Math.random() * (quest.maxGold - quest.minGold)));
+        // user.updateProgress(questId, data.stage, 1);
+
+        // user.addSoftCurrency(softCurrencyGained);
+
+        return null;
     }
 
-    async _resetStats(user, data) {
-        return user.resetStats();
+    async _buyStat(user, data) {
+        await user.trainStats(data);
+    }
+
+    async _equipItem(user, data) {
+        await user.equipItem(data.itemId);
+    }
+
+    async _unequipItem(user, data) {
+        await user.unequipItem(data.slot);
+    }
+
+    async _resetZone(user, data) {
+        if (!Number.isInteger(data.stage)) {
+            throw "missing zone stage";
+        }
+
+        if (!Number.isInteger(data.zone)) {
+            throw "missing zone";
+        }
+
+        let zones = this._db.collection(Collections.Zones);
+        let zone = await zones.findOne({
+            _id: data.zone
+        });
+
+        if (!zone) {
+            throw "incorrect zone";
+        }
+
+        if (!user.resetZoneProgress(zone, data.stage)) {
+            throw "already reset";
+        }
+
+        return null;
     }
 }
 

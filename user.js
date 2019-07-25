@@ -1,8 +1,23 @@
-const CharacterStats = require("./knightlands-shared/character_stat");
-const Experience = require("./knightlands-shared/experience");
+import CharacterStats from "./knightlands-shared/character_stat";
+
+import {
+    StatConversions
+}
+from "./knightlands-shared/character_stat";
+
+import TrainingCamp from "./knightlands-shared/training_camp";
+
+const {
+    EquipmentSlots,
+    getSlot
+} = require("./knightlands-shared/equipment_slot");
+
+const ItemType = require("./knightlands-shared/item_type");
+
 const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
-
+const PlayerUnit = require("./combat/playerUnit");
+const Inventory = require("./inventory");
 const DefaultRegenTimeSeconds = 120;
 
 const DefaultStats = {
@@ -16,16 +31,16 @@ const DefaultStats = {
     defense: 0
 };
 
-const Collections = {
-    Users: "users",
-    Zones: "zones",
-    Quests: "quests"
-};
+const {
+    Collections,
+    buildUpdateQuery
+} = require("./database");
 
 class User {
-    constructor(address, db) {
+    constructor(address, db, expTable) {
         this._address = address;
         this._db = db;
+        this._expTable = expTable;
     }
 
     serializeForClient() {
@@ -64,9 +79,16 @@ class User {
         return this._address;
     }
 
-    updateProgress(questId, hits) {
-        let questProgress = this.getQuestProgress(questId);
-        questProgress.hits += hits;
+    get enoughHp() {
+        return this.getTimerValue(CharacterStats.Health) >= 10;
+    }
+
+    getCombatUnit() {
+        let currentStats = {
+            ...this._data.character.stats
+        };
+        currentStats.health = this.getTimerValue(CharacterStats.Health);
+        return new PlayerUnit(this);
     }
 
     addSoftCurrency(value) {
@@ -79,22 +101,31 @@ class User {
         let levelBeforeExp = character.level;
         let maxLevel = 100;
         character.exp += exp * 1;
+        let leveledUp = false;
         while (maxLevel-- > 0) {
-            let toNextLevel = Experience.getRequiredExperience(character.level);
+            let toNextLevel = this._expTable[character.level - 1];
             console.log("character.exp", character.exp, "character.level", character.level, "toNextLevel", toNextLevel);
             if (toNextLevel <= character.exp) {
                 character.level++;
                 character.exp -= toNextLevel;
-                character.freeAttributePoints += 5;
-                character.stats[CharacterStats.Honor] += 1;
-                this.getTimer(CharacterStats.Energy).value = character.stats[CharacterStats.Energy];
-                this.getTimer(CharacterStats.Stamina).value = character.stats[CharacterStats.Stamina];
+                leveledUp = true;
             } else {
                 break;
             }
         }
 
+        if (leveledUp) {
+            this._calculateFinalStats();
+            this._restoreTimers();
+        }
+
         return character.level - levelBeforeExp;
+    }
+
+    _restoreTimers() {
+        this.getTimer(CharacterStats.Energy).value = this._data.character.stats[CharacterStats.Energy];
+        this.getTimer(CharacterStats.Stamina).value = this._data.character.stats[CharacterStats.Stamina];
+        this.getTimer(CharacterStats.Health).value = this._data.character.stats[CharacterStats.Health];
     }
 
     getTimer(stat) {
@@ -106,9 +137,14 @@ class User {
         return this.getTimer(stat).value;
     }
 
-    modifyTimerValue(stat, value) {
+    setTimerValue(stat, value) {
+        this.getTimer(stat).value = value;
         this._advanceTimer(stat);
+    }
+
+    modifyTimerValue(stat, value) {
         this.getTimer(stat).value += value;
+        this._advanceTimer(stat);
     }
 
     _advanceTimers() {
@@ -120,7 +156,7 @@ class User {
     _advanceTimer(stat) {
         let now = Math.floor(new Date().getTime() / 1000); // milliseconds to seconds
         let character = this._data.character;
-        let timer = character.timers[stat];
+        let timer = this.getTimer(stat);
 
         if (character.stats[stat] <= timer.value) {
             timer.lastRegenTime = now;
@@ -136,7 +172,7 @@ class User {
         timer.lastRegenTime += valueRenerated * DefaultRegenTimeSeconds;
     }
 
-    async generateNewNonce() {
+    async generateNonce() {
         this._data.nonce = uuidv4();
         const users = this._db.collection(Collections.Users);
         await users.updateOne({
@@ -146,6 +182,12 @@ class User {
                 nonce: this._data.nonce
             }
         });
+
+        return this._data.nonce;
+    }
+
+    async loadInventory() {
+        return await this._inventory.loadAllItems();
     }
 
     async load() {
@@ -168,26 +210,93 @@ class User {
 
         this._data = userData;
         this._originalData = cloneDeep(userData);
+        this._inventory = new Inventory(this._address, this._db);
 
         this._advanceTimers();
 
         return this;
     }
 
-    getQuestProgress(questId) {
-        let progress = this._data.questsProgress[questId];
+    getQuestBossProgress(zone, stage) {
+        let stages = this._data.questsProgress.bosses[zone];
+        if (!stages) {
+            stages = {};
+            this._data.questsProgress.bosses[zone] = stages;
+        }
+
+        let progress = stages[stage];
         if (!progress) {
             progress = {
-                hits: 0
+                damageRecieved: 0,
+                gold: 0,
+                exp: 0,
+                unlocked: false
             };
-            this._data.questsProgress[questId] = progress;
+            stages[stage] = progress;
         }
 
         return progress;
     }
 
-    applyStats(stats) {
-        let totalPointsSpent = 0;
+    isZoneCompleted(zone, stage) {
+        if (!this._data.questsProgress.completedRecords[zone]) {
+            this._data.questsProgress.completedRecords[zone] = {};
+        }
+
+        return this._data.questsProgress.completedRecords[zone][stage];
+    }
+
+    setZoneCompletedFirstTime(zone, stage) {
+        if (!this._data.questsProgress.completedRecords[zone]) {
+            this._data.questsProgress.completedRecords[zone] = {};
+        }
+
+        this._data.questsProgress.completedRecords[zone][stage] = true;
+    }
+
+    resetZoneProgress(zone, stage) {
+        let bossProgress = this.getQuestBossProgress(zone._id, stage);
+        if (bossProgress.damageRecieved === 0) {
+            return false;
+        }
+
+        bossProgress.damageRecieved = 0;
+        bossProgress.unlocked = false;
+
+        zone.quests.forEach((_, index) => {
+            this.getQuestProgress(zone._id, index, stage).hits = 0;
+        });
+
+        return true;
+    }
+
+    getQuestProgress(zone, questId, stage) {
+        let quests = this._data.questsProgress.zones[zone];
+        if (!quests) {
+            quests = {};
+            this._data.questsProgress.zones[zone] = quests;
+        }
+
+        let stages = quests[questId];
+        if (!stages) {
+            stages = {};
+            quests[questId] = stages;
+        }
+
+        let progress = stages[stage];
+
+        if (!progress) {
+            progress = {
+                hits: 0
+            };
+            stages[stage] = progress;
+        }
+
+        return progress;
+    }
+
+    trainStats(stats) {
+        let totalGoldRequired = 0;
         for (let i in stats) {
             if (!Number.isInteger(stats[i])) {
                 return `incorrect stat ${i}`;
@@ -197,16 +306,24 @@ class User {
                 return `incorrect stat ${i}`;;
             }
 
-            totalPointsSpent += stats[i];
+            let value = this._data.character.attributes[i];
             this._data.character.attributes[i] += stats[i];
+            const finalValue = this._data.character.attributes[i];
+
+            if (finalValue > TrainingCamp.getMaxStat(this._data.character.level)) {
+                throw "stat is over max level";
+            }
+
+            for (; value < finalValue; value++) {
+                totalGoldRequired += TrainingCamp.getStatCost(i, value);
+            }
         }
 
-        // if not enough points 
-        if (totalPointsSpent > this._data.character.freeAttributePoints) {
-            return "not enough attribute points";
+        if (totalGoldRequired > this._data.softCurrency) {
+            throw "not enough sc";
         }
 
-        this._data.character.freeAttributePoints -= totalPointsSpent;
+        this._data.softCurrency -= totalGoldRequired;
         this._calculateFinalStats();
 
         return null;
@@ -215,11 +332,14 @@ class User {
     _calculateFinalStats() {
         let finalStats = Object.assign({}, DefaultStats);
         for (let i in this._data.character.attributes) {
-            finalStats[i] += this._data.character.attributes[i];
+            finalStats[i] += StatConversions[i] * this._data.character.attributes[i];
         }
 
-        // apply items
+        finalStats[CharacterStats.Stamina] += this._data.character.level;
+        finalStats[CharacterStats.Energy] += this._data.character.level * 5;
+        finalStats[CharacterStats.Honor] += this._data.character.level;
 
+        // apply items
         let oldStats = this._data.character.stats;
         this._data.character.stats = finalStats;
 
@@ -243,81 +363,87 @@ class User {
         return null;
     }
 
-    // iterate over original data and latest, compare and build diff object
-    _detectChanges(oldObj, newObj, changes) {
-        let fieldsDetected = false;
-        for (let i in newObj) {
-            if (i == "_id") {
-                continue;
-            }
+    async addLoot(itemTemplates) {
+        await this._inventory.loadAllItems();
+        this._inventory.addItemTemplates(itemTemplates);
+    }
 
-            if (typeof (newObj[i]) == "object") {
-                if (!oldObj.hasOwnProperty(i)) {
-                    changes[i] = newObj[i];
-                    fieldsDetected = true;
-                } else {
-                    let innerChanges = {};
-                    if (this._detectChanges(oldObj[i], newObj[i], innerChanges)) {
-                        fieldsDetected = true;
-                        changes[i] = innerChanges;
-                    }
-                }
-            } else {
-                if (!oldObj.hasOwnProperty(i) || oldObj[i] !== newObj[i]) {
-                    changes[i] = newObj[i];
-                    fieldsDetected = true;
-                }
-            }
+    async equipItem(itemId) {
+        await this._inventory.loadAllItems();
+
+        let itemToEquip = this._inventory.getItemById(itemId);
+        if (!itemToEquip) {
+            throw "no such item";
         }
 
-        return fieldsDetected;
+        if (itemToEquip.equipped) {
+            throw "already equipped";
+        }
+
+        let template = await this._inventory.getTemplate(itemToEquip.template);
+        if (!template) {
+            throw "no such template";
+        }
+
+        if (template.type != ItemType.Equipment) {
+            throw "not equipment";
+        }
+
+        let slotId = getSlot(template.equipmentType);
+        await this.unequipItem(slotId);
+
+        itemToEquip.equipped = true;
+
+        // put into equipment and remove from inventory
+        this._data.character.equipment[slotId] = {
+            ...itemToEquip
+        };
+        this._data.character.equipment[slotId].count = 1; // make it count as 1, otherwise players will dupe it
+
+        this._inventory.removeItem(itemToEquip.id);
+    }
+
+    async unequipItem(itemSlot) {
+        await this._inventory.loadAllItems();
+
+        let oldItemInSlot = this._data.character.equipment[itemSlot];
+        if (oldItemInSlot) {
+            delete this._data.character.equipment[itemSlot];
+            // return to inventory
+            this._inventory.addItem(oldItemInSlot).equipped = false;
+        }
     }
 
     async commitChanges() {
-        let changes = {};
-        this._detectChanges(this._originalData, this._data, changes);
-
         let users = this._db.collection(Collections.Users);
-        let query = {};
-        this._buildUpdateQuery(changes, query);
+        let {
+            updateQuery,
+            removeQuery,
+            changes,
+            removals
+        } = buildUpdateQuery(this._originalData, this._data);
 
-        await users.updateOne({
-            _id: this.id
-        }, {
-            $set: query
-        });
-
-        return changes;
-    }
-
-    // builds flat update query for mongodb from diff
-    _buildPaths(key, changes, paths = {}) {
-        for (let i in changes) {
-            if (typeof (changes[i]) == "object") {
-                let innerPath = this._buildPaths(i, changes[i]);
-                for (let j in innerPath) {
-                    paths[`${key}.${j}`] = innerPath[j];
-                }
-            } else {
-                paths[`${key}.${i}`] = changes[i];
+        if (updateQuery || removeQuery) {
+            let finalQuery = {};
+            if (updateQuery) {
+                finalQuery.$set = updateQuery;
             }
+
+            if (removeQuery) {
+                finalQuery.$unset = removeQuery;
+            }
+
+            await users.updateOne({
+                _id: this.id
+            }, finalQuery);
         }
 
-        return paths;
-    }
+        changes.inventory = await this._inventory.commitChanges();
 
-    // create mongodb update query from diff object
-    _buildUpdateQuery(changes, query) {
-        for (let i in changes) {
-            if (typeof (changes[i]) == "object") {
-                let paths = this._buildPaths(i, changes[i]);
-                for (let j in paths) {
-                    query[j] = paths[j];
-                }
-            } else {
-                query[i] = changes[i];
-            }
-        }
+        return {
+            changes,
+            removals
+        };
     }
 
     _validateUser(user) {
@@ -352,9 +478,7 @@ class User {
                     stamina: 0
                 },
                 buffs: [],
-                inventory: [],
-                equipment: {},
-                freeAttributePoints: 0
+                equipment: {}
             };
 
             user.character = character;
@@ -362,8 +486,18 @@ class User {
 
         if (!user.questsProgress) {
             user.questsProgress = {
-
+                completedRecords: {}, // keep track of completed quests to unlock next stages
+                zones: {}, // zones progress
+                bosses: {}
             };
+        }
+
+        if (!user.questsProgress.bosses) {
+            user.questsProgress.bosses = {};
+        }
+
+        if (!user.questsProgress.zones) {
+            user.questsProgress.zones = {};
         }
 
         return user;

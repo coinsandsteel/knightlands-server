@@ -9,6 +9,8 @@ const Operations = require("./knightlands-shared/operations");
 const PlayerController = require("./playerController");
 const MongoClient = require("mongodb").MongoClient;
 
+const Database = require("./database");
+
 var db
 
 class Worker extends SCWorker {
@@ -35,16 +37,14 @@ class Worker extends SCWorker {
 
     this.setupMiddleware()
 
-    const url = 'mongodb://localhost:27017/knightlands';
     // Database Name
-    const dbName = 'knightlands';
-    const client = new MongoClient(url, {
+    const client = new MongoClient(Database.ConnectionString, {
       useNewUrlParser: true
     });
 
     try {
       await client.connect();
-      db = client.db(dbName);
+      db = client.db();
       console.log("Connected to db", db.databaseName)
     } catch (err) {
       console.log("Can't connect to DB.", err.stack);

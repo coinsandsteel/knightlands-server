@@ -24,7 +24,7 @@ var environment = process.env.ENV || 'dev';
 var options = {
   workers: Number(argv.w) || Number(process.env.SOCKETCLUSTER_WORKERS) || 1,
   brokers: Number(argv.b) || Number(process.env.SOCKETCLUSTER_BROKERS) || 1,
-  port: Number(argv.p) || Number(process.env.SOCKETCLUSTER_PORT) || 8000,
+  port: Number(argv.p) || Number(process.env.SOCKETCLUSTER_PORT) || 9000,
   // You can switch to 'sc-uws' for improved performance.
   wsEngine: process.env.SOCKETCLUSTER_WS_ENGINE || 'ws',
   appName: argv.n || process.env.SOCKETCLUSTER_APP_NAME || null,

@@ -2,16 +2,22 @@
   "name": "socketcluster-sample",
   "description": "A sample SocketCluster app",
   "version": "1.0.0",
-  "contributors": [
-    {
-      "name": "Jonathan Gros-Dubois",
-      "email": "grosjona@yahoo.com.au"
-    }
-  ],
+  "main": "server,js",
+  "type": "module",
+  "esm": {
+    "force": true
+  },
+  "contributors": [{
+    "name": "Jonathan Gros-Dubois",
+    "email": "grosjona@yahoo.com.au"
+  }],
   "dependencies": {
     "connect": "3.0.1",
+    "esm": "^3.2.25",
     "express": "4.16.3",
+    "lodash": "^4.17.15",
     "lodash.clonedeep": "^4.5.0",
+    "lodash.difference": "^4.5.0",
     "minimist": "1.1.0",
     "mongodb": "^3.2.7",
     "morgan": "1.7.0",
