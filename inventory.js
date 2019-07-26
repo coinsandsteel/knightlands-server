@@ -44,9 +44,9 @@ class Inventory {
         return this._items;
     }
 
-    async commitChanges() {
-        let changes = {};
-
+    async commitChanges(inventoryChangesMode) {
+        let changes = {}; // what was changed
+        let delta = {}; // stack delta that was added/removed
         let queries = [];
         // update/insert queries
         if (this._newItems.size > 0) {
@@ -54,9 +54,7 @@ class Inventory {
             for (let [id, item] of this._newItems) {
                 let query;
 
-                changes[id] = {
-                    ...item
-                };
+                changes[id] = item;
 
                 if (this._itemsByIdOriginal.has(id)) {
                     query = {
@@ -73,7 +71,7 @@ class Inventory {
                             upsert: true
                         }
                     };
-                    changes[id].count = item.count - this._itemsByIdOriginal.get(id);
+                    delta[id] = item.count - this._itemsByIdOriginal.get(id);
                 } else {
                     query = {
                         updateOne: {
@@ -89,8 +87,8 @@ class Inventory {
                         }
                     };
 
-                    this._itemsByIdOriginal.set(id, true);
-
+                    this._itemsByIdOriginal.set(id, item.count);
+                    delta[id] = item.count;
                 }
 
 
@@ -144,7 +142,10 @@ class Inventory {
         this._newItems.clear();
         this._removedItems.clear();
 
-        return changes;
+        return {
+            changes,
+            delta
+        };
     }
 
     addItemTemplates(templates) {

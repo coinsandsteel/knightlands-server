@@ -93,9 +93,16 @@ class PlayerController {
         return table.table;
     }
 
+    async getMeta() {
+        return await this._db.collection(Collections.Meta).findOne({
+            _id: 0
+        });
+    }
+
     async _loadUser(address) {
         let expTable = await this.getExpTable();
-        let user = new User(address, this._db, expTable);
+        let meta = await this.getMeta();
+        let user = new User(address, this._db, expTable, meta);
 
         await user.load();
 
@@ -108,7 +115,7 @@ class PlayerController {
         respond(null, zones);
     }
 
-    _gameHandler(handler) {
+    _gameHandler(handler, responseTransformation) {
         return async (data, respond) => {
             let user = await this._loadUser(this.address);
 
@@ -173,6 +180,8 @@ class PlayerController {
             throw "complete previous zone";
         }
 
+        let itemsToDrop = 0;
+
         if (isBoss) {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
 
@@ -201,7 +210,7 @@ class PlayerController {
                 bossProgress.exp += bossData.exp * (playerDamageDealt / bossUnit.getMaxHealth());
                 let expGained = Math.floor(bossProgress.exp);
                 bossProgress.exp -= expGained;
-                user.addExperience(expGained);
+                await user.addExperience(expGained);
 
                 bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (playerDamageDealt / bossUnit.getMaxHealth());
                 let softCurrencyGained = Math.floor(bossProgress.gold);
@@ -222,13 +231,7 @@ class PlayerController {
 
             if (!bossUnit.isAlive) {
                 user.setZoneCompletedFirstTime(data.zone, data.stage);
-
-                let lootGenerator = new LootGenerator(this._db);
-                let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, data.stage + 1);
-
-                if (items) {
-                    await user.addLoot(items);
-                }
+                itemsToDrop = data.stage + 1;
             }
         } else {
             // get saved progress or create default
@@ -262,17 +265,11 @@ class PlayerController {
             }
 
             questProgress.hits += hits;
+            itemsToDrop = hits;
 
             user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
 
             let softCurrencyGained = 0;
-
-            let lootGenerator = new LootGenerator(this._db);
-            let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, hits);
-
-            if (items) {
-                await user.addLoot(items);
-            }
 
             while (hits-- > 0) {
                 user.addExperience(quest.exp);
@@ -296,6 +293,15 @@ class PlayerController {
                 // unlock final boss
                 let bossProgress = user.getQuestBossProgress(data.zone, data.stage);
                 bossProgress.unlocked = true;
+            }
+        }
+
+        if (itemsToDrop > 0) {
+            let lootGenerator = new LootGenerator(this._db);
+            let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop);
+
+            if (items) {
+                await user.addLoot(items);
             }
         }
 

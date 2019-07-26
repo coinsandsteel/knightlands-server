@@ -6,6 +6,7 @@ import {
 from "./knightlands-shared/character_stat";
 
 import TrainingCamp from "./knightlands-shared/training_camp";
+import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 
 const {
     EquipmentSlots,
@@ -37,10 +38,15 @@ const {
 } = require("./database");
 
 class User {
-    constructor(address, db, expTable) {
+    constructor(address, db, expTable, meta) {
+        this.FullInventoryChanges = 1;
+        this.DeltaInventoryChanges = 2;
+
         this._address = address;
         this._db = db;
         this._expTable = expTable;
+        this._meta = meta;
+        this._recalculateStats = false;
     }
 
     serializeForClient() {
@@ -115,7 +121,7 @@ class User {
         }
 
         if (leveledUp) {
-            this._calculateFinalStats();
+            this._recalculateStats = true;
             this._restoreTimers();
         }
 
@@ -211,6 +217,7 @@ class User {
         this._data = userData;
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
+        this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower);
 
         this._advanceTimers();
 
@@ -295,7 +302,7 @@ class User {
         return progress;
     }
 
-    trainStats(stats) {
+    async trainStats(stats) {
         let totalGoldRequired = 0;
         for (let i in stats) {
             if (!Number.isInteger(stats[i])) {
@@ -319,33 +326,53 @@ class User {
             }
         }
 
+        if (totalGoldRequired == 0) {
+            return;
+        }
+
         if (totalGoldRequired > this._data.softCurrency) {
             throw "not enough sc";
         }
 
         this._data.softCurrency -= totalGoldRequired;
-        this._calculateFinalStats();
-
-        return null;
+        this._recalculateStats = true;
     }
 
-    _calculateFinalStats() {
-        let finalStats = Object.assign({}, DefaultStats);
-        for (let i in this._data.character.attributes) {
-            finalStats[i] += StatConversions[i] * this._data.character.attributes[i];
+    async _calculateFinalStats() {
+        if (!this._recalculateStats) {
+            return;
         }
 
-        finalStats[CharacterStats.Stamina] += this._data.character.level;
-        finalStats[CharacterStats.Energy] += this._data.character.level * 5;
-        finalStats[CharacterStats.Honor] += this._data.character.level;
+        let finalStats = Object.assign({}, DefaultStats);
+        let character = this._data.character;
+        for (let i in character.attributes) {
+            finalStats[i] += StatConversions[i] * character.attributes[i];
+        }
 
-        // apply items
-        let oldStats = this._data.character.stats;
+        finalStats[CharacterStats.Stamina] += character.level;
+        finalStats[CharacterStats.Energy] += character.level * 5;
+        finalStats[CharacterStats.Honor] += character.level;
+
+        // items
+        for (let itemId in character.equipment) {
+            let equippedItem = character.equipment[itemId];
+            let template = await this._inventory.getTemplate(equippedItem.template);
+            if (!template) {
+                continue;
+            }
+
+            for (let stat in template.stats) {
+                let statValue = this._itemStatResolver.getStatValue(template.rarity, equippedItem.level, stat, template.stats[stat]);
+                finalStats[stat] += statValue;
+            }
+        }
+
+        let oldStats = character.stats;
         this._data.character.stats = finalStats;
 
         // correct timers
-        for (let i in this._data.character.timers) {
-            let timer = this._data.character.timers[i];
+        for (let i in character.timers) {
+            let timer = character.timers[i];
             if (timer.value == oldStats[i]) {
                 timer.value = finalStats[i];
             }
@@ -357,8 +384,6 @@ class User {
             this._data.character.freeAttributePoints += this._data.character.attributes[i];
             this._data.character.attributes[i] = 0;
         }
-
-        this._calculateFinalStats();
 
         return null;
     }
@@ -401,6 +426,8 @@ class User {
         this._data.character.equipment[slotId].count = 1; // make it count as 1, otherwise players will dupe it
 
         this._inventory.removeItem(itemToEquip.id);
+
+        this._recalculateStats = true;
     }
 
     async unequipItem(itemSlot) {
@@ -411,10 +438,13 @@ class User {
             delete this._data.character.equipment[itemSlot];
             // return to inventory
             this._inventory.addItem(oldItemInSlot).equipped = false;
+            this._recalculateStats = true;
         }
     }
 
-    async commitChanges() {
+    async commitChanges(inventoryChangesMode) {
+        await this._calculateFinalStats();
+
         let users = this._db.collection(Collections.Users);
         let {
             updateQuery,
@@ -438,7 +468,7 @@ class User {
             }, finalQuery);
         }
 
-        changes.inventory = await this._inventory.commitChanges();
+        changes.inventory = await this._inventory.commitChanges(inventoryChangesMode);
 
         return {
             changes,

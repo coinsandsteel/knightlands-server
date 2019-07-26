@@ -128,7 +128,8 @@ module.exports = {
         QuestLoot: "quest_loot",
         ExpTable: "experience_table",
         Items: "items",
-        Inventory: "inventory"
+        Inventory: "inventory",
+        Meta: "meta"
     },
 
 
