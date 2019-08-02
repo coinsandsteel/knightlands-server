@@ -129,7 +129,14 @@ module.exports = {
         ExpTable: "experience_table",
         Items: "items",
         Inventory: "inventory",
-        Meta: "meta"
+        Meta: "meta",
+        Raids: "raids",
+        RaidsMeta: "raids_meta",
+        RaidsDktFactors: "raids_dkt_factors",
+        RaidsDktMeta: "raids_dkt_meta",
+        BlockchainEvents: "blockchain_events",
+        PaymentRequests: "payment_requests",
+        CraftingRecipes: "crafting_recipes"
     },
 
 

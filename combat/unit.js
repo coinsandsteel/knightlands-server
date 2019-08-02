@@ -20,6 +20,9 @@ class Unit {
     }
 
     setHealth(value) {
+        if (value < 0) {
+            value = 0;
+        }
         this.setStat(CharacterStat.Health, value);
     }
 
@@ -41,7 +44,16 @@ class Unit {
 
     attack(victim) {
         let attack = this.getAttack();
-        victim.modifyHealth(-attack);
+
+        // modify from defense
+        let victimDefense = victim.getStat(CharacterStat.Defense);
+        if (victimDefense === undefined) {
+            victimDefense = 0;
+        }
+
+        let damageReduction = victimDefense / (victimDefense + 150);
+        let finalAttack = Math.floor(attack * (1 - damageReduction));
+        victim.modifyHealth(-finalAttack);
 
         return attack;
     }

@@ -1,25 +1,31 @@
+'use strict';
+
 const User = require("./user");
 const Random = require("./random");
 const Operations = require("./knightlands-shared/operations");
 import CharacterStats from "./knightlands-shared/character_stat";
 const Unit = require("./combat/unit");
-const TronWeb = require("tronweb");
-const LootGenerator = require("./lootGenerator");
-
-const tronWeb = new TronWeb({
-    fullHost: 'https://api.trongrid.io',
-    privateKey: 'da146374a75310b9666e834ee4ad0866d6f4035967bfc76217c5a495fff9f0d0'
-});
+const IPaymentListener = require("./payment/IPaymentListener");
 
 const {
     Collections
 } = require("./database");
 
-class PlayerController {
-    constructor(socket, db, lootGenerator) {
+class PlayerController extends IPaymentListener {
+    constructor(socket, db, signVerifier, lootGenerator, raidManager, paymentProcessor, iapExecutor) {
+        super();
+
         this._socket = socket;
         this._db = db;
+        this._raidManager = raidManager;
         this._lootGenerator = lootGenerator;
+        this._signVerifier = signVerifier;
+        this._paymentProcessor = paymentProcessor;
+        this._iapExecutor = iapExecutor;
+
+        this._paymentProcessor.registerAsPaymentListener(this.address, this);
+
+        this._socket.on("disconnect", this._handleDisconnect.bind(this));
 
         // admin functions
         this._socket.on(Operations.GetQuestData, this._getQuestData.bind(this));
@@ -27,6 +33,11 @@ class PlayerController {
         // service functions
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
+        this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
+        this._socket.on(Operations.FetchRaidSummonList, this._fetchRaidSummonList.bind(this))
+
+        // IAPs 
+        this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
 
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
@@ -35,10 +46,20 @@ class PlayerController {
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
+        this._socket.on(Operations.JoinRaid, this._gameHandler(this._joinRaid.bind(this)));
+        this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
     }
 
     get address() {
         return this._socket.authToken ? this._socket.authToken.address : "";
+    }
+
+    _handleDisconnect() {
+        this._paymentProcessor.unregister(this.address);
+    }
+
+    async onPayment(status, iap, context) {
+
     }
 
     async _handleAuth(data, respond) {
@@ -61,7 +82,7 @@ class PlayerController {
         } else {
             // if signed message is presented - verify message
             try {
-                let result = await tronWeb.trx.verifyMessage(tronWeb.toHex(user.nonce), data.message, user.address);
+                let result = await this._signVerifier.verifySign(user.nonce, data.message, user.address);
                 if (result) {
                     this._socket.setAuthToken({
                         address: user.address,
@@ -70,7 +91,7 @@ class PlayerController {
 
                     respond(null, "success");
                 } else {
-                    throw "sign verifiction failed";
+                    throw "verification failed";
                 }
             } catch (exc) {
                 console.log(exc);
@@ -90,7 +111,7 @@ class PlayerController {
         let table = await this._db.collection(Collections.ExpTable).findOne({
             _id: 1
         });
-        return table.table;
+        return table.player;
     }
 
     async getMeta() {
@@ -297,8 +318,7 @@ class PlayerController {
         }
 
         if (itemsToDrop > 0) {
-            let lootGenerator = new LootGenerator(this._db);
-            let items = await lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop);
+            let items = await this._lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop);
 
             if (items) {
                 await user.addLoot(items);
@@ -376,6 +396,85 @@ class PlayerController {
         }
 
         return null;
+    }
+
+    async _refillTimer(user, data) {
+        // data.stat - type of the timer to refill
+        // data.refillType 
+        //     0 - Native currency
+        //     1 - Shinies
+        //     2 - Items
+        // In case of items we also need data.items - array of itemIds to use and count
+
+        let {
+            stat,
+            refillType,
+            items
+        } = data;
+
+        if (!stat && !refillType) {
+            throw "wrong arguments";
+        }
+
+        if (!Number.isInteger(refillType)) {
+            throw "wrong arguments";
+        }
+
+        let timer = user.getTimer(stat);
+        if (!timer) {
+            throw "wrong stat";
+        }
+
+        switch (refillType) {
+            case 0:
+                // native currency
+                break;
+            case 1:
+                // shinies
+                break;
+
+            case 2:
+                //items
+
+                break;
+        }
+
+        user.setTimerValue(stat, user.getMaxStatValue(stat));
+
+        return null;
+    }
+
+    // Raids
+    async _fetchRaidSummonList(data, respond) {
+        let summonList = await this._raidManager.getSummoningList(this.address);
+        respond(null, summonList);
+    }
+
+    async _fetchRaid(data, respond) {
+        let raidInfo = await this._raidManager.getRaidInfo(data.raidId);
+
+        respond(null, raidInfo);
+    }
+
+    async _summonRaid(data, respond) {
+        let user = await this._loadUser(this.address);
+
+        try {
+            if (!this._raidManager.canSummon(user, data.stage, data.raid)) {
+                throw "not enough essences";
+            }
+
+            let request = await this._raidManager.createPaymentRequest(user, data.stage, data.raid);
+            let nonce = await this._paymentProcessor.requestPayment(...request);
+            respond(null, nonce);
+        } catch (exc) {
+            console.log(exc);
+            respond(exc);
+        }
+    }
+
+    async _joinRaid(data, respond) {
+
     }
 }
 

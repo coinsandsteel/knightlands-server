@@ -1,9 +1,12 @@
-var SCWorker = require('socketcluster/scworker');
-var express = require('express');
-var serveStatic = require('serve-static');
-var path = require('path');
-var morgan = require('morgan');
-var healthChecker = require('sc-framework-health-check');
+'use strict';
+
+const Config = require("./config");
+const SCWorker = require('socketcluster/scworker');
+const express = require('express');
+const serveStatic = require('serve-static');
+const path = require('path');
+const morgan = require('morgan');
+const healthChecker = require('sc-framework-health-check');
 
 const Operations = require("./knightlands-shared/operations");
 const PlayerController = require("./playerController");
@@ -11,7 +14,11 @@ const MongoClient = require("mongodb").MongoClient;
 
 const Database = require("./database");
 
-var db
+const LootGenerator = require("./lootGenerator");
+const RaidManager = require("./raids/raidManager");
+const IAPExecutor = require("./payment/IAPExecutor");
+const PaymentProcessor = require("./payment/paymentProcessor");
+const BlockchainFactory = require("./blockchain/blockchainFactory");
 
 class Worker extends SCWorker {
   async run() {
@@ -44,15 +51,29 @@ class Worker extends SCWorker {
 
     try {
       await client.connect();
-      db = client.db();
-      console.log("Connected to db", db.databaseName)
+      this._db = client.db();
+      console.log("Connected to db", this._db.databaseName)
     } catch (err) {
       console.log("Can't connect to DB.", err.stack);
       throw err;
     }
 
+
+    this._blockchain = BlockchainFactory(Config.blockchain, this._db);
+    this._iapExecutor = new IAPExecutor(this._db);
+    this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
+
+    this._raidManager = new RaidManager(this._db);
+
+    await this._raidManager.init(this._iapExecutor);
+
+    this._lootGenerator = new LootGenerator(this._db);
+
+    // proceed everything that was suppose to finish
+    await this._paymentProcessor.proceedPayments();
+
     scServer.on("connection", socket => {
-      new PlayerController(socket, db)
+      new PlayerController(socket, this._db, this._blockchain, this._lootGenerator, this._raidManager, this._paymentProcessor);
     });
   }
 

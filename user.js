@@ -1,9 +1,11 @@
+'use strict';
+
 import CharacterStats from "./knightlands-shared/character_stat";
 
 import {
     StatConversions
 }
-from "./knightlands-shared/character_stat";
+    from "./knightlands-shared/character_stat";
 
 import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
@@ -89,6 +91,14 @@ class User {
         return this.getTimerValue(CharacterStats.Health) >= 10;
     }
 
+    get inventory() {
+        return this._inventory;
+    }
+
+    get raidTickets() {
+        return this._data.raidTickets;
+    }
+
     getCombatUnit() {
         let currentStats = {
             ...this._data.character.stats
@@ -138,6 +148,10 @@ class User {
         return this._data.character.timers[stat];
     }
 
+    getMaxStatValue(stat) {
+        return this._data.character.stats[stat];
+    }
+
     getTimerValue(stat) {
         this._advanceTimer(stat);
         return this.getTimer(stat).value;
@@ -184,10 +198,10 @@ class User {
         await users.updateOne({
             address: this._address
         }, {
-            $set: {
-                nonce: this._data.nonce
-            }
-        });
+                $set: {
+                    nonce: this._data.nonce
+                }
+            });
 
         return this._data.nonce;
     }
@@ -350,7 +364,7 @@ class User {
         }
 
         finalStats[CharacterStats.Stamina] += character.level;
-        finalStats[CharacterStats.Energy] += character.level * 5;
+        finalStats[CharacterStats.Energy] += character.level;
         finalStats[CharacterStats.Honor] += character.level;
 
         // items
@@ -528,6 +542,10 @@ class User {
 
         if (!user.questsProgress.zones) {
             user.questsProgress.zones = {};
+        }
+
+        if (!user.hasOwnProperty("raidTickets")) {
+            user.raidTickets = 0;
         }
 
         return user;

@@ -1,3 +1,5 @@
+'use strict';
+
 const {
     Collections
 } = require("./database");
@@ -7,6 +9,7 @@ class Inventory {
         this._db = db;
         this._userId = userId;
         this._items = [];
+        this._itemsByTemplate = {};
         this._itemsById = new Map(); // keeps index in items array
         this._itemsByIdOriginal = new Map(); // original copy to detect changes
         this._lastItemId = 0;
@@ -37,6 +40,7 @@ class Inventory {
                     let item = this._items[i];
                     this._itemsById.set(item.id, i);
                     this._itemsByIdOriginal.set(item.id, item.count);
+                    this._addItemToIndexByTemplate(item);
                 }
             }
         }
@@ -179,6 +183,45 @@ class Inventory {
         }
     }
 
+    _addItemToIndexByTemplate(item) {
+        this._getItemTemplates(item.template).push(item);
+    }
+
+    _deleteItemFromTemplateIndex(item) {
+        let templates = this._getItemTemplates(item.template);
+        let i = 0;
+        const length = templates.length;
+        for (; i < length; ++i) {
+            if (templates[i].id == item.id) {
+                templates[i] = templates[templates.length - 1];
+                templates.pop();
+                break;
+            }
+        }
+    }
+
+    _getItemTemplates(template) {
+        let templates = this._itemsByTemplate[template];
+        if (!templates) {
+            templates = [];
+            this._itemsByTemplate[template] = templates;
+        }
+
+        return templates;
+    }
+
+    _countItemsByTemplate(template) {
+        let templates = this._getItemTemplates(template);
+        let count = 0;
+        let i = 0;
+        const length = templates.length;
+        for (; i < length; ++i) {
+            count += templates[i].count;
+        }
+
+        return count;
+    }
+
     // add or modify item in collection
     addItem(item) {
         let foundItem = this.getItemById(item.id);
@@ -194,6 +237,7 @@ class Inventory {
             this._newItems.set(item.id, item);
             // check if is in deleted list
             this._removedItems.delete(item.id);
+            this._addItemToIndexByTemplate(item);
             return item;
         }
     }
@@ -214,6 +258,8 @@ class Inventory {
         this._newItems.delete(item.id);
         // delete from index
         this._itemsById.delete(item.id);
+        this._deleteItemFromTemplateIndex(item);
+
 
         return true;
     }
@@ -237,11 +283,27 @@ class Inventory {
         return this._items[this._itemsById.get(id)];
     }
 
+    hasEnoughIngridients(ingridients) {
+        let enoughResources = true;
+        let i = 0;
+        const length = ingridients.length;
+        for (; i < length; ++i) {
+            let ingridient = ingridients[i];
+            if (!this._countItemsByTemplate(ingridient.itemId) >= ingridient.quantity) {
+                enoughResources = false;
+                break;
+            }
+        }
+
+        return enoughResources;
+    }
+
     modifyStack(item, inc) {
         item.count += inc;
         // mark as new
         this._newItems.set(item.id, item);
     }
+
 
     // bulk items request by field name.
     // async getItems(itemIds, fieldName = "_id", excludeFieldName = "unique", excludeFields = []) {
