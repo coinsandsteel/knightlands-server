@@ -1,6 +1,6 @@
 import Blockchains from "./../knightlands-shared/blockchains";
 
-const TronBlockchain = require("./tronBlockchain");
+const TronBlockchain = require("./tron/tronBlockchain");
 const MockBlockchain = require("./mockBlockchain");
 
 module.exports = (blockchainType, db) => {

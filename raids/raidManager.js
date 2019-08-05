@@ -5,11 +5,17 @@ const {
 } = require("../database");
 
 const Raid = require("./raid");
+const inventory = require("./../inventory");
+const Events = require("./../knightlands-shared/events");
+import Game from "./../game";
 
 class RaidManager {
-    constructor(db) {
+    constructor(db, paymentProcessor) {
+        this.SummonPaymentTag = "raid_summon";
+
         this._db = db;
         this._factors = {};
+        this._paymentProcessor = paymentProcessor;
     }
 
     async init(iapExecutor) {
@@ -36,19 +42,6 @@ class RaidManager {
         await this._registerRaidIAPs(iapExecutor);
     }
 
-    async createPaymentRequest(user, stage, raidTemplateId) {
-        let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
-        return [
-            user.address,
-            raitTemplate.stages[stage].iap,
-            {
-                summoner: user.address,
-                stage: stage,
-                raidTemplateId: raidTemplateId
-            }
-        ];
-    }
-
     async _getCurrentFactor(raidTemplateId, stage) {
         let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
             raid: raidTemplateId,
@@ -70,25 +63,49 @@ class RaidManager {
         return 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factor.factor;
     }
 
-    async canSummon(summoner, stage, raidTemplateId) {
-        let template = await this._loadRaidTemplate(raidTemplateId);
+    async summonRaid(summoner, stage, raidTemplateId) {
+        let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
-        // check if there is enough crafting materials
+        if (!raitTemplate) {
+            throw "invalid raid";
+        }
+
+
         stage = stage * 1;
 
-        if (template.stages.length <= stage) {
-            return false;
+        if (raitTemplate.stages.length <= stage) {
+            throw "invalid raid";
         }
 
-        let raidStage = template.stages[stage];
+        // check if there is enough crafting materials
+        let raidStage = raitTemplate.stages[stage];
 
         let summonRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
-
         if (!summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients)) {
-            return false;
+            throw "no essences";
         }
 
-        return true;
+        let iapContext = {
+            summoner: summoner.address,
+            stage: stage,
+            raidTemplateId: raidTemplateId
+        };
+
+        // check if payment request already created
+        let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(summoner.address, iapContext, this.SummonPaymentTag);
+        if (hasPendingPayment) {
+            throw "summoning in process already";
+        }
+
+        try {
+            return await this._paymentProcessor.requestPayment(summoner.address,
+                raidStage.iap,
+                this.SummonPaymentTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
     }
 
     async _summonRaid(summonerId, stage, raidTemplateId) {
@@ -102,30 +119,57 @@ class RaidManager {
             challenges: {}
         };
 
+        let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
+
+        // load player inventory. If player online - use loaded inventory. Or load inventory directly;
+        let userInventory;
+        let playerOnline = Game.getPlayerController(summonerId);
+        if (playerOnline) {
+            userInventory = (await playerOnline.getUser()).inventory;
+        } else {
+            userInventory = new inventory(summonerId, this._db);
+        }
+
+        await userInventory.loadAllItems();
+
+        let raidStage = raidTemplate.stages[stage];
+        // consume crafting materials
+        let craftingRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
+        userInventory.consumeItemsFromCraftingRecipe(craftingRecipe);
+
         {
-            const length = template.challenges.length;
+            const length = raidStage.challenges.length;
             let i = 0;
             for (; i < length; ++i) {
-                let challenge = template.challenges[i];
+                let challenge = raidStage.challenges[i];
                 raidEntry.challenges[challenge.type] = {}; // can't have 2 same challenges. Stores state for challenge instance
             }
         }
 
-        raidEntry.timeLeft = new Date().getTime() / 1000 + template.duration;
+        raidEntry.timeLeft = Math.floor(new Date().getTime() / 1000 + raidStage.duration);
 
         let bossState = {};
-        bossState[CharacterStats.Health] = template.health;
-        bossState[CharacterStats.Attack] = template.attack;
+        // bossState[CharacterStats.Health] = raidStage.health;
+        // bossState[CharacterStats.Attack] = raidStage.attack;
         raidEntry.bossState = bossState;
 
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
         raidEntry._id = insertResult.insertedId;
 
-        this._raids[raidEntry._id.valueOf()] = new Raid(this._db, raidEntry, template);
+        const raidIdStr = raidEntry._id.valueOf();
+        this._raids[raidIdStr] = new Raid(this._db, raidEntry, raidStage);
+
+        return {
+            raid: raidIdStr
+        };
     }
 
-    async getSummoningList(userId) {
-
+    // build an array of raids in process of summoning
+    async getSummonStatus(userId, raidTemplateId, stage) {
+        return await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
+            "context.raidTemplateId": raidTemplateId,
+            "context.stage": stage
+        });
     }
 
     async getRaidInfo(raidId) {
@@ -176,8 +220,10 @@ class RaidManager {
         allRaids.forEach(raid => {
             raid.stages.forEach(stage => {
                 iapExecutor.registerAction(stage.iap, async (context) => {
-                    this._summonRaid(...context);
+                    return await this._summonRaid(context.summoner, context.stage, context.raidTemplateId);
                 });
+
+                iapExecutor.mapIAPtoEvent(stage.iap, Events.RaidSummonStatus);
             });
 
         });

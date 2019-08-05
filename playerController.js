@@ -3,29 +3,28 @@
 const User = require("./user");
 const Random = require("./random");
 const Operations = require("./knightlands-shared/operations");
+const Events = require("./knightlands-shared/events");
 import CharacterStats from "./knightlands-shared/character_stat";
 const Unit = require("./combat/unit");
 const IPaymentListener = require("./payment/IPaymentListener");
+
+const Inventory = require("./inventory");
 
 const {
     Collections
 } = require("./database");
 
+import Game from "./game";
+
 class PlayerController extends IPaymentListener {
-    constructor(socket, db, signVerifier, lootGenerator, raidManager, paymentProcessor, iapExecutor) {
+    constructor(socket) {
         super();
 
         this._socket = socket;
-        this._db = db;
-        this._raidManager = raidManager;
-        this._lootGenerator = lootGenerator;
-        this._signVerifier = signVerifier;
-        this._paymentProcessor = paymentProcessor;
-        this._iapExecutor = iapExecutor;
-
-        this._paymentProcessor.registerAsPaymentListener(this.address, this);
-
-        this._socket.on("disconnect", this._handleDisconnect.bind(this));
+        this._db = Game.db;
+        this._raidManager = Game.raidManager;
+        this._lootGenerator = Game.lootGenerator;
+        this._signVerifier = Game.blockchain;
 
         // admin functions
         this._socket.on(Operations.GetQuestData, this._getQuestData.bind(this));
@@ -34,9 +33,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
         this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
-        this._socket.on(Operations.FetchRaidSummonList, this._fetchRaidSummonList.bind(this))
+        this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this))
+        this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this))
 
-        // IAPs 
+        // payed functions 
+        this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
 
         // game functions
@@ -51,15 +52,33 @@ class PlayerController extends IPaymentListener {
     }
 
     get address() {
-        return this._socket.authToken ? this._socket.authToken.address : "";
+        return this._socket.authToken ? this._socket.authToken.address : undefined;
     }
 
-    _handleDisconnect() {
-        this._paymentProcessor.unregister(this.address);
+    onDisconnect() {
+        Game.removeAllListeners(this.address);
+        console.log(`player ${this.address} is disconnected`);
     }
 
-    async onPayment(status, iap, context) {
+    onAuthenticated() {
+        Game.on(this.address, this._handleEvent.bind(this));
+    }
 
+    async onPayment(iap, eventToTrigger, context) {
+        console.log("on payment succeed", JSON.stringify({ iap, eventToTrigger, context }, null, 2));
+        this._socket.emit(eventToTrigger, {
+            iap,
+            context
+        });
+    }
+
+    async onPaymentFailed(iap, eventToTrigger, reason, context) {
+        console.log("on payment failed", JSON.stringify({ iap, eventToTrigger, reason, context }, null, 2));
+        this._socket.emit(eventToTrigger, {
+            iap,
+            reason,
+            context
+        });
     }
 
     async _handleAuth(data, respond) {
@@ -100,6 +119,14 @@ class PlayerController extends IPaymentListener {
         }
     }
 
+    _handleEvent(event, args) {
+        switch (event) {
+            case Inventory.Changed:
+                this._socket.emit(Events.InventoryUpdate, args);
+                break;
+        }
+    }
+
     async _handleGetUserInfo(data, respond) {
         let user = await this._loadUser(this.address);
         let response = user.serializeForClient();
@@ -120,6 +147,10 @@ class PlayerController extends IPaymentListener {
         });
     }
 
+    async getUser() {
+        return await this._loadUser(this.address);
+    }
+
     async _loadUser(address) {
         let expTable = await this.getExpTable();
         let meta = await this.getMeta();
@@ -130,6 +161,11 @@ class PlayerController extends IPaymentListener {
         return user;
     }
 
+    async _getCurrencyConversionRate(_, respond) {
+        respond(null, {
+            rate: Game.currencyConversionService.conversionRate
+        });
+    }
 
     async _getQuestData(_, respond) {
         let zones = await this._db.collection(Collections.Zones).find({}).toArray();
@@ -444,10 +480,19 @@ class PlayerController extends IPaymentListener {
         return null;
     }
 
+    async _acceptPayment(data, respond) {
+        try {
+            await Game.paymentProcessor.acceptPayment(this.address, data.paymentId, data.signedTransaction);
+            respond(null);
+        } catch (exc) {
+            respond(exc);
+        }
+    }
+
     // Raids
-    async _fetchRaidSummonList(data, respond) {
-        let summonList = await this._raidManager.getSummoningList(this.address);
-        respond(null, summonList);
+    async _fetchRaidSummonStatus(data, respond) {
+        let summonStatus = await this._raidManager.getSummonStatus(this.address, data.raid, data.stage);
+        respond(null, summonStatus);
     }
 
     async _fetchRaid(data, respond) {
@@ -460,13 +505,8 @@ class PlayerController extends IPaymentListener {
         let user = await this._loadUser(this.address);
 
         try {
-            if (!this._raidManager.canSummon(user, data.stage, data.raid)) {
-                throw "not enough essences";
-            }
-
-            let request = await this._raidManager.createPaymentRequest(user, data.stage, data.raid);
-            let nonce = await this._paymentProcessor.requestPayment(...request);
-            respond(null, nonce);
+            let payment = await this._raidManager.summonRaid(user, data.stage, data.raid);
+            respond(null, payment);
         } catch (exc) {
             console.log(exc);
             respond(exc);

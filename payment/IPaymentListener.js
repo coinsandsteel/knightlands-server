@@ -1,5 +1,9 @@
 class IPaymentListener {
-    onPayment(status, iap) {
+    onPayment(iap, iapResponse) {
+
+    }
+
+    onPaymentFailed(iap, iapResponse) {
 
     }
 }

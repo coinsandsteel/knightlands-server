@@ -9,7 +9,6 @@ const morgan = require('morgan');
 const healthChecker = require('sc-framework-health-check');
 
 const Operations = require("./knightlands-shared/operations");
-const PlayerController = require("./playerController");
 const MongoClient = require("mongodb").MongoClient;
 
 const Database = require("./database");
@@ -19,6 +18,9 @@ const RaidManager = require("./raids/raidManager");
 const IAPExecutor = require("./payment/IAPExecutor");
 const PaymentProcessor = require("./payment/paymentProcessor");
 const BlockchainFactory = require("./blockchain/blockchainFactory");
+const CurrencyConversionService = require("./payment/CurrencyConversionService");
+
+import Game from "./game";
 
 class Worker extends SCWorker {
   async run() {
@@ -63,17 +65,20 @@ class Worker extends SCWorker {
     this._iapExecutor = new IAPExecutor(this._db);
     this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
 
-    this._raidManager = new RaidManager(this._db);
+    this._raidManager = new RaidManager(this._db, this._paymentProcessor);
 
     await this._raidManager.init(this._iapExecutor);
 
     this._lootGenerator = new LootGenerator(this._db);
+    this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
+
+    Game.init(this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
 
     // proceed everything that was suppose to finish
-    await this._paymentProcessor.proceedPayments();
+    await this._paymentProcessor.start();
 
     scServer.on("connection", socket => {
-      new PlayerController(socket, this._db, this._blockchain, this._lootGenerator, this._raidManager, this._paymentProcessor);
+      Game.handleIncomingConnection(socket);
     });
   }
 

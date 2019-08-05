@@ -4,6 +4,8 @@ const {
     Collections
 } = require("./database");
 
+import Game from "./game";
+
 class Inventory {
     constructor(userId, db) {
         this._db = db;
@@ -17,6 +19,10 @@ class Inventory {
         // keep track of changes to commit later
         this._removedItems = new Map();
         this._newItems = new Map();
+    }
+
+    static get Changed() {
+        return "inventory_changed";
     }
 
     get nextId() {
@@ -48,7 +54,7 @@ class Inventory {
         return this._items;
     }
 
-    async commitChanges(inventoryChangesMode) {
+    async commitChanges() {
         let changes = {}; // what was changed
         let delta = {}; // stack delta that was added/removed
         let queries = [];
@@ -146,10 +152,10 @@ class Inventory {
         this._newItems.clear();
         this._removedItems.clear();
 
-        return {
+        Game.emitPlayerEvent(this._userId, Inventory.Changed, {
             changes,
             delta
-        };
+        });
     }
 
     addItemTemplates(templates) {
@@ -267,7 +273,7 @@ class Inventory {
     removeItem(itemId, count = 1) {
         let item = this.getItemById(itemId);
         if (!item || item.count < count) {
-            return false;
+            return 0;
         }
 
         this.modifyStack(item, -count);
@@ -275,7 +281,29 @@ class Inventory {
             this.deleteItemById(itemId);
         }
 
-        return true;
+        return count;
+    }
+
+    removeItemByTemplate(templateId, count = 1) {
+        let templates = this._getItemTemplates(templateId);
+        if (templates.length > 0) {
+            const length = templates.length;
+            let i = 0;
+            for (; i < length; ++i) {
+                if (count == 0) {
+                    break;
+                }
+
+                let item = templates[i];
+                if (item.count >= count) {
+                    this.removeItem(item.id, count);
+                    count = 0;
+                } else {
+                    this.deleteItemById(item.id);
+                    count -= item.count;
+                }
+            }
+        }
     }
 
     getItemById(id) {
@@ -289,13 +317,22 @@ class Inventory {
         const length = ingridients.length;
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            if (!this._countItemsByTemplate(ingridient.itemId) >= ingridient.quantity) {
+            if (!this._countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
                 enoughResources = false;
                 break;
             }
         }
 
         return enoughResources;
+    }
+
+    consumeItemsFromCraftingRecipe(recipe) {
+        let i = 0;
+        const length = recipe.ingridients.length;
+        for (; i < length; ++i) {
+            let ingridient = recipe.ingridients[i];
+            this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+        }
     }
 
     modifyStack(item, inc) {

@@ -136,7 +136,10 @@ module.exports = {
         RaidsDktMeta: "raids_dkt_meta",
         BlockchainEvents: "blockchain_events",
         PaymentRequests: "payment_requests",
-        CraftingRecipes: "crafting_recipes"
+        CraftingRecipes: "crafting_recipes",
+        IAPs: "iaps",
+        Services: "services",
+        PaymentErrors: "payment_errors"
     },
 
 

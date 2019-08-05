@@ -482,7 +482,7 @@ class User {
             }, finalQuery);
         }
 
-        changes.inventory = await this._inventory.commitChanges(inventoryChangesMode);
+        await this._inventory.commitChanges(inventoryChangesMode);
 
         return {
             changes,

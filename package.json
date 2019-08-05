@@ -18,6 +18,8 @@
     "minimist": "1.1.0",
     "mongodb": "^3.2.7",
     "morgan": "1.7.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
     "sc-errors": "^1.4.0",
     "sc-framework-health-check": "^2.0.0",
     "sc-hot-reboot": "^1.0.0",
@@ -26,7 +28,7 @@
     "socketcluster": "^14.1.1",
     "socketcluster-client": "^14.0.0",
     "tinyqueue": "^2.0.3",
-    "tronweb": "^2.6.4",
+    "tronweb": "^2.6.8",
     "uuid": "^3.3.2"
   },
   "keywords": [

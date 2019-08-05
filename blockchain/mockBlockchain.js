@@ -1,8 +1,8 @@
 const IBlockchainListener = require("./IBlockchainListener");
-const IBlockchainSignVerifier = require("./IBlockchainSignVerifier");
+const IBlockchainSigner = require("./IBlockchainSigner");
 const ClassAggregation = require("./../classAggregation");
 
-class MockBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSignVerifier) {
+class MockBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
     constructor(db) {
         super(db);
         this._db = db;
