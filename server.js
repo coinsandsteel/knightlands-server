@@ -7,6 +7,8 @@
   each one has a specific meaning within the SC ecosystem.
 */
 
+require('dotenv').config();
+
 var path = require('path');
 var argv = require('minimist')(process.argv.slice(2));
 var scHotReboot = require('sc-hot-reboot');
