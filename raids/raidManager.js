@@ -5,7 +5,6 @@ const {
 } = require("../database");
 
 const Raid = require("./raid");
-const inventory = require("./../inventory");
 const Events = require("./../knightlands-shared/events");
 import Game from "./../game";
 
@@ -34,9 +33,10 @@ class RaidManager {
         let i = 0;
         const length = raids.length;
         for (; i < length; i++) {
-            let raid = raids[i];
-            let template = await this._loadRaidTemplate(raid.raidTemplateId);
-            this._raids[raid._id.valueOf()] = new Raid(this._db, raid, template);
+            let raidData = raids[i];
+            let raid = new Raid(this._db);
+            await raid.init(raidData);
+            this._raids[raid.id] = raid;
         }
 
         await this._registerRaidIAPs(iapExecutor);
@@ -69,7 +69,6 @@ class RaidManager {
         if (!raitTemplate) {
             throw "invalid raid";
         }
-
 
         stage = stage * 1;
 
@@ -109,58 +108,23 @@ class RaidManager {
     }
 
     async _summonRaid(summonerId, stage, raidTemplateId) {
-        let raidEntry = {
-            summoner: summonerId,
-            stage,
-            raidTemplateId,
-            participants: {
-                summoner: true
-            },
-            challenges: {}
-        };
-
+        // consume crafting resources
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
 
-        // load player inventory. If player online - use loaded inventory. Or load inventory directly;
-        let userInventory;
-        let playerOnline = Game.getPlayerController(summonerId);
-        if (playerOnline) {
-            userInventory = (await playerOnline.getUser()).inventory;
-        } else {
-            userInventory = new inventory(summonerId, this._db);
-        }
+        let userInventory = await Game.loadInventory(summonerId);
+        await userInventory.autoCommitChanges(async inventory => {
+            let raidStage = raidTemplate.stages[stage];
+            // consume crafting materials
+            let craftingRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
+            inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
+        });
 
-        await userInventory.loadAllItems();
-
-        let raidStage = raidTemplate.stages[stage];
-        // consume crafting materials
-        let craftingRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
-        userInventory.consumeItemsFromCraftingRecipe(craftingRecipe);
-
-        {
-            const length = raidStage.challenges.length;
-            let i = 0;
-            for (; i < length; ++i) {
-                let challenge = raidStage.challenges[i];
-                raidEntry.challenges[challenge.type] = {}; // can't have 2 same challenges. Stores state for challenge instance
-            }
-        }
-
-        raidEntry.timeLeft = Math.floor(new Date().getTime() / 1000 + raidStage.duration);
-
-        let bossState = {};
-        // bossState[CharacterStats.Health] = raidStage.health;
-        // bossState[CharacterStats.Attack] = raidStage.attack;
-        raidEntry.bossState = bossState;
-
-        let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
-        raidEntry._id = insertResult.insertedId;
-
-        const raidIdStr = raidEntry._id.valueOf();
-        this._raids[raidIdStr] = new Raid(this._db, raidEntry, raidStage);
+        const raid = new Raid(this._db);
+        await raid.create(summonerId, stage, raidTemplateId);
+        this._raids[raid.id] = raid;
 
         return {
-            raid: raidIdStr
+            raid: raid.id
         };
     }
 
@@ -180,6 +144,27 @@ class RaidManager {
         let raid = this._raids[raidId];
         let currentFactor = await this.getCurrentFactor(raid.id, raid.stage);
         return raid.getInfo(currentFactor);
+    }
+
+    async getUnfinishedRaids(userId) {
+        return await this._db.collection(Collections.Raids).aggregate([
+            {
+                $match: {
+                    summoner: userId,
+                    looted: false
+                },
+            },
+            {
+                "$addFields": {
+                    "id": { "$toString": "$_id" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0
+                }
+            }
+        ]).toArray();
     }
 
     async onRaidFinished(raidId, success) {

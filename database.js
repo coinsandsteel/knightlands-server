@@ -139,7 +139,9 @@ module.exports = {
         CraftingRecipes: "crafting_recipes",
         IAPs: "iaps",
         Services: "services",
-        PaymentErrors: "payment_errors"
+        PaymentErrors: "payment_errors",
+        GiveawayInventory: "giveaway_inventory",
+        TelegramAccounts: "telegram_accounts"
     },
 
 

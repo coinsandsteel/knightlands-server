@@ -7,7 +7,7 @@ const serveStatic = require('serve-static');
 const path = require('path');
 const morgan = require('morgan');
 const healthChecker = require('sc-framework-health-check');
-
+const cors = require('cors');
 const Operations = require("./knightlands-shared/operations");
 const MongoClient = require("mongodb").MongoClient;
 
@@ -19,6 +19,7 @@ const IAPExecutor = require("./payment/IAPExecutor");
 const PaymentProcessor = require("./payment/paymentProcessor");
 const BlockchainFactory = require("./blockchain/blockchainFactory");
 const CurrencyConversionService = require("./payment/CurrencyConversionService");
+const Giveaway = require("./giveaway");
 
 import Game from "./game";
 
@@ -37,6 +38,9 @@ class Worker extends SCWorker {
       // available formats.
       app.use(morgan('dev'));
     }
+
+    app.use(cors());
+    app.use(express.json());
     app.use(serveStatic(path.resolve(__dirname, 'public')));
 
     // Add GET /health-check express route
@@ -74,12 +78,13 @@ class Worker extends SCWorker {
 
     Game.init(this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
 
-    // proceed everything that was suppose to finish
     await this._paymentProcessor.start();
 
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);
     });
+
+    this._giveaway = new Giveaway(this._db, app, this._blockchain);
   }
 
   setupMiddleware() {

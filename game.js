@@ -1,7 +1,10 @@
 'use strict';
 
+const User = require("./user");
 const EventEmitter = require('events');
 const PlayerController = require("./playerController");
+const Inventory = require("./inventory");
+const { Collections } = require("./database");
 
 class Game extends EventEmitter {
     constructor() {
@@ -45,6 +48,42 @@ class Game extends EventEmitter {
 
     get currencyConversionService() {
         return this._currencyConversionService;
+    }
+
+    async _getExpTable() {
+        let table = await this._db.collection(Collections.ExpTable).findOne({
+            _id: 1
+        });
+        return table.player;
+    }
+
+    async _getMeta() {
+        return await this._db.collection(Collections.Meta).findOne({
+            _id: 0
+        });
+    }
+
+    async loadUser(address) {
+        let expTable = await this._getExpTable();
+        let meta = await this._getMeta();
+        let user = new User(address, this._db, expTable, meta);
+
+        await user.load();
+
+        return user;
+    }
+
+    async loadInventory(userId) {
+        // load player inventory. If player online - use loaded inventory. Or load inventory directly;
+        let userInventory;
+        let playerOnline = this.getPlayerController(userId);
+        if (playerOnline) {
+            userInventory = (await playerOnline.getUser()).inventory;
+        } else {
+            userInventory = new Inventory(userId, this._db);
+        }
+
+        return userInventory;
     }
 
     getPlayerController(userId) {

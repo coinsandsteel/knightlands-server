@@ -31,7 +31,7 @@ var options = {
   workerController: workerControllerPath || path.join(__dirname, 'worker.js'),
   brokerController: brokerControllerPath || path.join(__dirname, 'broker.js'),
   workerClusterController: workerClusterControllerPath || null,
-  socketChannelLimit: Number(process.env.SOCKETCLUSTER_SOCKET_CHANNEL_LIMIT) || 1000,
+  socketChannelLimit: Number(process.env.SOCKETCLUSTER_SOCKET_CHANNEL_LIMIT) || 2000,
   clusterStateServerHost: argv.cssh || process.env.SCC_STATE_SERVER_HOST || null,
   clusterStateServerPort: process.env.SCC_STATE_SERVER_PORT || null,
   clusterMappingEngine: process.env.SCC_MAPPING_ENGINE || null,

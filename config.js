@@ -1,6 +1,7 @@
 import Blockchains from "./knightlands-shared/blockchains";
 
 module.exports = {
+    botApiKey: "YDX7n4n%*bVM^c=BNLNwXAckwxE?yPEV",
     blockchain: Blockchains.Tron,
     conversionService: {
         refreshInterval: 1, // in minutes

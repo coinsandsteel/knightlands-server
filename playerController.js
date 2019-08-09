@@ -1,6 +1,5 @@
 'use strict';
 
-const User = require("./user");
 const Random = require("./random");
 const Operations = require("./knightlands-shared/operations");
 const Events = require("./knightlands-shared/events");
@@ -35,6 +34,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
         this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this))
         this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this))
+        this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this))
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
@@ -134,31 +134,10 @@ class PlayerController extends IPaymentListener {
         respond(null, response);
     }
 
-    async getExpTable() {
-        let table = await this._db.collection(Collections.ExpTable).findOne({
-            _id: 1
-        });
-        return table.player;
-    }
 
-    async getMeta() {
-        return await this._db.collection(Collections.Meta).findOne({
-            _id: 0
-        });
-    }
 
     async getUser() {
-        return await this._loadUser(this.address);
-    }
-
-    async _loadUser(address) {
-        let expTable = await this.getExpTable();
-        let meta = await this.getMeta();
-        let user = new User(address, this._db, expTable, meta);
-
-        await user.load();
-
-        return user;
+        return await Game.loadUser(this.address);
     }
 
     async _getCurrencyConversionRate(_, respond) {
@@ -499,6 +478,11 @@ class PlayerController extends IPaymentListener {
         let raidInfo = await this._raidManager.getRaidInfo(data.raidId);
 
         respond(null, raidInfo);
+    }
+
+    async _fetchRaidsList(_, respond) {
+        let raids = await this._raidManager.getUnfinishedRaids(this.address);
+        respond(null, raids);
     }
 
     async _summonRaid(data, respond) {

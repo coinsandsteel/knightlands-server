@@ -54,6 +54,12 @@ class Inventory {
         return this._items;
     }
 
+    //
+    async autoCommitChanges(changeCallback) {
+        await this.loadAllItems();
+        await changeCallback(this);
+    }
+
     async commitChanges() {
         let changes = {}; // what was changed
         let delta = {}; // stack delta that was added/removed
@@ -164,28 +170,8 @@ class Inventory {
             return;
         }
 
-        // get non-unique versions of items with templates
-        let i = 0;
-        const length = this._items.length;
-        for (; i < length; i++) {
-            let item = this._items[i];
-            if (!templates[item.template]) {
-                continue;
-            }
-
-            this.modifyStack(item, templates[item.template]);
-            // safe to assume that without unique items, there is always 1 stack of particular item with desired template
-            templatesLeft--;
-            templates[item.template] = undefined;
-        }
-
-        if (templatesLeft > 0) {
-            // add new items with templates
-            for (let template in templates) {
-                if (templates[template]) {
-                    this.addItem(this.createItem(template, templates[template]));
-                }
-            }
+        for (let templateId in templates) {
+            this._addItemTemplate(templateId, templates[templateId]);
         }
     }
 
@@ -226,6 +212,26 @@ class Inventory {
         }
 
         return count;
+    }
+
+    _addItemTemplate(template, count) {
+        let templates = this._getItemTemplates(template);
+
+        if (templates.length > 0) {
+            let i = 0;
+            const length = templates.length;
+            for (; i < length; ++i) {
+                let item = templates[i];
+                if (item.unique) {
+                    continue;
+                }
+
+                this.modifyStack(item, count);
+                return;
+            }
+        }
+
+        this.addItem(this.createItem(template, count));
     }
 
     // add or modify item in collection
