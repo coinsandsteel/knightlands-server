@@ -48,6 +48,14 @@ var options = {
   environment: environment
 };
 
+if (environment == "prod") {
+  options.protocol = "https";
+  options.protocolOptions = {
+    key: "/etc/ssl/private/knightlands-selfsigned.key",
+    cert: "/etc/ssl/certs/knightlands-selfsigned.crt"
+  };
+}
+
 var bootTimeout = Number(process.env.SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT) || 10000;
 var SOCKETCLUSTER_OPTIONS;
 
