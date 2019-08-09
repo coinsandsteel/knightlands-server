@@ -55,6 +55,8 @@ class Giveaway {
             _id: itemId
         });
 
+        console.log("itemTemplate", itemTemplate);
+
         if (!itemTemplate) {
             res.status(500).end("unknown item");
             return;
@@ -67,7 +69,7 @@ class Giveaway {
 
         // send item's image url for the telegram bot
         res.json({
-            image: `http://206.189.156.134:9000/img/${itemTemplate.icon}.png`,
+            image: `https://inventory.knightlands.com:9000/img/${itemTemplate.icon}.png`,
             caption: itemTemplate.caption
         });
     }
