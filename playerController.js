@@ -92,7 +92,7 @@ class PlayerController extends IPaymentListener {
             return;
         }
 
-        let user = await this._loadUser(data.address);
+        let user = await this.getUser(data.address);
 
         // if no signed message - generate new nonce and return it back to client
         if (!data.message) {
@@ -128,7 +128,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _handleGetUserInfo(data, respond) {
-        let user = await this._loadUser(this.address);
+        let user = await this.getUser(this.address);
         let response = user.serializeForClient();
         response.inventory = await user.loadInventory();
         respond(null, response);
@@ -153,7 +153,7 @@ class PlayerController extends IPaymentListener {
 
     _gameHandler(handler, responseTransformation) {
         return async (data, respond) => {
-            let user = await this._loadUser(this.address);
+            let user = await this.getUser(this.address);
 
             try {
                 await handler(user, data);
@@ -486,7 +486,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonRaid(data, respond) {
-        let user = await this._loadUser(this.address);
+        let user = await this.getUser(this.address);
 
         try {
             let payment = await this._raidManager.summonRaid(user, data.stage, data.raid);
