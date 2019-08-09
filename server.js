@@ -13,6 +13,8 @@ var path = require('path');
 var argv = require('minimist')(process.argv.slice(2));
 var scHotReboot = require('sc-hot-reboot');
 
+const fs = require('fs');
+
 var fsUtil = require('socketcluster/fsutil');
 var waitForFile = fsUtil.waitForFile;
 
@@ -53,8 +55,8 @@ var options = {
 if (environment == "prod") {
   options.protocol = "https";
   options.protocolOptions = {
-    key: "server.key",
-    cert: "server.cert"
+    key: fs.readFileSync("server.key"),
+    cert: fs.readFileSync("server.cert")
   };
 }
 
