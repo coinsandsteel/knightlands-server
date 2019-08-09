@@ -55,8 +55,8 @@ var options = {
 if (environment == "prod") {
   options.protocol = "https";
   options.protocolOptions = {
-    key: fs.readFileSync("server.key"),
-    cert: fs.readFileSync("server.cert")
+    key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
   };
 }
 
