@@ -53,8 +53,8 @@ var options = {
 if (environment == "prod") {
   options.protocol = "https";
   options.protocolOptions = {
-    key: "/etc/ssl/private/knightlands-selfsigned.key",
-    cert: "/etc/ssl/certs/knightlands-selfsigned.crt"
+    key: "server.key",
+    cert: "server.cert"
   };
 }
 
