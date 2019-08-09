@@ -69,7 +69,7 @@ class Giveaway {
 
         // send item's image url for the telegram bot
         res.json({
-            image: `itemTemplate.icon.png`,
+            image: `${itemTemplate.icon}.png`,
             caption: itemTemplate.caption
         });
     }
