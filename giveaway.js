@@ -62,7 +62,13 @@ class Giveaway {
             return;
         }
 
-        let user = await Game.loadUser(req.body.user);
+        let linkedAccount = await this._db.collection(Collections.TelegramAccounts).findOne({ tgUser: req.body.user });
+        if (!linkedAccount) {
+            res.status(500).end("no account");
+            return;
+        }
+
+        let user = await Game.loadUser(linkedAccount.wallet);
         await user.loadInventory();
         user.inventory.addItemTemplates({ itemId: 1 });
         await user.commitChanges();
