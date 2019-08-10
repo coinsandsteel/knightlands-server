@@ -49,7 +49,8 @@ var options = {
   crashWorkerOnError: argv['auto-reboot'] != false,
   // If using nodemon, set this to true, and make sure that environment is 'dev'.
   killMasterOnSignal: false,
-  environment: environment
+  environment: environment,
+  logLevel: Number(process.env.LOG_LEVEL) || 2
 };
 
 if (environment == "prod") {

@@ -272,7 +272,7 @@ class PaymentProcessor {
 
             let iapExecuctionResult = await this._executeIAP(request._id, request.iap, request.context);
 
-            let listener = this._listeners[paymentRecipe.user];
+            let listener = this._getListeners(paymentRecipe.user)[0];
             if (listener) {
                 // let listener know that payment arrived
                 await listener.onPayment(request.iap, this._iapExecutor.getEventByIAP(request.iap), iapExecuctionResult);
@@ -298,7 +298,7 @@ class PaymentProcessor {
                 }
             });
 
-        let listener = this._listeners[userId];
+        let listener = this._getListeners(userId)[0];
         if (listener) {
             let payment = await this._db.collection(Collections.PaymentRequests).findOne({
                 _id: paymentObjectId

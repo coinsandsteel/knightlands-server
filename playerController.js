@@ -49,19 +49,25 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.JoinRaid, this._gameHandler(this._joinRaid.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
+
+        this._handleEventBind = this._handleEvent.bind(this);
     }
 
     get address() {
         return this._socket.authToken ? this._socket.authToken.address : undefined;
     }
 
+    get socket() {
+        return this._socket;
+    }
+
     onDisconnect() {
-        Game.removeAllListeners(this.address);
+        Game.removeListener(this.address, this._handleEventBind);
         console.log(`player ${this.address} is disconnected`);
     }
 
     onAuthenticated() {
-        Game.on(this.address, this._handleEvent.bind(this));
+        Game.on(this.address, this._handleEventBind);
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -133,8 +139,6 @@ class PlayerController extends IPaymentListener {
         response.inventory = await user.loadInventory();
         respond(null, response);
     }
-
-
 
     async getUser(address) {
         return await Game.loadUser(address || this.address);

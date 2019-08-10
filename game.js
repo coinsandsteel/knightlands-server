@@ -98,6 +98,12 @@ class Game extends EventEmitter {
         let controller = new PlayerController(socket);
 
         socket.on("authenticate", () => {
+            // if there is previous controller registered - disconnect it and remove
+            let connectedController = this._players[controller.address];
+            if (connectedController) {
+                connectedController.socket.disconnect(4100, "other account connected");
+            }
+
             this._paymentProcessor.registerAsPaymentListener(controller.address, controller);
             this._players[controller.address] = controller;
 
