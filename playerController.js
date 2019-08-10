@@ -136,8 +136,8 @@ class PlayerController extends IPaymentListener {
 
 
 
-    async getUser() {
-        return await Game.loadUser(this.address);
+    async getUser(address) {
+        return await Game.loadUser(address || this.address);
     }
 
     async _getCurrencyConversionRate(_, respond) {

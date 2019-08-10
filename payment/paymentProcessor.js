@@ -23,15 +23,25 @@ class PaymentProcessor {
     }
 
     registerAsPaymentListener(userId, listener) {
-        if (this._listeners[userId]) {
-            console.log(`Trying to register already registered listener for user = ${userId}`);
-        }
-
-        this._listeners[userId] = listener;
+        let listeners = this._getListeners(userId);
+        listeners.push(listener);
     }
 
-    unregister(userId) {
-        delete this._listeners[userId];
+    unregister(userId, listener) {
+        let listeners = this._getListeners(userId);
+        let i = 0;
+        const length = listeners.length;
+        for (; i < length; i++) {
+            if (listeners[i] == listener) {
+                listeners[i] = listeners[listeners.length - 1];
+                listeners.pop();
+                break;
+            }
+        }
+    }
+
+    _getListeners(userId) {
+        return this._listeners[userId] || [];
     }
 
     async getPendingPayments(userId, iaps) {

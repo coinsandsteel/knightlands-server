@@ -117,7 +117,7 @@ class Game extends EventEmitter {
 
     _deletePlayerController(controller) {
         if (controller.address) {
-            this._paymentProcessor.unregister(controller.address);
+            this._paymentProcessor.unregister(controller.address, controller);
             delete this._players[controller.address];
         }
     }

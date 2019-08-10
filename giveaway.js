@@ -84,6 +84,11 @@ class Giveaway {
     }
 
     async _fetchInventory(req, res) {
+        if (!req.query.wallet) {
+            res.json({});
+            return;
+        }
+
         let user = await Game.loadUser(req.query.wallet);
         let items = await user.loadInventory();
 
