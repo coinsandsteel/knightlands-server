@@ -69,7 +69,7 @@ class Giveaway {
 
         // send item's image url for the telegram bot
         res.json({
-            media: `https://game.knightlands.com:9000/img/${itemTemplate.icon}.png`,
+            media: `https://game.knightlands.com:9000/img/${itemTemplate.icon}.mp4`,
             caption: itemTemplate.caption
         });
     }
