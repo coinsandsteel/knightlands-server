@@ -69,7 +69,7 @@ class Giveaway {
 
         // send item's image url for the telegram bot
         res.json({
-            image: `${itemTemplate.icon}.png`,
+            media: `https://game.knightlands.com:9000/img/${itemTemplate.icon}.png`,
             caption: itemTemplate.caption
         });
     }
@@ -116,6 +116,14 @@ class Giveaway {
         }
 
         let walletAddress = req.body.address;
+
+        // also check that this wallet is not linked yet
+        let walletLinked = await this._db.collection(Collections.TelegramAccounts).findOne({ wallet: walletAddress });
+        if (walletLinked) {
+            res.status(500).end("linked");
+            return;
+        }
+
         let signature = req.body.signature;
 
         let result = await this._signVerifier.verifySign(`${linkedAccount.linkToken}${tgUser}`, signature, walletAddress);
@@ -130,7 +138,7 @@ class Giveaway {
             await user.commitChanges();
 
             await this._db.collection(Collections.TelegramAccounts).updateOne({ tgUser: tgUser }, {
-                $set: { linked: true },
+                $set: { linked: true, wallet: walletAddress },
                 $unset: { linkToken: "" }
             });
 
