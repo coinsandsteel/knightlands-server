@@ -33,8 +33,10 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._paymentContract = this._tronWeb.contract(PaymentGateway.abi, PaymentGateway.address);
         this._paymentContract.Purchase().watch((err, eventData) => {
             // save as previous block number just to make sure in case of failure we will rescan same block for possibly missed events
-            this._updateLastScanTimestamp(eventData.block - 1);
-            this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from, err);
+            if (!err) {
+                this._updateLastScanTimestamp(eventData.block - 1);
+                this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
+            }
         });
     }
 

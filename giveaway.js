@@ -51,6 +51,12 @@ class Giveaway {
             return;
         }
 
+        let linkedAccount = await this._db.collection(Collections.TelegramAccounts).findOne({ tgUser: req.body.user });
+        if (!linkedAccount) {
+            res.status(500).end("no account");
+            return;
+        }
+
         let itemTemplate = await this._db.collection(Collections.Items).findOne({
             _id: itemId
         });
@@ -62,15 +68,12 @@ class Giveaway {
             return;
         }
 
-        let linkedAccount = await this._db.collection(Collections.TelegramAccounts).findOne({ tgUser: req.body.user });
-        if (!linkedAccount) {
-            res.status(500).end("no account");
-            return;
-        }
-
         let user = await Game.loadUser(linkedAccount.wallet);
         await user.loadInventory();
-        user.inventory.addItemTemplates({ itemId: 1 });
+
+        let templates = {};
+        templates[itemTemplate._id] = 1;
+        user.inventory.addItemTemplates(templates);
         await user.commitChanges();
 
         // send item's image url for the telegram bot
