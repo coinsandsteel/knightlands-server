@@ -140,7 +140,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
     async verifySign(nonce, message, address) {
         await this._ensureConnected();
-        return await this._tronWeb.trx.verifyMessage(this._tronWeb.toHex(nonce), message, address);
+        try {
+            return await this._tronWeb.trx.verifyMessage(this._tronWeb.toHex(nonce), message, address);
+        } catch {
+            return false;
+        }
     }
 
     async sign(...args) {

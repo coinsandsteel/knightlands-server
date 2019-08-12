@@ -141,7 +141,9 @@ module.exports = {
         Services: "services",
         PaymentErrors: "payment_errors",
         GiveawayInventory: "giveaway_inventory",
-        TelegramAccounts: "telegram_accounts"
+        LinkedAccounts: "linked_accounts",
+        GiveawayLogs: "giveaway_logs",
+        Giveaways: "giveaways"
     },
 
 
