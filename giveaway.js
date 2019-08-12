@@ -10,7 +10,8 @@ const WelcomeGifts = {
     softCurrency: 25000,
     items: {
         "648": 1,
-        "649": 1
+        "649": 1,
+        "650": 1
     }
 }
 
