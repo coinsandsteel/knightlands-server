@@ -142,7 +142,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         await this._ensureConnected();
         try {
             return await this._tronWeb.trx.verifyMessage(this._tronWeb.toHex(nonce), message, address);
-        } catch {
+        } catch (_) {
             return false;
         }
     }
