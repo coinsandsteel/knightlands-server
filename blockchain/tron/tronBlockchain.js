@@ -6,6 +6,8 @@ const TronWeb = require("tronweb");
 const { Collections } = require("../../database");
 
 const PaymentGateway = require("./PaymentGateway.json");
+const PresaleChestGateway = require("./PresaleChestGateway.json");
+const Presale = require("./Presale.json");
 
 const NewBlockScanInterval = 10000;
 const TxFailureScanInterval = 5000;
@@ -16,17 +18,24 @@ function hexToBytes(hex) {
     return bytes;
 }
 
+const EventsPageSize = 50;
+const EventsScanned = "eventsScanned";
+
 class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
     constructor(db) {
         super(db);
 
         this.Payment = "Purchase";
         this.PaymentFailed = "PurchaseFailed";
+        this.PresaleChestTransfer = "PresaleChestTransfer";
+        this.PresaleChestPurchased = "PresaleChestPurchased";
+
+        this._eventsReceived = 0;
 
         this._db = db;
         this._tronWeb = new TronWeb({
             fullHost: (process.env.ENV || 'dev') == 'dev' ? 'https://api.shasta.trongrid.io' : 'https://api.trongrid.io',
-            privateKey: 'b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200'
+            privateKey: "b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200"
         });
 
         // load payment contract
@@ -34,8 +43,23 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._paymentContract.Purchase().watch((err, eventData) => {
             // save as previous block number just to make sure in case of failure we will rescan same block for possibly missed events
             if (!err) {
-                this._updateLastScanTimestamp(eventData.block - 1);
                 this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
+            }
+        });
+
+        this._presale = this._tronWeb.contract(Presale.abi, Presale.address);
+        this._presale.ChestPurchased().watch((err, eventData) => {
+            if (!err) {
+                this._updateLastEventReceived(eventData.timestamp, "ChestPurchased");
+                this._emitPresaleChestPurchase(eventData.result, eventData.transaction, eventData.timestamp);
+            }
+        });
+
+        this._presaleChestsGateway = this._tronWeb.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
+        this._presaleChestsGateway.ChestReceived().watch((err, eventData) => {
+            if (!err) {
+                this._updateLastEventReceived(eventData.timestamp, "ChestReceived");
+                this._emitPresaleChestsTransfer(eventData.result, eventData.transaction, eventData.timestamp);
             }
         });
     }
@@ -49,65 +73,91 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         }, NewBlockScanInterval);
     }
 
-    async scanEvents() {
-        console.log("Scanning missed events...");
-
-        let lastScan = await this._db.collection(Collections.Services).findOne({
-            _id: "lastScan"
-        });
-
-        let startBlock = 0;
-        let lastBlockInfo = await this._tronWeb.trx.getCurrentBlock();
-        let lastBlock = lastBlockInfo.block_header.raw_data.number;
-
-        if (lastScan) {
-            startBlock = lastScan.block - 20;
-        }
-
-        // very first scan, get all events
-        if (startBlock == 0) {
-            lastBlock = 0;
-        }
-
-        let options = {
-            eventName: this.Payment,
-            onlyConfirmed: true,
-        };
-
-        let blocksToScan = lastBlock - startBlock + 1;
-        let blocksScanned = 0;
-
-        // get block 1 by 1 and search for events
-        for (; startBlock <= lastBlock; startBlock++) {
-            if (startBlock > 0) {
-                options.blockNumber = startBlock;
-            }
-
-            let events = await this._tronWeb.getEventResult(PaymentGateway.address, options);
-
-            let i = 0;
-            const length = events.length;
-            for (; i < length; i++) {
-                let eventData = events[i];
-                console.log("Scanned event", eventData);
-                this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
-            }
-
-            await this._updateLastScanTimestamp(startBlock);
-
-            blocksScanned++;
-            console.log(`Scanned blocks ${blocksScanned}/${blocksToScan}`);
-        }
-
-        await this._updateLastScanTimestamp(lastBlockInfo.block_header.raw_data.number);
-
-        this._watchNewBlocks();
-
-        console.log("Scanning missed is done.");
+    isAddress(addr) {
+        return addr != "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
     }
 
-    async _updateLastScanTimestamp(block) {
-        await this._db.collection(Collections.Services).replaceOne({ _id: "lastScan", }, { block: block }, { upsert: true });
+    async _scanEvents() {
+        console.log("Scanning missed events...");
+
+        let events = ["ChestReceived", "ChestPurchased"];
+        let handlers = [this._emitPresaleChestsTransfer, this._emitPresaleChestPurchase];
+        let contracts = [PresaleChestGateway.address, Presale.address];
+        let eventIndex = 0;
+        const eventLength = events.length;
+        for (; eventIndex < eventLength; ++eventIndex) {
+            const EventToScan = events[eventIndex];
+
+            let eventsScanned = await this._db.collection(Collections.Services).findOne({
+                type: EventsScanned,
+                event: EventToScan
+            });
+
+            let options = {
+                eventName: EventToScan,
+                sort: "block_timestamp", // force to work since as intended - make a minimum point of time to scan events
+                onlyConfirmed: true,
+                size: EventsPageSize,
+                fromTimestamp: (eventsScanned || {}).lastScan || false,
+                page: 1
+            };
+
+            // get block 1 by 1 and search for events
+            while (true) {
+                let events = await this._tronWeb.getEventResult(contracts[eventIndex], options);
+                const length = events.length;
+
+                if (length == 0) {
+                    break;
+                }
+
+                let i = 0;
+                for (; i < length; i++) {
+                    let eventData = events[i];
+                    handlers[eventIndex].call(this, eventData.result, eventData.transaction, eventData.timestamp);
+                }
+
+                options.page++;
+                options.fingerPrint = events[length - 1]._fingerPrint;
+
+                await this._updateLastEventReceived(events[length - 1].timestamp, EventToScan);
+
+                if (!options.fingerPrint) {
+                    break;
+                }
+            }
+        }
+
+        console.log("Scan finished.");
+    }
+
+    async start() {
+        await this._scanEvents();
+    }
+
+    async _updateLastEventReceived(time, eventName) {
+        await this._db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName }, { $set: { lastScan: time + 1 } }, { upsert: true });
+    }
+
+    _emitPresaleChestsTransfer(eventData, transaction, timestamp) {
+        this.emit(this.PresaleChestTransfer, {
+            tx: transaction,
+            timestamp: timestamp / 1000,
+            user: this._tronWeb.address.fromHex(eventData.from),
+            chestId: eventData.chestId,
+            amount: eventData.amount
+        });
+    }
+
+    _emitPresaleChestPurchase(eventData, transaction, timestamp) {
+        this.emit(this.PresaleChestPurchased, {
+            tx: transaction,
+            timestamp: timestamp / 1000,
+            user: this._tronWeb.address.fromHex(eventData.purchaser),
+            referer: this._tronWeb.address.fromHex(eventData.referer),
+            chestId: eventData.chest,
+            amount: eventData.amount
+        });
     }
 
     _emitPayment(paymentId, transaction, timestamp, from, err) {
@@ -122,11 +172,9 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 nonce: paymentId,
                 tx: transaction,
                 timestamp: timestamp / 1000,
-                user: from
+                user: this._tronWeb.address.fromHex(eventData.from)
             });
         }
-
-
     }
 
     _emitPaymentFailed(transaction, paymentId, userId, reason) {

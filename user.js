@@ -9,6 +9,7 @@ import {
 
 import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
+import CurrencyType from "./knightlands-shared/currency_type";
 
 const {
     EquipmentSlots,
@@ -80,7 +81,15 @@ class User {
     }
 
     get softCurrency() {
-        return this._data.softCurrency;
+        return this._inventory.getCurrency(CurrencyType.Soft);
+    }
+
+    get hardCurrency() {
+        return this._inventory.getCurrency(CurrencyType.Hard);
+    }
+
+    get dkt() {
+        return this._inventory.getCurrency(CurrencyType.Dkt);
     }
 
     get address() {
@@ -108,7 +117,7 @@ class User {
     }
 
     addSoftCurrency(value) {
-        this._data.softCurrency += value;
+        this._inventory.modifyCurrency(CurrencyType.Soft, value);
     }
 
     // returns levels gained
@@ -218,10 +227,7 @@ class User {
 
         if (!userData) {
             userData = this._validateUser({
-                address: this._address,
-                softCurrency: 0,
-                dkt: 0,
-                hardCurrency: 0
+                address: this._address
             });
             await users.insertOne(userData);
         } else {
@@ -344,11 +350,11 @@ class User {
             return;
         }
 
-        if (totalGoldRequired > this._data.softCurrency) {
+        if (totalGoldRequired > this.softCurrency) {
             throw "not enough sc";
         }
 
-        this._data.softCurrency -= totalGoldRequired;
+        this.addSoftCurrency(-totalGoldRequired);
         this._recalculateStats = true;
     }
 
@@ -403,8 +409,7 @@ class User {
     }
 
     async addLoot(itemTemplates) {
-        await this._inventory.loadAllItems();
-        this._inventory.addItemTemplates(itemTemplates);
+        await this._inventory.addItemTemplates(itemTemplates);
     }
 
     async equipItem(itemId) {

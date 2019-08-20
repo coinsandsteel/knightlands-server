@@ -20,6 +20,7 @@ const PaymentProcessor = require("./payment/paymentProcessor");
 const BlockchainFactory = require("./blockchain/blockchainFactory");
 const CurrencyConversionService = require("./payment/CurrencyConversionService");
 const Giveaway = require("./giveaway");
+const Presale = require("./presale");
 
 import Game from "./game";
 
@@ -78,13 +79,17 @@ class Worker extends SCWorker {
 
     Game.init(this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
 
+    this._giveaway = new Giveaway(app);
+    this._presale = new Presale(app);
+
+    await this._blockchain.start();
     await this._paymentProcessor.start();
 
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);
     });
 
-    this._giveaway = new Giveaway(this._db, app, this._blockchain);
+
   }
 
   setupMiddleware() {

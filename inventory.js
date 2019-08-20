@@ -4,6 +4,7 @@ const {
     Collections
 } = require("./database");
 
+import ItemType from "./knightlands-shared/item_type";
 import Game from "./game";
 
 class Inventory {
@@ -15,6 +16,8 @@ class Inventory {
         this._itemsById = new Map(); // keeps index in items array
         this._itemsByIdOriginal = new Map(); // original copy to detect changes
         this._lastItemId = 0;
+        this._currencies = {};
+        this._loaded = false;
 
         // keep track of changes to commit later
         this._removedItems = new Map();
@@ -25,39 +28,70 @@ class Inventory {
         return "inventory_changed";
     }
 
+    getCurrency(currency) {
+        return this._currencies[currency] || 0;
+    }
+
+    setCurrency(currency, value) {
+        this._currencies[currency] = value * 1;
+    }
+
+    modifyCurrency(currency, value) {
+        if (!this._currencies[currency]) {
+            this.setCurrency(currency, value);
+        } else {
+            this._currencies[currency] += value * 1;
+        }
+    }
+
     get nextId() {
         return ++this._lastItemId;
     }
 
-    async loadAllItems() {
-        if (this._items.length === 0) {
-            let inventory = await this._db.collection(Collections.Inventory).findOne({
-                _id: this._userId
-            });
+    async loadAll() {
+        if (this._loaded) {
+            return;
+        }
 
-            if (inventory && inventory.items) {
-                this._items = inventory.items;
-                this._lastItemId = inventory.lastItemId;
+        this._loaded = true;
 
-                // build index 
-                let i = 0;
-                const length = this._items.length;
-                for (; i < length; i++) {
-                    let item = this._items[i];
-                    this._itemsById.set(item.id, i);
-                    this._itemsByIdOriginal.set(item.id, item.count);
-                    this._addItemToIndexByTemplate(item);
-                }
+        let inventory = await this._db.collection(Collections.Inventory).findOne({
+            _id: this._userId
+        });
+
+        if (!inventory) {
+            return;
+        }
+
+        if (inventory.items) {
+            this._items = inventory.items;
+            this._lastItemId = inventory.lastItemId;
+
+            // build index 
+            let i = 0;
+            const length = this._items.length;
+            for (; i < length; i++) {
+                let item = this._items[i];
+                this._itemsById.set(item.id, i);
+                this._itemsByIdOriginal.set(item.id, item.count);
+                this._addItemToIndexByTemplate(item);
             }
         }
 
+        if (inventory.currencies) {
+            this._currencies = inventory.currencies;
+        }
+    }
+
+    async loadAllItems() {
+        await this.loadAll();
         return this._items;
     }
 
-    //
     async autoCommitChanges(changeCallback) {
         await this.loadAllItems();
         await changeCallback(this);
+        await this.commitChanges();
     }
 
     async commitChanges() {
@@ -144,7 +178,8 @@ class Inventory {
                 },
                 update: {
                     $set: {
-                        lastItemId: this._lastItemId
+                        lastItemId: this._lastItemId,
+                        currencies: this._currencies
                     }
                 },
                 upsert: true
@@ -164,14 +199,30 @@ class Inventory {
         });
     }
 
-    addItemTemplates(templates) {
-        let templatesLeft = Object.keys(templates).length;
+    async addItemTemplates(templateRecords) {
+        await this.loadAllItems();
+
+        const length = templateRecords.length;
+        let templateIds = new Array(length);
+        {
+            let i = 0;
+
+            for (; i < length; ++i) {
+                templateIds[i] = templateRecords[i].item;
+            }
+        }
+
+
+        let templatesLeft = templateIds.length;
         if (templatesLeft === 0) {
             return;
         }
 
-        for (let templateId in templates) {
-            this._addItemTemplate(templateId, templates[templateId]);
+        let templates = await Game.itemTemplates.getTemplates(templateIds);
+
+        let i = 0;
+        for (; i < length; ++i) {
+            this._addItemTemplate(templates[i], templateRecords[i].quantity);
         }
     }
 
@@ -215,7 +266,12 @@ class Inventory {
     }
 
     _addItemTemplate(template, count) {
-        let templates = this._getItemTemplates(template);
+        if (template.type == ItemType.Currency) {
+            this.modifyCurrency(template.currencyType, template.quantity);
+            return;
+        }
+
+        let templates = this._getItemTemplates(template._id);
 
         if (templates.length > 0) {
             let i = 0;
@@ -229,9 +285,9 @@ class Inventory {
                 this.modifyStack(item, count);
                 return;
             }
+        } else {
+            this.addItem(this.createItem(template._id, count));
         }
-
-        this.addItem(this.createItem(template, count));
     }
 
     // add or modify item in collection
@@ -262,7 +318,8 @@ class Inventory {
 
         let item = this._items[itemIndex];
         // swap with the last element and pop
-        this._items[itemIndex] = this._items[this._items.length - 1];
+        let lastItem = this._items[this._items.length - 1];
+        this._items[itemIndex] = lastItem;
         this._items.pop();
         // mark as removed
         this._removedItems.set(item.id, item);
@@ -271,6 +328,10 @@ class Inventory {
         // delete from index
         this._itemsById.delete(item.id);
         this._deleteItemFromTemplateIndex(item);
+        // set swapped item new index
+        if (lastItem != item) {
+            this._itemsById.set(lastItem.id, itemIndex);
+        }
 
 
         return true;
@@ -383,12 +444,6 @@ class Inventory {
     //         .toArray();
     //     return entries;
     // }
-
-    async getTemplate(templateId) {
-        return await this._db.collection(Collections.Items).findOne({
-            _id: templateId
-        });
-    }
 
     createItem(templateId, count = 0) {
         return {

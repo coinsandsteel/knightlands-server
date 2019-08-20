@@ -4,6 +4,7 @@ const User = require("./user");
 const EventEmitter = require('events');
 const PlayerController = require("./playerController");
 const Inventory = require("./inventory");
+const ItemTemplates = require("./itemTemplates");
 const { Collections } = require("./database");
 
 class Game extends EventEmitter {
@@ -18,6 +19,7 @@ class Game extends EventEmitter {
         this._raidManager = raidManager;
         this._lootGenerator = lootGenerator;
         this._currencyConversionService = currencyConversionService;
+        this._itemTemplates = new ItemTemplates(db);
 
         this._players = {};
 
@@ -28,6 +30,10 @@ class Game extends EventEmitter {
 
     get db() {
         return this._db;
+    }
+
+    get itemTemplates() {
+        return this._itemTemplates;
     }
 
     get blockchain() {

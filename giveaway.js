@@ -16,9 +16,9 @@ const WelcomeGifts = {
 }
 
 class Giveaway {
-    constructor(db, http, signVerifier) {
-        this._db = db;
-        this._signVerifier = signVerifier;
+    constructor(http) {
+        this._db = Game.db;
+        this._signVerifier = Game.blockchain;
 
         let requestGuards = [this._requiresApiKey.bind(this)];
 
@@ -98,9 +98,7 @@ class Giveaway {
             return;
         }
 
-        let itemTemplate = await this._db.collection(Collections.Items).findOne({
-            _id: itemId
-        });
+        let itemTemplate = await Game.itemTemplates.getTemplate(itemId);
 
         if (!itemTemplate) {
             res.status(500).end("unknown item");
@@ -112,7 +110,7 @@ class Giveaway {
 
         let templates = {};
         templates[itemTemplate._id] = 1;
-        user.inventory.addItemTemplates(templates);
+        await user.inventory.addItemTemplates(templates);
         await user.commitChanges();
 
         await this._db.collection(Collections.GiveawayLogs).insertOne({ user: req.body.user, item: itemTemplate._id });
@@ -145,6 +143,7 @@ class Giveaway {
         let summary = {
             softCurrency: user.softCurrency,
             hardCurrency: user.hardCurrency,
+            dkt: user.dkt,
             items: items
         }
 
@@ -210,7 +209,7 @@ class Giveaway {
 
             user.addSoftCurrency(WelcomeGifts.softCurrency);
             await user.loadInventory();
-            user.inventory.addItemTemplates(WelcomeGifts.items);
+            await user.inventory.addItemTemplates(WelcomeGifts.items);
 
             await user.commitChanges();
 

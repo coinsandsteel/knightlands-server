@@ -4,6 +4,7 @@ const { Collections } = require("./../database");
 import Game from "./../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 const ObjectId = require("mongodb").ObjectID;
+const EventEmitter = require('events');
 
 const PaymentErrorCodes = {
     UknownPaymentId: "UknownPaymentId",
@@ -11,8 +12,10 @@ const PaymentErrorCodes = {
     PaymentFailed: "PaymentFailed"
 };
 
-class PaymentProcessor {
+class PaymentProcessor extends EventEmitter {
     constructor(db, blockchain, iapExecutor) {
+        super();
+
         this._db = db;
         this._blockchain = blockchain;
         this._iapExecutor = iapExecutor;

@@ -1,7 +1,11 @@
+'use strict';
+
 const {
     Collections
 } = require("./database");
 const Random = require("./random");
+const bounds = require("binary-search-bounds");
+import GachaType from "./knightlands-shared/gacha_type";
 
 class LootGenerator {
     constructor(db) {
@@ -47,51 +51,162 @@ class LootGenerator {
             return null;
         }
 
-        entries = entries[0];
+        return this._rollQuestLoot(itemsToRoll, entries[0]);
+    }
 
-        let items = {}; {
-            let i = 0;
-            const length = entries.guaranteedRecords.length;
-            for (; i < length; i++) {
-                let record = entries.guaranteedRecords[i];
-                this._addLootToTable(items, record);
-            }
+    _rollQuestLoot(itemsToRoll, table) {
+        let { items, itemsHash } = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+        return this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
+    }
+
+    _rollGuaranteedLootFromTable(guaranteedRecords, items, itemsHash) {
+        if (!items) {
+            items = [];
         }
 
-        while (itemsToRoll-- > 0) {
-            let rolledItem;
+        if (!itemsHash) {
+            itemsHash = {};
+        }
 
+        let i = 0;
+        const length = guaranteedRecords.length;
+        for (; i < length; i++) {
+            let record = guaranteedRecords[i];
+            this._addLootToTable(items, itemsHash, record);
+        }
+
+        return {
+            items,
+            itemsHash
+        }
+    }
+
+    _rollItemsFromLootTable(itemsToRoll, table, weights, items, itemsHash) {
+        if (!items) {
+            items = [];
+        }
+
+        if (!itemsHash) {
+            itemsHash = {};
+        }
+
+        if (!weights) {
+            weights = table.weights;
+        }
+
+        // items are ordered by weight - use binary search instead of linear search
+        let comparator = (x, y) => {
+            return weights.recordWeights[x.index] - y;
+        };
+
+        while (itemsToRoll-- > 0) {
             //first no loot 
-            let roll = Random.range(0, entries.totalWeight);
-            if (roll <= entries.noLoot) {
+            let roll = Random.range(0, weights.totalWeight);
+            if (roll <= weights.noLoot) {
                 continue;
             }
 
-            roll = Random.range(0, entries.totalWeight - entries.noLoot);
-            for (let index = 0; index < entries.records.length; index++) {
-                const record = entries.records[index];
-                rolledItem = record;
-                if (roll <= record.weight) {
-                    break;
-                }
-            }
+            roll = Random.range(0, weights.totalWeight - weights.noLoot);
 
-            if (rolledItem) {
-                this._addLootToTable(items, rolledItem);
+            let rolledItem = bounds.gt(table.records, roll, comparator);
+
+            if (rolledItem > 0) {
+                this._addLootToTable(items, itemsHash, table.records[rolledItem]);
             }
         }
-
-        console.log(items);
 
         return items;
     }
 
-    _addLootToTable(items, record) {
-        let count = Math.ceil(Random.range(record.minCount, record.maxCount));
-        if (!items[record.itemId]) {
-            items[record.itemId] = count;
+    async getLootFromGacha(gachaId) {
+        let gacha;
+        if (Number.isInteger(gachaId)) {
+            gacha = await this._db.collection(Collections.GachaMeta).findOne({ _id: gachaId });
         } else {
-            items[record.itemId] += count;
+            gacha = await this._db.collection(Collections.GachaMeta).findOne({ name: gachaId });
+        }
+
+        if (!gacha) {
+            return {};
+        }
+
+        let items;
+
+        if (gacha.type == GachaType.Normal) {
+            items = this._drawFromNormalGacha(gacha);
+        } else {
+
+        }
+
+        return items;
+    }
+
+    _drawFromNormalGacha(gacha) {
+        let { items, itemsHash } = this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
+
+        let itemsPerDraw = gacha.itemsPerDraw;
+        // now roll guaranteed rarity groups
+        {
+            let i = 0;
+            const length = gacha.rarityGuarantees.length;
+            for (; i < length; ++i) {
+                if (itemsPerDraw <= 0) {
+                    break;
+                }
+
+                let rarityGroupRoll = gacha.rarityGuarantees[i];
+                let group = gacha.rarityGroups[rarityGroupRoll.rarity];
+                let quantity = rarityGroupRoll.quantity;
+
+                // do not exceed items per draw
+                if (itemsPerDraw < quantity) {
+                    quantity = itemsPerDraw;
+                }
+                // count towards total item per draw
+                itemsPerDraw -= quantity;
+
+                this._rollItemsFromLootTable(quantity, group.loot, group.loot.weights, items, itemsHash);
+            }
+        }
+
+        if (itemsPerDraw <= 0) {
+            return items;
+        }
+
+        while (itemsPerDraw-- > 0) {
+            // roll rarity group
+            let roll = Random.range(0, gacha.totalWeight);
+            roll = Random.range(0, gacha.totalWeight);
+            let rolledGroup;
+            for (let rarity in gacha.rarityGroups) {
+                const group = gacha.rarityGroups[rarity];
+                rolledGroup = group;
+                if (roll <= group.weight) {
+                    break;
+                }
+            }
+
+            if (!rolledGroup) {
+                continue;
+            }
+
+            this._rollItemsFromLootTable(1, rolledGroup.loot, rolledGroup.loot.weights, items, itemsHash);
+        }
+
+        return items;
+    }
+
+    _addLootToTable(items, hash, record) {
+        let count = Math.ceil(Random.range(record.minCount, record.maxCount));
+        if (!hash[record.itemId]) {
+            let newItem = {
+                item: record.itemId,
+                quantity: count
+            };
+            hash[record.itemId] = newItem;
+            items.push(newItem);
+        } else {
+            hash[record.itemId].quantity += count;
         }
     }
 }
