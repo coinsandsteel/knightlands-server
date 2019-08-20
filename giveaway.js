@@ -8,11 +8,7 @@ const uuidv4 = require('uuid/v4');
 
 const WelcomeGifts = {
     softCurrency: 25000,
-    items: {
-        "648": 1,
-        "649": 1,
-        "650": 1
-    }
+    items: [{ item: 648, quantity: 1 }, { item: 649, quantity: 1 }, { item: 650, quantity: 1 }]
 }
 
 class Giveaway {
