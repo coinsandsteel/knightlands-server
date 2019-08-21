@@ -21,10 +21,12 @@ class Giveaway {
         http.post('/give', requestGuards, this._giveItem.bind(this));
         http.post('/getSigninKey', requestGuards, this._getSigninKey.bind(this));
         http.get('/inventory', this._fetchInventory.bind(this));
-        http.get('/check/welcomeStatus', this._checkWelcomeStatus.bind(this));
-        http.post('/link', this._linkTelegram.bind(this));
+        // http.get('/check/welcomeStatus', this._checkWelcomeStatus.bind(this));
+        http.post('/link/telegram', this._linkTelegram.bind(this));
+        http.post('/link/email', this._linkEmail.bind(this));
         http.post('/get/welcomeKey', this._getWelcomeKey.bind(this));
-        http.post('/claim/welcomePackage', this._claimWelcomePackage.bind(this));
+        // http.post('/claim/welcomePackage', this._claimWelcomePackage.bind(this));
+        http.get('/generateMailLink', this._generateMailLink.bind(this));
     }
 
     async _getWelcomeKey(req, res) {
@@ -156,6 +158,42 @@ class Giveaway {
         }
     }
 
+    async _linkEmail(req, res) {
+        const { email, signature, walletAddress } = req.body;
+        let linkedAccount = await this._db.collection(Collections.LinkedAccounts).findOne({ mail: email });
+
+        if (!linkedAccount) {
+            res.status(500).end("incorrect sign in link");
+            return;
+        }
+
+        if (linkedAccount.linked && linkedAccount.linked.mail) {
+            res.status(500).end("linked");
+            return;
+        }
+
+        // also check that this wallet is not linked yet
+        let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: walletAddress });
+        if (walletLinked && walletLinked._id.valueOf() != linkedAccount._id.valueOf()) {
+            res.status(500).end("linked");
+            return;
+        }
+
+        let result = await this._signVerifier.verifySign(`${linkedAccount.mailToken}${email}`, signature, walletAddress);
+        if (result) {
+            let giveResult = await this._tryGiveWelcomeSigninPackage(walletAddress);
+
+            await this._db.collection(Collections.LinkedAccounts).updateOne({ mail: email }, {
+                $set: { "linked.mail": true, wallet: walletAddress },
+                $unset: { mailToken: "" }
+            });
+
+            res.json(giveResult);
+        } else {
+            res.status(500).end("failed sign verification");
+        }
+    }
+
     async _linkTelegram(req, res) {
         let tgUser = req.body.user * 1;
         let linkedAccount = await this._db.collection(Collections.LinkedAccounts).findOne({ tgUser: tgUser });
@@ -165,7 +203,7 @@ class Giveaway {
             return;
         }
 
-        if (linkedAccount.linked) {
+        if (linkedAccount.linked && linkedAccount.linked.tg) {
             res.status(500).end("linked");
             return;
         }
@@ -174,7 +212,7 @@ class Giveaway {
 
         // also check that this wallet is not linked yet
         let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: walletAddress });
-        if (walletLinked) {
+        if (walletLinked && walletLinked._id.valueOf() != linkedAccount._id.valueOf()) {
             res.status(500).end("linked");
             return;
         }
@@ -186,7 +224,7 @@ class Giveaway {
             let giveResult = await this._tryGiveWelcomeSigninPackage(walletAddress);
 
             await this._db.collection(Collections.LinkedAccounts).updateOne({ tgUser: tgUser }, {
-                $set: { linked: true, wallet: walletAddress },
+                $set: { "linked.tg": true, wallet: walletAddress },
                 $unset: { linkToken: "" }
             });
 
@@ -217,6 +255,17 @@ class Giveaway {
         }
 
         return {};
+    }
+
+    async _generateMailLink(req, res) {
+        let token = uuidv4();
+        await this._db.collection(Collections.LinkedAccounts).updateOne({ mail: req.query.mail }, {
+            $set: { mailToken: token }
+        }, { upsert: true });
+
+        res.json({
+            url: `https://inventory.knightlands.com/#/linkmail/${token}/${req.query.mail}`
+        });
     }
 };
 
