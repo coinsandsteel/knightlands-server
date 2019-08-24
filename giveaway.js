@@ -159,7 +159,7 @@ class Giveaway {
     }
 
     async _linkEmail(req, res) {
-        const { email, signature, walletAddress } = req.body;
+        const { email, signature, address } = req.body;
         let linkedAccount = await this._db.collection(Collections.LinkedAccounts).findOne({ mail: email });
 
         if (!linkedAccount) {
@@ -173,18 +173,18 @@ class Giveaway {
         }
 
         // also check that this wallet is not linked yet
-        let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: walletAddress });
+        let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: address });
         if (walletLinked && walletLinked._id.valueOf() != linkedAccount._id.valueOf()) {
             res.status(500).end("linked");
             return;
         }
 
-        let result = await this._signVerifier.verifySign(`${linkedAccount.mailToken}${email}`, signature, walletAddress);
+        let result = await this._signVerifier.verifySign(`${linkedAccount.mailToken}${email}`, signature, address);
         if (result) {
-            let giveResult = await this._tryGiveWelcomeSigninPackage(walletAddress);
+            let giveResult = await this._tryGiveWelcomeSigninPackage(address);
 
             await this._db.collection(Collections.LinkedAccounts).updateOne({ mail: email }, {
-                $set: { "linked.mail": true, wallet: walletAddress },
+                $set: { "linked.mail": true, wallet: address },
                 $unset: { mailToken: "" }
             });
 
