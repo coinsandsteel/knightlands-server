@@ -42,8 +42,8 @@ class Unit {
         this._stats[stat] = value;
     }
 
-    attack(victim) {
-        let attack = this.getAttack();
+    attack(victim, damageFactor = 1) {
+        let attack = this.getAttack() * damageFactor;
 
         // modify from defense
         let victimDefense = victim.getStat(CharacterStat.Defense);
@@ -55,7 +55,7 @@ class Unit {
         let finalAttack = Math.floor(attack * (1 - damageReduction));
         victim.modifyHealth(-finalAttack);
 
-        return attack;
+        return finalAttack;
     }
 }
 

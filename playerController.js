@@ -35,6 +35,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this))
         this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this))
         this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this))
+        this._socket.on(Operations.SyncTime, this._syncTime.bind(this))
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
@@ -42,13 +43,15 @@ class PlayerController extends IPaymentListener {
 
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
-        this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
+        // this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
         this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.JoinRaid, this._gameHandler(this._joinRaid.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
+        this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
+        this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -84,6 +87,12 @@ class PlayerController extends IPaymentListener {
             iap,
             reason,
             context
+        });
+    }
+
+    _syncTime(_, respond) {
+        respond(null, {
+            time: new Date().getTime()
         });
     }
 
@@ -136,7 +145,8 @@ class PlayerController extends IPaymentListener {
     async _handleGetUserInfo(data, respond) {
         let user = await this.getUser(this.address);
         let response = user.serializeForClient();
-        response.inventory = await user.loadInventory();
+        await user.loadInventory();
+        response.inventory = user.inventory.info;
         respond(null, response);
     }
 
@@ -160,10 +170,10 @@ class PlayerController extends IPaymentListener {
             let user = await this.getUser(this.address);
 
             try {
-                await handler(user, data);
+                let response = await handler(user, data);
                 let changes = await user.commitChanges();
 
-                respond(null, changes);
+                respond(null, { changes, response });
             } catch (error) {
                 console.log(error);
                 respond(error);
@@ -221,6 +231,7 @@ class PlayerController extends IPaymentListener {
         }
 
         let itemsToDrop = 0;
+        let questComplete = false;
 
         if (isBoss) {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
@@ -272,6 +283,7 @@ class PlayerController extends IPaymentListener {
             if (!bossUnit.isAlive) {
                 user.setZoneCompletedFirstTime(data.zone, data.stage);
                 itemsToDrop = data.stage + 1;
+                questComplete = true;
             }
         } else {
             // get saved progress or create default
@@ -318,13 +330,19 @@ class PlayerController extends IPaymentListener {
 
             user.addSoftCurrency(softCurrencyGained);
 
+            // will reset if current quest is not complete 
+            questComplete = true;
+
             // check if all previous quests are finished
             let allQuestsFinished = true;
             for (let index = 0; index < zone.quests.length; index++) {
                 const quest = zone.quests[index];
-                let questProgress = user.getQuestProgress(data.zone, data.questIndex, data.stage);
-                if (!questProgress || questProgress.hits < quest.stages[data.stage].hits) {
+                let otherQuestProgress = user.getQuestProgress(data.zone, index, data.stage);
+                if (!otherQuestProgress || otherQuestProgress.hits < quest.stages[data.stage].hits) {
                     allQuestsFinished = false;
+                    if (index == data.questIndex) {
+                        questComplete = false;
+                    }
                     break;
                 }
             }
@@ -337,45 +355,12 @@ class PlayerController extends IPaymentListener {
         }
 
         if (itemsToDrop > 0) {
-            let items = await this._lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop);
+            let items = await this._lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop, questComplete);
 
             if (items) {
                 await user.addLoot(items);
             }
         }
-
-        return null;
-    }
-
-    async _attackQuestBoss(user, data) {
-        if (!Number.isInteger(data.stage)) {
-            throw "missing zone stage";
-        }
-
-        let zones = this._db.collection(Collections.Zones);
-        let zone = await zones.findOne({
-            _id: data.zone
-        });
-
-        if (!zone) {
-            throw "incorrect zone";
-        }
-
-        // check if player has enough stamina for requested hits
-        let staminaRequired = data.hits;
-        if (user.getTimerValue(CharacterStats.Stamina) < staminaRequired) {
-            throw "not enough stamina";
-        }
-
-        user.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
-
-
-        // // quest boss exp and gold is based on
-        // user.addExperience(quest.exp);
-        // let softCurrencyGained = Math.floor((quest.minGold + Math.random() * (quest.maxGold - quest.minGold)));
-        // user.updateProgress(questId, data.stage, 1);
-
-        // user.addSoftCurrency(softCurrencyGained);
 
         return null;
     }
@@ -444,10 +429,12 @@ class PlayerController extends IPaymentListener {
             throw "wrong stat";
         }
 
+        // spend resources for refill
         switch (refillType) {
             case 0:
                 // native currency
                 break;
+
             case 1:
                 // shinies
                 break;
@@ -479,13 +466,12 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchRaid(data, respond) {
-        let raidInfo = await this._raidManager.getRaidInfo(data.raidId);
-
+        let raidInfo = await this._raidManager.getRaidInfo(this.address, data.raidId);
         respond(null, raidInfo);
     }
 
     async _fetchRaidsList(_, respond) {
-        let raids = await this._raidManager.getUnfinishedRaids(this.address);
+        let raids = await this._raidManager.getCurrentRaids(this.address);
         respond(null, raids);
     }
 
@@ -501,8 +487,53 @@ class PlayerController extends IPaymentListener {
         }
     }
 
-    async _joinRaid(data, respond) {
+    async _joinRaid(user, data) {
+        let raid = this._raidManager.getRaid(data.raidId);
+        if (!raid) {
+            throw "incorrect raid";
+        }
 
+        await raid.join(user);
+
+        return null;
+    }
+
+    async _attackRaidBoss(user, data) {
+        data.hits *= 1;
+
+        if (!Number.isInteger(data.hits)) {
+            throw "incorrect hits";
+        }
+
+        let raid = this._raidManager.getRaid(data.raidId);
+        if (!raid) {
+            throw "incorrect raid";
+        }
+
+        await raid.attack(user, data.hits);
+
+        return null;
+    }
+
+    async _claimLootRaid(user, data) {
+        let rewards = await this._raidManager.claimLoot(user, data.raidId);
+
+        if (!rewards) {
+            throw "no reward";
+        }
+
+        console.log(JSON.stringify(rewards, null, 2))
+
+        await user.loadInventory();
+        user.addSoftCurrency(rewards.gold);
+        user.addExperience(rewards.exp);
+        user.inventory.addItemTemplates(rewards.items);
+
+        const spread = 0.2;
+        let dkt = Random.range(rewards.dkt * (1 - spread), rewards.dkt * (1 + spread))
+        user.addHardCurrency(dkt);
+
+        return rewards;
     }
 }
 

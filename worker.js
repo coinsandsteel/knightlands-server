@@ -22,6 +22,8 @@ const CurrencyConversionService = require("./payment/CurrencyConversionService")
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
 
+import DisconnectCodes from "./knightlands-shared/disconnectCodes";
+
 import Game from "./game";
 
 class Worker extends SCWorker {
@@ -77,7 +79,7 @@ class Worker extends SCWorker {
     this._lootGenerator = new LootGenerator(this._db);
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
-    Game.init(this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
+    Game.init(scServer, this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
 
     this._giveaway = new Giveaway(app);
     this._presale = new Presale(app);
@@ -88,8 +90,6 @@ class Worker extends SCWorker {
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);
     });
-
-
   }
 
   setupMiddleware() {
@@ -100,13 +100,47 @@ class Worker extends SCWorker {
       }
 
       let authToken = req.socket.authToken;
-
       if (authToken && authToken.address) {
         next();
+        return;
       } else {
-        req.socket.disconnect();
+        req.socket.disconnect(DisconnectCodes.NotAuthorized);
         next('You are not authorized');
       }
+    });
+
+    this.scServer.addMiddleware(this.scServer.MIDDLEWARE_SUBSCRIBE, async (req) => {
+      let authToken = req.socket.authToken;
+
+      if (authToken && authToken.address) {
+        if (req.channel.substr(0, 4) === "raid") {
+          // check if user is part of the raid
+          let user = await Game.loadUser(authToken.address);
+          if (!user) {
+            req.socket.disconnect(DisconnectCodes.NotAuthorized);
+            throw 'You are not authorized';
+          }
+
+          let raidId = req.channel.substr(5);
+          let raid = Game.raidManager.getRaid(raidId);
+          if (!raid) {
+            req.socket.disconnect(DisconnectCodes.NotAllowed);
+            throw 'incorrect raid';
+          }
+
+          if (!raid.isParticipant(user.address)) {
+            req.socket.disconnect(DisconnectCodes.NotAllowed);
+            throw 'not participant';
+          }
+        }
+      } else {
+        req.socket.disconnect(DisconnectCodes.NotAuthorized);
+        throw 'You are not authorized';
+      }
+    });
+
+    this.scServer.addMiddleware(this.scServer.MIDDLEWARE_PUBLISH_IN, (req, next) => {
+      next('not allowed');
     });
   }
 }

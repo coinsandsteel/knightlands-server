@@ -43,6 +43,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._paymentContract.Purchase().watch((err, eventData) => {
             // save as previous block number just to make sure in case of failure we will rescan same block for possibly missed events
             if (!err) {
+                this._updateLastEventReceived(eventData.timestamp, "Purchase");
                 this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
             }
         });
@@ -80,9 +81,9 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     async _scanEvents() {
         console.log("Scanning missed events...");
 
-        let events = ["ChestReceived", "ChestPurchased"];
-        let handlers = [this._emitPresaleChestsTransfer, this._emitPresaleChestPurchase];
-        let contracts = [PresaleChestGateway.address, Presale.address];
+        let events = ["ChestReceived", "ChestPurchased", "Purchase"];
+        let handlers = [this._emitPresaleChestsTransfer, this._emitPresaleChestPurchase, this._emitPayment];
+        let contracts = [PresaleChestGateway.address, Presale.address, PaymentGateway.address];
         let eventIndex = 0;
         const eventLength = events.length;
         for (; eventIndex < eventLength; ++eventIndex) {
@@ -172,7 +173,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 nonce: paymentId,
                 tx: transaction,
                 timestamp: timestamp / 1000,
-                user: this._tronWeb.address.fromHex(eventData.from)
+                user: this._tronWeb.address.fromHex(from)
             });
         }
     }

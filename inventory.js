@@ -28,6 +28,13 @@ class Inventory {
         return "inventory_changed";
     }
 
+    get info() {
+        return {
+            items: this._items,
+            currencies: this._currencies
+        }
+    }
+
     getCurrency(currency) {
         return this._currencies[currency] || 0;
     }
@@ -63,9 +70,10 @@ class Inventory {
             return;
         }
 
+        this._lastItemId = inventory.lastItemId;
+
         if (inventory.items) {
             this._items = inventory.items;
-            this._lastItemId = inventory.lastItemId;
 
             // build index 
             let i = 0;
@@ -95,6 +103,10 @@ class Inventory {
     }
 
     async commitChanges() {
+        if (!this._loaded) {
+            return;
+        }
+
         let changes = {}; // what was changed
         let delta = {}; // stack delta that was added/removed
         let queries = [];
@@ -195,7 +207,8 @@ class Inventory {
 
         Game.emitPlayerEvent(this._userId, Inventory.Changed, {
             changes,
-            delta
+            delta,
+            currencies: this._currencies
         });
     }
 
@@ -219,7 +232,6 @@ class Inventory {
         }
 
         let templates = await Game.itemTemplates.getTemplates(templateIds);
-
         let i = 0;
         for (; i < length; ++i) {
             this._addItemTemplate(templates[i], templateRecords[i].quantity);

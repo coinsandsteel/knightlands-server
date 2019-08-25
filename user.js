@@ -10,7 +10,7 @@ import {
 import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 import CurrencyType from "./knightlands-shared/currency_type";
-
+import Game from "./game";
 const {
     EquipmentSlots,
     getSlot
@@ -50,6 +50,7 @@ class User {
         this._expTable = expTable;
         this._meta = meta;
         this._recalculateStats = false;
+        this._combatUnit = null;
     }
 
     serializeForClient() {
@@ -109,15 +110,23 @@ class User {
     }
 
     getCombatUnit() {
-        let currentStats = {
-            ...this._data.character.stats
-        };
-        currentStats.health = this.getTimerValue(CharacterStats.Health);
-        return new PlayerUnit(this);
+        if (!this._combatUnit) {
+            let currentStats = {
+                ...this._data.character.stats
+            };
+            currentStats.health = this.getTimerValue(CharacterStats.Health);
+            this._combatUnit = new PlayerUnit(this);
+        }
+
+        return this._combatUnit;
     }
 
     addSoftCurrency(value) {
         this._inventory.modifyCurrency(CurrencyType.Soft, value);
+    }
+
+    addHardCurrency(value) {
+        this._inventory.modifyCurrency(CurrencyType.Hard, value);
     }
 
     // returns levels gained
@@ -376,7 +385,7 @@ class User {
         // items
         for (let itemId in character.equipment) {
             let equippedItem = character.equipment[itemId];
-            let template = await this._inventory.getTemplate(equippedItem.template);
+            let template = await Game.itemTemplates.getTemplate(equippedItem.template);
             if (!template) {
                 continue;
             }
@@ -424,7 +433,7 @@ class User {
             throw "already equipped";
         }
 
-        let template = await this._inventory.getTemplate(itemToEquip.template);
+        let template = await await Game.itemTemplates.getTemplate(itemToEquip.template);
         if (!template) {
             throw "no such template";
         }

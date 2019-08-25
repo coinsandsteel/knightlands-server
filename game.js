@@ -12,7 +12,8 @@ class Game extends EventEmitter {
         super();
     }
 
-    init(db, blockchain, paymentProcessor, raidManager, lootGenerator, currencyConversionService) {
+    init(server, db, blockchain, paymentProcessor, raidManager, lootGenerator, currencyConversionService) {
+        this._server = server;
         this._db = db;
         this._blockchain = blockchain;
         this._paymentProcessor = paymentProcessor;
@@ -54,6 +55,14 @@ class Game extends EventEmitter {
 
     get currencyConversionService() {
         return this._currencyConversionService;
+    }
+
+    publishToChannel(name, data) {
+        this._server.exchange.publish(name, data);
+    }
+
+    get now() {
+        return new Date().getTime();
     }
 
     async _getExpTable() {

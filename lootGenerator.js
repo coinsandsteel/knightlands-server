@@ -12,7 +12,7 @@ class LootGenerator {
         this._db = db;
     }
 
-    async getQuestLoot(zone, questIndex, stage, itemsToRoll = 1) {
+    async getQuestLoot(zone, questIndex, stage, itemsToRoll = 1, questFinished = false) {
         let entries = await this._db
             .collection(Collections.QuestLoot)
             .aggregate([{
@@ -38,10 +38,9 @@ class LootGenerator {
             }, {
                 $project: {
                     _id: 0,
-                    noLoot: "$stages.loot.noLoot",
                     records: "$stages.loot.records",
                     guaranteedRecords: "$stages.loot.guaranteedRecords",
-                    totalWeight: "$stages.loot.totalWeight"
+                    weights: "$stages.loot.weights"
                 }
             }])
             .toArray();
@@ -51,11 +50,47 @@ class LootGenerator {
             return null;
         }
 
-        return this._rollQuestLoot(itemsToRoll, entries[0]);
+        return this._rollQuestLoot(itemsToRoll, entries[0], questFinished);
     }
 
-    _rollQuestLoot(itemsToRoll, table) {
-        let { items, itemsHash } = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+    async getLootFromGacha(gachaId) {
+        let gacha;
+        if (Number.isInteger(gachaId)) {
+            gacha = await this._db.collection(Collections.GachaMeta).findOne({ _id: gachaId });
+        } else {
+            gacha = await this._db.collection(Collections.GachaMeta).findOne({ name: gachaId });
+        }
+
+        if (!gacha) {
+            return {};
+        }
+
+        let items;
+
+        if (gacha.type == GachaType.Normal) {
+            items = this._drawFromNormalGacha(gacha);
+        } else {
+            // not implemented 
+            items = [];
+        }
+
+        return items;
+    }
+
+    async getRaidLoot(raidLoot) {
+        let { items, itemsHash } = this._rollGuaranteedLootFromTable(raidLoot.loot.guaranteedRecords);
+        return this._rollItemsFromLootTable(raidLoot.lootRolls, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
+    }
+
+    _rollQuestLoot(itemsToRoll, table, questFinished) {
+        let items, itemsHash;
+
+        if (questFinished) {
+            let rollResults = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+            items = rollResults.items;
+            itemsHash = rollResults.itemsHash;
+        }
+
         return this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
@@ -113,29 +148,6 @@ class LootGenerator {
             if (rolledItem > 0) {
                 this._addLootToTable(items, itemsHash, table.records[rolledItem]);
             }
-        }
-
-        return items;
-    }
-
-    async getLootFromGacha(gachaId) {
-        let gacha;
-        if (Number.isInteger(gachaId)) {
-            gacha = await this._db.collection(Collections.GachaMeta).findOne({ _id: gachaId });
-        } else {
-            gacha = await this._db.collection(Collections.GachaMeta).findOne({ name: gachaId });
-        }
-
-        if (!gacha) {
-            return {};
-        }
-
-        let items;
-
-        if (gacha.type == GachaType.Normal) {
-            items = this._drawFromNormalGacha(gacha);
-        } else {
-
         }
 
         return items;

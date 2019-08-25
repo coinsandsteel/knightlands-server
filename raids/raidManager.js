@@ -7,6 +7,7 @@ const {
 const Raid = require("./raid");
 const Events = require("./../knightlands-shared/events");
 import Game from "./../game";
+const ObjectId = require("mongodb").ObjectID;
 
 class RaidManager {
     constructor(db, paymentProcessor) {
@@ -26,7 +27,9 @@ class RaidManager {
         });
 
         // load all running raids
-        let raids = await this._db.collection(Collections.Raids).find({}).toArray();
+        let raids = await this._db.collection(Collections.Raids).find({
+            finished: false
+        }).toArray();
 
         this._raids = {};
 
@@ -36,16 +39,16 @@ class RaidManager {
             let raidData = raids[i];
             let raid = new Raid(this._db);
             await raid.init(raidData);
-            this._raids[raid.id] = raid;
+            this._addRaid(raid);
         }
 
         await this._registerRaidIAPs(iapExecutor);
     }
 
-    async _getCurrentFactor(raidTemplateId, stage) {
+    async _getNextDktFactor(raidTemplateId, stage) {
         let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
             raid: raidTemplateId,
-            stage
+            stage: stage
         });
 
         if (!factor) {
@@ -54,13 +57,19 @@ class RaidManager {
             }
         }
 
-        return factor;
-    }
-
-    async getCurrentFactor(raidTemplateId, stage) {
-        let factor = this._getCurrentFactor(raidTemplateId, stage);
         let factorSettings = this._factorSettings[stage];
-        return 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factor.factor;
+        let factorValue = 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factorSettings.multiplier;
+
+        factor.step++;
+        // save 
+        await this._db.collection(Collections.RaidsDktFactors).updateOne({
+            raid: raidTemplateId,
+            stage: stage
+        }, { $set: factor }, {
+                upsert: true
+            });
+
+        return factorValue;
     }
 
     async summonRaid(summoner, stage, raidTemplateId) {
@@ -120,8 +129,9 @@ class RaidManager {
         });
 
         const raid = new Raid(this._db);
-        await raid.create(summonerId, stage, raidTemplateId);
-        this._raids[raid.id] = raid;
+        let currentFactor = await this._getNextDktFactor(raidTemplateId, stage);
+        await raid.create(summonerId, stage, raidTemplateId, currentFactor);
+        this._addRaid(raid);
 
         return {
             raid: raid.id
@@ -130,60 +140,88 @@ class RaidManager {
 
     // build an array of raids in process of summoning
     async getSummonStatus(userId, raidTemplateId, stage) {
-        return await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
+        let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
             "context.raidTemplateId": raidTemplateId,
             "context.stage": stage
         });
+
+        if (status) {
+            // include current dkt factor
+            status.dktFactor = await this._getNextDktFactor(raidTemplateId, stage);
+        }
+
+        return status;
     }
 
-    async getRaidInfo(raidId) {
-        if (!this._raids[raidId]) {
+    async getRaidInfo(userId, raidId) {
+        let raid = await this._db.collection(Collections.Raids).aggregate([
+            {
+                $match: {
+                    _id: new ObjectId(raidId)
+                }
+            },
+            {
+                "$addFields": {
+                    "id": { "$toString": "$_id" },
+                    "currentDamage": `$participants.${userId}`
+                }
+            },
+            {
+                $project: {
+                    participants: 0,
+                    _id: 0
+                }
+            }
+        ]).toArray();
+
+        if (raid.length == 0) {
             throw "no such raid";
         }
 
-        let raid = this._raids[raidId];
-        let currentFactor = await this.getCurrentFactor(raid.id, raid.stage);
-        return raid.getInfo(currentFactor);
+        return raid[0];
     }
 
-    async getUnfinishedRaids(userId) {
+    async getCurrentRaids(userId) {
+        let lootQuery = {};
+        lootQuery[`loot.${userId}`] = false;
+
+        let matchQuery = {
+            $match: {
+                $or: [
+                    lootQuery,
+                    {
+                        finished: false
+                    }
+                ]
+            }
+        };
+
+        let participantId = `participants.${userId}`;
+        matchQuery.$match[participantId] = { $exists: true };
+
+        let inclusiveProject = {
+            $project: {
+                raidTemplateId: 1,
+                stage: 1,
+                timeLeft: 1,
+                busySlots: 1,
+                bossState: 1,
+                finished: 1,
+                id: 1,
+                _id: 0
+            }
+        };
+        inclusiveProject.$project[participantId] = 1;
+
         return await this._db.collection(Collections.Raids).aggregate([
-            {
-                $match: {
-                    summoner: userId,
-                    looted: false
-                },
-            },
+            matchQuery,
             {
                 "$addFields": {
                     "id": { "$toString": "$_id" }
                 }
             },
-            {
-                $project: {
-                    _id: 0
-                }
-            }
+            inclusiveProject
         ]).toArray();
-    }
-
-    async onRaidFinished(raidId, success) {
-        if (!success) {
-            return;
-        }
-
-        let raid = this._raids[raidId];
-
-        let currentFactor = await this._getCurrentFactor(raid.id, raid.stage);
-        // increase step
-        currentFactor.step++;
-        // save 
-        await this._db.collection(Collections.RaidsDktFactors).replaceOne({
-            raid: raid.id,
-            stage: raid.stage
-        }, currentFactor, {
-                upsert: true
-            });
     }
 
     async _loadRaidTemplate(raidTemplateId) {
@@ -212,6 +250,112 @@ class RaidManager {
             });
 
         });
+    }
+
+    getRaid(raidId) {
+        return this._getRaid(raidId);
+    }
+
+    _getRaid(raidId) {
+        return this._raids[raidId];
+    }
+
+    _addRaid(raid) {
+        this._raids[raid.id] = raid;
+
+        raid.on(raid.TimeRanOut, this._handleRaidTimeout.bind(this));
+        raid.on(raid.Defeat, this._handleRaidDefeat.bind(this));
+    }
+
+    async _handleRaidTimeout(raid) {
+        await raid.finish();
+        this._removeRaid(raid.id);
+    }
+
+    async _handleRaidDefeat(raid) {
+        await raid.finish();
+        this._removeRaid(raid.id);
+    }
+
+    _removeRaid(id) {
+        delete this._raids[id];
+    }
+
+    async claimLoot(user, raidId) {
+        let userId = user.address;
+
+        let matchQuery = {
+            $match: {
+                _id: new ObjectId(raidId),
+                finished: true
+            }
+        };
+
+        let participantId = `participants.${userId}`;
+        let lootId = `loot.${userId}`;
+        matchQuery.$match[participantId] = { $exists: true };
+        matchQuery.$match[lootId] = false;
+
+        let projection = {
+            $project: {
+                dktFactor: 1,
+                raidTemplateId: 1,
+                stage: 1,
+                summoner: 1,
+                userDamage: `$${participantId}`
+            }
+        };
+
+        projection.$project[participantId] = 1;
+
+        let raidData = await this._db.collection(Collections.Raids).aggregate([
+            matchQuery,
+            projection
+        ]).toArray();
+
+        if (!raidData || raidData.length == 0) {
+            throw "no such raid";
+        }
+
+        raidData = raidData[0];
+
+        let raidTemplate = await this._loadRaidTemplate(raidData.raidTemplateId);
+        if (!raidTemplate) {
+            throw "no raid template";
+        }
+
+        // determine raid loot record based on user damage
+        let chosenLoot;
+        let raidStage = raidTemplate.stages[raidData.stage];
+        {
+            let i = 0;
+            const length = raidStage.loot.length;
+            for (; i < length; ++i) {
+                if (raidData.userDamage >= raidStage.loot[i].damageThreshold) {
+                    chosenLoot = raidStage.loot[i];
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (!chosenLoot) {
+            return null
+        }
+
+        let items = await Game.lootGenerator.getRaidLoot(chosenLoot);
+
+        let updateQuery = { $set: {} };
+        updateQuery.$set[lootId] = false;
+
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(raidId) }, updateQuery);
+
+        return {
+            items: items,
+            dkt: chosenLoot.dktReward * raidStage.maxDkt,
+            exp: raidStage.exp,
+            gold: raidStage.gold
+        }
     }
 }
 

@@ -44,7 +44,13 @@ class PaymentProcessor extends EventEmitter {
     }
 
     _getListeners(userId) {
-        return this._listeners[userId] || [];
+        let listeners = this._listeners[userId];
+        if (!listeners) {
+            listeners = [];
+            this._listeners[userId] = listeners;
+        }
+
+        return listeners;
     }
 
     async getPendingPayments(userId, iaps) {

@@ -8,7 +8,8 @@ class ItemTemplates {
     }
 
     async getTemplate(templateId) {
-        return await this.getTemplates(templateId);
+        let templates = await this.getTemplates(templateId);
+        return templates.length == 1 ? templates[0] : null;
     }
 
     async getTemplates(templateIds) {
@@ -47,7 +48,7 @@ class ItemTemplates {
             }
         }
 
-        return templates.length == 1 ? templates[0] : templates;
+        return templates;
     }
 
     _items() {

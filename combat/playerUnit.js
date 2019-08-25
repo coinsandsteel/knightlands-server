@@ -15,7 +15,7 @@ class PlayerUnit extends Unit {
 
     setHealth(value) {
         super.setHealth(value);
-        this._user.setTimerValue(CharacterStats.Health, value);
+        this._user.setTimerValue(CharacterStats.Health, this.getHealth());
     }
 }
 
