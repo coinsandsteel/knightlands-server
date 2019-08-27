@@ -129,6 +129,10 @@ class User {
         this._inventory.modifyCurrency(CurrencyType.Hard, value);
     }
 
+    addDkt(value) {
+        this._inventory.modifyCurrency(CurrencyType.Dkt, value);
+    }
+
     // returns levels gained
     addExperience(exp) {
         let character = this._data.character;

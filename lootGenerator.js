@@ -82,6 +82,11 @@ class LootGenerator {
         return this._rollItemsFromLootTable(raidLoot.lootRolls, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
     }
 
+    async getLootFromTable(table, itemsToRoll) {
+        let { items, itemsHash } = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+        return this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
+    }
+
     _rollQuestLoot(itemsToRoll, table, questFinished) {
         let items, itemsHash;
 

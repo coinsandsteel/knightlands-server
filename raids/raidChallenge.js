@@ -1,13 +1,24 @@
 'use strict';
 
 class RaidChallenge {
-    constructor() {}
+    constructor() { }
 
-    onHit(player, damageDealt) {}
+    onHit(player, damageDealt) { }
 
-    finalize() {}
+    finalize() { }
 
-    snapshot() {}
+    snapshot() { }
+
+    type() { }
+
+    claimLoot(userId) {
+        return {
+            items: [],
+            dkt: 0,
+            softCurrency: 0,
+            hardCurrency: 0
+        }
+    }
 }
 
 module.exports = RaidChallenge;

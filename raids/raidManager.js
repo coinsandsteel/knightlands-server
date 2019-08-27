@@ -296,21 +296,8 @@ class RaidManager {
         matchQuery.$match[participantId] = { $exists: true };
         matchQuery.$match[lootId] = false;
 
-        let projection = {
-            $project: {
-                dktFactor: 1,
-                raidTemplateId: 1,
-                stage: 1,
-                summoner: 1,
-                userDamage: `$${participantId}`
-            }
-        };
-
-        projection.$project[participantId] = 1;
-
         let raidData = await this._db.collection(Collections.Raids).aggregate([
-            matchQuery,
-            projection
+            matchQuery
         ]).toArray();
 
         if (!raidData || raidData.length == 0) {
@@ -319,43 +306,10 @@ class RaidManager {
 
         raidData = raidData[0];
 
-        let raidTemplate = await this._loadRaidTemplate(raidData.raidTemplateId);
-        if (!raidTemplate) {
-            throw "no raid template";
-        }
+        let raid = new Raid(this._db);
+        await raid.init(raidData);
 
-        // determine raid loot record based on user damage
-        let chosenLoot;
-        let raidStage = raidTemplate.stages[raidData.stage];
-        {
-            let i = 0;
-            const length = raidStage.loot.length;
-            for (; i < length; ++i) {
-                if (raidData.userDamage >= raidStage.loot[i].damageThreshold) {
-                    chosenLoot = raidStage.loot[i];
-                } else {
-                    break;
-                }
-            }
-        }
-
-        if (!chosenLoot) {
-            return null
-        }
-
-        let items = await Game.lootGenerator.getRaidLoot(chosenLoot);
-
-        let updateQuery = { $set: {} };
-        updateQuery.$set[lootId] = false;
-
-        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(raidId) }, updateQuery);
-
-        return {
-            items: items,
-            dkt: chosenLoot.dktReward * raidStage.maxDkt,
-            exp: raidStage.exp,
-            gold: raidStage.gold
-        }
+        return await raid.claimLoot(userId);
     }
 }
 

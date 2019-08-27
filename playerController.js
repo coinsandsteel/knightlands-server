@@ -528,10 +528,8 @@ class PlayerController extends IPaymentListener {
         user.addSoftCurrency(rewards.gold);
         user.addExperience(rewards.exp);
         user.inventory.addItemTemplates(rewards.items);
-
-        const spread = 0.2;
-        let dkt = Random.range(rewards.dkt * (1 - spread), rewards.dkt * (1 + spread))
-        user.addHardCurrency(dkt);
+        user.addDkt(rewards.dkt);
+        user.addHardCurrency(rewards.hardCurrency);
 
         return rewards;
     }

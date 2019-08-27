@@ -12,7 +12,11 @@ const EventEmitter = require("events");
 const ObjectId = require("mongodb").ObjectID;
 const Events = require("./../knightlands-shared/events");
 const Config = require("./../config");
+const Random = require("./../random");
 import Errors from "./../knightlands-shared/errors";
+
+import RaidChallengeType from "./../knightlands-shared/raid_challenge";
+const TopDamageDealers = require("./topDamageDealersChallenge");
 
 const HitsDamage = {
     1: 1,
@@ -26,10 +30,16 @@ class Raid extends EventEmitter {
     constructor(db) {
         super();
 
-        this._db = db;
+        this.Hit = "hit";
+        this.BossKilled = "boss-killed";
+
         this.TimeRanOut = "time_ran_out";
         this.Defeat = "defeat";
+
+        this._db = db;
+
         this._damageLog = new CBuffer(15);
+        this._challenges = [];
     }
 
     get stage() {
@@ -42,6 +52,10 @@ class Raid extends EventEmitter {
 
     get finished() {
         return !this._bossUnit.isAlive || this._data.timeLeft < 1;
+    }
+
+    get stageData() {
+        return this._template.stages[this._data.stage];
     }
 
     get defeat() {
@@ -65,15 +79,6 @@ class Raid extends EventEmitter {
 
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
         let raidStage = raidTemplate.stages[stage];
-
-        {
-            const length = raidStage.challenges.length;
-            let i = 0;
-            for (; i < length; ++i) {
-                let challenge = raidStage.challenges[i];
-                raidEntry.challenges[challenge.type] = {}; // can't have 2 same challenges. Stores state for challenge instance
-            }
-        }
 
         raidEntry.creationTime = new Date().getTime() / 1000;
         raidEntry.duration = raidStage.duration;
@@ -113,6 +118,31 @@ class Raid extends EventEmitter {
         this._template = await this._loadRaidTemplate(data.raidTemplateId);
 
         this._data = data;
+
+        {
+            // randomly chose up to challengeCount challenges
+            let challengesToChoose = this.stageData.challengeCount;
+            let challengesMeta = this.stageData.challenges;
+            let i = 0;
+            const length = challengesMeta.length;
+            let indicies = [];
+            for (; i < length; ++i) {
+                indicies.push(i);
+            }
+
+            while (indicies.length > 0 && challengesToChoose > 0) {
+                challengesToChoose--;
+
+                // roll next random index and remove it by swapping with tail
+                let challengeIndex = Random.intRange(0, indicies.length);
+                indicies[challengeIndex] = indicies[indicies.length - 1];
+                indicies.pop();
+
+                let meta = challengesMeta[challengeIndex];
+                let challengeData = data.challenges[meta.type];
+                this._challenges.push(this._createChallenge(meta.type, meta, challengeData));
+            }
+        }
 
         {
             let i = 0;
@@ -155,7 +185,7 @@ class Raid extends EventEmitter {
     }
 
     async join(user) {
-        if (this._data.busySlots >= this._template.stages[this._data.stage].maxSlots) {
+        if (this._data.busySlots >= this.stageData.maxSlots) {
             throw "no free slot";
         }
 
@@ -205,19 +235,27 @@ class Raid extends EventEmitter {
                 totalDamageInflicted += damageDone;
                 this._data.participants[attacker.address] += damageDone;
 
-                // check if at least first loot damage threshold is reached and set loot record
-                let loot = this._template.stages[this._data.stage].loot;
-                if (loot.length > 0) {
-                    if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
-                        this._data.loot[attacker.address] = false;
+                // set loot flag in here to avoid sharp spike after raid is finished
+                if (this._data.loot[attacker.address] === undefined) {
+                    // check if at least first loot damage threshold is reached and set loot record
+                    let loot = this.stageData.loot;
+                    if (loot.length > 0) {
+                        if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
+                            this._data.loot[attacker.address] = false;
+                        }
                     }
                 }
-            }
 
-            if (!this._bossUnit.isAlive) {
-                // emit victory and let know to raid manager
-                Game.publishToChannel(this.channelName, { event: Events.RaidFinished, defeat: true });
-                this.emit(this.Defeat, this);
+                // notify current challenges
+                this.emit(this.Hit, attacker, damageDone);
+
+                if (!this._bossUnit.isAlive) {
+                    this.emit(this.BossKilled, attacker, damageDone, this._data.timeLeft);
+
+                    // emit victory and let know to raid manager
+                    this._publishEvent({ event: Events.RaidFinished, defeat: true });
+                    this.emit(this.Defeat, this);
+                }
             }
         }
 
@@ -229,11 +267,32 @@ class Raid extends EventEmitter {
             };
             this._damageLog.push(damageLog);
 
-            Game.publishToChannel(this.channelName, { event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
+            this._publishEvent({ event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
+
+            // finalize challenges to detect final changes inside 
+            {
+                let i = 0;
+                const length = this._challenges.length;
+
+                for (; i < length; ++i) {
+                    this._challenges[i].finalize();
+                }
+            }
         }
     }
 
     async _checkpoint() {
+        {
+            let i = 0;
+            const length = this._challenges.length;
+
+            for (; i < length; ++i) {
+                let challenge = this._challenges[i];
+                this._data.challenges[challenge.type()] = challenge.snapshot();
+                this._publishEvent({ event: Events.RaidChallengeUpdate, type: challenge.type(), data: challenge.snapshot() });
+            }
+        }
+
         await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
             $set: {
                 timeLeft: this._data.timeLeft,
@@ -242,11 +301,71 @@ class Raid extends EventEmitter {
                 finished: this.finished,
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
-                loot: this._data.loot
+                loot: this._data.loot,
+                challenges: this._data.challenges
             }
         });
 
         this._scheduleCheckpoint();
+    }
+
+    async claimLoot(userId) {
+        // determine raid loot record based on user damage
+        let chosenLoot;
+        let raidStage = this.stageData;
+        let userDamage = this._data.participants[userId];
+        {
+            let i = 0;
+            const length = raidStage.loot.length;
+            for (; i < length; ++i) {
+                if (userDamage >= raidStage.loot[i].damageThreshold) {
+                    chosenLoot = raidStage.loot[i];
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (!chosenLoot) {
+            return null
+        }
+
+        let rewards = {
+            dkt: chosenLoot.dktReward * Random.range(raidStage.minDkt, raidStage.maxDkt),
+            exp: raidStage.exp,
+            gold: raidStage.gold,
+            hardCurrency: 0
+        };
+
+        rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
+
+        // evaluate challenges
+        {
+            let i = 0;
+            const length = this._challenges.length;
+
+            for (; i < length; ++i) {
+                let challenge = this._challenges[i];
+                let challengeRewards = challenge.getRewards(userId);
+
+                let challengeItems = await Game.lootGenerator.getLootFromTable(challengeRewards.loot, challengeRewards.rolls);
+                if (challengeItems) {
+                    rewards.items = rewards.items.concat(challengeItems);
+                }
+
+                rewards.dkt += challengeRewards.dkt;
+                rewards.gold += challengeRewards.softCurrency;
+                rewards.hardCurrency += challengeRewards.hardCurrency;
+            }
+        }
+
+        // set loot claimed
+        let updateQuery = { $set: {} };
+        updateQuery.$set[`loot.${userId}`] = true;
+
+        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
+
+        return rewards;
     }
 
     _scheduleCheckpoint() {
@@ -255,6 +374,17 @@ class Raid extends EventEmitter {
         }
 
         this._checkpointTimeout = setTimeout(this._checkpoint.bind(this), Config.raids.checkpointInterval);
+    }
+
+    _publishEvent(eventData) {
+        Game.publishToChannel(this.channelName, eventData);
+    }
+
+    _createChallenge(type, challengeMeta, challengeData) {
+        switch (type) {
+            case RaidChallengeType.TopDamageDealers:
+                return new TopDamageDealers(challengeMeta, challengeData, this);
+        }
     }
 }
 
