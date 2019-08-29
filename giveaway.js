@@ -16,11 +16,9 @@ class Giveaway {
         this._db = Game.db;
         this._signVerifier = Game.blockchain;
 
-        let requestGuards = [this._requiresApiKey.bind(this)];
+        http.post('/give', [this._requiresApiKey.bind(this)], this._giveItem.bind(this));
+        http.post('/getSigninKey', [this._requiresApiKey.bind(this)], this._getSigninKey.bind(this));
 
-        http.post('/give', requestGuards, this._giveItem.bind(this));
-        http.post('/getSigninKey', requestGuards, this._getSigninKey.bind(this));
-        http.get('/inventory', this._fetchInventory.bind(this));
         // http.get('/check/welcomeStatus', this._checkWelcomeStatus.bind(this));
         http.post('/link/telegram', this._linkTelegram.bind(this));
         http.post('/link/email', this._linkEmail.bind(this));
@@ -127,25 +125,6 @@ class Giveaway {
         } else {
             next();
         }
-    }
-
-    async _fetchInventory(req, res) {
-        if (!req.query.wallet) {
-            res.json({});
-            return;
-        }
-
-        let user = await Game.loadUser(req.query.wallet);
-        let items = await user.loadInventory();
-
-        let summary = {
-            softCurrency: user.softCurrency,
-            hardCurrency: user.hardCurrency,
-            dkt: user.dkt,
-            items: items
-        }
-
-        res.json(summary);
     }
 
     async _checkWelcomeStatus(req, res) {

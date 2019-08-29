@@ -112,7 +112,7 @@ class LootGenerator {
         const length = guaranteedRecords.length;
         for (; i < length; i++) {
             let record = guaranteedRecords[i];
-            this._addLootToTable(items, itemsHash, record);
+            this._addLootToTable(items, itemsHash, record, true);
         }
 
         return {
@@ -213,12 +213,13 @@ class LootGenerator {
         return items;
     }
 
-    _addLootToTable(items, hash, record) {
+    _addLootToTable(items, hash, record, guaranteed = false) {
         let count = Math.ceil(Random.range(record.minCount, record.maxCount));
         if (!hash[record.itemId]) {
             let newItem = {
                 item: record.itemId,
-                quantity: count
+                quantity: count,
+                guaranteed: guaranteed
             };
             hash[record.itemId] = newItem;
             items.push(newItem);

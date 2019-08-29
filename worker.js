@@ -84,6 +84,7 @@ class Worker extends SCWorker {
     this._giveaway = new Giveaway(app);
     this._presale = new Presale(app);
 
+    await this._presale.init();
     await this._blockchain.start();
     await this._paymentProcessor.start();
 
@@ -133,7 +134,7 @@ class Worker extends SCWorker {
             throw 'not participant';
           }
         }
-      } else {
+      } else if (req.channel != 'presale') {
         req.socket.disconnect(DisconnectCodes.NotAuthorized);
         throw 'You are not authorized';
       }
