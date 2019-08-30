@@ -104,9 +104,10 @@ class Giveaway {
         let user = await Game.loadUser(linkedAccount.wallet);
         await user.loadInventory();
 
-        let templates = {};
-        templates[itemTemplate._id] = 1;
-        await user.inventory.addItemTemplates(templates);
+        await user.inventory.addItemTemplates([{
+            item: itemTemplate._id,
+            quantity: 1
+        }]);
         await user.commitChanges();
 
         await this._db.collection(Collections.GiveawayLogs).insertOne({ user: req.body.user, item: itemTemplate._id });

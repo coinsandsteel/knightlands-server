@@ -55,10 +55,17 @@ var options = {
 
 if (environment == "prod") {
   options.protocol = "https";
-  options.protocolOptions = {
-    key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
-    cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
-  };
+  if (process.env.SAPPAO) {
+    options.protocolOptions = {
+      key: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/privkey.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/fullchain.pem")
+    };
+  } else {
+    options.protocolOptions = {
+      key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
+      cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
+    };
+  }
 }
 
 var bootTimeout = Number(process.env.SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT) || 10000;
