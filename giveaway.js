@@ -94,6 +94,11 @@ class Giveaway {
             return;
         }
 
+        if (!linkedAccount.wallet) {
+            res.status(500).end("no wallet");
+            return;
+        }
+
         let itemTemplate = await Game.itemTemplates.getTemplate(itemId);
 
         if (!itemTemplate) {
