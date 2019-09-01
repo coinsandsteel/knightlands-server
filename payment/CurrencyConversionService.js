@@ -24,7 +24,10 @@ class CurrencyConversionService {
         }
 
         this._refreshInterval = config.refreshInterval * 60 * 1000;
-        this._endPoint = (process.env.ENV || "dev") == "dev" ? config.sandboxEndpoint : config.endpoint;
+
+        let env = (process.env.ENV || "dev");
+
+        this._endPoint = (env == "dev" || env == "test") ? config.sandboxEndpoint : config.endpoint;
 
         this._conversionRates = {};
 

@@ -227,6 +227,12 @@ class Presale {
             return;
         }
 
+        // everything is ok - generate items and assign to inventory
+        let items = await Game.lootGenerator.getLootFromGacha(PresaleChestToGacha[chestId]);
+        let inventory = await Game.loadInventory(wallet);
+        await inventory.addItemTemplates(items);
+        await inventory.commitChanges();
+
         let newOpeningToken = uuidv4();
         let updateQuery = {
             $set: { openingToken: newOpeningToken },
@@ -237,15 +243,9 @@ class Presale {
                 }
             }, $inc: {}
         };
-
-        updateQuery.$inc[`chest.${chestId}.opened`] = 0;
+        updateQuery.$inc[`chest.${chestId}.opened`] = 1;
         // log, count chest as opened and generate new open token
         await this._db.collection(Collections.PresaleChests).updateOne({ user: wallet }, updateQuery);
-        // everything is ok - generate items and assign to inventory
-        let items = await Game.lootGenerator.getLootFromGacha(PresaleChestToGacha[chestId]);
-        let inventory = await Game.loadInventory(wallet);
-        await inventory.addItemTemplates(items);
-        await inventory.commitChanges();
 
         // if there is Epic+ item drops -> push them to presale feed
         let templateIds = new Array(items.length);
@@ -259,6 +259,10 @@ class Presale {
         let feed = [];
         let itemTemplates = await Game.itemTemplates.getTemplates(templateIds);
         for (i = 0; i < length; ++i) {
+            if (i >= itemTemplates.length) {
+                break;
+            }
+
             let rarity = itemTemplates[i].rarity;
             if (rarity != "common" && rarity != "rare" && !items[i].guaranteed) {
                 let feedItem = {

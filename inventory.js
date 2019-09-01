@@ -414,10 +414,29 @@ class Inventory {
         }
     }
 
+    setItemUpdated(item) {
+        this._newItems.set(item.id, item);
+    }
+
     modifyStack(item, inc) {
         item.count += inc;
         // mark as new
-        this._newItems.set(item.id, item);
+        this.setItemUpdated(item);
+    }
+
+    makeUnique(item) {
+        if (item.count > 1) {
+            this.modifyStack(item, -1);
+
+            item = this.createItem(item.template, 1);
+            this.addItem(item);
+        } else {
+            // mark as new to update later
+            this.setItemUpdated(item);
+        }
+
+        item.unique = true;
+        return item;
     }
 
 

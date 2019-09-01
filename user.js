@@ -11,6 +11,8 @@ import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 import CurrencyType from "./knightlands-shared/currency_type";
 import Game from "./game";
+import Errors from "./knightlands-shared/errors";
+
 const {
     EquipmentSlots,
     getSlot
@@ -22,6 +24,7 @@ const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
 const Inventory = require("./inventory");
+const Crafting = require("./crafting");
 const DefaultRegenTimeSeconds = 120;
 
 const DefaultStats = {
@@ -250,6 +253,7 @@ class User {
         this._data = userData;
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
+        this._crafting = new Crafting(this._inventory);
         this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower);
 
         this._advanceTimers();
@@ -430,7 +434,7 @@ class User {
 
         let itemToEquip = this._inventory.getItemById(itemId);
         if (!itemToEquip) {
-            throw "no such item";
+            throw Errors.NoItem;
         }
 
         if (itemToEquip.equipped) {
@@ -472,6 +476,10 @@ class User {
             this._inventory.addItem(oldItemInSlot).equipped = false;
             this._recalculateStats = true;
         }
+    }
+
+    async upgradeItem(itemId, materialId, count) {
+        await this._crafting.upgradeItem(itemId, materialId, count);
     }
 
     async commitChanges(inventoryChangesMode) {

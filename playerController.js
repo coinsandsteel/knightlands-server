@@ -52,6 +52,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
+        this._socket.on(Operations.UpgradeItem, this._gameHandler(this._upgradeItem.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -532,6 +533,15 @@ class PlayerController extends IPaymentListener {
         user.addHardCurrency(rewards.hardCurrency);
 
         return rewards;
+    }
+
+    // crafting
+    async _upgradeItem(user, data) {
+        const { materialId, itemId, count } = data;
+
+        await user.upgradeItem(itemId, materialId, count);
+
+        return null;
     }
 }
 

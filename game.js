@@ -74,7 +74,7 @@ class Game extends EventEmitter {
 
     async _getMeta() {
         return await this._db.collection(Collections.Meta).findOne({
-            _id: 0
+            _id: "meta"
         });
     }
 
