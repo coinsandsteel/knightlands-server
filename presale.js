@@ -63,7 +63,7 @@ class Presale {
 
     async init() {
         let data = await this._db.collection(Collections.PresaleData).findOne({ _id: PresaleFeedDBEntry });
-        if (data) {
+        if (data && Array.isArray(data.feed)) {
             let i = 0;
             const length = data.feed.length;
             for (; i < length; ++i) {
@@ -145,7 +145,7 @@ class Presale {
 
         let update = { $inc: {}, $setOnInsert: {}, $set: { openingToken: uuidv4() } };
         update.$inc[`chest.${args.chestId}.total`] = args.amount * 1;
-        update.$setOnInsert[`chest.${args.chestId}.opened`] = 1;
+        update.$setOnInsert[`chest.${args.chestId}.opened`] = 0;
         await this._db.collection(Collections.PresaleChests).updateOne({ user: args.user }, update, { upsert: true });
     }
 
@@ -278,6 +278,8 @@ class Presale {
                 this._presaleFeed.push(feedItem);
             }
         }
+
+        await this._db.collection(Collections.PresaleChestsLogs).insertOne({ user: wallet }, { "type": "chest_opened", items: feed });
 
         if (feed.length > 0) {
             // save to retrieve when service restarted
