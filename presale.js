@@ -279,7 +279,7 @@ class Presale {
             }
         }
 
-        await this._db.collection(Collections.PresaleChestsLogs).insertOne({ user: wallet }, { "type": "chest_opened", items: feed });
+        await this._db.collection(Collections.PresaleChestsLogs).insertOne({ user: wallet, "type": "chest_opened", items: feed, chestId: chestId });
 
         if (feed.length > 0) {
             // save to retrieve when service restarted
