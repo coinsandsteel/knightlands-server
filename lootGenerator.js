@@ -6,6 +6,8 @@ const {
 const Random = require("./random");
 const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";
+const ItemType = require("./knightlands-shared/item_type");
+import Game from "./game";
 
 class LootGenerator {
     constructor(db) {
@@ -50,7 +52,7 @@ class LootGenerator {
             return null;
         }
 
-        return this._rollQuestLoot(itemsToRoll, entries[0], questFinished);
+        return await this._rollQuestLoot(itemsToRoll, entries[0], questFinished);
     }
 
     async getLootFromGacha(gachaId) {
@@ -68,7 +70,7 @@ class LootGenerator {
         let items;
 
         if (gacha.type == GachaType.Normal) {
-            items = this._drawFromNormalGacha(gacha);
+            items = await this._drawFromNormalGacha(gacha);
         } else {
             // not implemented 
             items = [];
@@ -79,15 +81,15 @@ class LootGenerator {
 
     async getRaidLoot(raidLoot) {
         let { items, itemsHash } = this._rollGuaranteedLootFromTable(raidLoot.loot.guaranteedRecords);
-        return this._rollItemsFromLootTable(raidLoot.lootRolls, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
+        return await this._rollItemsFromLootTable(raidLoot.lootRolls, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
     }
 
     async getLootFromTable(table, itemsToRoll) {
         let { items, itemsHash } = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
-        return this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
+        return await this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
-    _rollQuestLoot(itemsToRoll, table, questFinished) {
+    async _rollQuestLoot(itemsToRoll, table, questFinished) {
         let items, itemsHash;
 
         if (questFinished) {
@@ -96,7 +98,7 @@ class LootGenerator {
             itemsHash = rollResults.itemsHash;
         }
 
-        return this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
+        return await this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
     _rollGuaranteedLootFromTable(guaranteedRecords, items, itemsHash) {
@@ -121,7 +123,7 @@ class LootGenerator {
         }
     }
 
-    _rollItemsFromLootTable(itemsToRoll, table, weights, items, itemsHash) {
+    async _rollItemsFromLootTable(itemsToRoll, table, weights, items, itemsHash, skipConsumables) {
         if (!items) {
             items = [];
         }
@@ -139,7 +141,7 @@ class LootGenerator {
             return weights.recordWeights[x.index] - y;
         };
 
-        while (itemsToRoll-- > 0) {
+        while (itemsToRoll > 0) {
             //first no loot 
             let roll = Random.range(0, weights.totalWeight);
             if (roll <= weights.noLoot) {
@@ -149,16 +151,25 @@ class LootGenerator {
             roll = Random.range(0, weights.totalWeight - weights.noLoot);
 
             let rolledItem = bounds.gt(table.records, roll, comparator);
-
             if (rolledItem > 0) {
-                this._addLootToTable(items, itemsHash, table.records[rolledItem]);
+                let itemRecord = table.records[rolledItem];
+                if (skipConsumables) {
+                    let itemTemplate = await Game.itemTemplates.getTemplate(itemRecord.itemId);
+                    if (itemTemplate.type == ItemType.Consumable) {
+                        // skip
+                        continue;
+                    }
+                }
+                
+                itemsToRoll--;
+                this._addLootToTable(items, itemsHash, itemRecord);
             }
         }
 
         return items;
     }
 
-    _drawFromNormalGacha(gacha) {
+    async _drawFromNormalGacha(gacha) {
         let { items, itemsHash } = this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
 
         let itemsPerDraw = gacha.itemsPerDraw;
@@ -181,8 +192,9 @@ class LootGenerator {
                 }
                 // count towards total item per draw
                 itemsPerDraw -= quantity;
-
-                this._rollItemsFromLootTable(quantity, group.loot, group.loot.weights, items, itemsHash);
+                
+                // skip consumables for guaranteed rolls
+                await this._rollItemsFromLootTable(quantity, group.loot, group.loot.weights, items, itemsHash, true);
             }
         }
 
@@ -207,7 +219,7 @@ class LootGenerator {
                 continue;
             }
 
-            this._rollItemsFromLootTable(1, rolledGroup.loot, rolledGroup.loot.weights, items, itemsHash);
+            await this._rollItemsFromLootTable(1, rolledGroup.loot, rolledGroup.loot.weights, items, itemsHash);
         }
 
         return items;
