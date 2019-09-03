@@ -41,9 +41,8 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         // load payment contract
         this._paymentContract = this._tronWeb.contract(PaymentGateway.abi, PaymentGateway.address);
         this._paymentContract.Purchase().watch((err, eventData) => {
-            // save as previous block number just to make sure in case of failure we will rescan same block for possibly missed events
             if (!err) {
-                this._updateLastEventReceived(eventData.timestamp, "Purchase");
+                // this._updateLastEventReceived(eventData.timestamp, "Purchase");
                 this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
             }
         });
@@ -51,7 +50,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._presale = this._tronWeb.contract(Presale.abi, Presale.address);
         this._presale.ChestPurchased().watch((err, eventData) => {
             if (!err) {
-                this._updateLastEventReceived(eventData.timestamp, "ChestPurchased");
+                // this._updateLastEventReceived(eventData.timestamp, "ChestPurchased");
                 this._emitPresaleChestPurchase(eventData.result, eventData.transaction, eventData.timestamp);
             }
         });
@@ -59,7 +58,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._presaleChestsGateway = this._tronWeb.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
         this._presaleChestsGateway.ChestReceived().watch((err, eventData) => {
             if (!err) {
-                this._updateLastEventReceived(eventData.timestamp, "ChestReceived");
+                // this._updateLastEventReceived(eventData.timestamp, "ChestReceived");
                 this._emitPresaleChestsTransfer(eventData.result, eventData.transaction, eventData.timestamp);
             }
         });
