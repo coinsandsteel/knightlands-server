@@ -9,7 +9,7 @@ const CBuffer = require("./CBuffer");
 // Price in TRX
 const PresalePrices = {
     0: 500,
-    1: 1500,
+    1: 1000,
     2: 5000,
     3: 7500
 };
@@ -18,17 +18,38 @@ const PresaleChestToGacha = {
     0: "rookie_presale_chest",
     1: "lieutenant_presale_chest",
     2: "knight_presale_chest",
-    3: "king_presale_chest"
+    3: "king_presale_chest",
+    4: "lovehearts_presale"
 };
 
 const ReferralSystem = {
     500: {
+        referer: 1,
+        referee: 0.3
+    },
+    1500: {
         referer: 4,
         referee: 1
     },
-    4000: {
+    2500: {
+        referer: 6.5,
+        referee: 3
+    },
+    5000: {
         referer: 15,
         referee: 5
+    },
+    12500: {
+        referer: 40,
+        referee: 15
+    },
+    25000: {
+        referer: 90,
+        referee: 35
+    },
+    50000: {
+        referer: 200,
+        referee: 80
     }
 }
 
