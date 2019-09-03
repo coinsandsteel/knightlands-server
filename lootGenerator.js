@@ -55,7 +55,7 @@ class LootGenerator {
         return await this._rollQuestLoot(itemsToRoll, entries[0], questFinished);
     }
 
-    async getLootFromGacha(gachaId) {
+    async getLootFromGacha(userId, gachaId) {
         let gacha;
         if (Number.isInteger(gachaId)) {
             gacha = await this._db.collection(Collections.GachaMeta).findOne({ _id: gachaId });
@@ -70,7 +70,7 @@ class LootGenerator {
         let items;
 
         if (gacha.type == GachaType.Normal) {
-            items = await this._drawFromNormalGacha(gacha);
+            items = await this._drawFromNormalGacha(userId, gacha);
         } else {
             // not implemented 
             items = [];
@@ -151,7 +151,7 @@ class LootGenerator {
             roll = Random.range(0, weights.totalWeight - weights.noLoot);
 
             let rolledItem = bounds.gt(table.records, roll, comparator);
-            if (rolledItem > 0) {
+            if (rolledItem >= 0) {
                 let itemRecord = table.records[rolledItem];
                 if (skipConsumables) {
                     let itemTemplate = await Game.itemTemplates.getTemplate(itemRecord.itemId);
@@ -169,7 +169,7 @@ class LootGenerator {
         return items;
     }
 
-    async _drawFromNormalGacha(gacha) {
+    async _drawFromNormalGacha(userId, gacha) {
         let { items, itemsHash } = this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
 
         let itemsPerDraw = gacha.itemsPerDraw;
@@ -202,7 +202,18 @@ class LootGenerator {
             return items;
         }
 
+        let basketRolls = 0;
         while (itemsPerDraw-- > 0) {
+            if (gacha.basket) {
+                if (gacha.basket.timesPerDraw > 0 && basketRolls < gacha.basket.timesPerDraw) {
+                    basketRolls++
+                    let rolled = await this._rollBasket(1, userId, gacha, items, itemsHash);
+                    if (rolled) {
+                        continue;
+                    }
+                }
+            }
+
             // roll rarity group
             let roll = Random.range(0, gacha.totalWeight);
             roll = Random.range(0, gacha.totalWeight);
@@ -223,6 +234,36 @@ class LootGenerator {
         }
 
         return items;
+    }
+
+    async _rollBasket(itemsToRoll, userId, gacha, items, itemsHash) {
+        // get basket roll chance
+        let gachaState = await this._db.collection(Collections.GachaState).findOne({ user: userId, gacha: gacha._id });
+        if (!gachaState) {
+            gachaState = {};
+        }
+
+        let basket = gacha.basket;
+
+        let rollIndex = gachaState.rollIndex || 0;
+        if (basket.weights.length <= rollIndex) {
+            rollIndex = basket.weights.length - 1;
+        }
+
+        let basketWeight = basket.weights[rollIndex];
+        if (Random.range(0, basket.basketNoDropWeight) > basketWeight) {
+            return false;
+        }
+
+        while (itemsToRoll > 0) {
+            itemsToRoll--;
+
+            await this._rollItemsFromLootTable(1, basket.loot, basket.loot.weights, items, itemsHash);
+        }
+
+        await this._db.collection(Collections.GachaState).updateOne({ user: userId, gacha: gacha._id }, { $set: { rollIndex } }, { upsert: true });
+
+        return true;
     }
 
     _addLootToTable(items, hash, record, guaranteed = false) {

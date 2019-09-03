@@ -45,7 +45,8 @@ module.exports = {
         PresaleChests: "presale_chests",
         PresaleChestsLogs: "presale_chests_logs",
         GachaMeta: "gacha_meta",
-        PresaleData: "presale_data"
+        PresaleData: "presale_data",
+        GachaState: "gacha_state"
     },
 
 

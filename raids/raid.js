@@ -348,9 +348,11 @@ class Raid extends EventEmitter {
                 let challenge = this._challenges[i];
                 let challengeRewards = challenge.getRewards(userId);
 
-                let challengeItems = await Game.lootGenerator.getLootFromTable(challengeRewards.loot, challengeRewards.rolls);
-                if (challengeItems) {
-                    rewards.items = rewards.items.concat(challengeItems);
+                if (challengeRewards.loot) {
+                    let challengeItems = await Game.lootGenerator.getLootFromTable(challengeRewards.loot, challengeRewards.rolls);
+                    if (challengeItems) {
+                        rewards.items = rewards.items.concat(challengeItems);
+                    }
                 }
 
                 rewards.dkt += challengeRewards.dkt;

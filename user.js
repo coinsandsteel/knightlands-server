@@ -479,7 +479,7 @@ class User {
     }
 
     async upgradeItem(itemId, materialId, count) {
-        await this._crafting.upgradeItem(itemId, materialId, count);
+        return await this._crafting.upgradeItem(itemId, materialId, count);
     }
 
     async commitChanges(inventoryChangesMode) {

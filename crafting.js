@@ -29,6 +29,11 @@ class Crafting {
             item = this._inventory.makeUnique(item);
         }
 
+        // if material type is item itself
+        if (itemId === material) {
+            throw Errors.IncorrectArguments;
+        }
+
         let upgradeMeta = await this._getUpgradeMeta();
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
@@ -49,10 +54,11 @@ class Crafting {
         let expPerMaterial = 0;
         let levelingMeta = upgradeMeta.levelingMeta[getSlot(itemTemplate.equipmentType)];
         let materialSlot = getSlot(materialTemplate.equipmentType);
+
         if (materialTemplate.type == ItemType.Equipment && levelingMeta.materialSlots.includes(materialSlot)) {
             // experience when consuming items is based on rarity, slot type and level
             expPerMaterial = upgradeMeta.rarityExpFactor[materialTemplate.rarity];
-            expPerMaterial *= upgradeMeta.slotExpFactor[materialSlot].exp;
+            expPerMaterial *= upgradeMeta.slotExpFactor[materialSlot].expFactor;
             expPerMaterial *= upgradeMeta.levelExpFactor[materialItem.level - 1];
         } else {
             let materialExp = levelingMeta.materials.find(x => x.item == materialItem.template);
@@ -62,7 +68,7 @@ class Crafting {
                 throw Errors.IncompatibleLevelingMaterial;
             }
         }
-
+        
         // add experience to item for each material
         if (count > materialItem.count) {
             count = materialItem.count;
@@ -83,6 +89,8 @@ class Crafting {
         }
 
         this._inventory.setItemUpdated(item);
+
+        return item.id;
     }
 
     async _getUpgradeMeta() {

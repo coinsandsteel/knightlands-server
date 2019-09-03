@@ -11,7 +11,8 @@ const PresalePrices = {
     0: 500,
     1: 1000,
     2: 5000,
-    3: 7500
+    3: 7500,
+    4: 800
 };
 
 const PresaleChestToGacha = {
@@ -249,7 +250,7 @@ class Presale {
         }
 
         // everything is ok - generate items and assign to inventory
-        let items = await Game.lootGenerator.getLootFromGacha(PresaleChestToGacha[chestId]);
+        let items = await Game.lootGenerator.getLootFromGacha(wallet, PresaleChestToGacha[chestId]);
         let inventory = await Game.loadInventory(wallet);
         await inventory.addItemTemplates(items);
         await inventory.commitChanges();
