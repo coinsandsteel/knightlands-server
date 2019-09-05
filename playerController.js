@@ -3,6 +3,8 @@
 const Random = require("./random");
 const Operations = require("./knightlands-shared/operations");
 const Events = require("./knightlands-shared/events");
+import Errors from "./knightlands-shared/errors";
+import CurrencyType from "./knightlands-shared/currency_type";
 import CharacterStats from "./knightlands-shared/character_stat";
 const Unit = require("./combat/unit");
 const IPaymentListener = require("./payment/IPaymentListener");
@@ -33,6 +35,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
         this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
         this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this))
+        this._socket.on(Operations.FetchCraftingStatus, this._fetchCraftingStatus.bind(this))
         this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this))
         this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this))
         this._socket.on(Operations.SyncTime, this._syncTime.bind(this))
@@ -53,6 +56,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
         this._socket.on(Operations.UpgradeItem, this._gameHandler(this._upgradeItem.bind(this)));
+        this._socket.on(Operations.UnbindItem, this._gameHandler(this._unbindItem.bind(this)));
+        this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -152,7 +157,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async getUser(address) {
-        return await Game.loadUser(address || this.address);
+        if (!this._user) {
+            this._user = await Game.loadUser(address || this.address);
+        }
+
+        return this._user;
     }
 
     async _getCurrencyConversionRate(_, respond) {
@@ -543,6 +552,39 @@ class PlayerController extends IPaymentListener {
         let upgradedItemId = await user.upgradeItem(itemId, materialId, count);
 
         return upgradedItemId;
+    }
+
+    async _unbindItem(user, data) {
+        const { itemId, items } = data;
+
+        let unbindItemId = await user.unbindItem(itemId, items);
+
+        return unbindItemId;
+    }
+
+    async _craftItem(user, data) {
+        const { recipeId, currency } = data;
+
+        let unknownCurrency = true;
+        for (const key in CurrencyType) {
+            if (CurrencyType[key] === currency) {
+                unknownCurrency = false;
+                break;
+            }
+        }   
+
+        if (unknownCurrency) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let craftedItem = await user.craftRecipe(recipeId, currency);
+
+        return craftedItem;
+    }
+
+    async _fetchCraftingStatus(data, respond) {
+        let status = await Game.craftingQueue.getCraftingStatus(this.address, data.recipeId);
+        respond(null, status);
     }
 }
 

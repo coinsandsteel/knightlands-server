@@ -169,7 +169,7 @@ class Inventory {
                         update: {
                             $pull: {
                                 items: {
-                                    _id: id
+                                    id: id
                                 }
                             }
                         }
@@ -302,6 +302,13 @@ class Inventory {
         }
     }
 
+    async addItemTemplate(template) {
+        await this.addItemTemplates([{
+            item: template, 
+            quantity: 1
+        }]);
+    }
+
     // add or modify item in collection
     addItem(item) {
         let foundItem = this.getItemById(item.id);
@@ -323,6 +330,8 @@ class Inventory {
     }
 
     deleteItemById(id) {
+        id *= 1;
+        
         let itemIndex = this._itemsById.get(id);
         if (itemIndex === undefined) {
             return false;
@@ -356,9 +365,6 @@ class Inventory {
         }
 
         this.modifyStack(item, -count);
-        if (item.count === 0) {
-            this.deleteItemById(itemId);
-        }
 
         return count;
     }
@@ -386,6 +392,7 @@ class Inventory {
     }
 
     getItemById(id) {
+        id *= 1;
         // index -> item
         return this._items[this._itemsById.get(id)];
     }
@@ -396,7 +403,7 @@ class Inventory {
         const length = ingridients.length;
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            if (!this._countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
+            if (this._countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
                 enoughResources = false;
                 break;
             }
@@ -420,8 +427,13 @@ class Inventory {
 
     modifyStack(item, inc) {
         item.count += inc;
-        // mark as new
-        this.setItemUpdated(item);
+
+        if (item.count === 0) {
+            this.deleteItemById(item.id);
+        } else {
+            // mark as new
+            this.setItemUpdated(item);
+        }
     }
 
     makeUnique(item) {

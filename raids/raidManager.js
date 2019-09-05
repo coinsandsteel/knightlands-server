@@ -239,7 +239,7 @@ class RaidManager {
     async _registerRaidIAPs(iapExecutor) {
         console.log("Registering Raid IAPs...");
 
-        let allRaids = await this._db.collection(Collections.RaidsMeta).find({});
+        let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
         allRaids.forEach(raid => {
             raid.stages.forEach(stage => {
                 iapExecutor.registerAction(stage.iap, async (context) => {

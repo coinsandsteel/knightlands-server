@@ -24,7 +24,7 @@ const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
 const Inventory = require("./inventory");
-const Crafting = require("./crafting");
+const Crafting = require("./crafting/crafting");
 const DefaultRegenTimeSeconds = 120;
 
 const DefaultStats = {
@@ -106,6 +106,10 @@ class User {
 
     get inventory() {
         return this._inventory;
+    }
+
+    get crafting() {
+        return this._crafting;
     }
 
     get raidTickets() {
@@ -253,10 +257,12 @@ class User {
         this._data = userData;
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
-        this._crafting = new Crafting(this._inventory);
+        this._crafting = new Crafting(this._address, this._inventory);
         this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower);
 
         this._advanceTimers();
+
+        await this._inventory.loadAll();
 
         return this;
     }
@@ -480,6 +486,14 @@ class User {
 
     async upgradeItem(itemId, materialId, count) {
         return await this._crafting.upgradeItem(itemId, materialId, count);
+    }
+
+    async unbindItem(itemId, items) {
+        return await this._crafting.unbindItem(itemId, items);
+    }
+
+    async craftRecipe(recipeId, currencyType) {
+        return await this._crafting.craftRecipe(recipeId, currencyType);
     }
 
     async commitChanges(inventoryChangesMode) {

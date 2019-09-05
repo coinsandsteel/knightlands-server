@@ -80,7 +80,6 @@ class PaymentProcessor extends EventEmitter {
 
     async fetchPaymentStatus(userId, tag, filter = {}) {
         let pendingPayments = await this.fetchPendingPayments(userId, tag, filter);
-
         if (pendingPayments.length > 0) {
             let payment = pendingPayments[0];
             return {

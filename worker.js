@@ -14,6 +14,7 @@ const MongoClient = require("mongodb").MongoClient;
 const Database = require("./database");
 
 const LootGenerator = require("./lootGenerator");
+const CraftingQueue = require("./crafting/craftingQueue");
 const RaidManager = require("./raids/raidManager");
 const IAPExecutor = require("./payment/IAPExecutor");
 const PaymentProcessor = require("./payment/paymentProcessor");
@@ -73,13 +74,24 @@ class Worker extends SCWorker {
     this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
 
     this._raidManager = new RaidManager(this._db, this._paymentProcessor);
+    this._craftingQueue = new CraftingQueue(this._db);
 
     await this._raidManager.init(this._iapExecutor);
+    await this._craftingQueue.init(this._iapExecutor);
 
     this._lootGenerator = new LootGenerator(this._db);
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
-    Game.init(scServer, this._db, this._blockchain, this._paymentProcessor, this._raidManager, this._lootGenerator, this._currencyConversionService);
+    Game.init(
+      scServer, 
+      this._db, 
+      this._blockchain, 
+      this._paymentProcessor, 
+      this._raidManager, 
+      this._lootGenerator, 
+      this._currencyConversionService, 
+      this._craftingQueue
+    );
 
     this._giveaway = new Giveaway(app);
     this._presale = new Presale(app);

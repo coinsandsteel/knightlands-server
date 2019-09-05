@@ -6,13 +6,14 @@ const PlayerController = require("./playerController");
 const Inventory = require("./inventory");
 const ItemTemplates = require("./itemTemplates");
 const { Collections } = require("./database");
+import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
 class Game extends EventEmitter {
     constructor() {
         super();
     }
 
-    init(server, db, blockchain, paymentProcessor, raidManager, lootGenerator, currencyConversionService) {
+    init(server, db, blockchain, paymentProcessor, raidManager, lootGenerator, currencyConversionService, craftingQueue) {
         this._server = server;
         this._db = db;
         this._blockchain = blockchain;
@@ -20,17 +21,18 @@ class Game extends EventEmitter {
         this._raidManager = raidManager;
         this._lootGenerator = lootGenerator;
         this._currencyConversionService = currencyConversionService;
+        this._craftingQueue = craftingQueue;
         this._itemTemplates = new ItemTemplates(db);
 
         this._players = {};
-
-        // forbid further creation
-        // delete this.init;
-        // delete this.constructor;
     }
 
     get db() {
         return this._db;
+    }
+
+    get craftingQueue() {
+        return this._craftingQueue;
     }
 
     get itemTemplates() {
@@ -82,8 +84,19 @@ class Game extends EventEmitter {
         let expTable = await this._getExpTable();
         let meta = await this._getMeta();
         let user = new User(address, this._db, expTable, meta);
-
         await user.load();
+
+        return user;
+    }
+
+    async getUser(address) {
+        let playerController = this.getPlayerController(address);
+        let user;
+        if (playerController) {
+            user = await playerController.getUser();
+        } else {
+            user = await this.loadUser(address);
+        }
 
         return user;
     }
@@ -116,7 +129,7 @@ class Game extends EventEmitter {
             // if there is previous controller registered - disconnect it and remove
             let connectedController = this._players[controller.address];
             if (connectedController) {
-                connectedController.socket.disconnect(4100, "other account connected");
+                connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
             }
 
             this._paymentProcessor.registerAsPaymentListener(controller.address, controller);

@@ -134,7 +134,7 @@ class Raid extends EventEmitter {
                 challengesToChoose--;
 
                 // roll next random index and remove it by swapping with tail
-                let challengeIndex = Random.intRange(0, indicies.length);
+                let challengeIndex = Random.intRange(0, indicies.length - 1);
                 indicies[challengeIndex] = indicies[indicies.length - 1];
                 indicies.pop();
 
