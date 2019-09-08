@@ -92,7 +92,7 @@ class LootGenerator {
     async _rollQuestLoot(itemsToRoll, table, questFinished) {
         let items, itemsHash;
 
-        if (questFinished) {
+        if (questFinished && table.guaranteedRecords) {
             let rollResults = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
             items = rollResults.items;
             itemsHash = rollResults.itemsHash;
@@ -114,7 +114,7 @@ class LootGenerator {
         const length = guaranteedRecords.length;
         for (; i < length; i++) {
             let record = guaranteedRecords[i];
-            this._addLootToTable(items, itemsHash, record, true);
+            this._addRecordToTable(items, itemsHash, record, true);
         }
 
         return {
@@ -132,6 +132,10 @@ class LootGenerator {
             itemsHash = {};
         }
 
+        if (!table.records || table.records.length == 0) {
+            return items;
+        }
+
         if (!weights) {
             weights = table.weights;
         }
@@ -142,27 +146,41 @@ class LootGenerator {
         };
 
         while (itemsToRoll > 0) {
+            itemsToRoll--;
             //first no loot 
-            let roll = Random.range(0, weights.totalWeight);
-            if (roll <= weights.noLoot) {
-                continue;
+            let roll = 0;
+            if (weights.noLoot > 0) {
+                roll = Random.range(0, weights.totalWeight)
+                if (roll <= weights.noLoot) {
+                    continue;
+                }
             }
 
-            roll = Random.range(0, weights.totalWeight - weights.noLoot);
+            roll = Random.range(weights.noLoot, weights.totalWeight);
 
-            let rolledItem = bounds.gt(table.records, roll, comparator);
-            if (rolledItem >= 0) {
-                let itemRecord = table.records[rolledItem];
-                if (skipConsumables) {
-                    let itemTemplate = await Game.itemTemplates.getTemplate(itemRecord.itemId);
-                    if (itemTemplate.type == ItemType.Consumable) {
-                        // skip
-                        continue;
-                    }
+            let rolledRecordIndex = bounds.gt(table.records, roll, comparator);
+            if (rolledRecordIndex >= 0) {
+                let lootRecord = table.records[rolledRecordIndex];
+
+                if (lootRecord.table) {
+                    // roll again from embedded loot table
+                    lootRecord = await this._rollItemsFromLootTable(1, lootRecord.table, lootRecord.table.weights, [], {}, skipConsumables);
+                    // returns array 
+                    this._addLootToTable(items, itemsHash, lootRecord[0]);
+                    // item already rolled at this point
+                    continue;
+                } else {
+                    if (skipConsumables) {
+                        let itemTemplate = await Game.itemTemplates.getTemplate(lootRecord.itemId);
+                        if (itemTemplate.type == ItemType.Consumable) {
+                            // skip and return back item roll
+                            itemsToRoll++;
+                            continue;
+                        }
+                    } 
+
+                    this._addRecordToTable(items, itemsHash, lootRecord);
                 }
-                
-                itemsToRoll--;
-                this._addLootToTable(items, itemsHash, itemRecord);
             }
         }
 
@@ -266,18 +284,24 @@ class LootGenerator {
         return true;
     }
 
-    _addLootToTable(items, hash, record, guaranteed = false) {
+    _addRecordToTable(items, hash, record, guaranteed = false) {
         let count = Math.ceil(Random.range(record.minCount, record.maxCount));
-        if (!hash[record.itemId]) {
-            let newItem = {
-                item: record.itemId,
-                quantity: count,
-                guaranteed: guaranteed
-            };
-            hash[record.itemId] = newItem;
-            items.push(newItem);
+
+        let newItem = {
+            item: record.itemId,
+            quantity: count,
+            guaranteed: guaranteed
+        };
+
+        this._addLootToTable(items, hash, newItem);
+    }
+
+    _addLootToTable(items, hash, loot) {
+        if (!hash[loot.item]) {
+            hash[loot.item] = loot;
+            items.push(loot);
         } else {
-            hash[record.itemId].quantity += count;
+            hash[loot.item].quantity += loot.quantity;
         }
     }
 }

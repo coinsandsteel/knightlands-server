@@ -13,7 +13,17 @@ class Game extends EventEmitter {
         super();
     }
 
-    init(server, db, blockchain, paymentProcessor, raidManager, lootGenerator, currencyConversionService, craftingQueue) {
+    init(
+        server, 
+        db, 
+        blockchain, 
+        paymentProcessor, 
+        raidManager, 
+        lootGenerator, 
+        currencyConversionService, 
+        craftingQueue,
+        userPremiumService
+    ) {
         this._server = server;
         this._db = db;
         this._blockchain = blockchain;
@@ -23,12 +33,17 @@ class Game extends EventEmitter {
         this._currencyConversionService = currencyConversionService;
         this._craftingQueue = craftingQueue;
         this._itemTemplates = new ItemTemplates(db);
+        this._userPremiumService = userPremiumService;
 
         this._players = {};
     }
 
     get db() {
         return this._db;
+    }
+
+    get userPremiumService() {
+        return this._userPremiumService;
     }
 
     get craftingQueue() {
@@ -125,7 +140,13 @@ class Game extends EventEmitter {
     handleIncomingConnection(socket) {
         let controller = new PlayerController(socket);
 
-        socket.on("authenticate", () => {
+        socket.on("authenticate", async () => {
+            // check if player is whitelisted
+            let whitelisted = await this.db.collection(Collections.Whitelist).findOne({wallet: controller.address});
+            if (!whitelisted) {
+                controller.socket.disconnect(DisconnectCodes.NotAllowed, "not whitelisted");
+            }
+
             // if there is previous controller registered - disconnect it and remove
             let connectedController = this._players[controller.address];
             if (connectedController) {

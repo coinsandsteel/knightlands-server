@@ -213,9 +213,14 @@ class Inventory {
     }
 
     async addItemTemplates(templateRecords) {
+        const length = templateRecords.length;
+
+        if (length == 0) {
+            return;
+        }
+
         await this.loadAllItems();
 
-        const length = templateRecords.length;
         let templateIds = new Array(length);
         {
             let i = 0;
@@ -397,27 +402,64 @@ class Inventory {
         return this._items[this._itemsById.get(id)];
     }
 
-    hasEnoughIngridients(ingridients) {
+    async hasEnoughIngridients(ingridients) {
         let enoughResources = true;
         let i = 0;
         const length = ingridients.length;
+        let meta = await Game.db.collection(Collections.Meta).findOne({
+            _id: "meta"
+        });
+
+        // NOTICE doesn't support max level items >1 quantity!
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
             if (this._countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
                 enoughResources = false;
                 break;
             }
+
+            if (ingridient.maxLevelRequired) {
+                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
+                if (!item) {
+                    break;
+                }
+            }
         }
 
         return enoughResources;
     }
 
-    consumeItemsFromCraftingRecipe(recipe) {
+    async _getItemTemplateWithMaxLevel(template, meta) {
+        let templates = this._getItemTemplates(template);
+        let k = 0;
+        let l = templates.length;
+        for (; k < l; ++k) {
+            let item = templates[k];
+            if (!item.unique) {
+                continue;
+            }
+
+            let itemTemplate = await Game.db.itemTemplates.getTemplate(item.template);
+            let maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][2];
+            if (item.level == maxLevel) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    async consumeItemsFromCraftingRecipe(recipe) {
         let i = 0;
         const length = recipe.ingridients.length;
         for (; i < length; ++i) {
             let ingridient = recipe.ingridients[i];
-            this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+            if (ingridient.maxLevelRequired) {
+                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
+                this.deleteItemById(item.id);
+            } else {
+                this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+            }
         }
     }
 

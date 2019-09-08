@@ -22,6 +22,7 @@ const BlockchainFactory = require("./blockchain/blockchainFactory");
 const CurrencyConversionService = require("./payment/CurrencyConversionService");
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
+const UserPremiumService = require("./userPremiumService");
 
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
@@ -75,9 +76,11 @@ class Worker extends SCWorker {
 
     this._raidManager = new RaidManager(this._db, this._paymentProcessor);
     this._craftingQueue = new CraftingQueue(this._db);
+    this._userPremiumService = new UserPremiumService(this._db);
 
     await this._raidManager.init(this._iapExecutor);
     await this._craftingQueue.init(this._iapExecutor);
+    await this._userPremiumService.init(this._iapExecutor);
 
     this._lootGenerator = new LootGenerator(this._db);
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
@@ -90,7 +93,8 @@ class Worker extends SCWorker {
       this._raidManager, 
       this._lootGenerator, 
       this._currencyConversionService, 
-      this._craftingQueue
+      this._craftingQueue,
+      this._userPremiumService
     );
 
     this._giveaway = new Giveaway(app);
@@ -118,7 +122,7 @@ class Worker extends SCWorker {
         return;
       } else {
         req.socket.disconnect(DisconnectCodes.NotAuthorized);
-        next('You are not authorized');
+        next();
       }
     });
 

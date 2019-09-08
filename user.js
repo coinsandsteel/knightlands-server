@@ -26,7 +26,7 @@ const PlayerUnit = require("./combat/playerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
 const DefaultRegenTimeSeconds = 120;
-
+const TimerRefillReset = 86400000;
 const DefaultStats = {
     health: 100,
     attack: 5,
@@ -196,6 +196,60 @@ class User {
         this._advanceTimer(stat);
     }
 
+    getRefillsCount(stat) {
+        let timer = this.getTimer(stat);
+        // this.setTimerValue(stat, this.getMaxStatValue(stat));
+        let lastRefillTime = timer.lastRefillTime || 0;
+        let now = Game.now;
+        // let's find out whether timer must be reset
+        let timePassed = now - lastRefillTime;
+        if (timePassed > TimerRefillReset) {
+            // reset refill counter
+            timer.refills = 0;
+            // update lastRefillTime
+            timer.lastRefillTime = now - (timePassed % TimerRefillReset);
+        }
+
+        return timer.refills || 0;
+    }
+
+    getTimeUntilReset(stat) {
+        let timer = this.getTimer(stat);
+        let lastRefillTime = timer.lastRefillTime || 0;
+        let timePassed = Game.now - lastRefillTime;
+        return timePassed % TimerRefillReset;
+    }
+
+    async getTimerRefillCost(stat) {
+        if (stat == CharacterStats.Health) {
+            return {
+                soft: Math.ceil((this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 1 * this._data.character.level * 0.4)
+            };
+        }
+
+        let refills = await Game.db.collection(Collections.Meta).findOne({_id: `${stat}_refill_cost`});
+
+        let refillsToday = this.getRefillsCount(stat);
+
+        if (refillsToday >= refills.cost.length) {
+            refillsToday = refills.cost.length - 1;
+        }
+
+        return refills.cost[refillsToday];
+    }
+
+    refillTimer(stat, refills) {
+        let timer = this.getTimer(stat);
+        timer.value = this.getMaxStatValue(stat);
+
+        if (!refills) {
+            refills = this.getRefillsCount(stat);
+        }
+
+        timer.refills = refills + 1;
+        this._advanceTimer(stat);
+    }
+
     _advanceTimers() {
         for (let i in this._data.character.timers) {
             this._advanceTimer(i);
@@ -258,7 +312,7 @@ class User {
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
         this._crafting = new Crafting(this._address, this._inventory);
-        this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower);
+        this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors);
 
         this._advanceTimers();
 
@@ -404,8 +458,10 @@ class User {
                 continue;
             }
 
+            let slot = getSlot(template.equipmentType);
+
             for (let stat in template.stats) {
-                let statValue = this._itemStatResolver.getStatValue(template.rarity, equippedItem.level, stat, template.stats[stat]);
+                let statValue = this._itemStatResolver.getStatValue(template.rarity, slot, equippedItem.level, stat, template.stats[stat]);
                 finalStats[stat] += statValue;
             }
         }
@@ -420,6 +476,8 @@ class User {
                 timer.value = finalStats[i];
             }
         }
+
+        console.log(finalStats);
     }
 
     resetStats() {
@@ -523,6 +581,9 @@ class User {
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
+
+        // apply new data as original
+        this._originalData = cloneDeep(this._data);
 
         return {
             changes,

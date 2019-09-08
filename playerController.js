@@ -34,11 +34,13 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
         this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
-        this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this))
-        this._socket.on(Operations.FetchCraftingStatus, this._fetchCraftingStatus.bind(this))
-        this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this))
-        this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this))
-        this._socket.on(Operations.SyncTime, this._syncTime.bind(this))
+        this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this));
+        this._socket.on(Operations.FetchCraftingStatus, this._fetchCraftingStatus.bind(this));
+        this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this));
+        this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this));
+        this._socket.on(Operations.SyncTime, this._syncTime.bind(this));
+        this._socket.on(Operations.FetchRefillTimerStatus, this._fetchRefillTimerStatus.bind(this));
+        this._socket.on(Operations.GetTimerRefillInfo, this._getTimerRefillInfo.bind(this));
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
@@ -389,11 +391,11 @@ class PlayerController extends IPaymentListener {
 
     async _resetZone(user, data) {
         if (!Number.isInteger(data.stage)) {
-            throw "missing zone stage";
+            throw Errors.IncorrectArguments;
         }
 
         if (!Number.isInteger(data.zone)) {
-            throw "missing zone";
+            throw Errors.IncorrectArguments;
         }
 
         let zones = this._db.collection(Collections.Zones);
@@ -402,7 +404,7 @@ class PlayerController extends IPaymentListener {
         });
 
         if (!zone) {
-            throw "incorrect zone";
+            throw Errors.IncorrectArguments;
         }
 
         if (!user.resetZoneProgress(zone, data.stage)) {
@@ -427,37 +429,57 @@ class PlayerController extends IPaymentListener {
         } = data;
 
         if (!stat && !refillType) {
-            throw "wrong arguments";
+            throw Errors.IncorrectArguments;
         }
 
         if (!Number.isInteger(refillType)) {
-            throw "wrong arguments";
+            throw Errors.IncorrectArguments;
         }
 
         let timer = user.getTimer(stat);
         if (!timer) {
-            throw "wrong stat";
+            throw Errors.IncorrectArguments;
         }
 
-        // spend resources for refill
-        switch (refillType) {
-            case 0:
-                // native currency
-                break;
+        if (refillType == 2) {
+            // items. Check if those items can be used as timer refill
+        } else {
+            if (refillType == 0 && stat != CharacterStats.Health) {
+                return await Game.userPremiumService.requestRefillPayment(this.address, stat);
+            } 
 
-            case 1:
-                // shinies
-                break;
+            let refillCost = await user.getTimerRefillCost(stat);
+            if (refillCost.hard > 0) {
+                if (refillCost.hard > user.hardCurrency) {
+                    throw Errors.NotEnoughCurrency;
+                }
 
-            case 2:
-                //items
+                user.addHardCurrency(-refillCost.hard);
+            } else if (refillCost.soft > 0) {
+                if (refillCost.soft > user.softCurrency) {
+                    throw Errors.NotEnoughCurrency;
+                }
 
-                break;
+                user.addSoftCurrency(-refillCost.soft);
+            }
+            
+            user.refillTimer(stat);
         }
-
-        user.setTimerValue(stat, user.getMaxStatValue(stat));
 
         return null;
+    }
+
+    async _getTimerRefillInfo(data, respond) {
+        let user = await this.getUser();
+        let timeRefillCost = await user.getTimerRefillCost(data.stat);
+        timeRefillCost.refills = user.getRefillsCount(data.stat);
+        timeRefillCost.timeTillReset = user.getTimeUntilReset(data.stat);
+        respond(null, timeRefillCost);
+    }
+
+    async _fetchRefillTimerStatus(data, respond) {
+        let timeRefillInfo = await Game.userPremiumService.getTimerRefillStatus(this.address, data.stat);
+        respond(null, timeRefillInfo);
     }
 
     async _acceptPayment(data, respond) {

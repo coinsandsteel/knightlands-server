@@ -27,7 +27,7 @@ class Crafting {
             throw Errors.NoRecipe;
         }
 
-        if (!this._inventory.hasEnoughIngridients(recipe.ingridients)) {
+        if (!(await this._inventory.hasEnoughIngridients(recipe.ingridients))) {
             throw Errors.NoRecipeIngridients;
         }
 
@@ -50,7 +50,7 @@ class Crafting {
 
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
-        this._inventory.consumeItemsFromCraftingRecipe(recipe);
+        await this._inventory.consumeItemsFromCraftingRecipe(recipe);
 
         if (currency == CurrencyType.Fiat) {
             return;

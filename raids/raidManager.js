@@ -89,7 +89,7 @@ class RaidManager {
         let raidStage = raitTemplate.stages[stage];
 
         let summonRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
-        if (!summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients)) {
+        if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
             throw "no essences";
         }
 
