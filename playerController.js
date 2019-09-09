@@ -294,7 +294,6 @@ class PlayerController extends IPaymentListener {
 
             if (!bossUnit.isAlive) {
                 user.setZoneCompletedFirstTime(data.zone, data.stage);
-                itemsToDrop = data.stage + 1;
                 questComplete = true;
             }
         } else {

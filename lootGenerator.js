@@ -14,7 +14,7 @@ class LootGenerator {
         this._db = db;
     }
 
-    async getQuestLoot(zone, questIndex, stage, itemsToRoll = 1, questFinished = false) {
+    async getQuestLoot(zone, questIndex, stage, itemsToRoll = 0, questFinished = false) {
         let entries = await this._db
             .collection(Collections.QuestLoot)
             .aggregate([{
@@ -98,6 +98,10 @@ class LootGenerator {
             itemsHash = rollResults.itemsHash;
         }
 
+        if (!itemsToRoll) {
+            itemsToRoll = table.itemsToRoll;
+        }
+        
         return await this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
