@@ -12,6 +12,7 @@ import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 import CurrencyType from "./knightlands-shared/currency_type";
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
+import ItemProperties from "./knightlands-shared/item_properties";
 
 const {
     EquipmentSlots,
@@ -27,21 +28,30 @@ const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
-const DefaultStats = {
-    health: 100,
-    attack: 5,
-    criticalChance: 2,
-    energy: 30,
-    stamina: 5,
-    honor: 1,
-    luck: 0,
-    defense: 0
-};
+
+let DefaultStats = {}
+DefaultStats[CharacterStats.Health] = 100;
+DefaultStats[CharacterStats.Attack] = 5;
+DefaultStats[CharacterStats.CriticalChance] = 2;
+DefaultStats[CharacterStats.Energy] = 30;
+DefaultStats[CharacterStats.CriticalDamage] = 50;
+DefaultStats[CharacterStats.Stamina] = 5;
+DefaultStats[CharacterStats.Honor] = 1;
+DefaultStats[CharacterStats.Luck] = 0;
+DefaultStats[CharacterStats.Defense] = 0;
+DefaultStats[CharacterStats.ExtraDkt] = 0;
+DefaultStats[CharacterStats.ExtraExp] = 0;
+DefaultStats[CharacterStats.ExtraGold] = 0;
 
 const {
     Collections,
     buildUpdateQuery
 } = require("./database");
+
+function extraStatIfItemOwned(property, count, finalStats) {
+    count = property.maxItemCount < count ? property.maxItemCount : count;
+    finalStats[property.stat] += property.value * count;
+}
 
 class User {
     constructor(address, db, expTable, meta) {
@@ -312,7 +322,7 @@ class User {
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
         this._crafting = new Crafting(this._address, this._inventory);
-        this._itemStatResolver = new ItemStatResolver(StatConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors);
+        this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors);
 
         this._advanceTimers();
 
@@ -450,7 +460,7 @@ class User {
         finalStats[CharacterStats.Energy] += character.level;
         finalStats[CharacterStats.Honor] += character.level;
 
-        // items
+        // calculate stats from equipment
         for (let itemId in character.equipment) {
             let equippedItem = character.equipment[itemId];
             let template = await Game.itemTemplates.getTemplate(equippedItem.template);
@@ -466,6 +476,9 @@ class User {
             }
         }
 
+        // calculate stats from inventory passive items
+        await this._applyInventoryPassives(finalStats);
+
         let oldStats = character.stats;
         this._data.character.stats = finalStats;
 
@@ -476,8 +489,36 @@ class User {
                 timer.value = finalStats[i];
             }
         }
+    }
 
-        console.log(finalStats);
+    async _applyInventoryPassives(finalStats) {
+        let items = await this._inventory.getItemsWithTemplate();
+        console.log(JSON.stringify(items, null, 2))
+        let i = 0;
+        const length = items.length;
+        for (; i < length; i++) {
+            let item = items[i];
+            
+            if (item.type == ItemType.Charm) {
+                // apply stats
+                for (let stat in item.stats) {
+                    finalStats[stat] += this._itemStatResolver.getStatValue(item.rarity, slot, item.level, stat, item.stats[stat]);
+                }
+            }
+
+            const props = item.properties;
+            let k = 0;
+            const pLength = props.length;
+            for (; k < pLength; ++k) {
+                let prop = props[k];
+                if (prop.type == ItemProperties.ExtraStatIfItemNotEquipped) {
+                    extraStatIfItemOwned(prop, item.count, finalStats);
+                } 
+                else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
+                    extraStatIfItemOwned(prop, item.count, finalStats);
+                }
+            }
+        }
     }
 
     resetStats() {
@@ -613,7 +654,7 @@ class User {
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
-                stats: Object.assign({}, DefaultStats),
+                stats: {...DefaultStats},
                 attributes: {
                     health: 0,
                     attack: 0,
@@ -627,6 +668,10 @@ class User {
             };
 
             user.character = character;
+        }
+
+        if (!user.character.passiveStats) {
+            user.character.passiveStats = {...DefaultStats};
         }
 
         if (!user.questsProgress) {

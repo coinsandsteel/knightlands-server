@@ -14,7 +14,7 @@ class LootGenerator {
         this._db = db;
     }
 
-    async getQuestLoot(zone, questIndex, stage, itemsToRoll = 0, questFinished = false) {
+    async getQuestLoot(userId, zone, questIndex, stage, itemsToRoll = 0, questFinished = false) {
         let entries = await this._db
             .collection(Collections.QuestLoot)
             .aggregate([{
@@ -24,25 +24,32 @@ class LootGenerator {
             }, {
                 $project: {
                     stages: {
-                        $arrayElemAt: [{
-                            $filter: {
-                                input: {
-                                    $arrayElemAt: ["$stages", stage]
-                                },
-                                as: "entry",
-                                cond: {
-                                    $in: [questIndex, "$$entry.quests"]
-                                }
+                        $filter: {
+                            input: {
+                                $arrayElemAt: ["$stages", stage]
+                            },
+                            as: "entry",
+                            cond: {
+                                $in: [questIndex, "$$entry.quests"]
                             }
-                        }, 0]
+                        }
                     }
                 }
             }, {
                 $project: {
-                    _id: 0,
-                    records: "$stages.loot.records",
-                    guaranteedRecords: "$stages.loot.guaranteedRecords",
-                    weights: "$stages.loot.weights"
+                    tables: {
+                        $map: {
+                            input: "$stages",
+                            as: "stages",
+                            in: {
+                                _id: 0,
+                                records: "$$stages.loot.records",
+                                guaranteedRecords: "$$stages.loot.guaranteedRecords",
+                                weights: "$$stages.loot.weights",
+                                firstTimeRecords: "$$stages.loot.firstTimeRecords"
+                            }
+                        }
+                    }
                 }
             }])
             .toArray();
@@ -52,7 +59,35 @@ class LootGenerator {
             return null;
         }
 
-        return await this._rollQuestLoot(itemsToRoll, entries[0], questFinished);
+        entries = entries[0].tables;
+
+        let items = [];
+        let itemsHash = {};
+
+        for (let i = 0; i < entries.length; ++i) {
+            let table = entries[i];
+
+            if (questFinished && table.firstTimeRecords) {
+                let lootQuery = {
+                    address: userId
+                };
+                lootQuery[`firstTimeLoot.${zone}.${questIndex}`] = true;
+
+                let isDropped = await this._db.collection(Collections.Users).findOne(lootQuery);
+                if (!isDropped) {
+                    let updateQuery = {$set:{}};
+                    updateQuery.$set[`firstTimeLoot.${zone}.${questIndex}`] = true;
+
+                    await this._db.collection(Collections.Users).updateOne({address: userId}, updateQuery);
+
+                    this._rollGuaranteedLootFromTable(table.firstTimeRecords, items, itemsHash);
+                }   
+            }
+
+            await this._rollQuestLoot(itemsToRoll, table, questFinished, items, itemsHash);
+        }
+
+        return items;
     }
 
     async getLootFromGacha(userId, gachaId) {
@@ -89,11 +124,9 @@ class LootGenerator {
         return await this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
-    async _rollQuestLoot(itemsToRoll, table, questFinished) {
-        let items, itemsHash;
-
+    async _rollQuestLoot(itemsToRoll, table, questFinished, items, itemsHash) {
         if (questFinished && table.guaranteedRecords) {
-            let rollResults = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+            let rollResults = this._rollGuaranteedLootFromTable(table.guaranteedRecords, items, itemsHash);
             items = rollResults.items;
             itemsHash = rollResults.itemsHash;
         }
@@ -101,7 +134,7 @@ class LootGenerator {
         if (!itemsToRoll) {
             itemsToRoll = table.itemsToRoll;
         }
-        
+
         return await this._rollItemsFromLootTable(itemsToRoll, table, table.weights, items, itemsHash);
     }
 
@@ -161,7 +194,7 @@ class LootGenerator {
             }
 
             roll = Random.range(weights.noLoot, weights.totalWeight);
-
+            console.log(`Rolled ${roll} in [${weights.noLoot} .. ${weights.totalWeight}]`)
             let rolledRecordIndex = bounds.gt(table.records, roll, comparator);
             if (rolledRecordIndex >= 0) {
                 let lootRecord = table.records[rolledRecordIndex];

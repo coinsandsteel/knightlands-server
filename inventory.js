@@ -6,6 +6,7 @@ const {
 
 import ItemType from "./knightlands-shared/item_type";
 import Game from "./game";
+import ItemProperties from "./knightlands-shared/item_properties";
 
 class Inventory {
     constructor(userId, db) {
@@ -49,6 +50,62 @@ class Inventory {
         } else {
             this._currencies[currency] += value * 1;
         }
+    }
+
+    async getItemsWithTemplate() {
+        // join items with templates
+        let items = await this._db.collection(Collections.Inventory).aggregate([
+            { 
+                "$match" : {
+                    "_id" : this._userId
+                }
+            }, 
+            { 
+                "$lookup" : {
+                    "from" : "items", 
+                    "localField" : "items.template", 
+                    "foreignField" : "_id", 
+                    "as" : "templates"
+                }
+            }, 
+            { 
+                "$project" : {
+                    "items" : {
+                        "$map" : {
+                            "input" : "$items", 
+                            "as" : "item", 
+                            "in" : {
+                                "$mergeObjects" : [
+                                    "$$item", 
+                                    {
+                                        "$arrayElemAt" : [
+                                            {
+                                                "$filter" : {
+                                                    "input" : "$templates", 
+                                                    "as" : "template", 
+                                                    "cond" : {
+                                                        "$eq" : [
+                                                            "$$template._id", 
+                                                            "$$item.template"
+                                                        ]
+                                                    }
+                                                }
+                                            }, 
+                                            0
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ], 
+        { 
+            "allowDiskUse" : false
+        }).toArray();
+
+        return items[0].items;
     }
 
     get nextId() {

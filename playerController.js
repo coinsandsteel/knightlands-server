@@ -365,12 +365,10 @@ class PlayerController extends IPaymentListener {
             }
         }
 
-        if (itemsToDrop > 0) {
-            let items = await this._lootGenerator.getQuestLoot(data.zone, data.questIndex, data.stage, itemsToDrop, questComplete);
+        let items = await this._lootGenerator.getQuestLoot(this.address, data.zone, data.questIndex, data.stage, itemsToDrop, questComplete);
 
-            if (items) {
-                await user.addLoot(items);
-            }
+        if (items) {
+            await user.addLoot(items);
         }
 
         return null;

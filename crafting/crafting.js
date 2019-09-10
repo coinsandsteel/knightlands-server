@@ -209,6 +209,8 @@ class Crafting {
             }
         }
 
+        item.exp = Math.floor(item.exp * 100) / 100; // last 2 digits
+
         this._inventory.setItemUpdated(item);
 
         return item.id;

@@ -53,6 +53,10 @@ class Unit {
 
         let damageReduction = victimDefense / (victimDefense + 150);
         let finalAttack = Math.floor(attack * (1 - damageReduction));
+        let damageCap = victim._maxStats.damageCap;
+        if (damageCap) {
+            finalAttack = finalAttack <= damageCap ? finalAttack : damageCap;
+        }
         victim.modifyHealth(-finalAttack);
 
         return finalAttack;
