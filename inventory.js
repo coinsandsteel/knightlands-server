@@ -205,12 +205,11 @@ class Inventory {
                             upsert: true
                         }
                     };
-
-                    this._itemsByIdOriginal.set(id, item.count);
+                    
                     delta[id] = item.count;
                 }
 
-
+                this._itemsByIdOriginal.set(id, item.count);
                 queries.push(query);
             }
         }
