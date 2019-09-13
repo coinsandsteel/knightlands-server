@@ -249,7 +249,7 @@ class PlayerController extends IPaymentListener {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
 
             if (!bossProgress.unlocked) {
-                throw "not allowed";
+                throw Errors.BossIsLocked;
             }
 
             if (!user.enoughHp) {
@@ -257,11 +257,16 @@ class PlayerController extends IPaymentListener {
             }
 
             let bossData = quest;
+
             let unitStats = {};
             unitStats[CharacterStats.Health] = bossData.health - bossProgress.damageRecieved;
             unitStats[CharacterStats.Attack] = bossData.attack;
             unitStats[CharacterStats.Defense] = bossData.defense;
             let bossUnit = new Unit(unitStats, bossData);
+
+            if (!bossUnit.isAlive) {
+                throw Errors.BossDead;
+            }
 
             let playerUnit = user.getCombatUnit();
 
@@ -495,6 +500,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchRaid(data, respond) {
+        console.log(`fetch raid info ${data.raidId}`);
         let raidInfo = await this._raidManager.getRaidInfo(this.address, data.raidId);
         respond(null, raidInfo);
     }

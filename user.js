@@ -131,9 +131,10 @@ class User {
             let currentStats = {
                 ...this._data.character.stats
             };
-            currentStats.health = this.getTimerValue(CharacterStats.Health);
             this._combatUnit = new PlayerUnit(this);
         }
+
+        this._combatUnit.setHealth(this.getTimerValue(CharacterStats.Health));
 
         return this._combatUnit;
     }
@@ -459,6 +460,7 @@ class User {
         finalStats[CharacterStats.Stamina] += character.level;
         finalStats[CharacterStats.Energy] += character.level;
         finalStats[CharacterStats.Honor] += character.level;
+        finalStats[CharacterStats.Health] += character.level * 10;
 
         // calculate stats from equipment
         for (let itemId in character.equipment) {
@@ -493,7 +495,6 @@ class User {
 
     async _applyInventoryPassives(finalStats) {
         let items = await this._inventory.getItemsWithTemplate();
-        console.log(JSON.stringify(items, null, 2))
         let i = 0;
         const length = items.length;
         for (; i < length; i++) {

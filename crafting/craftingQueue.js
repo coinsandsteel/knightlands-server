@@ -14,7 +14,7 @@ class CraftingQueue {
     async init(iapExecutor) {
         console.log("Registering Crafting IAPs...");
 
-        let allRecipes = await this._db.collection(Collections.CraftingRecipes).find({}).toArray();
+        let allRecipes = await this._db.collection(Collections.CraftingRecipes).find({crafted:true}).toArray();
         allRecipes.forEach(recipe => {
             if (!recipe.iap) {
                 return;

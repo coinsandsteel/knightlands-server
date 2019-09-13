@@ -47,7 +47,9 @@ module.exports = {
         GachaMeta: "gacha_meta",
         PresaleData: "presale_data",
         GachaState: "gacha_state",
-        Whitelist: "whitelist"
+        Whitelist: "whitelist",
+        DropZoneModifiers: "drop_zone_modifiers",
+        DropRaidModifiers: "drop_raid_modifiers"
     },
 
 
