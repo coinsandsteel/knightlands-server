@@ -208,14 +208,12 @@ class LootGenerator {
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight);
-                console.log(`No weight Rolled ${roll} in [0 .. ${weights.totalWeight}]. No loot weight ${weights.noLoot}`)
                 if (roll <= weights.noLoot) {
                     continue;
                 }
             }
 
             roll = Random.range(weights.noLoot, weights.totalWeight);
-            console.log(`Rolled ${roll} in [${weights.noLoot} .. ${weights.totalWeight}]`)
             let rolledRecordIndex = bounds.gt(table.records, roll, comparator);
             if (rolledRecordIndex >= 0) {
                 let lootRecord = table.records[rolledRecordIndex];

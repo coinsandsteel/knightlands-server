@@ -42,6 +42,7 @@ DefaultStats[CharacterStats.Defense] = 0;
 DefaultStats[CharacterStats.ExtraDkt] = 0;
 DefaultStats[CharacterStats.ExtraExp] = 0;
 DefaultStats[CharacterStats.ExtraGold] = 0;
+DefaultStats[CharacterStats.RaidDamage] = 0;
 
 const {
     Collections,
@@ -127,16 +128,7 @@ class User {
     }
 
     getCombatUnit() {
-        if (!this._combatUnit) {
-            let currentStats = {
-                ...this._data.character.stats
-            };
-            this._combatUnit = new PlayerUnit(this);
-        }
-
-        this._combatUnit.setHealth(this.getTimerValue(CharacterStats.Health));
-
-        return this._combatUnit;
+        return new PlayerUnit(this);
     }
 
     addSoftCurrency(value) {
@@ -160,7 +152,6 @@ class User {
         let leveledUp = false;
         while (maxLevel-- > 0) {
             let toNextLevel = this._expTable[character.level - 1];
-            console.log("character.exp", character.exp, "character.level", character.level, "toNextLevel", toNextLevel);
             if (toNextLevel <= character.exp) {
                 character.level++;
                 character.exp -= toNextLevel;
@@ -234,7 +225,7 @@ class User {
     async getTimerRefillCost(stat) {
         if (stat == CharacterStats.Health) {
             return {
-                soft: Math.ceil((this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 1 * this._data.character.level * 0.4)
+                soft: Math.ceil((this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 1 * this._data.character.level * 0.1)
             };
         }
 
@@ -278,12 +269,12 @@ class User {
         }
 
         let timePassed = now - timer.lastRegenTime;
-        let valueRenerated = Math.floor(timePassed / DefaultRegenTimeSeconds);
+        let valueRenerated = Math.floor(timePassed / timer.regenTime);
         timer.value += valueRenerated;
         // clamp to max value
         timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
         // adjust regen time to accomodate rounding
-        timer.lastRegenTime += valueRenerated * DefaultRegenTimeSeconds;
+        timer.lastRegenTime += valueRenerated * timer.regenTime;
     }
 
     async generateNonce() {
@@ -458,9 +449,9 @@ class User {
         }
 
         finalStats[CharacterStats.Stamina] += character.level;
-        finalStats[CharacterStats.Energy] += character.level;
+        finalStats[CharacterStats.Energy] += character.level * 2;
         finalStats[CharacterStats.Honor] += character.level;
-        finalStats[CharacterStats.Health] += character.level * 10;
+        finalStats[CharacterStats.Health] += character.level * 20;
 
         // calculate stats from equipment
         for (let itemId in character.equipment) {
@@ -642,7 +633,7 @@ class User {
                     health: {
                         value: 0,
                         lastRegenTime: 0,
-                        regenTime: DefaultRegenTimeSeconds
+                        regenTime: 30
                     },
                     energy: {
                         value: 0,

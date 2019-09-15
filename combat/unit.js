@@ -1,4 +1,5 @@
 import CharacterStat from "./../knightlands-shared/character_stat";
+const Random = require("../random");
 
 class Unit {
     constructor(stats, maxStats) {
@@ -42,24 +43,46 @@ class Unit {
         this._stats[stat] = value;
     }
 
-    attack(victim, damageFactor = 1) {
-        let attack = this.getAttack() * damageFactor;
+    isCritical() {
+        return Random.range(0, 100, true) <= this.getStat(CharacterStat.CriticalChance);
+    }
 
-        // modify from defense
-        let victimDefense = victim.getStat(CharacterStat.Defense);
-        if (victimDefense === undefined) {
-            victimDefense = 0;
+    attackRaid(raidBoss, bonusDamage) {
+        let attack = this.getAttack();
+        attack += this.getStat(CharacterStat.RaidDamage);
+
+        if (this.isCritical()) {
+            attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);
         }
 
-        let damageReduction = victimDefense / (victimDefense + 150);
-        let finalAttack = Math.floor(attack * (1 - damageReduction));
-        let damageCap = victim._maxStats.damageCap;
+        attack *= bonusDamage;
+        
+        return raidBoss._applyDamage(attack);
+    }
+
+    attack(victim) {
+        return victim._applyDamage(this.getAttack());
+    }
+
+    _applyDamage(damage) {
+        let defense = this.getStat(CharacterStat.Defense);
+        if (defense === undefined) {
+            defense = 0;
+        }
+
+        let damageReduction = defense / (defense  + 150);
+        let finalDamage = Math.floor(damage * (1 - damageReduction));
+
+        let damageCap = this._maxStats.damageCap;
         if (damageCap) {
-            finalAttack = finalAttack <= damageCap ? finalAttack : damageCap;
+            damage = finalDamage <= damageCap ? finalDamage : damageCap;
         }
-        victim.modifyHealth(-finalAttack);
 
-        return finalAttack;
+        finalDamage = Math.ceil(finalDamage);
+
+        this.modifyHealth(-finalDamage);
+
+        return finalDamage;
     }
 }
 

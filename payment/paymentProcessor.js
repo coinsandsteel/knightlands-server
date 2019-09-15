@@ -226,12 +226,14 @@ class PaymentProcessor extends EventEmitter {
 
         try {
             let transactionId = await this._blockchain.sendTransaction(paymentId, userId, signedTransaction);
-            await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {
-                $set: {
-                    transactionId,
-                    status: PaymentStatus.Pending
-                }
-            });
+            if (transactionId) {
+                await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {
+                    $set: {
+                        transactionId,
+                        status: PaymentStatus.Pending
+                    }
+                });
+            }
         } catch (exc) {
             await this._logError(paymentId, PaymentErrorCodes.TxSendFailed, {
                 paymentId: paymentId,

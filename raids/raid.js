@@ -231,7 +231,7 @@ class Raid extends EventEmitter {
             this._bossUnit.attack(combatUnit);
 
             if (combatUnit.isAlive) {
-                let damageDone = combatUnit.attack(this._bossUnit, bonusDamage);
+                let damageDone = combatUnit.attackRaid(this._bossUnit, bonusDamage);
                 totalDamageInflicted += damageDone;
                 this._data.participants[attacker.address] += damageDone;
 
