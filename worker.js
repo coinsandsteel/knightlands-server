@@ -145,10 +145,10 @@ class Worker extends SCWorker {
             throw 'incorrect raid';
           }
 
-          if (!raid.isParticipant(user.address)) {
-            req.socket.disconnect(DisconnectCodes.NotAllowed);
-            throw 'not participant';
-          }
+          // if (!raid.isParticipant(user.address)) {
+          //   req.socket.disconnect(DisconnectCodes.NotAllowed);
+          //   throw 'not participant';
+          // }
         }
       } else if (req.channel != 'presale') {
         req.socket.disconnect(DisconnectCodes.NotAuthorized);

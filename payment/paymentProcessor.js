@@ -16,6 +16,9 @@ class PaymentProcessor extends EventEmitter {
     constructor(db, blockchain, iapExecutor) {
         super();
 
+        this.PaymentFailed = "payment_failed";
+        this.PaymentSent = "payment_sent";
+
         this._db = db;
         this._blockchain = blockchain;
         this._iapExecutor = iapExecutor;
@@ -233,6 +236,8 @@ class PaymentProcessor extends EventEmitter {
                         status: PaymentStatus.Pending
                     }
                 });
+
+                this.emit(this.PaymentSent, request.tag, request.context);
             }
         } catch (exc) {
             await this._logError(paymentId, PaymentErrorCodes.TxSendFailed, {
@@ -250,14 +255,13 @@ class PaymentProcessor extends EventEmitter {
         // first update status in database
         try {
             let requestNonce = new ObjectId(paymentRecipe.nonce);
-
             let request = await this._db.collection(Collections.PaymentRequests).findOne({
                 _id: requestNonce
             });
 
             if (!request) {
                 await this._logError(paymentRecipe.nonce, PaymentErrorCodes.UknownPaymentId, {
-                    paymentId: request._id.valueOf(),
+                    paymentId: paymentRecipe.nonce,
                     userId: request.userId,
                     iap: request.iap,
                     timestamp: paymentRecipe.timestamp,
@@ -273,12 +277,12 @@ class PaymentProcessor extends EventEmitter {
             await this._db.collection(Collections.PaymentRequests).updateOne({
                 _id: requestNonce
             }, {
-                    $set: {
-                        tx: request.transactionId,
-                        timestamp: paymentRecipe.timestamp,
-                        status: PaymentStatus.Success
-                    }
-                });
+                $set: {
+                    tx: request.transactionId,
+                    timestamp: paymentRecipe.timestamp,
+                    status: PaymentStatus.Success
+                }
+            });
 
             let iapExecuctionResult = await this._executeIAP(request._id, request.iap, request.context);
 
@@ -300,20 +304,22 @@ class PaymentProcessor extends EventEmitter {
         await this._db.collection(Collections.PaymentRequests).updateOne({
             _id: paymentObjectId
         }, {
-                $set: {
-                    userId,
-                    tx: transactionId,
-                    status: PaymentStatus.Failed,
-                    reason: args.reason
-                }
-            });
+            $set: {
+                userId,
+                tx: transactionId,
+                status: PaymentStatus.Failed,
+                reason: args.reason
+            }
+        });
+
+        let payment = await this._db.collection(Collections.PaymentRequests).findOne({
+            _id: paymentObjectId
+        });
+
+        this.emit(this.PaymentFailed, payment.tag, payment.context);
 
         let listener = this._getListeners(userId)[0];
         if (listener) {
-            let payment = await this._db.collection(Collections.PaymentRequests).findOne({
-                _id: paymentObjectId
-            });
-
             console.log("notify client payment failed. Reason: ", JSON.stringify(args.reason, null, 2));
 
             // let listener know that payment failed
@@ -327,10 +333,10 @@ class PaymentProcessor extends EventEmitter {
         await this._db.collection(Collections.PaymentRequests).updateOne({
             _id: paymentId
         }, {
-                $set: {
-                    claimed: true
-                }
-            });
+            $set: {
+                claimed: true
+            }
+        });
 
         return executionResponse;
     }

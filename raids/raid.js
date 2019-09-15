@@ -99,6 +99,10 @@ class Raid extends EventEmitter {
         return `raid/${this.id}`;
     }
 
+    get isFull() {
+        return this._data.busySlots >= this.stageData.maxSlots;
+    }
+
     async init(data) {
         await this._initFromData(data);
     }
@@ -184,17 +188,25 @@ class Raid extends EventEmitter {
         });
     }
 
-    async join(user) {
-        if (this._data.busySlots >= this.stageData.maxSlots) {
-            throw "no free slot";
-        }
-
-        this._data.participants[user.address] = 0;
-        this._data.busySlots++;
+    async setReserveSlot(reserve) {
+        this._data.busySlots += (reserve ? 1 : -1);
 
         await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
             $set: {
-                busySlots: this._data.busySlots,
+                busySlots: this._data.busySlots
+            }
+        });
+    }
+
+    async join(userId) {
+        if (this._data.busySlots >= this.stageData.maxSlots) {
+            throw Errors.RaidIsFull;
+        }
+
+        this._data.participants[userId] = 0;
+
+        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
+            $set: {
                 participants: this._data.participants
             }
         });

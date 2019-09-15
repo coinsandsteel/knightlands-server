@@ -35,6 +35,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
         this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
         this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this));
+        this._socket.on(Operations.FetchRaidJoinStatus, this._fetchRaidJoinStatus.bind(this));
         this._socket.on(Operations.FetchCraftingStatus, this._fetchCraftingStatus.bind(this));
         this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this));
         this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this));
@@ -45,6 +46,7 @@ class PlayerController extends IPaymentListener {
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
+        this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
 
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
@@ -53,7 +55,6 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
-        this._socket.on(Operations.JoinRaid, this._gameHandler(this._joinRaid.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
@@ -494,13 +495,17 @@ class PlayerController extends IPaymentListener {
     }
 
     // Raids
+    async _fetchRaidJoinStatus(data, respond) {
+        let joinStatus = await this._raidManager.getJoinStatus(this.address, data.raidId);
+        respond(null, joinStatus);
+    }
+
     async _fetchRaidSummonStatus(data, respond) {
         let summonStatus = await this._raidManager.getSummonStatus(this.address, data.raid, data.stage);
         respond(null, summonStatus);
     }
 
     async _fetchRaid(data, respond) {
-        console.log(`fetch raid info ${data.raidId}`);
         let raidInfo = await this._raidManager.getRaidInfo(this.address, data.raidId);
         respond(null, raidInfo);
     }
@@ -522,15 +527,14 @@ class PlayerController extends IPaymentListener {
         }
     }
 
-    async _joinRaid(user, data) {
-        let raid = this._raidManager.getRaid(data.raidId);
-        if (!raid) {
-            throw "incorrect raid";
+    async _joinRaid(data, respond) {
+        try {
+            let payment = await this._raidManager.joinRaid(this.address, data.raidId);
+            respond(null, payment);
+        } catch (exc) {
+            console.log(exc);
+            respond(exc);
         }
-
-        await raid.join(user);
-
-        return null;
     }
 
     async _attackRaidBoss(user, data) {

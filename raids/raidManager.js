@@ -8,14 +8,19 @@ const Raid = require("./raid");
 const Events = require("./../knightlands-shared/events");
 import Game from "./../game";
 const ObjectId = require("mongodb").ObjectID;
+import Errors from "./../knightlands-shared/errors";
 
 class RaidManager {
     constructor(db, paymentProcessor) {
         this.SummonPaymentTag = "raid_summon";
+        this.JoinPaymentTag = "raid_join";
 
         this._db = db;
         this._factors = {};
         this._paymentProcessor = paymentProcessor;
+
+        this._paymentProcessor.on(this._paymentProcessor.PaymentFailed, this._handlePaymentFailed.bind(this));
+        this._paymentProcessor.on(this._paymentProcessor.PaymentSent, this._handlePaymentSent.bind(this));
     }
 
     async init(iapExecutor) {
@@ -45,6 +50,22 @@ class RaidManager {
         await this._registerRaidIAPs(iapExecutor);
     }
 
+    async _handlePaymentFailed(tag, context) {
+        if (tag == this.JoinPaymentTag) {
+            // payment failed, free slot
+            let raid = this.getRaid(context.raidId);
+            await raid.setReserveSlot(false);
+        }
+    }
+
+    async _handlePaymentSent(tag, context) {
+        if (tag == this.JoinPaymentTag) {
+            // payment sent, reserve slot
+            let raid = this.getRaid(context.raidId);
+            await raid.setReserveSlot(true);
+        }
+    }
+
     async _getNextDktFactor(raidTemplateId, stage) {
         let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
             raid: raidTemplateId,
@@ -66,23 +87,65 @@ class RaidManager {
             raid: raidTemplateId,
             stage: stage
         }, { $set: factor }, {
-                upsert: true
-            });
+            upsert: true
+        });
 
         return factorValue;
+    }
+
+    async joinRaid(userId, raidId) {
+        let raid = this.getRaid(raidId);
+        if (!raid) {
+            throw Errors.InvalidRaid;
+        }
+
+        if (raid.isFull) {
+            throw Errors.RaidIsFull;
+        }
+
+        let iapContext = {
+            userId,
+            raidId
+        };
+
+        // check if payment request already created
+        let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.JoinPaymentTag);
+        if (hasPendingPayment) {
+            throw "summoning in process already";
+        }
+
+        try {
+            return await this._paymentProcessor.requestPayment(
+                userId,
+                raid.stageData.joinIap,
+                this.JoinPaymentTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
+    }
+
+    async _joinRaid(userId, raidId) {
+        let raid = this.getRaid(raidId);
+        if (!raid) {
+            throw Errors.InvalidRaid;
+        }
+
+        await raid.join(userId);
     }
 
     async summonRaid(summoner, stage, raidTemplateId) {
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         if (!raitTemplate) {
-            throw "invalid raid";
+            throw Errors.InvalidRaid;
         }
 
         stage = stage * 1;
 
         if (raitTemplate.stages.length <= stage) {
-            throw "invalid raid";
+            throw Errors.InvalidRaid;
         }
 
         // check if there is enough crafting materials
@@ -149,6 +212,14 @@ class RaidManager {
             // include current dkt factor
             status.dktFactor = await this._getNextDktFactor(raidTemplateId, stage);
         }
+
+        return status;
+    }
+
+    async getJoinStatus(userId, raidId) {
+        let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.JoinPaymentTag, {
+            "context.raidId": raidId
+        });
 
         return status;
     }
@@ -242,11 +313,21 @@ class RaidManager {
         let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
         allRaids.forEach(raid => {
             raid.stages.forEach(stage => {
-                iapExecutor.registerAction(stage.iap, async (context) => {
-                    return await this._summonRaid(context.summoner, context.stage, context.raidTemplateId);
-                });
+                if (stage.iap) {
+                    iapExecutor.registerAction(stage.iap, async (context) => {
+                        return await this._summonRaid(context.summoner, context.stage, context.raidTemplateId);
+                    });
 
-                iapExecutor.mapIAPtoEvent(stage.iap, Events.RaidSummonStatus);
+                    iapExecutor.mapIAPtoEvent(stage.iap, Events.RaidSummonStatus);
+                }
+
+                if (stage.joinIap) {
+                    iapExecutor.registerAction(stage.joinIap, async (context) => {
+                        return await this._joinRaid(context.userId, context.raidId);
+                    });
+
+                    iapExecutor.mapIAPtoEvent(stage.joinIap, Events.RaidJoinStatus);
+                }
             });
 
         });
