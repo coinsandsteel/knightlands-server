@@ -50,6 +50,7 @@ class PlayerController extends IPaymentListener {
 
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
+        this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
         // this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
         this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
@@ -341,7 +342,7 @@ class PlayerController extends IPaymentListener {
             let softCurrencyGained = 0;
 
             while (hits-- > 0) {
-                user.addExperience(quest.exp);
+                await user.addExperience(quest.exp);
                 softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }
 
@@ -390,6 +391,10 @@ class PlayerController extends IPaymentListener {
 
     async _unequipItem(user, data) {
         await user.unequipItem(data.slot);
+    }
+
+    async _useItem(user, data) {
+        await user.useItem(data.itemId);
     }
 
     async _resetZone(user, data) {
@@ -565,7 +570,7 @@ class PlayerController extends IPaymentListener {
 
         await user.loadInventory();
         user.addSoftCurrency(rewards.gold);
-        user.addExperience(rewards.exp);
+        await user.addExperience(rewards.exp);
         user.inventory.addItemTemplates(rewards.items);
         user.addDkt(rewards.dkt);
         user.addHardCurrency(rewards.hardCurrency);

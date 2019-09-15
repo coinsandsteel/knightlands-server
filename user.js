@@ -30,7 +30,7 @@ const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 
 let DefaultStats = {}
-DefaultStats[CharacterStats.Health] = 100;
+DefaultStats[CharacterStats.Health] = 50;
 DefaultStats[CharacterStats.Attack] = 5;
 DefaultStats[CharacterStats.CriticalChance] = 2;
 DefaultStats[CharacterStats.Energy] = 30;
@@ -144,24 +144,34 @@ class User {
     }
 
     // returns levels gained
-    addExperience(exp) {
+    async addExperience(exp) {
         let character = this._data.character;
         let levelBeforeExp = character.level;
-        let maxLevel = 100;
         character.exp += exp * 1;
-        let leveledUp = false;
-        while (maxLevel-- > 0) {
+        const maxLevels = this._expTable.length;
+        const previousLevel = character.level;
+        while (character.level < maxLevels) {
             let toNextLevel = this._expTable[character.level - 1];
             if (toNextLevel <= character.exp) {
                 character.level++;
                 character.exp -= toNextLevel;
-                leveledUp = true;
             } else {
                 break;
             }
         }
 
-        if (leveledUp) {
+        if (previousLevel < character.level) {
+            let levelUpMeta = await this._db.collection(Collections.Meta).findOne({_id: "levelUp"});
+
+            for (let i = previousLevel; i < character.level; ++i) {
+                // assign currencies
+                let levelMeta = levelUpMeta.records[i];
+                if (levelMeta) {
+                    this.addSoftCurrency(levelMeta.soft);
+                    this.addHardCurrency(levelMeta.hard);
+                }
+            }
+
             this._recalculateStats = true;
             this._restoreTimers();
         }
@@ -194,8 +204,11 @@ class User {
     }
 
     modifyTimerValue(stat, value) {
-        this.getTimer(stat).value += value;
-        this._advanceTimer(stat);
+        let timer = this.getTimer(stat);
+        if (timer) {
+            timer.value += value;
+            this._advanceTimer(stat);
+        }
     }
 
     getRefillsCount(stat) {
@@ -448,10 +461,14 @@ class User {
             finalStats[i] += StatConversions[i] * character.attributes[i];
         }
 
-        finalStats[CharacterStats.Stamina] += character.level;
-        finalStats[CharacterStats.Energy] += character.level * 2;
-        finalStats[CharacterStats.Honor] += character.level;
-        finalStats[CharacterStats.Health] += character.level * 20;
+        let levelUpMeta = await this._db.collection(Collections.Meta).findOne({_id: "levelUp"});
+
+        let levelMetaData = levelUpMeta.records[character.level - 1].stats;
+
+        finalStats[CharacterStats.Stamina] += levelMetaData[CharacterStats.Stamina];
+        finalStats[CharacterStats.Energy] += levelMetaData[CharacterStats.Energy]
+        // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
+        finalStats[CharacterStats.Health] += levelMetaData[CharacterStats.Health]
 
         // calculate stats from equipment
         for (let itemId in character.equipment) {
@@ -524,6 +541,38 @@ class User {
 
     async addLoot(itemTemplates) {
         await this._inventory.addItemTemplates(itemTemplates);
+    }
+
+    async useItem(itemId) {
+        let itemToUse = this._inventory.getItemById(itemId);
+        if (!itemToUse) {
+            throw Errors.NoItem;
+        }
+
+        let template = await Game.itemTemplates.getTemplate(itemToUse.template);
+        if (!template.action) {
+            throw Errors.NotConsumable;
+        }
+
+        let actionData = template.action;
+        // based on action perform necessary actions
+        switch (actionData.action) {
+            case "refillTimer":
+                if (actionData.relative) {
+                    // % restoration from maximum base 
+                    this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionData.value / 100);
+                } else {
+                    this.modifyTimerValue(actionData.stat, actionData.value);
+                }
+                break;
+
+            case "addExperience":
+                await this.addExperience(actionData.value);
+                break;
+        }
+
+        // remove used item
+        this._inventory.removeItem(itemToUse.id);
     }
 
     async equipItem(itemId) {
@@ -663,7 +712,7 @@ class User {
         }
 
         if (!user.character.passiveStats) {
-            user.character.passiveStats = {...DefaultStats};
+            user.character.passiveStats = { ...DefaultStats };
         }
 
         if (!user.questsProgress) {
