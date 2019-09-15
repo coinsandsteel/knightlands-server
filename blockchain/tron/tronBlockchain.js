@@ -34,7 +34,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
         this._db = db;
         this._tronWeb = new TronWeb({
-            fullHost: (process.env.ENV || 'dev') == 'dev' ? 'https://api.shasta.trongrid.io' : 'https://api.trongrid.io',
+            fullHost: (process.env.ENV || 'dev') == 'prod' ?  'https://api.trongrid.io' : 'https://api.shasta.trongrid.io',
             privateKey: "b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200"
         });
 

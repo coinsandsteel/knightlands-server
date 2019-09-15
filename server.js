@@ -53,19 +53,18 @@ var options = {
   logLevel: Number(process.env.LOG_LEVEL) || 2
 };
 
-if (environment == "prod") {
+if (process.env.SAPPAO) {
   options.protocol = "https";
-  if (process.env.SAPPAO) {
-    options.protocolOptions = {
-      key: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/fullchain.pem")
-    };
-  } else {
-    options.protocolOptions = {
-      key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
-    };
-  }
+  options.protocolOptions = {
+    key: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/fullchain.pem")
+  };
+} else if (environment == "prod") {
+  options.protocol = "https";
+  options.protocolOptions = {
+    key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
+  };
 }
 
 var bootTimeout = Number(process.env.SOCKETCLUSTER_CONTROLLER_BOOT_TIMEOUT) || 10000;
