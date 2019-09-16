@@ -243,7 +243,10 @@ class Raid extends EventEmitter {
             this._bossUnit.attack(combatUnit);
 
             if (combatUnit.isAlive) {
-                let damageDone = combatUnit.attackRaid(this._bossUnit, bonusDamage);
+                let attackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
+                const damageDone = attackResult.damage;
+                const crit = attackResult.crit;
+
                 totalDamageInflicted += damageDone;
                 this._data.participants[attacker.address] += damageDone;
 
@@ -259,10 +262,10 @@ class Raid extends EventEmitter {
                 }
 
                 // notify current challenges
-                this.emit(this.Hit, attacker, damageDone);
+                this.emit(this.Hit, attacker, damageDone, crit);
 
                 if (!this._bossUnit.isAlive) {
-                    this.emit(this.BossKilled, attacker, damageDone, this._data.timeLeft);
+                    this.emit(this.BossKilled, attacker, damageDone, crit, this._data.timeLeft);
 
                     // emit victory and let know to raid manager
                     this._publishEvent({ event: Events.RaidFinished, defeat: true });

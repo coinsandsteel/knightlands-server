@@ -8,8 +8,18 @@ class Unit {
     }
 
     // returns {min, max}
-    getAttack() {
-        return this.getStat(CharacterStat.Attack);
+    getAttack(raid) {
+        let attack = this.getStat(CharacterStat.Attack) + (raid ? this.getStat(CharacterStat.RaidDamage) : 0);
+
+        const crit = this.isCritical();
+        if (crit) {
+            attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);
+        }
+
+        return {
+            attack,
+            crit
+        }
     }
 
     getHealth() {
@@ -48,20 +58,20 @@ class Unit {
     }
 
     attackRaid(raidBoss, bonusDamage) {
-        let attack = this.getAttack();
-        attack += this.getStat(CharacterStat.RaidDamage);
-
-        if (this.isCritical()) {
-            attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);
-        }
+        let {attack, crit} = this.getAttack();
 
         attack *= bonusDamage;
         
-        return raidBoss._applyDamage(attack);
+        return { damage: raidBoss._applyDamage(attack), crit };
     }
 
     attack(victim) {
-        return victim._applyDamage(this.getAttack());
+        let {attack, crit} = this.getAttack();
+
+        return {
+            damage: victim._applyDamage(attack),
+            crit
+        }
     }
 
     _applyDamage(damage) {

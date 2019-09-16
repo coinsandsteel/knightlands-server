@@ -246,6 +246,7 @@ class PlayerController extends IPaymentListener {
 
         let itemsToDrop = 0;
         let questComplete = false;
+        let damages = [];
 
         if (isBoss) {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
@@ -274,15 +275,17 @@ class PlayerController extends IPaymentListener {
 
             while (user.enoughHp && bossUnit.isAlive) {
                 // exp and gold are calculated based on damage inflicted
-                let playerDamageDealt = playerUnit.attack(bossUnit);
+                let attackResult = playerUnit.attack(bossUnit);
+                damages.push(attackResult);
+
                 bossUnit.attack(playerUnit);
 
-                bossProgress.exp += bossData.exp * (playerDamageDealt / bossUnit.getMaxHealth());
+                bossProgress.exp += bossData.exp * (attackResult.damage / bossUnit.getMaxHealth());
                 let expGained = Math.floor(bossProgress.exp);
                 bossProgress.exp -= expGained;
                 await user.addExperience(expGained);
 
-                bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (playerDamageDealt / bossUnit.getMaxHealth());
+                bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (attackResult.damage / bossUnit.getMaxHealth());
                 let softCurrencyGained = Math.floor(bossProgress.gold);
                 bossProgress.gold -= softCurrencyGained;
                 user.addSoftCurrency(softCurrencyGained);
@@ -378,7 +381,7 @@ class PlayerController extends IPaymentListener {
             await user.addLoot(items);
         }
 
-        return null;
+        return damages;
     }
 
     async _buyStat(user, data) {
