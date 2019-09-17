@@ -3,7 +3,7 @@
 const {
     Collections
 } = require("./database");
-const Random = require("./random");
+import Random from "./random";
 const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";
 const ItemType = require("./knightlands-shared/item_type");
@@ -110,16 +110,7 @@ class LootGenerator {
             return {};
         }
 
-        let items;
-
-        if (gacha.type == GachaType.Normal) {
-            items = await this._drawFromNormalGacha(userId, gacha);
-        } else {
-            // not implemented 
-            items = [];
-        }
-
-        return items;
+        return await this._drawFromGacha(userId, gacha, gacha.type == GachaType.Box);
     }
 
     async getRaidLoot(raidLoot) {
@@ -207,13 +198,13 @@ class LootGenerator {
             //first no loot 
             let roll = 0;
             if (weights.noLoot > 0) {
-                roll = Random.range(0, weights.totalWeight);
+                roll = Random.range(0, weights.totalWeight, true);
                 if (roll <= weights.noLoot) {
                     continue;
                 }
             }
 
-            roll = Random.range(weights.noLoot, weights.totalWeight);
+            roll = Random.range(weights.noLoot, weights.totalWeight, true);
             let rolledRecordIndex = bounds.gt(table.records, roll, comparator);
             if (rolledRecordIndex >= 0) {
                 let lootRecord = table.records[rolledRecordIndex];
@@ -246,8 +237,8 @@ class LootGenerator {
         return items;
     }
 
-    async _drawFromNormalGacha(userId, gacha) {
-        let { items, itemsHash } = this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
+    async _drawFromGacha(userId, gacha, isBox = false) {
+        let { items, itemsHash } = await this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
 
         let itemsPerDraw = gacha.itemsPerDraw;
         // now roll guaranteed rarity groups
@@ -281,6 +272,20 @@ class LootGenerator {
             return items;
         }
 
+        let totalWeight = gacha.totalWeight;
+        let groupsWeights = gacha.rarityGroupsWeights;
+        let gachaState = null;
+
+        if (isBox) {
+            gachaState = await this._getGachaState(userId, gacha);
+            if (!gachaState) {
+                gachaState = { totalWeight: totalWeight, rarityGroupsWeights: {...gacha.rarityGroupsWeights} };
+            }
+
+            totalWeight = gachaState.totalWeight;
+            groupsWeights = gachaState.rarityGroupsWeights;
+        }
+
         let basketRolls = 0;
         while (itemsPerDraw-- > 0) {
             if (gacha.basket) {
@@ -294,13 +299,15 @@ class LootGenerator {
             }
 
             // roll rarity group
-            let roll = Random.range(0, gacha.totalWeight);
-            roll = Random.range(0, gacha.totalWeight);
+            let roll = Random.range(0, totalWeight, true);
+            console.log(`rarity roll ${roll} ${totalWeight}` );
+
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
-                if (roll <= group.weight) {
+                console.log(`rarity weight ${groupsWeights[rarity]}`);
+                if (roll <= groupsWeights[rarity]) {
                     break;
                 }
             }
@@ -309,30 +316,57 @@ class LootGenerator {
                 continue;
             }
 
+            if (isBox) {
+                // if rarityGroup has reset condition - reset initial state of the gacha
+                if (rolledGroup.resetWeights) {
+                    gachaState.rarityGroupsWeights = {...gacha.rarityGroupsWeights};
+                    gachaState.totalWeight = gacha.totalWeight;
+                } else {
+                    // decrease current group weight
+                    gachaState.rarityGroupsWeights[rolledGroup.rarity] -= rolledGroup.decreaseWeightOnRoll;
+                    gachaState.totalWeight -= rolledGroup.decreaseWeightOnRoll;
+                }
+            }
+
             await this._rollItemsFromLootTable({
                 itemsToRoll: 1
             }, rolledGroup.loot, rolledGroup.loot.weights, items, itemsHash);
         }
 
+        if (isBox) {
+            // if rarityGroup has reset condition - reset initial state of the gacha
+            await this._setGachaState(userId, gacha, gachaState);
+        }
+
         return items;
     }
 
+    async _setGachaState(userId, gacha, state) {
+        await this._db.collection(Collections.GachaState).updateOne({ user: userId, gacha: gacha._id }, { $set: state }, { upsert: true });
+    }
+
+    async _getGachaState(userId, gacha) {
+        return await this._db.collection(Collections.GachaState).findOne({ user: userId, gacha: gacha._id });
+    }
+        
     async _rollBasket(itemsToRoll, userId, gacha, items, itemsHash) {
         // get basket roll chance
-        let gachaState = await this._db.collection(Collections.GachaState).findOne({ user: userId, gacha: gacha._id });
+        let gachaState = await this._getGachaState(userId, gacha);
         if (!gachaState) {
-            gachaState = {};
+            gachaState = {
+                rollIndex: 0
+            };
         }
 
         let basket = gacha.basket;
 
-        let rollIndex = gachaState.rollIndex || 0;
+        let rollIndex = gachaState.rollIndex;
         if (basket.weights.length <= rollIndex) {
             rollIndex = basket.weights.length - 1;
         }
 
         let basketWeight = basket.weights[rollIndex];
-        if (Random.range(0, basket.basketNoDropWeight) > basketWeight) {
+        if (Random.range(0, basket.basketNoDropWeight, true) > basketWeight) {
             return false;
         }
 
@@ -344,7 +378,7 @@ class LootGenerator {
             }, basket.loot, basket.loot.weights, items, itemsHash);
         }
 
-        await this._db.collection(Collections.GachaState).updateOne({ user: userId, gacha: gacha._id }, { $set: { rollIndex } }, { upsert: true });
+        await this._setGachaState(userId, gacha, gachaState);
 
         return true;
     }
@@ -395,7 +429,7 @@ class LootGenerator {
             max = Math.ceil(dropModifier.quantity * (1 + dropModifier.spread));
         }
 
-        let count = Math.round(Random.range(min, max));
+        let count = Math.round(Random.range(min, max, true));
 
         let newItem = {
             item: record.itemId,

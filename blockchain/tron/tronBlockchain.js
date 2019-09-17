@@ -32,9 +32,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
         this._eventsReceived = 0;
 
+        this._eventWatchers = {};
+
         this._db = db;
         this._tronWeb = new TronWeb({
-            fullHost: (process.env.ENV || 'dev') == 'prod' ?  'https://api.trongrid.io' : 'https://api.shasta.trongrid.io',
+            fullHost: (process.env.ENV || 'dev') == 'prod' ? 'https://api.trongrid.io' : 'https://api.shasta.trongrid.io',
             privateKey: "b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200"
         });
 
@@ -77,56 +79,63 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         return addr != "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
     }
 
+    _watchEvent(eventName, contactAddress , handler) {
+        this._eventWatchers = setTimeout(this._scanEventsFor.bind(this, eventName, contactAddress , handler), 3000);
+    }
+
+    async _scanEventsFor(eventName, contactAddress, handler) {
+        let eventsScanned = await this._db.collection(Collections.Services).findOne({
+            type: EventsScanned,
+            event: eventName
+        });
+
+        let lastScanTimestamp = (eventsScanned || {}).lastScan || false;
+        let options = {
+            eventName: eventName,
+            sort: "block_timestamp", // force to work since as intended - make a minimum point of time to scan events
+            onlyConfirmed: true,
+            size: EventsPageSize,
+            fromTimestamp: lastScanTimestamp,
+            page: 1
+        };
+
+        // get block 1 by 1 and search for events
+        while (true) {
+            let events = await this._tronWeb.getEventResult(contactAddress, options);
+            const length = events.length;
+
+            if (length == 0) {
+                break;
+            }
+
+            let i = 0;
+            for (; i < length; i++) {
+                let eventData = events[i];
+                lastScanTimestamp = eventData.timestamp;
+                handler.call(this, eventData.result, eventData.transaction, eventData.timestamp);
+            }
+
+            options.page++;
+            options.fingerPrint = events[length - 1]._fingerPrint;
+
+            if (!options.fingerPrint) {
+                break;
+            }
+        }
+
+        if (lastScanTimestamp) {
+            await this._updateLastEventReceived(lastScanTimestamp, eventName);
+        }
+
+        this._watchEvent(eventName, contactAddress, handler);
+    }
+
     async _scanEvents() {
         console.log("Scanning missed events...");
 
-        let events = ["ChestReceived", "ChestPurchased", "Purchase"];
-        let handlers = [this._emitPresaleChestsTransfer, this._emitPresaleChestPurchase, this._emitPayment];
-        let contracts = [PresaleChestGateway.address, Presale.address, PaymentGateway.address];
-        let eventIndex = 0;
-        const eventLength = events.length;
-        for (; eventIndex < eventLength; ++eventIndex) {
-            const EventToScan = events[eventIndex];
-
-            let eventsScanned = await this._db.collection(Collections.Services).findOne({
-                type: EventsScanned,
-                event: EventToScan
-            });
-
-            let options = {
-                eventName: EventToScan,
-                sort: "block_timestamp", // force to work since as intended - make a minimum point of time to scan events
-                onlyConfirmed: true,
-                size: EventsPageSize,
-                fromTimestamp: (eventsScanned || {}).lastScan || false,
-                page: 1
-            };
-
-            // get block 1 by 1 and search for events
-            while (true) {
-                let events = await this._tronWeb.getEventResult(contracts[eventIndex], options);
-                const length = events.length;
-
-                if (length == 0) {
-                    break;
-                }
-
-                let i = 0;
-                for (; i < length; i++) {
-                    let eventData = events[i];
-                    handlers[eventIndex].call(this, eventData.result, eventData.transaction, eventData.timestamp);
-                }
-
-                options.page++;
-                options.fingerPrint = events[length - 1]._fingerPrint;
-
-                await this._updateLastEventReceived(events[length - 1].timestamp, EventToScan);
-
-                if (!options.fingerPrint) {
-                    break;
-                }
-            }
-        }
+        this._watchEvent("Purchase", PaymentGateway.address, this._emitPayment);
+        this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
+        this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
 
         console.log("Scan finished.");
     }

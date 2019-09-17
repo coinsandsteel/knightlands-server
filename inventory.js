@@ -317,6 +317,11 @@ class Inventory {
         }
     }
 
+    getItemByTemplate(template) {
+        let templates = this._getItemTemplates(template);
+        return templates[0];
+    }
+
     _getItemTemplates(template) {
         let templates = this._itemsByTemplate[template];
         if (!templates) {
@@ -476,7 +481,7 @@ class Inventory {
             }
 
             if (ingridient.maxLevelRequired) {
-                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
+                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId, meta);
                 if (!item) {
                     break;
                 }

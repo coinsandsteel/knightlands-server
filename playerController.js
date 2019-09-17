@@ -1,6 +1,6 @@
 'use strict';
 
-const Random = require("./random");
+import Random from "./random";
 const Operations = require("./knightlands-shared/operations");
 const Events = require("./knightlands-shared/events");
 import Errors from "./knightlands-shared/errors";
@@ -51,6 +51,7 @@ class PlayerController extends IPaymentListener {
         // game functions
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
+        this._socket.on(Operations.OpenChest, this._gameHandler(this._openChest.bind(this)));
         // this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
         this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
@@ -398,6 +399,29 @@ class PlayerController extends IPaymentListener {
 
     async _useItem(user, data) {
         await user.useItem(data.itemId);
+    }
+
+    async _openChest(user, data) {
+        // each chest has corresponding item attached to it to open
+        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: data.chest });
+        if (!gachaMeta) {
+            throw Errors.UnknownChest;
+        }
+
+        // check if key item is required
+        if (gachaMeta.itemKey) {
+            let itemKey = user.inventory.getItemByTemplate(gachaMeta.itemKey);
+            if (!itemKey) {
+                throw Errors.NoChestKey;
+            }
+
+            // consume key
+            user.inventory.removeItem(itemKey.id);
+        }
+
+        let items = await Game.lootGenerator.getLootFromGacha(this.address, data.chest);
+        await user.inventory.addItemTemplates(items);
+        return items;
     }
 
     async _resetZone(user, data) {

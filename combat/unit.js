@@ -1,5 +1,5 @@
 import CharacterStat from "./../knightlands-shared/character_stat";
-const Random = require("../random");
+import Random from "../random";
 
 class Unit {
     constructor(stats, maxStats) {

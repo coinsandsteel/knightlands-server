@@ -223,7 +223,7 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown payment request";
         }
 
-        if (request.status === PaymentStatus.Pending) {
+        if (request.status !== PaymentStatus.WaitingForTx) {
             throw "already payed";
         }
 

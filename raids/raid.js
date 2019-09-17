@@ -12,7 +12,7 @@ const EventEmitter = require("events");
 const ObjectId = require("mongodb").ObjectID;
 const Events = require("./../knightlands-shared/events");
 const Config = require("./../config");
-const Random = require("./../random");
+import Random from "./../random";
 import Errors from "./../knightlands-shared/errors";
 
 import RaidChallengeType from "./../knightlands-shared/raid_challenge";
