@@ -259,7 +259,9 @@ class RaidManager {
         let matchQuery = {
             $match: {
                 $or: [
-                    lootQuery,
+                    {
+                        $and: [lootQuery, { defeat: true }]
+                    },
                     {
                         finished: false
                     }
@@ -368,7 +370,8 @@ class RaidManager {
         let matchQuery = {
             $match: {
                 _id: new ObjectId(raidId),
-                finished: true
+                finished: true,
+                defeat: true
             }
         };
 
