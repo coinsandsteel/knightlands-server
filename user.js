@@ -548,8 +548,12 @@ class User {
                     extraStatIfItemOwned(prop, item.count, finalStats);
                 } else if (item.type == ItemType.Charm && prop.type == ItemProperties.MaxEffectStack) {
                     // apply stats
+                    let max = item.maxStack;
+                    if (max > item.count) {
+                        max = item.count;
+                    }
                     for (let stat in item.stats) {
-                        finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]);
+                        finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]) * max;
                     }
                 }
             }
