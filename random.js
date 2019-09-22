@@ -1,6 +1,8 @@
 const { Random } = require("random-js");
 const random = new Random();
 
+console.log("INIT RANDOM")
+
 export default {
     range(min, max, inclusive = false) {
         return random.real(min, max, inclusive);

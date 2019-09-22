@@ -42,6 +42,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SyncTime, this._syncTime.bind(this));
         this._socket.on(Operations.FetchRefillTimerStatus, this._fetchRefillTimerStatus.bind(this));
         this._socket.on(Operations.GetTimerRefillInfo, this._getTimerRefillInfo.bind(this));
+        this._socket.on(Operations.FetchChestOpenStatus, this._fetchChestOpenStatus.bind(this));
+        this._socket.on(Operations.FetchEnchantingStatus, this._fetchEnchantingStatus.bind(this));
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
@@ -52,7 +54,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
         this._socket.on(Operations.OpenChest, this._gameHandler(this._openChest.bind(this)));
-        // this._socket.on(Operations.AttackQuestBoss, this._gameHandler(this._attackQuestBoss.bind(this)));
+        this._socket.on(Operations.GetChestsStatus, this._gameHandler(this._getChestsStatus.bind(this)));
         this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
@@ -63,6 +65,14 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.UpgradeItem, this._gameHandler(this._upgradeItem.bind(this)));
         this._socket.on(Operations.UnbindItem, this._gameHandler(this._unbindItem.bind(this)));
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
+        this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
+
+        this._socket.on(Operations.BuyAdventureSlot, this._buyAdventureSlot.bind(this));
+        this._socket.on(Operations.FetchAdventuresStatus, this._fetchAdventuresStatus.bind(this));
+        this._socket.on(Operations.StartAdventure, this._startAdventure.bind(this));
+        this._socket.on(Operations.ClaimAdventure, this._claimAdventure.bind(this));
+        this._socket.on(Operations.GetAvailableAdventures, this._getAdventures.bind(this));
+        this._socket.on(Operations.RefreshAdventures, this._refreshAdventures.bind(this));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -376,7 +386,7 @@ class PlayerController extends IPaymentListener {
             }
         }
 
-        let items = await this._lootGenerator.getQuestLoot(this.address, data.zone, data.questIndex, data.stage, itemsToDrop, questComplete);
+        let items = await this._lootGenerator.getQuestLoot(this.address, data.zone, data.questIndex, isBoss, data.stage, itemsToDrop, questComplete);
 
         if (items) {
             await user.addLoot(items);
@@ -398,30 +408,50 @@ class PlayerController extends IPaymentListener {
     }
 
     async _useItem(user, data) {
-        await user.useItem(data.itemId);
+        return await user.useItem(data.itemId);
+    }
+
+    async _getChestsStatus(user, data) {
+        return user.getChests();
     }
 
     async _openChest(user, data) {
+        let chestId = data.chest;
+
         // each chest has corresponding item attached to it to open
-        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: data.chest });
+        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: chestId });
         if (!gachaMeta) {
             throw Errors.UnknownChest;
         }
 
-        // check if key item is required
-        if (gachaMeta.itemKey) {
-            let itemKey = user.inventory.getItemByTemplate(gachaMeta.itemKey);
-            if (!itemKey) {
-                throw Errors.NoChestKey;
+        if (data.iap && gachaMeta.iaps[data.iap]) {
+            return await Game.lootGenerator.requestChestOpening(this.address, gachaMeta, data.iap);
+        } else {
+            let freeOpening = false;
+            // check if this is free opening
+            if (gachaMeta.freeOpens > 0) {
+                let chests = user.getChests();
+                let cycleLength = gachaMeta.freeOpens * 86400000; // 24h is base cycle
+
+                if (!chests[chestId] || Game.now - chests[chestId] >= cycleLength) {
+                    user.setChestFreeOpening(chestId);
+                    freeOpening = true;
+                }
             }
 
-            // consume key
-            user.inventory.removeItem(itemKey.id);
-        }
+            // check if key item is required
+            if (!freeOpening && gachaMeta.itemKey) {
+                let itemKey = user.inventory.getItemByTemplate(gachaMeta.itemKey);
+                if (!itemKey) {
+                    throw Errors.NoChestKey;
+                }
 
-        let items = await Game.lootGenerator.getLootFromGacha(this.address, data.chest);
-        await user.inventory.addItemTemplates(items);
-        return items;
+                // consume key
+                user.inventory.removeItem(itemKey.id);
+            }
+
+            return await Game.lootGenerator.openChest(user, chestId, 1);
+        }
     }
 
     async _resetZone(user, data) {
@@ -638,14 +668,78 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        let craftedItem = await user.craftRecipe(recipeId, currency);
+        return await user.craftRecipe(recipeId, currency);
+    }
 
-        return craftedItem;
+    async _enchantItem(user, data) {
+        const { itemId, currency } = data;
+
+        let unknownCurrency = true;
+        for (const key in CurrencyType) {
+            if (CurrencyType[key] === currency) {
+                unknownCurrency = false;
+                break;
+            }
+        }   
+
+        if (unknownCurrency) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return await user.enchantItem(itemId, currency);
     }
 
     async _fetchCraftingStatus(data, respond) {
         let status = await Game.craftingQueue.getCraftingStatus(this.address, data.recipeId);
         respond(null, status);
+    }
+
+    async _fetchChestOpenStatus(data, respond) {
+        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: data.chest });
+        if (!gachaMeta) {
+            throw Errors.UnknownChest;
+        }
+
+        // find first status 
+        for (let i in gachaMeta.iaps) {
+            let status = await Game.lootGenerator.getChestOpenStatus(this.address, gachaMeta, i);
+            if (status) {
+                respond(null, status);
+                return;
+            }
+        }
+
+        respond(null, null);
+    }
+
+    async _fetchEnchantingStatus(data, respond) {
+        let status = await Game.craftingQueue.getEnchantingStatus(this.address, data.itemId);
+        respond(null, status);
+    }
+
+    // Adventures
+    async _buyAdventureSlot(user, data) {
+
+    }
+
+    async _fetchAdventuresStatus(user, data) {
+        return user.getAdventuresStatus();
+    }
+
+    async _startAdventure(user, data) {
+
+    }
+
+    async _claimAdventure(user, data) {
+
+    }
+
+    async _getAdventures(user, data) {
+
+    }
+
+    async _refreshAdventures(user, data) {
+
     }
 }
 

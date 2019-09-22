@@ -52,45 +52,45 @@ class Inventory {
         }
     }
 
-    async getItemsWithTemplate() {
+    async getPassiveItems() {
         // join items with templates
         let items = await this._db.collection(Collections.Inventory).aggregate([
-            { 
-                "$match" : {
-                    "_id" : this._userId
+            {
+                "$match": {
+                    "_id": this._userId
                 }
-            }, 
-            { 
-                "$lookup" : {
-                    "from" : "items", 
-                    "localField" : "items.template", 
-                    "foreignField" : "_id", 
-                    "as" : "templates"
+            },
+            {
+                "$lookup": {
+                    "from": "items",
+                    "localField": "items.template",
+                    "foreignField": "_id",
+                    "as": "templates"
                 }
-            }, 
-            { 
-                "$project" : {
-                    "items" : {
-                        "$map" : {
-                            "input" : "$items", 
-                            "as" : "item", 
-                            "in" : {
-                                "$mergeObjects" : [
-                                    "$$item", 
+            },
+            {
+                "$project": {
+                    "items": {
+                        "$map": {
+                            "input": "$items",
+                            "as": "item",
+                            "in": {
+                                "$mergeObjects": [
+                                    "$$item",
                                     {
-                                        "$arrayElemAt" : [
+                                        "$arrayElemAt": [
                                             {
-                                                "$filter" : {
-                                                    "input" : "$templates", 
-                                                    "as" : "template", 
-                                                    "cond" : {
-                                                        "$eq" : [
-                                                            "$$template._id", 
+                                                "$filter": {
+                                                    "input": "$templates",
+                                                    "as": "template",
+                                                    "cond": {
+                                                        "$eq": [
+                                                            "$$template._id",
                                                             "$$item.template"
                                                         ]
                                                     }
                                                 }
-                                            }, 
+                                            },
                                             0
                                         ]
                                     }
@@ -99,11 +99,29 @@ class Inventory {
                         }
                     }
                 }
+            },
+            {
+                $project: {
+                    items: {
+                        $filter: {
+                            input: "$items",
+                            as: "item",
+                            cond: {
+                                $gt: [
+                                    { $size: "$$item.properties" },
+                                    0
+                                ]
+                            }
+                        }
+                    }
+                }
+
+                
             }
-        ], 
-        { 
-            "allowDiskUse" : false
-        }).toArray();
+        ],
+            {
+                "allowDiskUse": false
+            }).toArray();
 
         return items[0].items;
     }
@@ -155,8 +173,9 @@ class Inventory {
 
     async autoCommitChanges(changeCallback) {
         await this.loadAllItems();
-        await changeCallback(this);
+        let reponse = await changeCallback(this);
         await this.commitChanges();
+        return reponse;
     }
 
     async commitChanges() {
@@ -205,7 +224,7 @@ class Inventory {
                             upsert: true
                         }
                     };
-                    
+
                     delta[id] = item.count;
                 }
 
@@ -346,7 +365,7 @@ class Inventory {
 
     _addItemTemplate(template, count) {
         if (template.type == ItemType.Currency) {
-            this.modifyCurrency(template.currencyType, template.quantity);
+            this.modifyCurrency(template.currencyType, template.quantity * count);
             return;
         }
 
@@ -371,7 +390,7 @@ class Inventory {
 
     async addItemTemplate(template) {
         await this.addItemTemplates([{
-            item: template, 
+            item: template,
             quantity: 1
         }]);
     }
@@ -398,7 +417,7 @@ class Inventory {
 
     deleteItemById(id) {
         id *= 1;
-        
+
         let itemIndex = this._itemsById.get(id);
         if (itemIndex === undefined) {
             return false;
@@ -509,6 +528,15 @@ class Inventory {
         }
 
         return null;
+    }
+
+    consumeIngridients(ingridients) {
+        let i = 0;
+        const length = ingridients.length;
+        for (; i < length; ++i) {
+            let ingridient = ingridients[i];
+            this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+        }
     }
 
     async consumeItemsFromCraftingRecipe(recipe) {

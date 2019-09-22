@@ -8,13 +8,87 @@ const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";
 const ItemType = require("./knightlands-shared/item_type");
 import Game from "./game";
+const Events = require("./knightlands-shared/events");
 
 class LootGenerator {
     constructor(db) {
         this._db = db;
     }
 
-    async getQuestLoot(userId, zone, questIndex, stage, itemsToRoll = 0, questFinished = false) {
+    get ChestPaymentTag() {
+        return "open_chest";
+    }
+
+    async init(iapExecutor) {
+        console.log("Registering Chests IAPs...");
+
+        let allChests = await this._db.collection(Collections.GachaMeta).find({}).toArray();
+        allChests.forEach(chest => {
+            for (let iap in chest.iaps) {
+                iapExecutor.registerAction(iap, async (context) => {
+                    return await this._openChest(context.user, context.chestId, context.count);
+                });
+                iapExecutor.mapIAPtoEvent(iap, Events.ChestOpened);
+            } 
+        });
+    }
+
+    async getChestOpenStatus(userId, chestMeta, iap) {
+        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.ChestPaymentTag, {
+            "context.user": userId,
+            "context.chestId": chestMeta.name,
+            "context.count": chestMeta.iaps[iap]
+        });
+    }
+
+    async requestChestOpening(userId, chestMeta, iap) {
+        let iapContext = {
+            user: userId,
+            chestId: chestMeta.name,
+            count: chestMeta.iaps[iap]
+        };
+
+        // check if payment request already created
+        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.ChestPaymentTag);
+        if (hasPendingPayment) {
+            throw "opening in process already";
+        }
+
+        try {
+            return await Game.paymentProcessor.requestPayment(
+                userId,
+                iap,
+                this.ChestPaymentTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
+    }
+
+    async openChest(user, chestId, count) {
+        let items = await Game.lootGenerator.getLootFromGacha(this.address, chestId, count);
+
+        await user.inventory.autoCommitChanges(async inv=>{
+            await inv.addItemTemplates(items);
+        });
+
+        return items;
+    }
+
+    async _openChest(userId, chestId, count) {
+        let user;
+        let controller = await Game.getPlayerController(userId);
+        if (controller) {
+            user = await controller.getUser();
+        } else {
+            user = await Game.loadUser(userId);
+        }
+
+        return await this.openChest(user, chestId, count);
+    }
+
+    async getQuestLoot(userId, zone, questIndex, isBoss, stage, itemsToRoll = 0, questFinished = false) {
         let entries = await this._db
             .collection(Collections.QuestLoot)
             .aggregate([{
@@ -82,8 +156,7 @@ class LootGenerator {
                     updateQuery.$set[`firstTimeLoot.${zone}.${questIndex}`] = true;
 
                     await this._db.collection(Collections.Users).updateOne({address: userId}, updateQuery);
-
-                    this._rollGuaranteedLootFromTable(table.firstTimeRecords, table.tag, items, itemsHash);
+                    await this._rollGuaranteedLootFromTable(table.firstTimeRecords, table.tag, items, itemsHash);
                 }   
             }
 
@@ -91,14 +164,14 @@ class LootGenerator {
                 itemsToRoll,
                 zone,
                 stage,
-                isBoss: questIndex == 5 // right 6th quest is boss
+                isBoss
             }, table, questFinished, items, itemsHash);
         }
 
         return items;
     }
 
-    async getLootFromGacha(userId, gachaId) {
+    async getLootFromGacha(userId, gachaId, count = 1) {
         let gacha;
         if (Number.isInteger(gachaId)) {
             gacha = await this._db.collection(Collections.GachaMeta).findOne({ _id: gachaId });
@@ -110,18 +183,18 @@ class LootGenerator {
             return {};
         }
 
-        return await this._drawFromGacha(userId, gacha, gacha.type == GachaType.Box);
+        return await this._drawFromGacha(userId, gacha, count, gacha.type == GachaType.Box);
     }
 
     async getRaidLoot(raidLoot) {
-        let { items, itemsHash } = this._rollGuaranteedLootFromTable(raidLoot.loot.guaranteedRecords, raidLoot.loot.tag);
+        let { items, itemsHash } = await this._rollGuaranteedLootFromTable(raidLoot.loot.guaranteedRecords, raidLoot.loot.tag);
         return await this._rollItemsFromLootTable({
             itemsToRoll: raidLoot.lootRolls
         }, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
     }
 
     async getLootFromTable(table, itemsToRoll) {
-        let { items, itemsHash } = this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+        let { items, itemsHash } = await this._rollGuaranteedLootFromTable(table.guaranteedRecords);
         return await this._rollItemsFromLootTable({
             itemsToRoll
         }, table, table.weights, items, itemsHash);
@@ -192,6 +265,9 @@ class LootGenerator {
         };
 
         let itemsToRoll = lootContext.itemsToRoll;
+        if (!itemsToRoll) {
+            itemsToRoll = table.itemsToRoll;
+        }
 
         while (itemsToRoll > 0) {
             itemsToRoll--;
@@ -199,6 +275,7 @@ class LootGenerator {
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight, true);
+                console.log(`No loot roll ${roll} / ${weights.noLoot}`);
                 if (roll <= weights.noLoot) {
                     continue;
                 }
@@ -237,10 +314,10 @@ class LootGenerator {
         return items;
     }
 
-    async _drawFromGacha(userId, gacha, isBox = false) {
+    async _drawFromGacha(userId, gacha, count, isBox = false) {
         let { items, itemsHash } = await this._rollGuaranteedLootFromTable(gacha.guaranteedLoot);
 
-        let itemsPerDraw = gacha.itemsPerDraw;
+        let itemsPerDraw = gacha.itemsPerDraw * count;
         // now roll guaranteed rarity groups
         {
             let i = 0;

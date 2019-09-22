@@ -237,7 +237,14 @@ class Raid extends EventEmitter {
         let bonusDamage = HitsDamage[hits];
         let totalDamageInflicted = 0;
         let hitsToPerform = hits;
+
+        let exp = 0;
+        let gold = 0;
+
         while (hitsToPerform > 0) {
+            exp += this.stageData.exp;
+            gold += this.stageData.gold;
+
             hitsToPerform--;
             // boss attacks first to avoid abusing 1 hp tactics
             this._bossUnit.attack(combatUnit);
@@ -275,6 +282,9 @@ class Raid extends EventEmitter {
         }
 
         if (totalDamageInflicted > 0) {
+            attacker.addExperience(exp);
+            attacker.addSoftCurrency(gold);
+
             let damageLog = {
                 by: attacker.address,
                 damage: totalDamageInflicted,
@@ -333,7 +343,7 @@ class Raid extends EventEmitter {
             let i = 0;
             const length = raidStage.loot.length;
             for (; i < length; ++i) {
-                if (userDamage >= raidStage.loot[i].damageThreshold) {
+                if (userDamage >= raidStage.health / raidStage.maxSlots * raidStage.loot[i].damageThreshold) {
                     chosenLoot = raidStage.loot[i];
                 } else {
                     break;
@@ -347,8 +357,8 @@ class Raid extends EventEmitter {
 
         let rewards = {
             dkt: chosenLoot.dktReward * Random.range(raidStage.minDkt, raidStage.maxDkt),
-            exp: raidStage.exp,
-            gold: raidStage.gold,
+            exp: 0,
+            gold: 0,
             hardCurrency: 0
         };
 
@@ -380,7 +390,7 @@ class Raid extends EventEmitter {
         let updateQuery = { $set: {} };
         updateQuery.$set[`loot.${userId}`] = true;
 
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
+        // await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
 
         return rewards;
     }

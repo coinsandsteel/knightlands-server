@@ -2,7 +2,7 @@
 
 import CharacterStats from "./knightlands-shared/character_stat";
 
-import {
+import CharacterStat, {
     StatConversions
 }
     from "./knightlands-shared/character_stat";
@@ -26,6 +26,7 @@ const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
+const ItemActions = require("./knightlands-shared/item_actions");
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 
@@ -141,6 +142,14 @@ class User {
 
     addDkt(value) {
         this._inventory.modifyCurrency(CurrencyType.Dkt, value);
+    }
+
+    getChests() {
+        return this._data.chests;
+    }
+
+    setChestFreeOpening(chest) {
+        this._data.chests[chest] = Game.now;
     }
 
     // returns levels gained
@@ -327,7 +336,7 @@ class User {
         this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
         this._crafting = new Crafting(this._address, this._inventory);
-        this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors);
+        this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
 
         this._advanceTimers();
 
@@ -470,6 +479,12 @@ class User {
         // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
         finalStats[CharacterStats.Health] += levelMetaData[CharacterStats.Health]
 
+        let combatMeta = await this._db.collection(Collections.Meta).findOne({_id: "combat_meta"});
+
+        let mainHandType;
+        let offHandType;
+        let mainHandDamage;
+
         // calculate stats from equipment
         for (let itemId in character.equipment) {
             let equippedItem = character.equipment[itemId];
@@ -479,10 +494,23 @@ class User {
             }
 
             let slot = getSlot(template.equipmentType);
+            if (slot == EquipmentSlots.MainHand) {
+                mainHandType = template.equipmentType;
+            } else if (slot == EquipmentSlots.OffHand) {
+                offHandType = template.equipmentType;
+            }   
 
             for (let stat in template.stats) {
-                let statValue = this._itemStatResolver.getStatValue(template.rarity, slot, equippedItem.level, stat, template.stats[stat]);
+                let statValue = this._itemStatResolver.getStatValue(template.rarity, slot, equippedItem.level, equippedItem.enchant, stat, template.stats[stat]);
                 finalStats[stat] += statValue;
+            }
+        }
+
+        if (mainHandType && offHandType) {
+            // check if the bonus if applicable
+            let mainHandBonus = combatMeta.weaponBonuses[mainHandType];
+            if (mainHandBonus.offHand == offHandType) {
+                finalStats[CharacterStat.Attack] += Math.floor(finalStats[CharacterStat.Attack] * mainHandBonus.bonus / 100);
             }
         }
 
@@ -502,18 +530,11 @@ class User {
     }
 
     async _applyInventoryPassives(finalStats) {
-        let items = await this._inventory.getItemsWithTemplate();
+        let items = await this._inventory.getPassiveItems();
         let i = 0;
         const length = items.length;
         for (; i < length; i++) {
             let item = items[i];
-            
-            if (item.type == ItemType.Charm) {
-                // apply stats
-                for (let stat in item.stats) {
-                    finalStats[stat] += this._itemStatResolver.getStatValue(item.rarity, slot, item.level, stat, item.stats[stat]);
-                }
-            }
 
             const props = item.properties;
             let k = 0;
@@ -525,6 +546,11 @@ class User {
                 } 
                 else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
+                } else if (item.type == ItemType.Charm && prop.type == ItemProperties.MaxEffectStack) {
+                    // apply stats
+                    for (let stat in item.stats) {
+                        finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]);
+                    }
                 }
             }
         }
@@ -554,10 +580,13 @@ class User {
             throw Errors.NotConsumable;
         }
 
+        // remove used item
+        this._inventory.removeItem(itemToUse.id);
+
         let actionData = template.action;
         // based on action perform necessary actions
         switch (actionData.action) {
-            case "refillTimer":
+            case ItemActions.RefillTimer:
                 if (actionData.relative) {
                     // % restoration from maximum base 
                     this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionData.value / 100);
@@ -566,13 +595,15 @@ class User {
                 }
                 break;
 
-            case "addExperience":
+            case ItemActions.AddExperience:
                 await this.addExperience(actionData.value);
                 break;
-        }
 
-        // remove used item
-        this._inventory.removeItem(itemToUse.id);
+            case ItemActions.OpenBox: 
+                let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable);
+                await this.addLoot(items);
+                return items;
+        }
     }
 
     async equipItem(itemId) {
@@ -628,12 +659,16 @@ class User {
         return await this._crafting.upgradeItem(itemId, materialId, count);
     }
 
+    async enchantItem(itemId, currency) {
+        return await this._crafting.enchantItem(itemId, currency);
+    }
+
     async unbindItem(itemId, items) {
         return await this._crafting.unbindItem(itemId, items);
     }
 
-    async craftRecipe(recipeId, currencyType) {
-        return await this._crafting.craftRecipe(recipeId, currencyType);
+    async craftRecipe(recipeId, currency) {
+        return await this._crafting.craftRecipe(recipeId, currency);
     }
 
     async commitChanges(inventoryChangesMode) {
@@ -731,11 +766,28 @@ class User {
             user.questsProgress.zones = {};
         }
 
+        if (!user.chests) {
+            // saves when last free chest was opened
+            user.chests = {};
+        }
+
         if (!user.hasOwnProperty("raidTickets")) {
             user.raidTickets = 0;
         }
 
+        if (!user.adventures) {
+            user.adventures = [{
+                startTime: 0,
+                duration: 0
+            }];
+        }
+
         return user;
+    }
+
+    // Adventures
+    getAdventuresStatus() {
+        return user.adventures;
     }
 }
 

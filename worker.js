@@ -77,12 +77,14 @@ class Worker extends SCWorker {
     this._raidManager = new RaidManager(this._db, this._paymentProcessor);
     this._craftingQueue = new CraftingQueue(this._db);
     this._userPremiumService = new UserPremiumService(this._db);
+    this._lootGenerator = new LootGenerator(this._db);
 
     await this._raidManager.init(this._iapExecutor);
     await this._craftingQueue.init(this._iapExecutor);
     await this._userPremiumService.init(this._iapExecutor);
+    await this._lootGenerator.init(this._iapExecutor);
 
-    this._lootGenerator = new LootGenerator(this._db);
+    
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
     Game.init(

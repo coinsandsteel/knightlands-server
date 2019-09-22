@@ -161,6 +161,8 @@ class Game extends EventEmitter {
 
         socket.on("deauthenticate", () => {
             this._deletePlayerController(controller);
+
+            controller.onDisconnect();
         });
 
         socket.on("disconnect", () => {

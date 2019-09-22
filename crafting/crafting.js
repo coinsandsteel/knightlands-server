@@ -1,8 +1,8 @@
 import Game from "../game";
 import Errors from "../knightlands-shared/errors";
-const Events = require("../knightlands-shared/events");
 const { Collections } = require("../database");
 import CurrencyType from "../knightlands-shared/currency_type";
+import Random from "./../random";
 
 const {
     EquipmentSlots,
@@ -15,7 +15,88 @@ class Crafting {
     constructor(userId, inventory) {
         this._inventory = inventory;
         this._userId = userId;
-        this.CraftPaymentTag = "craft_item";
+    }
+
+    async enchantItem(itemId, currency) {
+        itemId *= 1;
+
+        let item = this._inventory.getItemById(itemId);
+        if (!item) {
+            throw Errors.NoItem;
+        }
+
+        let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
+        if (!itemTemplate) {
+            throw Errors.NoTemplate;
+        }        
+        
+        let enchantingInProcess = await Game.craftingQueue.isEnchantingInProcess(this._userId, itemId);
+        if (enchantingInProcess) {
+            throw Errors.EnchantingInProcess;
+        }
+
+        let enchantingMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "enchanting_meta" });
+        let enchantLevel = item.enchant || 0;
+
+        if (enchantLevel >= enchantingMeta.maxEnchanting) {
+            throw Errors.MaxEnchantLevel;
+        }
+
+        let stepData = enchantingMeta.steps[itemTemplate.rarity].steps[enchantLevel];
+
+        if (!(await this._inventory.hasEnoughIngridients(stepData.ingridients))) {
+            // throw Errors.NoRecipeIngridients;
+        }
+
+        if (currency == CurrencyType.Fiat) {
+            if (!stepData.iap) {
+                throw Errors.UknownIAP;
+            }
+
+            return await Game.craftingQueue.requestEnchantingPayment(this._userId, stepData.iap, item);
+        } else {
+            // check the balance
+            let enchantCost = stepData.soft;
+            if (currency == CurrencyType.Hard) {
+                enchantCost = stepData.hard;
+            }
+
+            if (this._inventory.getCurrency(currency) < enchantCost) {
+                throw Errors.NotEnoughCurrency;
+            }
+
+            // deduct fee
+            this._inventory.modifyCurrency(currency, -enchantCost);
+        }
+
+        this._inventory.consumeIngridients(stepData.ingridients);
+
+        // roll success 
+        if (Random.range(0, 100, true) > stepData.successRate) {
+            return false;
+        }
+
+        return false;
+
+        return await this.enchantPayed(itemId);
+    }
+
+    async enchantPayed(itemId) {
+        return await this._inventory.autoCommitChanges(inventory => {
+            let item = inventory.getItemById(itemId);
+            if (item) {
+                if (!item.unique) {
+                    item = inventory.makeUnique(item);
+                }
+
+                item.enchant = (item.enchant || 0) + 1;
+                inventory.setItemUpdated(item);
+
+                return item.id;
+            }
+
+            return false;
+        });
     }
 
     // check pre-conditions, ask for payment if necessary
@@ -51,11 +132,6 @@ class Crafting {
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
         await this._inventory.consumeItemsFromCraftingRecipe(recipe);
-
-        if (currency == CurrencyType.Fiat) {
-            return;
-        }
-
         return await this.craftPayedRecipe(recipe);
     }
 
@@ -65,7 +141,9 @@ class Crafting {
             recipe = await this._loadRecipe(recipe);
         }
 
-        await this._inventory.addItemTemplate(recipe.resultItem);
+        await this._inventory.autoCommitChanges(async inv => {
+            await inv.addItemTemplate(recipe.resultItem);
+        });
 
         return recipe;
     }
@@ -187,7 +265,7 @@ class Crafting {
                 throw Errors.IncompatibleLevelingMaterial;
             }
         }
-        
+
         // add experience to item for each material
         if (count > materialItem.count) {
             count = materialItem.count;
@@ -199,7 +277,7 @@ class Crafting {
             count--;
 
             item.exp += expPerMaterial;
-            
+
             this._inventory.modifyStack(materialItem, -1);
 
             while (expRequired <= item.exp && maxLevel > item.level) {

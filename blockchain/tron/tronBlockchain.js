@@ -42,28 +42,8 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
         // load payment contract
         this._paymentContract = this._tronWeb.contract(PaymentGateway.abi, PaymentGateway.address);
-        this._paymentContract.Purchase().watch((err, eventData) => {
-            if (!err) {
-                // this._updateLastEventReceived(eventData.timestamp, "Purchase");
-                this._emitPayment(eventData.result.paymentId, eventData.transaction, eventData.timestamp, eventData.result.from);
-            }
-        });
-
         this._presale = this._tronWeb.contract(Presale.abi, Presale.address);
-        this._presale.ChestPurchased().watch((err, eventData) => {
-            if (!err) {
-                // this._updateLastEventReceived(eventData.timestamp, "ChestPurchased");
-                this._emitPresaleChestPurchase(eventData.result, eventData.transaction, eventData.timestamp);
-            }
-        });
-
         this._presaleChestsGateway = this._tronWeb.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
-        this._presaleChestsGateway.ChestReceived().watch((err, eventData) => {
-            if (!err) {
-                // this._updateLastEventReceived(eventData.timestamp, "ChestReceived");
-                this._emitPresaleChestsTransfer(eventData.result, eventData.transaction, eventData.timestamp);
-            }
-        });
     }
 
     async _watchNewBlocks() {
@@ -84,50 +64,53 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     async _scanEventsFor(eventName, contactAddress, handler) {
-        let eventsScanned = await this._db.collection(Collections.Services).findOne({
-            type: EventsScanned,
-            event: eventName
-        });
-
-        let lastScanTimestamp = (eventsScanned || {}).lastScan || false;
-        let options = {
-            eventName: eventName,
-            sort: "block_timestamp", // force to work since as intended - make a minimum point of time to scan events
-            onlyConfirmed: true,
-            size: EventsPageSize,
-            fromTimestamp: lastScanTimestamp,
-            page: 1
-        };
-
-        // get block 1 by 1 and search for events
-        while (true) {
-            let events = await this._tronWeb.getEventResult(contactAddress, options);
-            const length = events.length;
-
-            if (length == 0) {
-                break;
+        try {
+            let eventsScanned = await this._db.collection(Collections.Services).findOne({
+                type: EventsScanned,
+                event: eventName
+            });
+    
+            let scaneStartTimestamp = (eventsScanned || {}).lastScan || false;
+            let lastScanTimestamp = scaneStartTimestamp;
+            let options = {
+                eventName: eventName,
+                sort: "block_timestamp", // force to work since as intended - make a minimum point of time to scan events
+                onlyConfirmed: true,
+                size: EventsPageSize,
+                fromTimestamp: lastScanTimestamp,
+                page: 1
+            };
+    
+            // get block 1 by 1 and search for events
+            while (true) {
+                let events = await this._tronWeb.getEventResult(contactAddress, options);
+                const length = events.length;
+    
+                if (length == 0) {
+                    break;
+                }
+    
+                let i = 0;
+                for (; i < length; i++) {
+                    let eventData = events[i];
+                    lastScanTimestamp = eventData.timestamp;
+                    handler.call(this, eventData.transaction, eventData.timestamp, eventData.result);
+                }
+    
+                options.page++;
+                options.fingerPrint = events[length - 1]._fingerPrint;
+    
+                if (!options.fingerPrint) {
+                    break;
+                }
             }
-
-            let i = 0;
-            for (; i < length; i++) {
-                let eventData = events[i];
-                lastScanTimestamp = eventData.timestamp;
-                handler.call(this, eventData.result, eventData.transaction, eventData.timestamp);
+    
+            if (scaneStartTimestamp != lastScanTimestamp) {
+                await this._updateLastEventReceived(lastScanTimestamp, eventName);
             }
-
-            options.page++;
-            options.fingerPrint = events[length - 1]._fingerPrint;
-
-            if (!options.fingerPrint) {
-                break;
-            }
+        } finally {
+            this._watchEvent(eventName, contactAddress, handler);
         }
-
-        if (lastScanTimestamp) {
-            await this._updateLastEventReceived(lastScanTimestamp, eventName);
-        }
-
-        this._watchEvent(eventName, contactAddress, handler);
     }
 
     async _scanEvents() {
@@ -148,7 +131,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         await this._db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName }, { $set: { lastScan: time + 1 } }, { upsert: true });
     }
 
-    _emitPresaleChestsTransfer(eventData, transaction, timestamp) {
+    _emitPresaleChestsTransfer(transaction, timestamp, eventData) {
         this.emit(this.PresaleChestTransfer, {
             tx: transaction,
             timestamp: timestamp / 1000,
@@ -158,7 +141,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         });
     }
 
-    _emitPresaleChestPurchase(eventData, transaction, timestamp) {
+    _emitPresaleChestPurchase(transaction, timestamp, eventData) {
         this.emit(this.PresaleChestPurchased, {
             tx: transaction,
             timestamp: timestamp / 1000,
@@ -169,21 +152,12 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         });
     }
 
-    _emitPayment(paymentId, transaction, timestamp, from, err) {
-        from = this._tronWeb.address.fromHex(from);
-
-        if (err) {
-            this._emitPaymentFailed(transaction, paymentId, from);
-        } else {
-            this.emit(this.Payment, {
-                success: true,
-                error: err,
-                nonce: paymentId,
-                tx: transaction,
-                timestamp: timestamp / 1000,
-                user: this._tronWeb.address.fromHex(from)
-            });
-        }
+    _emitPayment(transaction, timestamp, eventData) {
+        this.emit(this.Payment, {
+            success: true,
+            nonce: eventData.paymentId,
+            timestamp: timestamp / 1000
+        });
     }
 
     _emitPaymentFailed(transaction, paymentId, userId, reason) {
