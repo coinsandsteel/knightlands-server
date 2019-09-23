@@ -13,6 +13,8 @@ import CurrencyType from "./knightlands-shared/currency_type";
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
 import ItemProperties from "./knightlands-shared/item_properties";
+import Random from "./random";
+const WeightedList = require("./js-weighted-list");
 
 const {
     EquipmentSlots,
@@ -29,6 +31,7 @@ const Crafting = require("./crafting/crafting");
 const ItemActions = require("./knightlands-shared/item_actions");
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
+const AdventureRefreshInterval = 86400000;
 
 let DefaultStats = {}
 DefaultStats[CharacterStats.Health] = 50;
@@ -170,7 +173,7 @@ class User {
         }
 
         if (previousLevel < character.level) {
-            let levelUpMeta = await this._db.collection(Collections.Meta).findOne({_id: "levelUp"});
+            let levelUpMeta = await this._db.collection(Collections.Meta).findOne({ _id: "levelUp" });
 
             for (let i = previousLevel; i < character.level; ++i) {
                 // assign currencies
@@ -251,7 +254,7 @@ class User {
             };
         }
 
-        let refills = await Game.db.collection(Collections.Meta).findOne({_id: `${stat}_refill_cost`});
+        let refills = await Game.db.collection(Collections.Meta).findOne({ _id: `${stat}_refill_cost` });
 
         let refillsToday = this.getRefillsCount(stat);
 
@@ -305,10 +308,10 @@ class User {
         await users.updateOne({
             address: this._address
         }, {
-                $set: {
-                    nonce: this._data.nonce
-                }
-            });
+            $set: {
+                nonce: this._data.nonce
+            }
+        });
 
         return this._data.nonce;
     }
@@ -341,6 +344,9 @@ class User {
         this._advanceTimers();
 
         await this._inventory.loadAll();
+
+        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({_id: "adventures_meta"});
+        this.adventuresList = adventuresMeta.weightedList;
 
         return this;
     }
@@ -470,7 +476,7 @@ class User {
             finalStats[i] += StatConversions[i] * character.attributes[i];
         }
 
-        let levelUpMeta = await this._db.collection(Collections.Meta).findOne({_id: "levelUp"});
+        let levelUpMeta = await this._db.collection(Collections.Meta).findOne({ _id: "levelUp" });
 
         let levelMetaData = levelUpMeta.records[character.level - 1].stats;
 
@@ -479,7 +485,7 @@ class User {
         // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
         finalStats[CharacterStats.Health] += levelMetaData[CharacterStats.Health]
 
-        let combatMeta = await this._db.collection(Collections.Meta).findOne({_id: "combat_meta"});
+        let combatMeta = await this._db.collection(Collections.Meta).findOne({ _id: "combat_meta" });
 
         let mainHandType;
         let offHandType;
@@ -498,7 +504,7 @@ class User {
                 mainHandType = template.equipmentType;
             } else if (slot == EquipmentSlots.OffHand) {
                 offHandType = template.equipmentType;
-            }   
+            }
 
             for (let stat in template.stats) {
                 let statValue = this._itemStatResolver.getStatValue(template.rarity, slot, equippedItem.level, equippedItem.enchant, stat, template.stats[stat]);
@@ -543,7 +549,7 @@ class User {
                 let prop = props[k];
                 if (prop.type == ItemProperties.ExtraStatIfItemNotEquipped) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
-                } 
+                }
                 else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
                 } else if (item.type == ItemType.Charm && prop.type == ItemProperties.MaxEffectStack) {
@@ -603,7 +609,7 @@ class User {
                 await this.addExperience(actionData.value);
                 break;
 
-            case ItemActions.OpenBox: 
+            case ItemActions.OpenBox:
                 let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable);
                 await this.addLoot(items);
                 return items;
@@ -676,8 +682,6 @@ class User {
     }
 
     async commitChanges(inventoryChangesMode) {
-        await this._calculateFinalStats();
-
         let users = this._db.collection(Collections.Users);
         let {
             updateQuery,
@@ -699,12 +703,13 @@ class User {
             await users.updateOne({
                 _id: this.id
             }, finalQuery);
+
+            this._originalData = cloneDeep(this._data);
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
 
         // apply new data as original
-        this._originalData = cloneDeep(this._data);
 
         return {
             changes,
@@ -734,7 +739,7 @@ class User {
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
-                stats: {...DefaultStats},
+                stats: { ...DefaultStats },
                 attributes: {
                     health: 0,
                     attack: 0,
@@ -779,19 +784,212 @@ class User {
             user.raidTickets = 0;
         }
 
-        if (!user.adventures) {
-            user.adventures = [{
-                startTime: 0,
-                duration: 0
-            }];
-        }
-
         return user;
     }
 
     // Adventures
-    getAdventuresStatus() {
-        return user.adventures;
+    async getAdventuresStatus() {
+        let adventures = await this._db.collection(Collections.Adventures).findOne({ _id: this.id });
+
+        let changed = false;
+
+        if (!adventures) {
+            changed = true;
+            adventures = {
+                adventures: []
+            };
+
+            let slot = await this._createNewAdventureSlot();
+            adventures.adventures.push(slot);
+        }
+
+        let adventuresList = adventures.adventures;
+        let i = 0;
+        const length = adventuresList.length;
+        for (; i < length; ++i) {
+            let adventure = adventuresList[i];
+            if (!adventure.hasOwnProperty("startTime")) {
+                changed = true;
+                adventuresList[i] = await this._createNewAdventureSlot();
+            }
+            else if ((adventure.startTime == 0 && !adventure.list) || (adventure.list && adventure.list.length == 0)) {
+                changed = true;
+                adventure.list = await this._rollAdventureList();
+            }
+        }
+
+        if (changed) {
+            await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+        }
+
+        return adventures;
+    }
+
+    async buyAdventureSlot() {
+        let adventures = await this.getAdventuresStatus();
+        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
+
+        let slotIndex = adventures.adventures.length - 1;
+
+        if (slotIndex >= adventuresMeta.prices.length) {
+            return;
+        }
+
+        let price = adventuresMeta.prices[slotIndex];
+
+        this.addHardCurrency(-price.hard);
+        this.addSoftCurrency(-price.soft);
+
+        let slot = await this._createNewAdventureSlot();
+        adventures.adventures.push(slot);
+
+        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+
+        return slot;
+    }
+
+    async _createNewAdventureSlot() {
+        let adventure = {
+            startTime: 0,
+            duration: 0
+        }
+
+        adventure.list = await this._rollAdventureList();
+        return adventure;
+    }
+
+    async _rollAdventureList() {
+        const length = this.adventuresList.length;
+        let maxWeight = this.adventuresList[length - 1].weight;
+        let ids = new Array(3);
+        
+        for (let i = 0; i < 3; ++i) {
+            const roll = Random.range(0, maxWeight, true);
+            for (let j = 0; j < length; ++j) {
+                const record = this.adventuresList[j];
+                ids[i] = record.key;
+
+                if (roll <= record.weight) {
+                    break;
+                }
+            }
+        }
+
+        const adventuresData = await this._db.collection(Collections.AdventuresList).find({_id:{$in: ids}}).toArray();
+        for (let i = 0; i < 3; ++i) {
+            ids[i] = adventuresData.find(x=>x._id == ids[i]);
+        }
+
+        return ids;
+    }
+
+    async startAdventure(slot, adventureIndex) {
+        let adventures = await this.getAdventuresStatus();
+        let list = adventures.adventures;
+
+        if (list.length <= slot) {
+            throw Errors.UnknownAdventure;
+        }
+
+        let adventure = list[slot];
+        if (adventure.startTime > 0) {
+            throw Errors.AdventureInProcess;
+        }
+
+        if (adventure.list.length <= adventureIndex) {
+            throw Errors.UnknownAdventure;
+        }
+
+        let adventureToStart = adventure.list[adventureIndex];
+        adventureToStart.startTime = Game.now;
+        list[slot] = adventureToStart;
+
+        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+
+        return adventureToStart;
+    }
+
+    async claimAdventure(slot) {
+        let adventures = await this.getAdventuresStatus();
+        let list = adventures.adventures;
+
+        if (list.length <= slot) {
+            throw Errors.UnknownAdventure;
+        }
+
+        let adventure = list[slot];
+
+        if (adventure.startTime == 0) {
+            throw Errors.AdventureClaimed;
+        }
+
+        if (Game.now - adventure.startTime < adventure.duration * 1000) {
+            throw Errors.AdventureInProcess;
+        }
+
+        let items = await Game.lootGenerator.getLootFromTable(adventure.loot);
+        await this._inventory.addItemTemplates(items);
+
+        list[slot] = await this._createNewAdventureSlot();
+        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+
+        return {
+            items,
+            adventure: list[slot]
+        };
+    }
+
+    async refreshAdventure(slot) {
+        let adventures = await this.getAdventuresStatus();
+        let list = adventures.adventures;
+
+        if (list.length <= slot) {
+            throw Errors.UnknownAdventure;
+        }
+
+        let adventure = list[slot];
+
+        if (Game.now - adventure.startTime < adventure.duration * 1000) {
+            throw Errors.AdventureInProcess;
+        }
+
+        if (!adventure.refreshTime || Game.now - adventure.refreshTime >= AdventureRefreshInterval) {
+            adventure.list = await this._rollAdventureList();
+            adventure.refreshTime = Game.now;
+        } else {
+            throw Errors.AdventureWasRefreshed;
+        }
+
+        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+
+        return adventure;
+    }
+
+    refillTimerWithItems(stat, items, templates) {
+        let i = 0;
+        const length = templates.length;
+        const baseStatValue = this.getTimerValue(stat);
+        let relativeValue = 0;
+        let absoluteValue = 0;
+        for (; i < length; ++i) {
+            const template = templates[i];
+            const itemEntry = items[template._id];
+
+            if (template.action.relative) {
+                relativeValue += (baseStatValue * template.action.value * itemEntry.count) / 100;
+            } else {
+                absoluteValue += (template.action.value * itemEntry.count);
+            }
+
+            this.inventory.removeItem(itemEntry.id, itemEntry.count);
+        }
+
+        let timerValue = baseStatValue + relativeValue + absoluteValue;
+        if (timerValue > this.getMaxStatValue(stat)) {
+            timerValue = this.getMaxStatValue(stat);
+        }
+
+        this.setTimerValue(stat, timerValue);
     }
 }
 

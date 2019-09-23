@@ -8,7 +8,7 @@ import CurrencyType from "./knightlands-shared/currency_type";
 import CharacterStats from "./knightlands-shared/character_stat";
 const Unit = require("./combat/unit");
 const IPaymentListener = require("./payment/IPaymentListener");
-
+const ItemActions = require("./knightlands-shared/item_actions");
 const Inventory = require("./inventory");
 
 const {
@@ -67,12 +67,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
         this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
 
-        this._socket.on(Operations.BuyAdventureSlot, this._buyAdventureSlot.bind(this));
-        this._socket.on(Operations.FetchAdventuresStatus, this._fetchAdventuresStatus.bind(this));
-        this._socket.on(Operations.StartAdventure, this._startAdventure.bind(this));
-        this._socket.on(Operations.ClaimAdventure, this._claimAdventure.bind(this));
-        this._socket.on(Operations.GetAvailableAdventures, this._getAdventures.bind(this));
-        this._socket.on(Operations.RefreshAdventures, this._refreshAdventures.bind(this));
+        this._socket.on(Operations.BuyAdventureSlot, this._gameHandler(this._buyAdventureSlot.bind(this)));
+        this._socket.on(Operations.FetchAdventuresStatus, this._gameHandler(this._fetchAdventuresStatus.bind(this)));
+        this._socket.on(Operations.StartAdventure, this._gameHandler(this._startAdventure.bind(this)));
+        this._socket.on(Operations.ClaimAdventure, this._gameHandler(this._claimAdventure.bind(this)));
+        this._socket.on(Operations.RefreshAdventures, this._gameHandler(this._refreshAdventures.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -431,7 +430,7 @@ class PlayerController extends IPaymentListener {
             // check if this is free opening
             if (gachaMeta.freeOpens > 0) {
                 let chests = user.getChests();
-                let cycleLength = gachaMeta.freeOpens * 86400000; // 24h is base cycle
+                let cycleLength = 86400000 / gachaMeta.freeOpens; // 24h is base cycle
 
                 if (!chests[chestId] || Game.now - chests[chestId] >= cycleLength) {
                     user.setChestFreeOpening(chestId);
@@ -508,10 +507,31 @@ class PlayerController extends IPaymentListener {
 
         if (refillType == 2) {
             // items. Check if those items can be used as timer refill
+            let templateIds = [];
+            for (let i in items) {
+                templateIds.push(i * 1);
+            }
+
+            const templates = await Game.itemTemplates.getTemplates(templateIds);
+            let i = 0;
+            const length = templates.length;
+            for (; i < length; ++i) {
+                const template = templates[i];
+                const item = user.inventory.getItemById(items[template._id].id);
+                if (!item) {
+                    throw Errors.IncorrectArguments;
+                }
+
+                if (!template.action || template.action.action != ItemActions.RefillTimer || template.action.stat != stat) {
+                    throw Errors.IncorrectArguments;
+                }
+            }
+
+            user.refillTimerWithItems(stat, items, templates);
         } else {
             if (refillType == 0 && stat != CharacterStats.Health) {
                 return await Game.userPremiumService.requestRefillPayment(this.address, stat);
-            } 
+            }
 
             let refillCost = await user.getTimerRefillCost(stat);
             if (refillCost.hard > 0) {
@@ -527,7 +547,7 @@ class PlayerController extends IPaymentListener {
 
                 user.addSoftCurrency(-refillCost.soft);
             }
-            
+
             user.refillTimer(stat);
         }
 
@@ -662,7 +682,7 @@ class PlayerController extends IPaymentListener {
                 unknownCurrency = false;
                 break;
             }
-        }   
+        }
 
         if (unknownCurrency) {
             throw Errors.IncorrectArguments;
@@ -680,7 +700,7 @@ class PlayerController extends IPaymentListener {
                 unknownCurrency = false;
                 break;
             }
-        }   
+        }
 
         if (unknownCurrency) {
             throw Errors.IncorrectArguments;
@@ -719,27 +739,23 @@ class PlayerController extends IPaymentListener {
 
     // Adventures
     async _buyAdventureSlot(user, data) {
-
+        return user.buyAdventureSlot();
     }
 
     async _fetchAdventuresStatus(user, data) {
-        return user.getAdventuresStatus();
+        return await user.getAdventuresStatus();
     }
 
     async _startAdventure(user, data) {
-
+        return await user.startAdventure(data.slot * 1, data.adventureIndex * 1);
     }
 
     async _claimAdventure(user, data) {
-
-    }
-
-    async _getAdventures(user, data) {
-
+        return await user.claimAdventure(data.slot * 1);
     }
 
     async _refreshAdventures(user, data) {
-
+        return await user.refreshAdventure(data.slot * 1);
     }
 }
 

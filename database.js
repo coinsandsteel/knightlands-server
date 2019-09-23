@@ -49,7 +49,8 @@ module.exports = {
         GachaState: "gacha_state",
         Whitelist: "whitelist",
         DropZoneModifiers: "drop_zone_modifiers",
-        DropRaidModifiers: "drop_raid_modifiers"
+        Adventures: "adventures",
+        AdventuresList: "adventures_list"
     },
 
 
