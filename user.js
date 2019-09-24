@@ -537,6 +537,10 @@ class User {
 
     async _applyInventoryPassives(finalStats) {
         let items = await this._inventory.getPassiveItems();
+        if (!items) {
+            return;
+        }
+        
         let i = 0;
         const length = items.length;
         for (; i < length; i++) {
