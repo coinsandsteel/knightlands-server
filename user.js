@@ -682,6 +682,7 @@ class User {
     }
 
     async commitChanges(inventoryChangesMode) {
+        await this._calculateFinalStats();
         let users = this._db.collection(Collections.Users);
         let {
             updateQuery,
