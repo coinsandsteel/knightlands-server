@@ -784,6 +784,10 @@ class User {
             user.raidTickets = 0;
         }
 
+        if (!user.hasOwnProperty("classInited")) {
+            user.classInited = false;
+        }
+
         return user;
     }
 
@@ -887,7 +891,7 @@ class User {
         let adventures = await this.getAdventuresStatus();
         let list = adventures.adventures;
 
-        if (list.length <= slot) {
+        if (slot < 0 || list.length <= slot) {
             throw Errors.UnknownAdventure;
         }
 
@@ -990,6 +994,32 @@ class User {
         }
 
         this.setTimerValue(stat, timerValue);
+    }
+
+    async selectClass(className) {
+        const selections = (await this._db.collection(Collections.Meta).findOne({_id: "classes"})).selections;
+        // find suitable class
+        let selection;
+        for (let i = 0; i < selections.length; ++i) {
+            if (selections[i].minLevel <= this._data.character.level) {
+                selection = selections[i];  
+            }
+        }
+
+        if (!selection) {
+            throw Errors.CantChooseClass;
+        }
+
+        const classSelected = selection.classes.find(x=>x.name == className);
+        if (!classSelected) {
+            throw Errors.UnknownClass;
+        }
+
+        this._data.classInited = true;
+
+        // modify regen timers
+        this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen;
+        this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen;
     }
 }
 

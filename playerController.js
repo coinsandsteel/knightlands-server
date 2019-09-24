@@ -51,6 +51,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
 
         // game functions
+        this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
         this._socket.on(Operations.OpenChest, this._gameHandler(this._openChest.bind(this)));
@@ -756,6 +757,11 @@ class PlayerController extends IPaymentListener {
 
     async _refreshAdventures(user, data) {
         return await user.refreshAdventure(data.slot * 1);
+    }
+
+    // Classes
+    async _changeClass(user, data) {
+        return await user.selectClass(data.class);
     }
 }
 

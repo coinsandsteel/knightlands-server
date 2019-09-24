@@ -261,7 +261,7 @@ class Raid extends EventEmitter {
                 if (this._data.loot[attacker.address] === undefined) {
                     // check if at least first loot damage threshold is reached and set loot record
                     let loot = this.stageData.loot;
-                    if (loot.length > 0) {
+                    if (loot && loot.length > 0) {
                         if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
                             this._data.loot[attacker.address] = false;
                         }
