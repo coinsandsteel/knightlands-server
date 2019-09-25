@@ -390,7 +390,7 @@ class Raid extends EventEmitter {
         let updateQuery = { $set: {} };
         updateQuery.$set[`loot.${userId}`] = true;
 
-        // await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
+        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
 
         return rewards;
     }
