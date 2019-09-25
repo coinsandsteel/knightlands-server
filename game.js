@@ -152,7 +152,6 @@ class Game extends EventEmitter {
             let connectedController = this._players[controller.address];
             if (connectedController) {
                 connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
-                return;
             }
 
             this._paymentProcessor.registerAsPaymentListener(controller.address, controller);

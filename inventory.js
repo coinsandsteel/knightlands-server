@@ -383,9 +383,9 @@ class Inventory {
                 this.modifyStack(item, count);
                 return;
             }
-        } else {
-            this.addItem(this.createItem(template._id, count));
         }
+
+        this.addItem(this.createItem(template._id, count));
     }
 
     async addItemTemplate(template) {

@@ -458,7 +458,7 @@ class User {
         }
 
         if (totalGoldRequired > this.softCurrency) {
-            throw "not enough sc";
+            throw Errors.NotEnoughSoft;
         }
 
         this.addSoftCurrency(-totalGoldRequired);
@@ -540,7 +540,7 @@ class User {
         if (!items) {
             return;
         }
-        
+
         let i = 0;
         const length = items.length;
         for (; i < length; i++) {

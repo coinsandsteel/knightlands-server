@@ -234,7 +234,6 @@ class PlayerController extends IPaymentListener {
 
         // quests exists?
         let quest = zone.quests[data.questIndex];
-
         if (!quest) {
             throw "incorrect quest";
         }
@@ -253,6 +252,14 @@ class PlayerController extends IPaymentListener {
 
         if (previousZone && !user.isZoneCompleted(previousZone._id, data.stage)) {
             throw "complete previous zone";
+        }
+
+        if (data.stage > 0) {
+            // check if previous zones finished
+            let totalZones = await zones.find({}).count();
+            if (!user.isZoneCompleted(totalZones, data.stage-1)) {
+                throw "complete previous difficulty";
+            }
         }
 
         let itemsToDrop = 0;
