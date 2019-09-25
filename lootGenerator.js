@@ -275,7 +275,7 @@ class LootGenerator {
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight, true);
-                console.log(`No loot roll ${roll} / ${weights.noLoot}`);
+                // console.log(`No loot roll ${roll} / ${weights.noLoot}`);
                 if (roll <= weights.noLoot) {
                     continue;
                 }
@@ -377,13 +377,13 @@ class LootGenerator {
 
             // roll rarity group
             let roll = Random.range(0, totalWeight, true);
-            console.log(`rarity roll ${roll} ${totalWeight}` );
+            // console.log(`rarity roll ${roll} ${totalWeight}` );
 
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
-                console.log(`rarity weight ${groupsWeights[rarity]}`);
+                // console.log(`rarity weight ${groupsWeights[rarity]}`);
                 if (roll <= groupsWeights[rarity]) {
                     break;
                 }

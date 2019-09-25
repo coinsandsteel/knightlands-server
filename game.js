@@ -145,12 +145,14 @@ class Game extends EventEmitter {
             let whitelisted = await this.db.collection(Collections.Whitelist).findOne({wallet: controller.address});
             if (!whitelisted) {
                 controller.socket.disconnect(DisconnectCodes.NotAllowed, "not whitelisted");
+                return;
             }
 
             // if there is previous controller registered - disconnect it and remove
             let connectedController = this._players[controller.address];
             if (connectedController) {
                 connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
+                return;
             }
 
             this._paymentProcessor.registerAsPaymentListener(controller.address, controller);
