@@ -143,7 +143,7 @@ class PaymentProcessor extends EventEmitter {
             userId,
             iap,
             tag,
-            date: new Date().getTime(),
+            date: Game.now,
             status: PaymentStatus.WaitingForTx,
             claimed: false,
             context,

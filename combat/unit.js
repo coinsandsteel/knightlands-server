@@ -58,15 +58,17 @@ class Unit {
     }
 
     attackRaid(raidBoss, bonusDamage) {
-        let {attack, crit} = this.getAttack();
+        let { attack, crit } = this.getAttack();
+
+        attack += this.getStat(CharacterStat.RaidDamage);
 
         attack *= bonusDamage;
-        
+
         return { damage: raidBoss._applyDamage(attack), crit };
     }
 
     attack(victim) {
-        let {attack, crit} = this.getAttack();
+        let { attack, crit } = this.getAttack();
 
         return {
             damage: victim._applyDamage(attack),
@@ -80,7 +82,7 @@ class Unit {
             defense = 0;
         }
 
-        let damageReduction = defense / (defense  + 150);
+        let damageReduction = defense / (defense + 150);
         let finalDamage = Math.floor(damage * (1 - damageReduction));
 
         let damageCap = this._maxStats.damageCap;
