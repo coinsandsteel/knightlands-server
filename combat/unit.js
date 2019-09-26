@@ -87,7 +87,7 @@ class Unit {
 
         let damageCap = this._maxStats.damageCap;
         if (damageCap) {
-            damage = finalDamage <= damageCap ? finalDamage : damageCap;
+            finalDamage = finalDamage <= damageCap ? finalDamage : damageCap;
         }
 
         finalDamage = Math.ceil(finalDamage);

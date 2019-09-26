@@ -221,7 +221,9 @@ class Raid extends EventEmitter {
             throw "incorrect hits";
         }
 
-        let combatUnit = attacker.getCombatUnit();
+        let combatUnit = attacker.getCombatUnit({
+            raid: this._template._id
+        });
         if (!combatUnit.isAlive) {
             throw Errors.NoHealth;
         }

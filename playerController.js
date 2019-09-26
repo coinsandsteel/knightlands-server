@@ -88,6 +88,9 @@ class PlayerController extends IPaymentListener {
     onDisconnect() {
         Game.removeListener(this.address, this._handleEventBind);
         console.log(`player ${this.address} is disconnected`);
+        if (this._user) {
+            this._user.dispose();
+        }
     }
 
     onAuthenticated() {
@@ -159,6 +162,10 @@ class PlayerController extends IPaymentListener {
         switch (event) {
             case Inventory.Changed:
                 this._socket.emit(Events.InventoryUpdate, args);
+                break;
+
+            case Events.BuffApplied:
+                this._socket.emit(Events.BuffApplied, args);
                 break;
         }
     }
@@ -257,7 +264,7 @@ class PlayerController extends IPaymentListener {
         if (data.stage > 0) {
             // check if previous zones finished
             let totalZones = await zones.find({}).count();
-            if (!user.isZoneCompleted(totalZones, data.stage-1)) {
+            if (!user.isZoneCompleted(totalZones, data.stage - 1)) {
                 throw "complete previous difficulty";
             }
         }

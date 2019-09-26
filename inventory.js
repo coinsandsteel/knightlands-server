@@ -560,7 +560,7 @@ class Inventory {
     modifyStack(item, inc) {
         item.count += inc;
 
-        if (item.count === 0) {
+        if (item.count <= 0) {
             this.deleteItemById(item.id);
         } else {
             // mark as new

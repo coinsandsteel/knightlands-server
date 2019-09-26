@@ -78,20 +78,28 @@ module.exports = {
                 continue;
             }
 
+            const newObject = newObj[i];
+            const oldObject = oldObj[i];
+
+            if (Array.isArray(newObject) || Array.isArray(oldObject)) {
+                //skip arrays
+                continue;
+            }
+
             if (typeof (newObj[i]) == "object") {
                 if (!oldObj.hasOwnProperty(i)) {
-                    changes[i] = newObj[i];
+                    changes[i] = newObject;
                     fieldsDetected = true;
                 } else {
                     let innerChanges = {};
-                    if (this.detectChanges(oldObj[i], newObj[i], innerChanges)) {
+                    if (this.detectChanges(oldObject, newObject, innerChanges)) {
                         fieldsDetected = true;
                         changes[i] = innerChanges;
                     }
                 }
             } else {
-                if (!oldObj || !oldObj.hasOwnProperty(i) || oldObj[i] !== newObj[i]) {
-                    changes[i] = newObj[i];
+                if (!oldObj || !oldObj.hasOwnProperty(i) || oldObject !== newObject) {
+                    changes[i] = newObject;
                     fieldsDetected = true;
                 }
             }

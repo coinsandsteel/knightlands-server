@@ -3,7 +3,8 @@
 import CharacterStats from "./knightlands-shared/character_stat";
 
 import CharacterStat, {
-    StatConversions
+    StatConversions,
+    DefaultStats
 }
     from "./knightlands-shared/character_stat";
 
@@ -11,7 +12,9 @@ import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 import CurrencyType from "./knightlands-shared/currency_type";
 import Game from "./game";
+import Buffs from "./knightlands-shared/buffs";
 import Errors from "./knightlands-shared/errors";
+import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
 const WeightedList = require("./js-weighted-list");
@@ -32,21 +35,6 @@ const ItemActions = require("./knightlands-shared/item_actions");
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 const AdventureRefreshInterval = 86400000;
-
-let DefaultStats = {}
-DefaultStats[CharacterStats.Health] = 50;
-DefaultStats[CharacterStats.Attack] = 5;
-DefaultStats[CharacterStats.CriticalChance] = 2;
-DefaultStats[CharacterStats.Energy] = 30;
-DefaultStats[CharacterStats.CriticalDamage] = 50;
-DefaultStats[CharacterStats.Stamina] = 5;
-DefaultStats[CharacterStats.Honor] = 1;
-DefaultStats[CharacterStats.Luck] = 0;
-DefaultStats[CharacterStats.Defense] = 0;
-DefaultStats[CharacterStats.ExtraDkt] = 0;
-DefaultStats[CharacterStats.ExtraExp] = 0;
-DefaultStats[CharacterStats.ExtraGold] = 0;
-DefaultStats[CharacterStats.RaidDamage] = 0;
 
 const {
     Collections,
@@ -69,6 +57,11 @@ class User {
         this._meta = meta;
         this._recalculateStats = false;
         this._combatUnit = null;
+        this._buffsResolver = new Buffs();
+    }
+
+    dispose() {
+        clearTimeout(this._buffUpdateTimeout);
     }
 
     serializeForClient() {
@@ -131,8 +124,13 @@ class User {
         return this._data.raidTickets;
     }
 
-    getCombatUnit() {
-        return new PlayerUnit(this);
+    getCombatUnit(config) {
+        let stats = this._data.character.stats;
+        if (config.raid) {
+            this._buffsResolver.calculate(Game.now, this.rawStats, this._data.character.buffs, config.raid);
+            stats = this._buffsResolver.finalStats;
+        }
+        return new PlayerUnit(this, stats);
     }
 
     addSoftCurrency(value) {
@@ -345,8 +343,11 @@ class User {
 
         await this._inventory.loadAll();
 
-        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({_id: "adventures_meta"});
+        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
+
+        // calculate stats from items and stats from buffs
+        await this._calculateFinalStats(true);
 
         return this;
     }
@@ -465,8 +466,8 @@ class User {
         this._recalculateStats = true;
     }
 
-    async _calculateFinalStats() {
-        if (!this._recalculateStats) {
+    async _calculateFinalStats(force = false) {
+        if (!force && !this._recalculateStats) {
             return;
         }
 
@@ -489,7 +490,6 @@ class User {
 
         let mainHandType;
         let offHandType;
-        let mainHandDamage;
 
         // calculate stats from equipment
         for (let itemId in character.equipment) {
@@ -524,7 +524,10 @@ class User {
         await this._applyInventoryPassives(finalStats);
 
         let oldStats = character.stats;
-        this._data.character.stats = finalStats;
+        this.rawStats = finalStats;
+
+        await this._recalculateBuffs();
+        finalStats = character.stats;
 
         // correct timers
         for (let i in character.timers) {
@@ -533,6 +536,44 @@ class User {
                 timer.value = finalStats[i];
             }
         }
+    }
+
+    async _recalculateBuffs() {
+        clearTimeout(this._buffUpdateTimeout);
+
+        const buffs = this._data.character.buffs;
+        let i = 0;
+        const length = buffs.length;
+        const now = Game.now;
+        let filteredIndex = 0;
+        let earliestTime = -1;
+        // find earliest buff to finish and filter out finished buffs
+        for (; i < length; ++i) {
+            const buff = buffs[i];
+            const time = buff.duration - (now - buff.applyTime) / 1000;
+            if (time <= 0) {
+                // buff is finished, skip it
+                continue;
+            }
+
+            if (earliestTime > time) {
+                earliestTime = time;
+            }
+
+            buffs[filteredIndex++] = buff;
+        }
+
+        if (filteredIndex > 0) {
+            buffs.splice(filteredIndex);
+            await this._saveBuffs();
+        }
+
+        if (earliestTime > -1) {
+            this._buffUpdateTimeout = setTimeout(this._recalculateBuffs.bind(this), earliestTime);
+        }
+
+        this._buffsResolver.calculate(Game.now, this.rawStats, buffs);
+        this._data.character.stats = this._buffsResolver.finalStats;
     }
 
     async _applyInventoryPassives(finalStats) {
@@ -617,7 +658,49 @@ class User {
                 let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable);
                 await this.addLoot(items);
                 return items;
+
+            case ItemActions.Buff:
+            case ItemActions.RaidBuff:
+                return await this._applyBuff(template._id, actionData);
         }
+    }
+
+    async _applyBuff(templateId, actionData) {
+        // first fine buff in the array
+        let buffs = this._data.character.buffs;
+
+        let currentBuff = buffs.find(x => x.template == templateId);
+        if (!currentBuff) {
+            // create new 
+            currentBuff = {
+                template: templateId,
+                duration: actionData.duration,
+                value: actionData.value,
+                raid: actionData.raid,
+                relative: actionData.relative,
+                stat: actionData.stat
+            };
+
+            buffs.push(currentBuff);
+        }
+
+        currentBuff.applyTime = Game.now;
+
+        Game.emitPlayerEvent(this.address, Events.BuffApplied, currentBuff);
+
+        await this._recalculateBuffs();
+
+        return null;
+    }
+
+    async _saveBuffs() {
+        await this._db.collection(Collections.Users).updateOne({
+            address: this._address
+        }, {
+            $set: {
+                "character.buffs": this._data.character.buffs
+            }
+        });
     }
 
     async equipItem(itemId) {
@@ -871,7 +954,7 @@ class User {
         const length = this.adventuresList.length;
         let maxWeight = this.adventuresList[length - 1].weight;
         let ids = new Array(3);
-        
+
         for (let i = 0; i < 3; ++i) {
             const roll = Random.range(0, maxWeight, true);
             for (let j = 0; j < length; ++j) {
@@ -884,9 +967,9 @@ class User {
             }
         }
 
-        const adventuresData = await this._db.collection(Collections.AdventuresList).find({_id:{$in: ids}}).toArray();
+        const adventuresData = await this._db.collection(Collections.AdventuresList).find({ _id: { $in: ids } }).toArray();
         for (let i = 0; i < 3; ++i) {
-            ids[i] = adventuresData.find(x=>x._id == ids[i]);
+            ids[i] = adventuresData.find(x => x._id == ids[i]);
         }
 
         return ids;
@@ -1002,12 +1085,12 @@ class User {
     }
 
     async selectClass(className) {
-        const selections = (await this._db.collection(Collections.Meta).findOne({_id: "classes"})).selections;
+        const selections = (await this._db.collection(Collections.Meta).findOne({ _id: "classes" })).selections;
         // find suitable class
         let selection;
         for (let i = 0; i < selections.length; ++i) {
             if (selections[i].minLevel <= this._data.character.level) {
-                selection = selections[i];  
+                selection = selections[i];
             }
         }
 
@@ -1015,7 +1098,7 @@ class User {
             throw Errors.CantChooseClass;
         }
 
-        const classSelected = selection.classes.find(x=>x.name == className);
+        const classSelected = selection.classes.find(x => x.name == className);
         if (!classSelected) {
             throw Errors.UnknownClass;
         }
