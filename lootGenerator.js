@@ -67,7 +67,7 @@ class LootGenerator {
     }
 
     async openChest(user, chestId, count) {
-        let items = await Game.lootGenerator.getLootFromGacha(this.address, chestId, count);
+        let items = await Game.lootGenerator.getLootFromGacha(user.address, chestId, count);
 
         await user.inventory.autoCommitChanges(async inv=>{
             await inv.addItemTemplates(items);
