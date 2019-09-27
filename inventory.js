@@ -116,7 +116,7 @@ class Inventory {
                     }
                 }
 
-                
+
             }
         ],
             {
@@ -397,22 +397,35 @@ class Inventory {
 
     // add or modify item in collection
     addItem(item) {
-        let foundItem = this.getItemById(item.id);
-        if (foundItem) {
-            this.modifyStack(foundItem, item.count);
-            return foundItem;
+        if (item.unique) {
+            let foundItem = this.getItemById(item.id);
+            if (foundItem) {
+                this.modifyStack(foundItem, item.count);
+                return foundItem;
+            }
         } else {
-            // add to list of items
-            let newIndex = this._items.push(item) - 1;
-            //add to index
-            this._itemsById.set(item.id, newIndex);
-            // mark as new 
-            this._newItems.set(item.id, item);
-            // check if is in deleted list
-            this._removedItems.delete(item.id);
-            this._addItemToIndexByTemplate(item);
-            return item;
+            const templates = this._getItemTemplates(item.template);
+            let i = 0;
+            const length = templates.length;
+            for (; i < length; ++i) {
+                const foundItem = templates[i];
+                if (!foundItem.unique) {
+                    this.modifyStack(foundItem, item.count);
+                    return foundItem;
+                }
+            }
         }
+
+        // add to list of items
+        let newIndex = this._items.push(item) - 1;
+        //add to index
+        this._itemsById.set(item.id, newIndex);
+        // mark as new 
+        this._newItems.set(item.id, item);
+        // check if is in deleted list
+        this._removedItems.delete(item.id);
+        this._addItemToIndexByTemplate(item);
+        return item;
     }
 
     deleteItemById(id) {
@@ -569,18 +582,13 @@ class Inventory {
     }
 
     makeUnique(item) {
-        if (item.count > 1) {
-            this.modifyStack(item, -1);
+        this.modifyStack(item, -1);
 
-            item = this.createItem(item.template, 1);
-            this.addItem(item);
-        } else {
-            // mark as new to update later
-            this.setItemUpdated(item);
-        }
+        const newItem = this.createItem(item.template, 1);
+        newItem.unique = true;
+        this.addItem(newItem);
 
-        item.unique = true;
-        return item;
+        return newItem;
     }
 
 

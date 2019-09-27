@@ -45,7 +45,7 @@ class Crafting {
         let stepData = enchantingMeta.steps[itemTemplate.rarity].steps[enchantLevel];
 
         if (!(await this._inventory.hasEnoughIngridients(stepData.ingridients))) {
-            // throw Errors.NoRecipeIngridients;
+            throw Errors.NoRecipeIngridients;
         }
 
         if (currency == CurrencyType.Fiat) {
@@ -75,8 +75,6 @@ class Crafting {
         if (Random.range(0, 100, true) > stepData.successRate) {
             return false;
         }
-
-        return false;
 
         return await this.enchantPayed(itemId);
     }
@@ -132,6 +130,7 @@ class Crafting {
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
         await this._inventory.consumeItemsFromCraftingRecipe(recipe);
+        
         return await this.craftPayedRecipe(recipe);
     }
 
