@@ -126,7 +126,7 @@ class User {
 
     getCombatUnit(config) {
         let stats = this._data.character.stats;
-        if (config.raid) {
+        if (config && config.raid) {
             this._buffsResolver.calculate(Game.now, this.rawStats, this._data.character.buffs, config.raid);
             stats = this._buffsResolver.finalStats;
         }
