@@ -74,6 +74,9 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ClaimAdventure, this._gameHandler(this._claimAdventure.bind(this)));
         this._socket.on(Operations.RefreshAdventures, this._gameHandler(this._refreshAdventures.bind(this)));
 
+        this._socket.on(Operations.FetchDailyRewardStatus, this._gameHandler(this._fetchDailyRewardStatus.bind(this)));
+        this._socket.on(Operations.CollectDailyReward, this._gameHandler(this._collectDailyReward.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -776,6 +779,15 @@ class PlayerController extends IPaymentListener {
     // Classes
     async _changeClass(user, data) {
         return await user.selectClass(data.class);
+    }
+
+    // Daily rewards
+    async _fetchDailyRewardStatus(user) {
+        return await user.getDailyRewardStatus();
+    }
+
+    async _collectDailyReward(user) {
+        return await user.collectDailyReward();
     }
 }
 

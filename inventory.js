@@ -388,10 +388,10 @@ class Inventory {
         this.addItem(this.createItem(template._id, count));
     }
 
-    async addItemTemplate(template) {
+    async addItemTemplate(template, quantity = 1) {
         await this.addItemTemplates([{
             item: template,
-            quantity: 1
+            quantity
         }]);
     }
 

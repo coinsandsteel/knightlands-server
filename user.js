@@ -36,6 +36,9 @@ const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 const AdventureRefreshInterval = 86400000;
 
+const DailyRewardCycle = 86400000;
+const DailyRewardCyclePenalty = 2;
+
 const {
     Collections,
     buildUpdateQuery
@@ -157,7 +160,7 @@ class User {
     async addExperience(exp) {
         let character = this._data.character;
         let levelBeforeExp = character.level;
-        character.exp += exp * 1;
+        character.exp += exp * (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
         const maxLevels = this._expTable.length;
         const previousLevel = character.level;
         while (character.level < maxLevels) {
@@ -876,6 +879,13 @@ class User {
             user.classInited = false;
         }
 
+        if (!user.dailyRewardCollect) {
+            user.dailyRewardCollect = {
+                cycle: 0,
+                step: 0
+            };
+        }
+
         return user;
     }
 
@@ -1108,6 +1118,62 @@ class User {
         // modify regen timers
         this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen;
         this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen;
+    }
+    
+    async getDailyRewardStatus() {
+        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({_id: "daily_rewards"})).rewards;
+        const dailyRewards = this._processDailyReward(dailyRewardsMeta);
+
+        return {
+            readyToCollect: dailyRewards.cycle < this._getDailyRewardCycle(),
+            step: dailyRewards.step
+        };
+    }
+
+    _getDailyRewardCycle() {
+        return Math.floor(Game.now / DailyRewardCycle);
+    }
+
+    _processDailyReward(dailyRewardsMeta) {
+        const dailyRewardCollect = this._data.dailyRewardCollect;
+        const currentRewardCycle = this._getDailyRewardCycle();
+        const missedDays = currentRewardCycle - dailyRewardCollect.cycle;
+
+        if (missedDays > 1) {
+            // for each missed day penalty player
+            dailyRewardCollect.step -= Math.max(missedDays * DailyRewardCyclePenalty, 0);
+        }
+
+        if (dailyRewardCollect.step < 0 || dailyRewardCollect.step >= dailyRewardsMeta.length) {
+            dailyRewardCollect.step = 0;
+        }
+
+        return dailyRewardCollect;
+    }
+
+    async collectDailyReward() {
+        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({_id: "daily_rewards"})).rewards;
+        const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);
+
+        if (dailyRewardCollect.cycle >= this._getDailyRewardCycle()) {
+            throw Errors.DailyRewardCollected;
+        }
+
+        const reward = dailyRewardsMeta[dailyRewardCollect.step];
+
+        const item = {
+            item: reward.itemId,
+            quantity: Random.intRange(reward.minCount, reward.maxCount)
+        }
+
+        await this.inventory.addItemTemplate(item.item, item.quantity);
+
+        dailyRewardCollect.cycle = this._getDailyRewardCycle();
+        dailyRewardCollect.step++;
+
+        this._data.dailyRewardCollect = dailyRewardCollect;      
+        
+        return item;
     }
 }
 
