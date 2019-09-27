@@ -123,7 +123,7 @@ class Inventory {
                 "allowDiskUse": false
             }).toArray();
 
-        return items[0].items;
+        return items && items.length > 0 && items[0].items;
     }
 
     get nextId() {
