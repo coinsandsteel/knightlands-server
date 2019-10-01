@@ -425,7 +425,12 @@ class PlayerController extends IPaymentListener {
     }
 
     async _useItem(user, data) {
-        return await user.useItem(data.itemId);
+        let count = data.count * 1;
+        if (!Number.isInteger(count)) {
+            count = 1;
+        }
+        
+        return await user.useItem(data.itemId, count);
     }
 
     async _getChestsStatus(user, data) {

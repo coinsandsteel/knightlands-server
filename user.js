@@ -137,7 +137,8 @@ class User {
     }
 
     addSoftCurrency(value) {
-        this._inventory.modifyCurrency(CurrencyType.Soft, value);
+        value *= this.getMaxStatValue(CharacterStat.ExtraGold) / 100;
+        this._inventory.modifyCurrency(CurrencyType.Soft, Math.round(value));
     }
 
     addHardCurrency(value) {
@@ -145,7 +146,8 @@ class User {
     }
 
     addDkt(value) {
-        this._inventory.modifyCurrency(CurrencyType.Dkt, value);
+        value *= this.getMaxStatValue(CharacterStat.ExtraDkt) / 100;
+        this._inventory.modifyCurrency(CurrencyType.Dkt,  Math.round(value));
     }
 
     getChests() {
@@ -627,10 +629,14 @@ class User {
         await this._inventory.addItemTemplates(itemTemplates);
     }
 
-    async useItem(itemId) {
+    async useItem(itemId, count = 1) {
         let itemToUse = this._inventory.getItemById(itemId);
         if (!itemToUse) {
             throw Errors.NoItem;
+        }
+
+        if (itemToUse.count < count) {
+            throw Errors.NoEnoughItems;
         }
 
         let template = await Game.itemTemplates.getTemplate(itemToUse.template);
@@ -639,7 +645,7 @@ class User {
         }
 
         // remove used item
-        this._inventory.removeItem(itemToUse.id);
+        this._inventory.removeItem(itemToUse.id, count);
 
         let actionData = template.action;
         // based on action perform necessary actions
@@ -658,7 +664,7 @@ class User {
                 break;
 
             case ItemActions.OpenBox:
-                let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable);
+                let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable, null, count);
                 await this.addLoot(items);
                 return items;
 

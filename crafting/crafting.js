@@ -130,7 +130,7 @@ class Crafting {
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
         await this._inventory.consumeItemsFromCraftingRecipe(recipe);
-        
+
         return await this.craftPayedRecipe(recipe);
     }
 
@@ -286,7 +286,7 @@ class Crafting {
             }
         }
 
-        item.exp = Math.floor(item.exp * 100) / 100; // last 2 digits
+        item.exp = Math.round(item.exp);
 
         this._inventory.setItemUpdated(item);
 

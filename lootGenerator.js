@@ -193,10 +193,11 @@ class LootGenerator {
         }, raidLoot.loot, raidLoot.loot.weights, items, itemsHash);
     }
 
-    async getLootFromTable(table, itemsToRoll) {
+    async getLootFromTable(table, itemsToRoll, lootCount = 1) {
         let { items, itemsHash } = await this._rollGuaranteedLootFromTable(table.guaranteedRecords);
         return await this._rollItemsFromLootTable({
-            itemsToRoll
+            itemsToRoll,
+            lootCount
         }, table, table.weights, items, itemsHash);
     }
 
@@ -267,6 +268,10 @@ class LootGenerator {
         let itemsToRoll = lootContext.itemsToRoll;
         if (!itemsToRoll) {
             itemsToRoll = table.itemsToRoll;
+        }
+
+        if (lootContext.lootCount) {
+            itemsToRoll *= lootContext.lootCount;
         }
 
         while (itemsToRoll > 0) {
@@ -377,13 +382,13 @@ class LootGenerator {
 
             // roll rarity group
             let roll = Random.range(0, totalWeight, true);
-            // console.log(`rarity roll ${roll} ${totalWeight}` );
+            console.log(`rarity roll ${roll} ${totalWeight}` );
 
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
-                // console.log(`rarity weight ${groupsWeights[rarity]}`);
+                console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
                 if (roll <= groupsWeights[rarity]) {
                     break;
                 }
