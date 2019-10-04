@@ -51,6 +51,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
 
         // game functions
+        this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
+
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
@@ -77,6 +79,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchDailyRewardStatus, this._gameHandler(this._fetchDailyRewardStatus.bind(this)));
         this._socket.on(Operations.CollectDailyReward, this._gameHandler(this._collectDailyReward.bind(this)));
 
+        this._socket.on(Operations.BeastRegularBoost, this._gameHandler(this._beastRegularBoost.bind(this)));
+        this._socket.on(Operations.BeastAdvancedBoost, this._gameHandler(this._beastAdvancedBoost.bind(this)));
+        this._socket.on(Operations.EvolveBeast, this._gameHandler(this._evolveBeast.bind(this)));
+        this._socket.on(Operations.FetchBeastBoostPurchase, this._gameHandler(this._fetchBeastBoostPurchase.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -98,6 +105,7 @@ class PlayerController extends IPaymentListener {
 
     onAuthenticated() {
         Game.on(this.address, this._handleEventBind);
+        console.log(`${this.address} listeners ${Game.listeners(this.address).length}`)
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -429,7 +437,7 @@ class PlayerController extends IPaymentListener {
         if (!Number.isInteger(count)) {
             count = 1;
         }
-        
+
         return await user.useItem(data.itemId, count);
     }
 
@@ -438,16 +446,16 @@ class PlayerController extends IPaymentListener {
     }
 
     async _openChest(user, data) {
-        let chestId = data.chest;
+        const { chest, iap, count } = data;
 
         // each chest has corresponding item attached to it to open
-        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: chestId });
+        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: chest });
         if (!gachaMeta) {
             throw Errors.UnknownChest;
         }
 
-        if (data.iap && gachaMeta.iaps[data.iap]) {
-            return await Game.lootGenerator.requestChestOpening(this.address, gachaMeta, data.iap);
+        if (iap && gachaMeta.iaps[iap]) {
+            return await Game.lootGenerator.requestChestOpening(this.address, gachaMeta, iap);
         } else {
             let freeOpening = false;
             // check if this is free opening
@@ -455,11 +463,13 @@ class PlayerController extends IPaymentListener {
                 let chests = user.getChests();
                 let cycleLength = 86400000 / gachaMeta.freeOpens; // 24h is base cycle
 
-                if (!chests[chestId] || Game.now - chests[chestId] >= cycleLength) {
-                    user.setChestFreeOpening(chestId);
+                if (!chests[chest] || Game.now - chests[chest] >= cycleLength) {
+                    user.setChestFreeOpening(chest);
                     freeOpening = true;
                 }
             }
+
+            let chestsToOpen = count || 1;
 
             // check if key item is required
             if (!freeOpening && gachaMeta.itemKey) {
@@ -468,11 +478,15 @@ class PlayerController extends IPaymentListener {
                     throw Errors.NoChestKey;
                 }
 
+                if (chestsToOpen > itemKey.count) {
+                    chestsToOpen = itemKey.count;
+                }
+
                 // consume key
-                user.inventory.removeItem(itemKey.id);
+                user.inventory.removeItem(itemKey.id, chestsToOpen);
             }
 
-            return await Game.lootGenerator.openChest(user, chestId, 1);
+            return await Game.lootGenerator.openChest(user, chest, chestsToOpen);
         }
     }
 
@@ -681,9 +695,9 @@ class PlayerController extends IPaymentListener {
     // crafting
     // if item never have been modified server will return new item id for created unique version
     async _upgradeItem(user, data) {
-        const { materialId, itemId, count } = data;
+        const { materials, itemId, count } = data;
 
-        let upgradedItemId = await user.upgradeItem(itemId, materialId, count);
+        let upgradedItemId = await user.upgradeItem(itemId, materials, count);
 
         return upgradedItemId;
     }
@@ -793,6 +807,31 @@ class PlayerController extends IPaymentListener {
 
     async _collectDailyReward(user) {
         return await user.collectDailyReward();
+    }
+
+    // Beast boosting
+    async _beastRegularBoost(user, data) {
+        return await user.beastBoost(data.count * 1, true);
+    }
+
+    async _beastAdvancedBoost(user, data) {
+        if (data.hasOwnProperty("iapIndex")) {
+            return await Game.userPremiumService.requestBeatSoulPurchase(this.address, data.iapIndex * 1);
+        }
+
+        return await user.beastBoost(data.count * 1, false);
+    }
+
+    async _evolveBeast(user) {
+        return await user.evolveBeast();
+    }
+
+    async _fetchBeastBoostPurchase(user) {
+        return await Game.userPremiumService.getBeastBoostPurchaseStatus(this.address);
+    }
+
+    async _cancelPayment(user, data) {
+        return await Game.paymentProcessor.cancelPayment(this.address, data.id);
     }
 }
 

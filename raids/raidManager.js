@@ -6,9 +6,18 @@ const {
 
 const Raid = require("./raid");
 const Events = require("./../knightlands-shared/events");
+import Elements from "./../knightlands-shared/elements";
+const EquipmentType = require("./../knightlands-shared/equipment_type");
 import Game from "./../game";
 const ObjectId = require("mongodb").ObjectID;
 import Errors from "./../knightlands-shared/errors";
+import random from "../random";
+
+const WeaknessRotationCycle = 86400000;
+const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
+const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.Bow, EquipmentType.Wand, EquipmentType.Spear];
+
+const DktFactorUpdateInterval = 21600000; // every 6 hours
 
 class RaidManager {
     constructor(db, paymentProcessor) {
@@ -48,6 +57,11 @@ class RaidManager {
         }
 
         await this._registerRaidIAPs(iapExecutor);
+
+        await this._updateWeaknesses(true);
+        this._scheduleWeaknessUpdate();
+
+        this._scheduleDktUpdate();
     }
 
     async _handlePaymentFailed(tag, context) {
@@ -66,7 +80,11 @@ class RaidManager {
         }
     }
 
-    async _getNextDktFactor(raidTemplateId, stage) {
+    _scheduleDktUpdate() {
+
+    }
+
+    async _getNextDktFactor(raidTemplateId, stage, peek = false) {
         let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
             raid: raidTemplateId,
             stage: stage
@@ -81,14 +99,17 @@ class RaidManager {
         let factorSettings = this._factorSettings[stage];
         let factorValue = 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factorSettings.multiplier;
 
-        factor.step++;
-        // save 
-        await this._db.collection(Collections.RaidsDktFactors).updateOne({
-            raid: raidTemplateId,
-            stage: stage
-        }, { $set: factor }, {
-            upsert: true
-        });
+        if (!peek) {
+            factor.step++;
+            // save 
+            await this._db.collection(Collections.RaidsDktFactors).updateOne({
+                raid: raidTemplateId,
+                stage: stage
+            }, { $set: factor }, {
+                upsert: true
+            });
+        }
+
 
         return factorValue;
     }
@@ -136,6 +157,8 @@ class RaidManager {
     }
 
     async summonRaid(summoner, stage, raidTemplateId) {
+        raidTemplateId *= 1;
+        
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         if (!raitTemplate) {
@@ -203,15 +226,20 @@ class RaidManager {
 
     // build an array of raids in process of summoning
     async getSummonStatus(userId, raidTemplateId, stage) {
+        raidTemplateId *= 1;
+
         let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
             "context.raidTemplateId": raidTemplateId,
             "context.stage": stage
         });
 
-        if (status) {
-            // include current dkt factor
-            status.dktFactor = await this._getNextDktFactor(raidTemplateId, stage);
+        if (!status) {
+            status = {};
         }
+
+        status.dktFactor = await this._getNextDktFactor(raidTemplateId, stage, true);
+        status.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId, stage });
+        status.weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
 
         return status;
     }
@@ -222,6 +250,12 @@ class RaidManager {
         });
 
         return status;
+    }
+
+    async fetchRaidCurrentMeta(raidTemplateId, stage) {
+        let weakness = await this._db.collection(Collections.RaidsWeaknessRotations).find({ raid: raidTemplateId, stage });
+        weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
+        return weakness;
     }
 
     async getRaidInfo(userId, raidId) {
@@ -242,6 +276,48 @@ class RaidManager {
                     participants: 0,
                     _id: 0
                 }
+            },
+            {
+                "$lookup": {
+                    "from": "raid_weakness_rotations",
+                    "let": {
+                        "raid": "$raidTemplateId",
+                        "stage": "$stage"
+                    },
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$and": [
+                                        {
+                                            "$eq": [
+                                                "$raid",
+                                                "$$raid"
+                                            ]
+                                        },
+                                        {
+                                            "$eq": [
+                                                "$stage",
+                                                "$$stage"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "as": "weakness"
+                }
+            },
+            {
+                "$addFields": {
+                    "weakness": {
+                        "$arrayElemAt": [
+                            "$weakness",
+                            0
+                        ]
+                    }
+                }
             }
         ]).toArray();
 
@@ -249,7 +325,9 @@ class RaidManager {
             throw "no such raid";
         }
 
-        return raid[0];
+        let info = raid[0];
+        info.weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
+        return info;
     }
 
     async getCurrentRaids(userId) {
@@ -394,6 +472,91 @@ class RaidManager {
         await raid.init(raidData);
 
         return await raid.claimLoot(userId);
+    }
+
+    _scheduleWeaknessUpdate() {
+        setTimeout(async () => {
+            try {
+                await this._updateWeaknesses();
+            } finally {
+                this._scheduleWeaknessUpdate();
+            }
+        }, Game.now % WeaknessRotationCycle);
+    }
+
+    async _updateWeaknesses(onlyMissing = false) {
+        // get all raid templates, assign next weaknesses and generate next day weakneses
+        let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
+        let allRaidsWeaknesses = await this._db.collection(Collections.RaidsWeaknessRotations).find({}).toArray();
+
+        const weaknessLookup = {};
+        {
+            const length = allRaidsWeaknesses.length;
+            for (let i = 0; i < length; i++) {
+                const weakness = allRaidsWeaknesses[i];
+                let stages = weaknessLookup[weakness.raid];
+                if (!stages) {
+                    stages = {};
+                    weaknessLookup[weakness.raid] = stages;
+                }
+                stages[weakness.stage] = weakness;
+            }
+        }
+
+        let queries = [];
+        const length = allRaids.length;
+        for (let i = 0; i < length; i++) {
+            const raidTemplate = allRaids[i];
+            for (let j = 0; j < raidTemplate.stages.length; j++) {
+                let missing = false;
+                let stages = weaknessLookup[raidTemplate._id];
+                if (!stages) {
+                    stages = {};
+                    weaknessLookup[raidTemplate._id] = stages;
+                }
+
+                let weakness = stages[j];
+                if (weakness) {
+                    weakness.current = weakness.next;
+                    weakness.next = this._rollRaidWeaknesses();
+                } else {
+                    weakness = {
+                        current: this._rollRaidWeaknesses(),
+                        next: this._rollRaidWeaknesses(),
+                        raid: raidTemplate._id,
+                        stage: j
+                    };
+                    stages[j] = weakness;
+                    missing = true;
+                }
+
+                if ((onlyMissing && missing) || !onlyMissing) {
+                    queries.push({
+                        updateOne: {
+                            filter: {
+                                raid: weakness.raid,
+                                stage: weakness.stage
+                            },
+                            update: {
+                                $set: weakness
+                            },
+                            upsert: true
+                        }
+                    });
+                }
+            }
+        }
+
+        if (queries.length > 0) {
+            await this._db.collection(Collections.RaidsWeaknessRotations).bulkWrite(queries);
+        }
+    }
+
+    _rollRaidWeaknesses() {
+        return {
+            element: ElementalWeakness[random.intRange(0, ElementalWeakness.length - 1)],
+            weapon: WeaponWeaknesses[random.intRange(0, WeaponWeaknesses.length - 1)]
+        }
     }
 }
 

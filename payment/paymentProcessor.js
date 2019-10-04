@@ -3,6 +3,7 @@
 const { Collections } = require("./../database");
 import Game from "./../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
+import Errors from "../knightlands-shared/errors";
 const ObjectId = require("mongodb").ObjectID;
 const EventEmitter = require('events');
 
@@ -91,11 +92,35 @@ class PaymentProcessor extends EventEmitter {
                 "paymentId": payment._id.valueOf(),
                 "price": payment.price,
                 "context": payment.context,
-                "signature": payment.signature
+                "signature": payment.signature,
+                "id": payment._id
             };
         }
 
         return null;
+    }
+
+    async cancelPayment(userId, id) {
+        const idObject = ObjectId(id);
+
+        const payment = await this._db.collection(Collections.PaymentRequests).findOne({
+            $and: [{
+                userId, _id: idObject,
+            },
+            {
+                $or: [{ status: PaymentStatus.Pending }, { status: PaymentStatus.WaitingForTx }]
+            }]
+        });
+
+        if (!payment) {
+            throw Errors.UknownPaymentId;
+        }
+
+        await this._db.collection(Collections.PaymentRequests).updateOne({ _id: idObject }, {
+            $set: {
+                status: PaymentStatus.Cancelled
+            }
+        });
     }
 
     async fetchPendingPayments(userId, tag, filter = {}) {

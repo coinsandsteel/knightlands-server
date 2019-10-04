@@ -591,43 +591,6 @@ class Inventory {
         return newItem;
     }
 
-
-    // bulk items request by field name.
-    // async getItems(itemIds, fieldName = "_id", excludeFieldName = "unique", excludeFields = []) {
-    //     if (!Array.isArray(itemIds)) {
-    //         itemIds = [itemIds];
-    //     }
-
-    //     let entries = await this._db
-    //         .collection(Collections.Inventory)
-    //         .aggregate([{
-    //             $match: {
-    //                 _id: "test"
-    //             }
-    //         }, {
-    //             $project: {
-    //                 items: {
-    //                     $filter: {
-    //                         input: "$items",
-    //                         as: "item",
-    //                         cond: {
-    //                             $in: [`$$item.${fieldName}`, itemIds],
-    //                             $not: {
-    //                                 $in: [`$$item.${excludeFieldName}`, excludeFields]
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }, {
-    //             $project: {
-    //                 _id: 0
-    //             }
-    //         }])
-    //         .toArray();
-    //     return entries;
-    // }
-
     createItem(templateId, count = 0) {
         return {
             id: this.nextId,

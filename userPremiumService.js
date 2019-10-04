@@ -7,12 +7,13 @@ class UserPremiumService {
     constructor(db) {
         this._db = db;
         this.UserPaymentTag = "user_payment";
+        this.BeastBoostPurchaseTag = "beast_boost_purchase";
     }
 
     async init(iapExecutor) {
         console.log("Registering User Premium IAPs...");
 
-        let refills = await this._db.collection(Collections.Meta).find({_id: {
+        const refills = await this._db.collection(Collections.Meta).find({_id: {
             $in: ["energy_refill_cost", "stamina_refill_cost"]
         }}).toArray();
 
@@ -26,15 +27,68 @@ class UserPremiumService {
                     return;
                 }
 
-                iapExecutor.registerAction(cost.iap, async (context) => {
+                iapExecutor.registerAction(cost.iap, async context => {
                     return await this._refillUserTimer(context.user, context.stat, context.refills);
                 });
     
                 iapExecutor.mapIAPtoEvent(cost.iap, Events.TimerRefilled);
             });
-
-            
         });
+
+        const beastMeta = await this._db.collection(Collections.Meta).findOne({_id: "beasts"});
+        beastMeta.iaps.forEach(iapMeta=>{
+            iapExecutor.registerAction(iapMeta.iap, async context=>{
+                return await this._grantItem(context.user, context.item, context.count);
+            });
+
+            iapExecutor.mapIAPtoEvent(iapMeta.iap, Events.ItemPurchased);
+        });
+    }
+
+    async getBeastBoostPurchaseStatus(userId) {
+        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.BeastBoostPurchaseTag, {
+            "context.user": userId
+        });
+    }
+
+    async _grantItem(userId, itemTemplate, count) {
+        const user = await Game.getUser(userId);
+        await user.inventory.autoCommitChanges(async inv => {
+            await inv.addItemTemplate(itemTemplate, count);
+        });
+    }
+
+    async requestBeatSoulPurchase(userId, purchaseIndex) {
+        const beastMeta = await this._db.collection(Collections.Meta).findOne({_id: "beasts"});
+
+        const iapMeta = beastMeta.iaps[purchaseIndex];
+        if (!iapMeta) {
+            throw Errors.UknownIAP;
+        }
+
+        let iapContext = {
+            user: userId
+        };
+
+        // check if payment request already created
+        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.BeastBoostPurchaseTag);
+        if (hasPendingPayment) {
+            throw Errors.PaymentIsPending;
+        }
+
+        iapContext.item = beastMeta.ticketItem;
+        iapContext.count = iapMeta.tickets;
+
+        try {
+            return await Game.paymentProcessor.requestPayment(
+                userId,
+                iapMeta.iap,
+                this.BeastBoostPurchaseTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
     }
 
     async requestRefillPayment(userId, stat) {

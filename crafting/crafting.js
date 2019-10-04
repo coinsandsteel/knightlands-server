@@ -28,8 +28,8 @@ class Crafting {
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
             throw Errors.NoTemplate;
-        }        
-        
+        }
+
         let enchantingInProcess = await Game.craftingQueue.isEnchantingInProcess(this._userId, itemId);
         if (enchantingInProcess) {
             throw Errors.EnchantingInProcess;
@@ -199,12 +199,15 @@ class Crafting {
         return item.id;
     }
 
-    async upgradeItem(itemId, material, count) {
+    async upgradeItem(itemId, materials, count) {
         itemId *= 1;
-        material *= 1;
 
         if (!Number.isInteger(count) || count < 1) {
             throw Errors.IncorrectArguments;
+        }
+
+        if (materials.length > 1) {
+            count = 1;
         }
 
         await this._inventory.loadAllItems();
@@ -219,11 +222,6 @@ class Crafting {
             item = this._inventory.makeUnique(item);
         }
 
-        // if material type is item itself
-        if (itemId === material) {
-            throw Errors.IncorrectArguments;
-        }
-
         let upgradeMeta = await this._getUpgradeMeta();
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
@@ -236,59 +234,81 @@ class Crafting {
             throw Errors.ItemMaxLevel;
         }
 
-        // check if material item can be used as leveling material 
-        let materialItem = this._inventory.getItemById(material);
-        if (!materialItem) {
-            throw Errors.NoMaterial;
-        }
+        const startLevel = item.level;
+        const startExp = item.exp;
 
-        let materialTemplate = await Game.itemTemplates.getTemplate(materialItem.template);
-        if (!materialTemplate) {
-            throw Errors.NoTemplate;
-        }
+        try {
+            for (let i = 0; i < materials.length; ++i) {
+                const material = materials[i];
 
-        let expPerMaterial = 0;
-        let levelingMeta = upgradeMeta.levelingMeta[getSlot(itemTemplate.equipmentType)];
-        let materialSlot = getSlot(materialTemplate.equipmentType);
+                // if material type is item itself
+                if (itemId === material) {
+                    throw Errors.IncorrectArguments;
+                }
 
-        if (materialTemplate.type == ItemType.Equipment && levelingMeta.materialSlots.includes(materialSlot)) {
-            // experience when consuming items is based on rarity, slot type and level
-            expPerMaterial = upgradeMeta.rarityExpFactor[materialTemplate.rarity].exp;
-            expPerMaterial *= upgradeMeta.slotExpFactor[materialSlot].expFactor;
-            expPerMaterial *= upgradeMeta.levelExpFactor[materialItem.level - 1];
-        } else {
-            let materialExp = levelingMeta.materials.find(x => x.item == materialItem.template);
-            if (materialExp) {
-                expPerMaterial = materialExp.exp;
-            } else {
-                throw Errors.IncompatibleLevelingMaterial;
+                // check if material item can be used as leveling material 
+                let materialItem = this._inventory.getItemById(material);
+                if (!materialItem) {
+                    throw Errors.NoMaterial;
+                }
+
+                let materialTemplate = await Game.itemTemplates.getTemplate(materialItem.template);
+                if (!materialTemplate) {
+                    throw Errors.NoTemplate;
+                }
+
+                let expPerMaterial = 0;
+                let levelingMeta = upgradeMeta.levelingMeta[getSlot(itemTemplate.equipmentType)];
+                let materialSlot = getSlot(materialTemplate.equipmentType);
+
+                if (materialTemplate.type == ItemType.Equipment && levelingMeta.materialSlots.includes(materialSlot)) {
+                    // experience when consuming items is based on rarity, slot type and level
+                    expPerMaterial = upgradeMeta.rarityExpFactor[materialTemplate.rarity].exp;
+                    expPerMaterial *= upgradeMeta.slotExpFactor[materialSlot].expFactor;
+                    expPerMaterial *= upgradeMeta.levelExpFactor[materialItem.level - 1];
+                } else {
+                    let materialExp = levelingMeta.materials.find(x => x.item == materialItem.template);
+                    if (materialExp) {
+                        expPerMaterial = materialExp.exp;
+                    } else {
+                        throw Errors.IncompatibleLevelingMaterial;
+                    }
+                }
+
+                let itemsToConsume = count;
+                // add experience to item for each material
+                if (itemsToConsume > materialItem.count) {
+                    itemsToConsume = materialItem.count;
+                }
+
+                let expTable = upgradeMeta.levelExpTable;
+                let expRequired = expTable[item.level - 1];
+                item.exp += expPerMaterial * itemsToConsume;
+                while (expRequired <= item.exp && maxLevel > item.level) {
+                    item.level++;
+                    item.exp -= expRequired;
+                    expRequired = expTable[item.level - 1];
+                }
+
+                if (item.level == maxLevel) {
+                    item.exp = 0;
+                }
             }
-        }
+        } catch (exc) {
+            item.level = startLevel;
+            item.exp = startExp;
 
-        // add experience to item for each material
-        if (count > materialItem.count) {
-            count = materialItem.count;
-        }
-
-        let expTable = upgradeMeta.levelExpTable;
-        let expRequired = expTable[item.level - 1];
-        while (maxLevel > item.level && count > 0 && expTable.length >= item.level) {
-            count--;
-
-            item.exp += expPerMaterial;
-
-            this._inventory.modifyStack(materialItem, -1);
-
-            while (expRequired <= item.exp && maxLevel > item.level) {
-                item.level++;
-                item.exp -= expRequired;
-                expRequired = expTable[item.level - 1];
-            }
+            throw exc;
         }
 
         item.exp = Math.round(item.exp);
 
         this._inventory.setItemUpdated(item);
+
+        for (let i = 0; i < materials.length; ++i) {
+            const material = materials[i];
+            this._inventory.modifyStack(this._inventory.getItemById(material), -count);
+        }
 
         return item.id;
     }

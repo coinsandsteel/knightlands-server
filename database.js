@@ -30,6 +30,7 @@ module.exports = {
         Meta: "meta",
         Raids: "raids",
         RaidsMeta: "raids_meta",
+        RaidsWeaknessRotations: "raid_weakness_rotations",
         RaidsDktFactors: "raids_dkt_factors",
         RaidsDktMeta: "raids_dkt_meta",
         BlockchainEvents: "blockchain_events",

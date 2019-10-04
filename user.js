@@ -1,6 +1,7 @@
 'use strict';
 
 import CharacterStats from "./knightlands-shared/character_stat";
+import Elements from "./knightlands-shared/elements";
 
 import CharacterStat, {
     StatConversions,
@@ -17,7 +18,7 @@ import Errors from "./knightlands-shared/errors";
 import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
-const WeightedList = require("./js-weighted-list");
+import random from "./random";
 
 const {
     EquipmentSlots,
@@ -38,6 +39,8 @@ const AdventureRefreshInterval = 86400000;
 
 const DailyRewardCycle = 86400000;
 const DailyRewardCyclePenalty = 2;
+
+const BeastMaxBoost = 50;
 
 const {
     Collections,
@@ -127,6 +130,19 @@ class User {
         return this._data.raidTickets;
     }
 
+    async getWeaponCombatData() {
+        let weapon = this._data.character.equipment[EquipmentSlots.MainHand];
+        if (!weapon) {
+            return null;
+        }
+
+        let template = await Game.itemTemplates.getTemplate(weapon.template);
+        return {
+            element: template.element,
+            type: template.equipmentType
+        }
+    }
+
     getCombatUnit(config) {
         let stats = this._data.character.stats;
         if (config && config.raid) {
@@ -137,7 +153,7 @@ class User {
     }
 
     addSoftCurrency(value) {
-        value *= this.getMaxStatValue(CharacterStat.ExtraGold) / 100;
+        value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
         this._inventory.modifyCurrency(CurrencyType.Soft, Math.round(value));
     }
 
@@ -146,8 +162,8 @@ class User {
     }
 
     addDkt(value) {
-        value *= this.getMaxStatValue(CharacterStat.ExtraDkt) / 100;
-        this._inventory.modifyCurrency(CurrencyType.Dkt,  Math.round(value));
+        value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
+        this._inventory.modifyCurrency(CurrencyType.Dkt, Math.round(value));
     }
 
     getChests() {
@@ -325,21 +341,29 @@ class User {
 
     async load() {
         const users = this._db.collection(Collections.Users);
-        let userData = await users.findOne({
+
+        let userData = this._validateUser({
             address: this._address
         });
 
-        if (!userData) {
-            userData = this._validateUser({
+        userData = await users.findOneAndUpdate(
+            {
                 address: this._address
-            });
-            await users.insertOne(userData);
-        } else {
-            userData = this._validateUser(userData);
-        }
+            },
+            {
+                $setOnInsert: userData,
+            },
+            {
+                returnNewDocument: true,
+                upsert: true
+            }
+        );
+
+        userData = userData.value;
+        this._originalData = cloneDeep(userData);
+        userData = this._validateUser(userData);
 
         this._data = userData;
-        this._originalData = cloneDeep(userData);
         this._inventory = new Inventory(this._address, this._db);
         this._crafting = new Crafting(this._address, this._inventory);
         this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
@@ -761,8 +785,8 @@ class User {
         }
     }
 
-    async upgradeItem(itemId, materialId, count) {
-        return await this._crafting.upgradeItem(itemId, materialId, count);
+    async upgradeItem(itemId, materials, count) {
+        return await this._crafting.upgradeItem(itemId, materials, count);
     }
 
     async enchantItem(itemId, currency) {
@@ -779,6 +803,7 @@ class User {
 
     async commitChanges(inventoryChangesMode) {
         await this._calculateFinalStats();
+
         let users = this._db.collection(Collections.Users);
         let {
             updateQuery,
@@ -798,8 +823,8 @@ class User {
             }
 
             await users.updateOne({
-                _id: this.id
-            }, finalQuery);
+                address: this.address
+            }, finalQuery, { upsert: true });
 
             this._originalData = cloneDeep(this._data);
         }
@@ -807,7 +832,6 @@ class User {
         await this._inventory.commitChanges(inventoryChangesMode);
 
         // apply new data as original
-
         return {
             changes,
             removals
@@ -889,6 +913,14 @@ class User {
             user.dailyRewardCollect = {
                 cycle: 0,
                 step: 0
+            };
+        }
+
+        if (!user.beast) {
+            user.beast = {
+                level: 0,
+                index: 0,
+                exp: 0
             };
         }
 
@@ -1097,7 +1129,7 @@ class User {
             timerValue = this.getMaxStatValue(stat);
         }
 
-        this.setTimerValue(stat, timerValue);
+        this.setTimerValue(stat, Math.round(timerValue));
     }
 
     async selectClass(className) {
@@ -1125,9 +1157,9 @@ class User {
         this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen;
         this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen;
     }
-    
+
     async getDailyRewardStatus() {
-        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({_id: "daily_rewards"})).rewards;
+        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewards = this._processDailyReward(dailyRewardsMeta);
 
         return {
@@ -1158,7 +1190,7 @@ class User {
     }
 
     async collectDailyReward() {
-        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({_id: "daily_rewards"})).rewards;
+        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);
 
         if (dailyRewardCollect.cycle >= this._getDailyRewardCycle()) {
@@ -1177,9 +1209,105 @@ class User {
         dailyRewardCollect.cycle = this._getDailyRewardCycle();
         dailyRewardCollect.step++;
 
-        this._data.dailyRewardCollect = dailyRewardCollect;      
-        
+        this._data.dailyRewardCollect = dailyRewardCollect;
+
         return item;
+    }
+
+    async beastBoost(boostCount, regular) {
+        if (boostCount > BeastMaxBoost) {
+            boostCount = BeastMaxBoost;
+        }
+
+        if (boostCount < 1) {
+            boostCount = 1;
+        }
+
+        const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+
+        const result = this._addExperienceToBeast(boostCount, beastMeta, regular);
+
+        if (regular) {
+            const softRequired = boostCount * beastMeta.softPrice;
+
+            if (softRequired > this.softCurrency) {
+                throw Errors.NotEnoughSoft;
+            }
+
+            this.addSoftCurrency(-softRequired);
+        } else {
+            const ticketItem = this.inventory.getItemByTemplate(beastMeta.ticketItem);
+            if (!ticketItem) {
+                throw Errors.NoItem;
+            }
+
+            if (ticketItem.count < boostCount) {
+                throw Errors.NotEnoughCurrency;
+            }
+
+            this.inventory.removeItem(ticketItem.id, boostCount);
+        }
+
+        return result;
+    }
+
+    _addExperienceToBeast(boostCount, beastMeta, regular) {
+        let currentBeast = beastMeta.levels[this._data.beast.index];
+        if (this._data.beast.level >= currentBeast.levels.length) {
+            throw Errors.BeastMaxLevel;
+        }
+
+        let totalGained = 0;
+        let expGained = currentBeast.levels[this._data.beast.level].expGained * (regular ? 1 : beastMeta.advancedBoostBonus);
+        let expRequired = currentBeast.levels[this._data.beast.level].expRequired;
+
+        let boostCritCount = 0;
+
+        while (boostCount > 0) {
+            boostCount--;
+
+            if (!regular && random.range(1, 100, true) <= beastMeta.critBoostChance) {
+                boostCritCount++;
+                totalGained += expGained * 10;
+                this._data.beast.exp += expGained * 10;
+            } else {
+                totalGained += expGained;
+                this._data.beast.exp += expGained;
+            }
+
+            if (this._data.beast.exp >= expRequired) {
+                this._data.beast.exp -= expRequired;
+                this._data.beast.level++;
+
+                if (this._data.beast.level >= currentBeast.levels.length) {
+                    break;
+                }
+            }
+        }
+
+        this._data.beast.exp = Math.round(this._data.beast.exp);
+
+        return {
+            crits: boostCritCount,
+            exp: Math.round(totalGained)
+        };
+    }
+
+    async evolveBeast() {
+        const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+        const currentBeast = beastMeta.levels[this._data.beast.index];
+
+        // not enough level to evolve, should be last
+        if (this._data.beast.level < currentBeast.levels.length) {
+            throw Errors.BeastCantEvolve;
+        }
+
+        // can evolve
+        if (this._data.beast.index < beastMeta.levels.length + 1) {
+            this._data.beast.index++;
+            this._data.beast.level = 0;
+            this._data.beast.exp = 0;
+        }
     }
 }
 

@@ -7,9 +7,10 @@ const {
 const CBuffer = require("./../CBuffer");
 const Unit = require("./../combat/unit");
 import CharacterStats from "./../knightlands-shared/character_stat";
+import Elements from "./../knightlands-shared/elements";
+const EquipmentType = require("./../knightlands-shared/equipment_type");
 import Game from "../game";
 const EventEmitter = require("events");
-const ObjectId = require("mongodb").ObjectID;
 const Events = require("./../knightlands-shared/events");
 const Config = require("./../config");
 import Random from "./../random";
@@ -63,6 +64,8 @@ class Raid extends EventEmitter {
     }
 
     async create(summonerId, stage, raidTemplateId, dktFactor) {
+        raidTemplateId *= 1;
+        
         let raidEntry = {
             summoner: summonerId,
             stage,
@@ -120,6 +123,7 @@ class Raid extends EventEmitter {
 
     async _initFromData(data) {
         this._template = await this._loadRaidTemplate(data.raidTemplateId);
+        this._weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: data.raidTemplateId, stage: data.stage });
 
         this._data = data;
 
@@ -224,6 +228,7 @@ class Raid extends EventEmitter {
         let combatUnit = attacker.getCombatUnit({
             raid: this._template._id
         });
+
         if (!combatUnit.isAlive) {
             throw Errors.NoHealth;
         }
@@ -243,6 +248,21 @@ class Raid extends EventEmitter {
         let exp = 0;
         let gold = 0;
 
+        // apply weakness bonuses
+        const attackerWeaponCombatData = await attacker.getWeaponCombatData();
+        if (attackerWeaponCombatData) {
+            // if element matches +30%
+            // if weapon matches +30%
+            if (attackerWeaponCombatData.element == this._weakness.current.element) {
+                bonusDamage *= 1.3;
+            }
+
+            if (attackerWeaponCombatData.type == this._weakness.current.weapon) {
+                bonusDamage *= 1.3;
+            }
+        }
+
+        
         while (hitsToPerform > 0) {
             exp += this.stageData.exp;
             gold += this.stageData.gold;
