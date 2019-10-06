@@ -351,7 +351,7 @@ class Inventory {
         return templates;
     }
 
-    _countItemsByTemplate(template) {
+    countItemsByTemplate(template) {
         let templates = this._getItemTemplates(template);
         let count = 0;
         let i = 0;
@@ -507,7 +507,7 @@ class Inventory {
         // NOTICE doesn't support max level items >1 quantity!
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            if (this._countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
+            if (this.countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
                 enoughResources = false;
                 break;
             }
@@ -515,6 +515,7 @@ class Inventory {
             if (ingridient.maxLevelRequired) {
                 let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId, meta);
                 if (!item) {
+                    enoughResources = false;
                     break;
                 }
             }
