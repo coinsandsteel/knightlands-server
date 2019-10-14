@@ -18,7 +18,7 @@ import Errors from "./knightlands-shared/errors";
 import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
-import random from "./random";
+import TrialType from "./knightlands-shared/trial_type";
 
 const {
     EquipmentSlots,
@@ -27,19 +27,19 @@ const {
 
 const ItemType = require("./knightlands-shared/item_type");
 
+const Trials = require("./Trials/Trials");
 const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
+const TowerPlayerUnit = require("./combat/towerPlayerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
 const ItemActions = require("./knightlands-shared/item_actions");
+
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 const AdventureRefreshInterval = 86400000;
-
 const DailyRewardCycle = 86400000;
-const DailyRewardCyclePenalty = 2;
-
 const BeastMaxBoost = 50;
 
 const {
@@ -130,6 +130,34 @@ class User {
         return this._data.raidTickets;
     }
 
+    get rank() {
+        return this._data.rank.index;
+    }
+
+    get towerFloorsCleared() {
+        return this._data.tower.towerFloorsCleared;
+    }
+
+    set towerFloorsCleared(value) {
+        this._data.tower.towerFloorsCleared = value;
+    }
+
+    get freeTowerAttempts() {
+        return this._data.tower.freeAttemps;
+    }
+
+    set freeTowerAttempts(value) {
+        this._data.tower.freeAttemps = value;
+    }
+
+    get challengedTowerFloor() {
+        return this._data.tower.challengedFloor;
+    }
+
+    get maxStats() {
+        return this._data.character.stats;
+    }
+
     async getWeaponCombatData() {
         let weapon = this._data.character.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -144,7 +172,7 @@ class User {
     }
 
     getCombatUnit(config) {
-        let stats = this._data.character.stats;
+        let stats = this.maxStats;
         if (config && config.raid) {
             this._buffsResolver.calculate(Game.now, this.rawStats, this._data.character.buffs, config.raid);
             stats = this._buffsResolver.finalStats;
@@ -152,8 +180,11 @@ class User {
         return new PlayerUnit(this, stats);
     }
 
-    addSoftCurrency(value) {
-        value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
+    addSoftCurrency(value, ignorePassiveBonuses = false) {
+        if (!ignorePassiveBonuses) {
+            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
+        }
+
         this._inventory.modifyCurrency(CurrencyType.Soft, Math.round(value));
     }
 
@@ -211,9 +242,17 @@ class User {
     }
 
     _restoreTimers() {
-        this.getTimer(CharacterStats.Energy).value = this._data.character.stats[CharacterStats.Energy];
-        this.getTimer(CharacterStats.Stamina).value = this._data.character.stats[CharacterStats.Stamina];
-        this.getTimer(CharacterStats.Health).value = this._data.character.stats[CharacterStats.Health];
+        if (this.getTimerValue(CharacterStats.Energy) < this.getMaxStatValue(CharacterStats.Energy)) {
+            this.getTimer(CharacterStats.Energy).value = this.getMaxStatValue(CharacterStats.Energy);
+        }
+
+        if (this.getTimerValue(CharacterStats.Stamina) < this.getMaxStatValue(CharacterStats.Stamina)) {
+            this.getTimer(CharacterStats.Stamina).value = this.getMaxStatValue(CharacterStats.Stamina);
+        }
+
+        if (this.getTimerValue(CharacterStats.Health) < this.getMaxStatValue(CharacterStats.Health)) {
+            this.getTimer(CharacterStats.Health).value = this.getMaxStatValue(CharacterStats.Health);
+        }
     }
 
     getTimer(stat) {
@@ -221,7 +260,7 @@ class User {
     }
 
     getMaxStatValue(stat) {
-        return this._data.character.stats[stat];
+        return this.maxStats[stat];
     }
 
     getTimerValue(stat) {
@@ -346,7 +385,7 @@ class User {
             address: this._address
         });
 
-        userData = await users.findOneAndUpdate(
+        userData = (await users.findOneAndUpdate(
             {
                 address: this._address
             },
@@ -357,20 +396,21 @@ class User {
                 returnNewDocument: true,
                 upsert: true
             }
-        );
+        )).value;
 
-        userData = userData.value;
         this._originalData = cloneDeep(userData);
         userData = this._validateUser(userData);
 
         this._data = userData;
         this._inventory = new Inventory(this._address, this._db);
-        this._crafting = new Crafting(this._address, this._inventory);
+        this._crafting = new Crafting(this._address, this._inventory, this._data.character.equipment);
         this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
+        this._trials = new Trials(this._data.trials, this);
 
         this._advanceTimers();
 
         await this._inventory.loadAll();
+        await this._trials.init();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
@@ -460,7 +500,12 @@ class User {
     }
 
     async trainStats(stats) {
+        const trainingMeta = await this._db.collection(Collections.Meta).findOne({ _id: "training_camp" });
         let totalGoldRequired = 0;
+
+        let resourceRequired = {};
+        let resourcesInStock = {};
+
         for (let i in stats) {
             if (!Number.isInteger(stats[i])) {
                 return `incorrect stat ${i}`;
@@ -470,8 +515,11 @@ class User {
                 return `incorrect stat ${i}`;;
             }
 
+            resourcesInStock[i] = this.inventory.countItemsByTemplate(trainingMeta.stats[i].resource);
+
             let value = this._data.character.attributes[i];
             this._data.character.attributes[i] += stats[i];
+
             const finalValue = this._data.character.attributes[i];
 
             if (finalValue > TrainingCamp.getMaxStat(this._data.character.level)) {
@@ -480,6 +528,15 @@ class User {
 
             for (; value < finalValue; value++) {
                 totalGoldRequired += TrainingCamp.getStatCost(i, value);
+                resourceRequired[i] = (resourceRequired[i] || 0) + TrainingCamp.getStatResourceCost(i, value);
+            }
+
+            if (totalGoldRequired > this.softCurrency) {
+                throw Errors.NotEnoughSoft;
+            }
+
+            if (resourcesInStock[i] < resourceRequired[i]) {
+                throw Errors.NotEnoughResource;
             }
         }
 
@@ -491,8 +548,16 @@ class User {
             throw Errors.NotEnoughSoft;
         }
 
+        for (let i in resourceRequired) {
+            this.inventory.removeItemByTemplate(trainingMeta.stats[i].resource, resourceRequired[i]);
+        }
+
         this.addSoftCurrency(-totalGoldRequired);
         this._recalculateStats = true;
+    }
+
+    async onInventoryChanged() {
+        await this._calculateFinalStats(true);
     }
 
     async _calculateFinalStats(force = false) {
@@ -552,10 +617,27 @@ class User {
         // calculate stats from inventory passive items
         await this._applyInventoryPassives(finalStats);
 
+        // add stats from beast. If it is non upgraded beast, skip it
+        if (this._data.beast.index != 0 || this._data.beast.level != 0) {
+            const beastsMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+            let level = this._data.beast.level;
+            let index = this._data.beast.index;
+            if (level == 0) {
+                index--;
+                level = beastsMeta.levels[index].levels.length;
+            }
+
+            const currentBeast = beastsMeta.levels[index].levels[level - 1];
+            finalStats[CharacterStat.Health] += currentBeast.health;
+            finalStats[CharacterStat.Attack] += currentBeast.attack;
+            finalStats[CharacterStat.Defense] += currentBeast.defense;
+        }
+
+
         let oldStats = character.stats;
         this.rawStats = finalStats;
 
-        await this._recalculateBuffs();
+        await this._recalculateBuffs(false);
         finalStats = character.stats;
 
         // correct timers
@@ -567,7 +649,7 @@ class User {
         }
     }
 
-    async _recalculateBuffs() {
+    async _recalculateBuffs(update = true) {
         clearTimeout(this._buffUpdateTimeout);
 
         const buffs = this._data.character.buffs;
@@ -592,7 +674,7 @@ class User {
             buffs[filteredIndex++] = buff;
         }
 
-        if (filteredIndex > 0) {
+        if (buffs.length > 0) {
             buffs.splice(filteredIndex);
             await this._saveBuffs();
         }
@@ -603,6 +685,10 @@ class User {
 
         this._buffsResolver.calculate(Game.now, this.rawStats, buffs);
         this._data.character.stats = this._buffsResolver.finalStats;
+
+        if (update) {
+            Game.emitPlayerEvent(this.address, Events.BuffUpdate, this.maxStats);
+        }
     }
 
     async _applyInventoryPassives(finalStats) {
@@ -616,6 +702,17 @@ class User {
         for (; i < length; i++) {
             let item = items[i];
 
+            if (item.type == ItemType.Charm) {
+                // apply stats
+                let max = item.maxStack;
+                if (max > item.count) {
+                    max = item.count;
+                }
+                for (let stat in item.stats) {
+                    finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]) * max;
+                }
+            }
+
             const props = item.properties;
             let k = 0;
             const pLength = props.length;
@@ -626,15 +723,6 @@ class User {
                 }
                 else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
-                } else if (item.type == ItemType.Charm && prop.type == ItemProperties.MaxEffectStack) {
-                    // apply stats
-                    let max = item.maxStack;
-                    if (max > item.count) {
-                        max = item.count;
-                    }
-                    for (let stat in item.stats) {
-                        finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]) * max;
-                    }
                 }
             }
         }
@@ -721,7 +809,7 @@ class User {
 
         Game.emitPlayerEvent(this.address, Events.BuffApplied, currentBuff);
 
-        await this._recalculateBuffs();
+        await this._recalculateBuffs(false);
 
         return null;
     }
@@ -909,11 +997,22 @@ class User {
             user.classInited = false;
         }
 
+        if (!user.rank) {
+            user.rank = {
+                index: 0,
+                exp: 0
+            };
+        }
+
         if (!user.dailyRewardCollect) {
             user.dailyRewardCollect = {
                 cycle: 0,
                 step: 0
             };
+        }
+
+        if (!user.dailyRefillCollect) {
+            user.dailyRefillCollect = 0;
         }
 
         if (!user.beast) {
@@ -922,6 +1021,24 @@ class User {
                 index: 0,
                 exp: 0
             };
+        }
+
+        if (!user.tower) {
+            user.tower = {
+                towerFloorsCleared: 0,
+                freeAttemps: 0,
+                challengedFloor: {
+                    id: 0,
+                    startTime: 0,
+                    health: 0,
+                    attack: 0,
+                    claimed: true
+                }
+            };
+        }
+
+        if (!user.trials) {
+            user.trials = {};
         }
 
         return user;
@@ -1115,6 +1232,10 @@ class User {
             const template = templates[i];
             const itemEntry = items[template._id];
 
+            if (itemEntry.count > this.inventory.getItemById(itemEntry.id).count) {
+                continue;
+            }
+
             if (template.action.relative) {
                 relativeValue += (baseStatValue * template.action.value * itemEntry.count) / 100;
             } else {
@@ -1164,8 +1285,52 @@ class User {
 
         return {
             readyToCollect: dailyRewards.cycle < this._getDailyRewardCycle(),
-            step: dailyRewards.step
+            step: dailyRewards.step,
+            untilNext: DailyRewardCycle - Game.now % DailyRewardCycle
         };
+    }
+
+    async getDailyRefillsStatus() {
+        return {
+            readyToCollect: this._data.dailyRefillCollect < this._getDailyRewardCycle(),
+            untilNext: DailyRewardCycle - Game.now % DailyRewardCycle
+        };
+    }
+
+    async collectDailyRefills() {
+        if (this._data.dailyRefillCollect >= this._getDailyRewardCycle()) {
+            throw Errors.DailyRefillCollected;
+        }
+
+        this._data.dailyRefillCollect = this._getDailyRewardCycle();
+
+        const dailyRefillsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
+        const length = dailyRefillsMeta.length;
+        for (let i = 0; i < length; ++i) {
+            const refill = dailyRefillsMeta[i];
+
+            let quantity = 0;
+            for (let i = 0; i < refill.ranks.length; ++i) {
+                const refillMeta = refill.ranks[i];
+                if (refillMeta.rank <= this.rank) {
+                    quantity = refillMeta.quantity;
+                }
+            }
+
+            switch (refill.type) {
+                case "tower":
+                    this.freeTowerAttempts = quantity;
+                    break;
+
+                case "trialsArmour":
+                    this._trials.addAttempts(TrialType.Armour, quantity, true);
+                    break;
+
+                case "weaponTrials":
+                    this._trials.addAttempts(TrialType.Weapon, quantity, true);
+                    break;
+            }
+        }
     }
 
     _getDailyRewardCycle() {
@@ -1178,8 +1343,7 @@ class User {
         const missedDays = currentRewardCycle - dailyRewardCollect.cycle;
 
         if (missedDays > 1) {
-            // for each missed day penalty player
-            dailyRewardCollect.step -= Math.max(missedDays * DailyRewardCyclePenalty, 0);
+            dailyRewardCollect.step = 0;
         }
 
         if (dailyRewardCollect.step < 0 || dailyRewardCollect.step >= dailyRewardsMeta.length) {
@@ -1266,7 +1430,7 @@ class User {
         while (boostCount > 0) {
             boostCount--;
 
-            if (!regular && random.range(1, 100, true) <= beastMeta.critBoostChance) {
+            if (!regular && Random.range(1, 100, true) <= beastMeta.critBoostChance) {
                 boostCritCount++;
                 totalGained += expGained * 10;
                 this._data.beast.exp += expGained * 10;
@@ -1278,6 +1442,7 @@ class User {
             if (this._data.beast.exp >= expRequired) {
                 this._data.beast.exp -= expRequired;
                 this._data.beast.level++;
+                this._recalculateStats = true;
 
                 if (this._data.beast.level >= currentBeast.levels.length) {
                     break;
@@ -1308,6 +1473,43 @@ class User {
             this._data.beast.level = 0;
             this._data.beast.exp = 0;
         }
+    }
+
+    getTowerFloorCombatUnit() {
+        const towerFloor = this._data.tower.challengedFloor;
+        return new TowerPlayerUnit(this.maxStats, towerFloor.userHealth, towerFloor.userMaxHealth);
+    }
+
+    // Trial
+    _createTrial() {
+        return {
+            lastStage: 0,
+            freeAttempts: 0,
+            currentFight: {
+                index: 0,
+                playerHealth: 0,
+                playerMaxHealth: 0,
+                enemyHealth: 0,
+                enemyMaxHealth: 0,
+                hits: 0
+            }
+        };
+    }
+
+    getTrialState(trialType, trialId) {
+        return this._trials.getTrialState(trialType, trialId);
+    }
+
+    challengeTrial(trialType, trialId, stageId, fightIndex) {
+        return this._trials.challengeFight(trialType, trialId, stageId, fightIndex);
+    }
+
+    fetchTrialCardsState() {
+        return this._trials.getCardsState();
+    }
+
+    attackTrial(trialType) {
+        return this._trials.attack(trialType);
     }
 }
 

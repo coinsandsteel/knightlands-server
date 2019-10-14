@@ -86,7 +86,7 @@ module.exports = {
                 continue;
             }
 
-            if (typeof (newObj[i]) == "object") {
+            if (typeof (newObject) == "object") {
                 if (!oldObj.hasOwnProperty(i)) {
                     changes[i] = newObject;
                     fieldsDetected = true;

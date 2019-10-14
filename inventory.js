@@ -107,9 +107,16 @@ class Inventory {
                             input: "$items",
                             as: "item",
                             cond: {
-                                $gt: [
-                                    { $size: "$$item.properties" },
-                                    0
+                                $or: [
+                                    {
+                                        $gt: [
+                                            { $size: "$$item.properties" },
+                                            0
+                                        ]
+                                    },
+                                    {
+                                        $eq: ["$$item.type", ItemType.Charm]
+                                    }
                                 ]
                             }
                         }
@@ -567,7 +574,11 @@ class Inventory {
         }
     }
 
-    setItemUpdated(item) {
+    setItemUpdated(item, force = false) {
+        if (!force && item.equipped) {
+            return;
+        }
+        
         this._newItems.set(item.id, item);
     }
 
@@ -578,17 +589,27 @@ class Inventory {
             this.deleteItemById(item.id);
         } else {
             // mark as new
-            this.setItemUpdated(item);
+            this.setItemUpdated(item, true);
         }
     }
 
     makeUnique(item) {
+        if (item.equipped) {
+            // if item is equipped make current stack non equipped
+            const itemStack = this.getItemById(item.id);
+            itemStack.equipped = false;
+            this.setItemUpdated(itemStack, true);
+
+            item.unique = true;
+            item.id = this.nextId;
+            return item;
+        }
+
         this.modifyStack(item, -1);
 
         const newItem = this.createItem(item.template, 1);
         newItem.unique = true;
         this.addItem(newItem);
-
         return newItem;
     }
 

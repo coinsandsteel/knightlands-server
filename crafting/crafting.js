@@ -12,7 +12,8 @@ const {
 const ItemType = require("../knightlands-shared/item_type");
 
 class Crafting {
-    constructor(userId, inventory) {
+    constructor(userId, inventory, equipment) {
+        this._equipment = equipment;
         this._inventory = inventory;
         this._userId = userId;
     }
@@ -20,7 +21,7 @@ class Crafting {
     async enchantItem(itemId, currency) {
         itemId *= 1;
 
-        let item = this._inventory.getItemById(itemId);
+        let item = this._getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
         }
@@ -81,7 +82,7 @@ class Crafting {
 
     async enchantPayed(itemId) {
         return await this._inventory.autoCommitChanges(inventory => {
-            let item = inventory.getItemById(itemId);
+            let item = this._getItemById(itemId);
             if (item) {
                 if (!item.unique) {
                     item = inventory.makeUnique(item);
@@ -152,14 +153,9 @@ class Crafting {
 
         await this._inventory.loadAllItems();
 
-        let item = this._inventory.getItemById(itemId);
+        let item = this._getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
-        }
-
-        // if item is not unique - it should be converted to unique and assigned new id to make it stand out from default stack
-        if (!item.unique) {
-            item = this._inventory.makeUnique(item);
         }
 
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
@@ -175,6 +171,11 @@ class Crafting {
                 throw Errors.NoItem;
             }
 
+            // if it same item as target - make sure it has enough stack size for material count + unique item
+            if (materialItem.count < items[i]+1) {
+                throw Errors.NotEnoughMaterial;
+            }
+
             if (materialItem.template != item.template) {
                 throw Errors.IncorrectArguments;
             }
@@ -184,6 +185,11 @@ class Crafting {
 
         if (unbindLevels < 1 && unbindLevels > 2) {
             throw Errors.IncorrectArguments;
+        }
+
+        // if item is not unique - it should be converted to unique and assigned new id to make it stand out from default stack
+        if (!item.unique) {
+            item = this._inventory.makeUnique(item);
         }
 
         // remove items
@@ -203,6 +209,7 @@ class Crafting {
         itemId *= 1;
 
         if (!Number.isInteger(count) || count < 1) {
+            console.log(count);
             throw Errors.IncorrectArguments;
         }
 
@@ -212,14 +219,9 @@ class Crafting {
 
         await this._inventory.loadAllItems();
 
-        let item = this._inventory.getItemById(itemId);
+        let item = this._getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
-        }
-
-        // if item is not unique - it should be converted to unique and assigned new id to make it stand out from default stack
-        if (!item.unique) {
-            item = this._inventory.makeUnique(item);
         }
 
         let upgradeMeta = await this._getUpgradeMeta();
@@ -234,8 +236,8 @@ class Crafting {
             throw Errors.ItemMaxLevel;
         }
 
-        const startLevel = item.level;
-        const startExp = item.exp;
+        let level = item.level;
+        let exp = item.exp;
 
         try {
             for (let i = 0; i < materials.length; ++i) {
@@ -243,6 +245,7 @@ class Crafting {
 
                 // if material type is item itself
                 if (itemId === material) {
+                    console.log(itemId, material);
                     throw Errors.IncorrectArguments;
                 }
 
@@ -276,33 +279,41 @@ class Crafting {
                 }
 
                 let itemsToConsume = count;
+                let totalmaterial = materialItem.count;
+                if (materialItem.id == item.id) {
+                    // item is not yet unique, reserve 1 for it
+                    totalmaterial--;
+                }
                 // add experience to item for each material
-                if (itemsToConsume > materialItem.count) {
-                    itemsToConsume = materialItem.count;
+                if (itemsToConsume > totalmaterial) {
+                    itemsToConsume = totalmaterial;
                 }
 
                 let expTable = upgradeMeta.levelExpTable;
-                let expRequired = expTable[item.level - 1];
-                item.exp += expPerMaterial * itemsToConsume;
-                while (expRequired <= item.exp && maxLevel > item.level) {
-                    item.level++;
-                    item.exp -= expRequired;
-                    expRequired = expTable[item.level - 1];
+                let expRequired = expTable[level - 1];
+                exp += expPerMaterial * itemsToConsume;
+                while (expRequired <= exp && maxLevel > level) {
+                    level++;
+                    exp -= expRequired;
+                    expRequired = expTable[level - 1];
                 }
 
-                if (item.level == maxLevel) {
-                    item.exp = 0;
+                if (level == maxLevel) {
+                    exp = 0;
                 }
             }
         } catch (exc) {
-            item.level = startLevel;
-            item.exp = startExp;
-
             throw exc;
         }
 
-        item.exp = Math.round(item.exp);
+        // if item is not unique - it should be converted to unique and assigned new id to make it stand out from default stack
+        if (!item.unique) {
+            item = this._inventory.makeUnique(item);
+        }
 
+        item.level = level;
+        item.exp = Math.round(exp);
+        
         this._inventory.setItemUpdated(item);
 
         for (let i = 0; i < materials.length; ++i) {
@@ -311,6 +322,22 @@ class Crafting {
         }
 
         return item.id;
+    }
+
+    _getItemById(itemId) {
+        let item = this._inventory.getItemById(itemId);
+        if (!item || item.equipped) {
+            // try to search in equipment
+            for (const slot in this._equipment) {
+                const gear = this._equipment[slot];
+                if (gear.id == itemId) {
+                    item = gear;
+                    break;
+                }
+            }
+        }
+
+        return item;
     }
 
     async _loadRecipe(recipe) {

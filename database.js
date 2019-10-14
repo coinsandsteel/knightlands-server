@@ -6,8 +6,12 @@ function _buildPaths(key, changes, paths = {}) {
     for (let i in changes) {
         if (typeof (changes[i]) == "object") {
             let innerPath = _buildPaths(i, changes[i]);
-            for (let j in innerPath) {
-                paths[`${key}.${j}`] = innerPath[j];
+            if (Object.keys(innerPath).length > 0) {
+                for (let j in innerPath) {
+                    paths[`${key}.${j}`] = innerPath[j];
+                }
+            } else {
+                paths[`${key}.${i}`] = changes[i];
             }
         } else {
             paths[`${key}.${i}`] = changes[i];
@@ -51,7 +55,8 @@ module.exports = {
         Whitelist: "whitelist",
         DropZoneModifiers: "drop_zone_modifiers",
         Adventures: "adventures",
-        AdventuresList: "adventures_list"
+        AdventuresList: "adventures_list",
+        TowerMeta: "tower_meta"
     },
 
 

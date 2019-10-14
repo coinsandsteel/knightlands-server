@@ -7,15 +7,19 @@ import Errors from "./knightlands-shared/errors";
 import CurrencyType from "./knightlands-shared/currency_type";
 import CharacterStats from "./knightlands-shared/character_stat";
 const Unit = require("./combat/unit");
+const FloorEnemyUnit = require("./combat/floorEnemyUnit");
 const IPaymentListener = require("./payment/IPaymentListener");
 const ItemActions = require("./knightlands-shared/item_actions");
 const Inventory = require("./inventory");
+import CharacterStat from "./knightlands-shared/character_stat";
 
 const {
     Collections
 } = require("./database");
 
 import Game from "./game";
+
+const TowerFloorPageSize = 20;
 
 class PlayerController extends IPaymentListener {
     constructor(socket) {
@@ -47,12 +51,14 @@ class PlayerController extends IPaymentListener {
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
+
+        // raids
         this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
         this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
+        this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
+        this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
 
-        // game functions
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
-
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
@@ -63,26 +69,46 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
-        this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
-        this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
+
+        // Crafting
         this._socket.on(Operations.UpgradeItem, this._gameHandler(this._upgradeItem.bind(this)));
         this._socket.on(Operations.UnbindItem, this._gameHandler(this._unbindItem.bind(this)));
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
         this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
 
+        // Adventures
         this._socket.on(Operations.BuyAdventureSlot, this._gameHandler(this._buyAdventureSlot.bind(this)));
         this._socket.on(Operations.FetchAdventuresStatus, this._gameHandler(this._fetchAdventuresStatus.bind(this)));
         this._socket.on(Operations.StartAdventure, this._gameHandler(this._startAdventure.bind(this)));
         this._socket.on(Operations.ClaimAdventure, this._gameHandler(this._claimAdventure.bind(this)));
         this._socket.on(Operations.RefreshAdventures, this._gameHandler(this._refreshAdventures.bind(this)));
 
+        // Daily rewards
         this._socket.on(Operations.FetchDailyRewardStatus, this._gameHandler(this._fetchDailyRewardStatus.bind(this)));
         this._socket.on(Operations.CollectDailyReward, this._gameHandler(this._collectDailyReward.bind(this)));
+        this._socket.on(Operations.FetchDailyRefillsStatus, this._gameHandler(this._fetchDailyRefillsStatus.bind(this)));
+        this._socket.on(Operations.CollectDailyRefills, this._gameHandler(this._collectDailyRefills.bind(this)));
 
+        // Beast taming
         this._socket.on(Operations.BeastRegularBoost, this._gameHandler(this._beastRegularBoost.bind(this)));
         this._socket.on(Operations.BeastAdvancedBoost, this._gameHandler(this._beastAdvancedBoost.bind(this)));
         this._socket.on(Operations.EvolveBeast, this._gameHandler(this._evolveBeast.bind(this)));
         this._socket.on(Operations.FetchBeastBoostPurchase, this._gameHandler(this._fetchBeastBoostPurchase.bind(this)));
+
+        // Tower 
+        this._socket.on(Operations.FetchTowerFloors, this._gameHandler(this._fetchTowerFloors.bind(this)));
+        this._socket.on(Operations.ChallengeTowerFloor, this._gameHandler(this._challengeTowerFloor.bind(this)));
+        this._socket.on(Operations.AttackTowerFloor, this._gameHandler(this._attackTowerFloor.bind(this)));
+        this._socket.on(Operations.SkipTowerFloor, this._gameHandler(this._skipTowerFloor.bind(this)));
+        this._socket.on(Operations.ClaimTowerFloorRewards, this._gameHandler(this._claimTowerFloorRewards.bind(this)));
+        this._socket.on(Operations.CancelTowerFloor, this._gameHandler(this._cancelTowerFloor.bind(this)));
+        this._socket.on(Operations.FetchChallengedTowerFloor, this._gameHandler(this._fetchChallengedTowerFloor.bind(this)));
+
+        // Trials
+        this._socket.on(Operations.FetchTrialState, this._gameHandler(this._fetchTrialState.bind(this)));
+        this._socket.on(Operations.ChallengeTrialFight, this._gameHandler(this._challengeTrialFight.bind(this)));
+        this._socket.on(Operations.FetchCardsState, this._gameHandler(this._fetchTrialCardsState.bind(this)));
+        this._socket.on(Operations.AttackTrial, this._gameHandler(this._attackTrial.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -169,15 +195,17 @@ class PlayerController extends IPaymentListener {
         }
     }
 
-    _handleEvent(event, args) {
+    async _handleEvent(event, args) {
         switch (event) {
             case Inventory.Changed:
                 this._socket.emit(Events.InventoryUpdate, args);
+
+                const user = await this.getUser();
+                await user.onInventoryChanged();
                 break;
 
-            case Events.BuffApplied:
-                this._socket.emit(Events.BuffApplied, args);
-                break;
+            default:
+                this._socket.emit(event, args);
         }
     }
 
@@ -809,6 +837,14 @@ class PlayerController extends IPaymentListener {
         return await user.collectDailyReward();
     }
 
+    async _fetchDailyRefillsStatus(user) {
+        return await user.getDailyRefillsStatus();
+    }
+
+    async _collectDailyRefills(user) {
+        return await user.collectDailyRefills();
+    }
+
     // Beast boosting
     async _beastRegularBoost(user, data) {
         return await user.beastBoost(data.count * 1, true);
@@ -832,6 +868,201 @@ class PlayerController extends IPaymentListener {
 
     async _cancelPayment(user, data) {
         return await Game.paymentProcessor.cancelPayment(this.address, data.id);
+    }
+
+    // Tower
+    async _fetchTowerFloors(user, data) {
+        let page = data.page * 1;
+
+        if (!Number.isInteger(page) || page < -1) {
+            throw Errors.IncorrectArguments;
+        }
+
+        // if page == -1 fetch list around last cleared floor
+        const floorsCleared = user.towerFloorsCleared;
+
+        if (page == -1) {
+            page = Math.floor(floorsCleared / TowerFloorPageSize);
+        }
+
+        const startIndex = page * TowerFloorPageSize;
+        const toSkip = (page + 1) * TowerFloorPageSize;
+
+        // _id is an index of the floor, let's take advantage to use index
+        const floors = await this._db.collection(Collections.TowerMeta).find({ _id: { $lt: toSkip, $gte: startIndex } }).sort({ _id: -1 }).toArray();
+
+        return {
+            floors,
+            floorsCleared,
+            page
+        };
+    }
+
+    async _challengeTowerFloor(user, data) {
+        const floorIndex = data.floor * 1;
+
+        if (!Number.isInteger(floorIndex) || floorIndex < 0 || floorIndex > user.towerFloorsCleared) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const towerFloor = user.challengedTowerFloor;
+        // check if challenge is finished
+        if (towerFloor.userHealth > 0 && !towerFloor.claimed && towerFloor.health <= 0) {
+            throw Errors.TowerFloorInProcess;
+        }
+
+        const floorData = await this._db.collection(Collections.TowerMeta).find({
+            _id: {
+                $in: [
+                    floorIndex, "misc"
+                ]
+            }
+        }).toArray();
+
+        
+
+        const floorMeta = floorData.find(x => x._id != "misc");
+        if (!floorMeta) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (user.freeTowerAttempts > 0) {
+            user.freeTowerAttempts--;
+        } else {
+            const miscMeta = floorData.find(x => x._id == "misc");
+            const ticketItem = user.inventory.getItemByTemplate(miscMeta.ticketItem);
+            if (!ticketItem) {
+                throw Errors.TowerNoTicket;
+            }
+
+            user.inventory.removeItem(ticketItem.id, 1);
+        }
+
+        towerFloor.startTime = Game.now;
+        towerFloor.health = floorMeta.health;
+        towerFloor.maxHealth = floorMeta.health;
+        towerFloor.attack = floorMeta.attack;
+        towerFloor.id = floorIndex;
+        towerFloor.userHealth = user.getMaxStatValue(CharacterStat.Health);
+        towerFloor.userMaxHealth = user.getMaxStatValue(CharacterStat.Health);
+        towerFloor.claimed = false;
+
+        return towerFloor;
+    }
+
+    async _attackTowerFloor(user) {
+        const towerFloor = user.challengedTowerFloor;
+        // check if challenge is timed out or unclaimed and finished
+        if (towerFloor.userHealth <= 0 || towerFloor.health <= 0) {
+            throw Errors.TowerFloorFinished;
+        }
+
+        const userUnit = user.getTowerFloorCombatUnit();
+        const floorEnemyUnit = new FloorEnemyUnit(towerFloor.attack, towerFloor.health);
+
+        const attackResult = userUnit.attack(floorEnemyUnit);
+        if (floorEnemyUnit.isAlive) {
+            floorEnemyUnit.attack(userUnit);
+        }
+
+        towerFloor.health = floorEnemyUnit.getHealth();
+        towerFloor.userHealth = userUnit.getHealth();
+
+        return {
+            ...attackResult,
+            enemyHealth: towerFloor.health,
+            playerHealth: towerFloor.userHealth
+        };
+    }
+
+    async _skipTowerFloor(user, data) {
+        const floor = data.floor * 1;
+        // only skip cleared floors
+        if (user.towerFloorsCleared <= floor) {
+            throw Errors.IncorrectArguments;
+        }
+
+        // check if there is a skip item
+        const towerMiscMeta = await this._db.collection(Collections.TowerMeta).findOne({ _id: "misc" });
+        const skipItem = user.inventory.getItemByTemplate(towerMiscMeta.skipItem);
+        if (!skipItem) {
+            throw Errors.NoEnoughItems;
+        }
+
+        user.inventory.removeItem(skipItem.id, 1);
+
+        return await this._sendRewardsForTowerFloor(floor, false);
+    }
+
+    async _claimTowerFloorRewards(user) {
+        // only unclaimed and finished floor
+        const towerFloor = user.challengedTowerFloor;
+        if (towerFloor.health > 0) {
+            throw Errors.TowerFloorInProcess;
+        }
+
+        if (towerFloor.claimed) {
+            throw Errors.TowerFloorClaimed;
+        }
+
+        // is it a newly finished floor?
+        const firstClearance = towerFloor.id == user.towerFloorsCleared;
+        if (firstClearance) {
+            user.towerFloorsCleared++;
+        }
+
+        towerFloor.claimed = true;
+
+        return await this._sendRewardsForTowerFloor(towerFloor.id, firstClearance);
+    }
+
+    async _sendRewardsForTowerFloor(floor, firstClearance) {
+        const floorMeta = await this._db.collection(Collections.TowerMeta).findOne({ _id: floor });
+        const loot = firstClearance ? floorMeta.firstClearReward : floorMeta.repeatClearReward;
+
+        const items = await Game.lootGenerator.getLootFromTable(loot);
+
+        this._user.addSoftCurrency(floorMeta.softCurrency);
+        await this._user.addExperience(floorMeta.exp);
+        await this._user.inventory.addItemTemplates(items);
+
+        return {
+            items,
+            soft: floorMeta.softCurrency,
+            exp: floorMeta.exp
+        }
+    }
+
+    async _cancelTowerFloor(user) {
+        const towerFloor = user.challengedTowerFloor;
+        towerFloor.health = 0;
+        towerFloor.claimed = true;
+    }
+
+    async _fetchChallengedTowerFloor(user) {
+        const towerFloor = user.challengedTowerFloor;
+        if (towerFloor.userHealth > 0 && (!towerFloor.claimed || towerFloor.health > 0)) {
+            return towerFloor;
+        }
+
+        return null;
+    }
+
+    // Trials
+    async _fetchTrialState(user, data) {
+        return user.getTrialState(data.trialType, data.trialId);
+    }
+
+    async _challengeTrialFight(user, data) {
+        return user.challengeTrial(data.trialType, data.trialId, data.stageId, data.fightIndex);
+    }
+
+    async _fetchTrialCardsState(user) {
+        return user.fetchTrialCardsState();
+    }
+
+    async _attackTrial(user, data) {
+        return user.attackTrial(data.trialType);
     }
 }
 
