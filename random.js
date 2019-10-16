@@ -13,5 +13,8 @@ export default {
     },
     pick(array) {
         return random.pick(array);
+    },
+    shuffle(array) {
+        return random.shuffle(array);
     }
 }

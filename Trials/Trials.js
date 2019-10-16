@@ -27,6 +27,7 @@ class Trials {
 
     _createStageState() {
         return {
+            collected: false,
             cleared: false,
             firstTimeCleared: false,
             finishedFights: {}
@@ -84,54 +85,85 @@ class Trials {
         this._cards = new TrialCards(this._user, this._state.cards, this._generalTrialsMeta, cardsRollMeta);
     }
 
-    async pickCard(cardIndex) {
+    async pickCard(trialType, cardIndex) {
         cardIndex *= 1;
 
         const currentFight = this._getChallengedFight(trialType);
         if (!currentFight.cards) {
-            return;
-        }
-
-        if (!currentFight.cards) {
             throw Errors.TrialNoCards;
         }
 
-        if (cardIndex < -1 || currentFight.cards.length >= cardIndex) {
+        if (cardIndex < -1 || cardIndex >= currentFight.cards.length) {
             throw Errors.TrialInvalidCard;
         }
 
-        return await this._cards.activateCard(currentFight, cardIndex);
+        const trialsMeta = this._getTrialsMeta(trialType);
+        const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
+        const fightMeta = this._getFightMeta(stageMeta, currentFight.index);
+        const response = await this._cards.activateCard(currentFight, fightMeta, cardIndex);
+
+        await this.tryFinishFight(trialType, currentFight);
+
+        delete currentFight.cards;
+
+        return response;
     }
 
-    attack(trialType) {
-        const trialState = this._getTrialTypeState(trialType);
+    async attack(trialType) {
         const currentFight = this._getChallengedFight(trialType);
+        if (!currentFight) {
+            throw Errors.TrialFightFinished;
+        }
 
         const playerCombatUnit = new TrialPlayerUnit(this._user.maxStats, currentFight.playerHealth, currentFight.maxPlayerHealth);
-        const enemyCombatUnit = new FloorEnemyUnit(currentFight.health, currentFight.attack);
+        const enemyCombatUnit = new FloorEnemyUnit(currentFight.attack, currentFight.health);
 
         const attackResult = playerCombatUnit.attack(enemyCombatUnit);
         const response = {
             attackResult
         };
 
-        if (enemyCombatUnit.isAlive) {
-            enemyCombatUnit.attack(playerCombatUnit);
+        currentFight.health = enemyCombatUnit.getHealth();
+        currentFight.playerHealth = playerCombatUnit.getHealth();
 
+        attackResult.enemyHealth = currentFight.health;
+        attackResult.playerHealth = currentFight.playerHealth;
+
+        const fightFinished = await this.tryFinishFight(trialType, currentFight);
+        if (fightFinished) {
+            response.fightFinished = true;
+        } else {
             // trigger cards of hate (based on chance and hits)
             response.cards = this._cards.rollCards(trialType, currentFight.hits);
-            currentFight.cards = response.cards;
+            if (response.cards) {
+                currentFight.cards = response.cards;
+            }
             currentFight.hits++;
-            currentFight.health = enemyCombatUnit.getHealth();
-            currentFight.playerHealth = playerCombatUnit.getHealth();
-        } else {
-            // set as finished
+        }
+
+        return response;
+    }
+
+    async tryFinishFight(trialType, currentFight) {
+        if (currentFight.health <= 0 || currentFight.playerHealth <= 0) {
+            await this.finishCurrentFight(trialType, currentFight);
+            return true;
+        }
+
+        return false;
+    }
+
+    async finishCurrentFight(trialType, currentFight) {
+        if (currentFight.playerHealth > 0) {
             const stageState = this._getStageState(trialType, currentFight.trialId, currentFight.stageId);
             stageState.finishedFights[currentFight.id] = true;
-            response.fightFinished = true;
 
             const trialsMeta = this._getTrialsMeta(trialType);
-            const stageMeta = this._getStageMeta(trialsMeta, trialId, currentFight.stageId);
+            const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
+            // reward soft and exp
+            const fightMeta = this._getFightMeta(stageMeta, currentFight.index);
+            this._user.addSoftCurrency(fightMeta.soft);
+            await this._user.addExperience(fightMeta.exp);
 
             // check if all fights are finished
             let allFinished = true;
@@ -145,33 +177,22 @@ class Trials {
 
             if (allFinished) {
                 stageState.cleared = true;
-                stageState.firstTimeCleared = true;
-                response.stageCleared = true;
+                stageState.finishedFights = {};
             }
-
-            trialState.currentFight = null;
         }
 
-        return response;
+        delete this._getTrialTypeState(trialType).currentFight;
     }
 
     challengeFight(trialType, trialId, stageId, fightIndex) {
         fightIndex *= 1;
 
-        // get trial meta
         const trialsMeta = this._getTrialsMeta(trialType);
-        if (!trialsMeta) {
-            throw Errors.IncorrectArguments;
-        }
-
         const stageMeta = this._getStageMeta(trialsMeta, trialId, stageId);
+        const stageState = this._getStageState(trialType, trialId, stageMeta.id);
 
-        if (!stageMeta) {
-            throw Errors.IncorrectArguments;
-        }
-
-        // this stage was cleared?
-        if (this._isStageCleared(trialType, trialId, stageMeta.id)) {
+        // this stage was cleared and no collected yet
+        if (stageState.cleared && !stageState.collected) {
             throw Errors.TrialStageCleared;
         }
 
@@ -189,7 +210,6 @@ class Trials {
         }
 
         const fightMeta = this._getFightMeta(stageMeta, fightIndex);
-        const stageState = this._getStageState(trialType, trialId, stageMeta.id);
 
         // if this fight already finished?
         if (this._isFightFinished(stageState, fightMeta.id)) {
@@ -219,6 +239,9 @@ class Trials {
             throw Errors.TrialNoAttempts;
         }
 
+        stageState.cleared = false;
+        stageState.collected = false;
+
         // create fight 
         trialState.currentFight = {
             playerHealth: this._user.getMaxStatValue(CharacterStat.Health),
@@ -228,11 +251,50 @@ class Trials {
             attack: fightMeta.attack,
             stageId: stageMeta.id,
             id: fightMeta.id,
+            index: fightIndex,
             trialId,
             hits: 0 // used for pity system
         };
 
         return trialState;
+    }
+
+    async collectTrialStageReward(trialType, trialId, stageId) {
+        const trialState = this._getTrialTypeState(trialType);
+        // check if player is not in fight
+        if (trialState.currentFight) {
+            throw Errors.TrialInFight;
+        }
+
+        const trialsMeta = this._getTrialsMeta(trialType);
+        const stageMeta = this._getStageMeta(trialsMeta, trialId, stageId);
+        const stageState = this._getStageState(trialType, trialId, stageId);
+
+        if (!stageState.cleared) {
+            throw Errors.TrialStageNotCleared;
+        }
+
+        if (stageState.collected) {
+            throw Errors.TrialStageRewardCollected;
+        }
+
+        let rewardPreset;
+        if (stageState.firstTimeCleared) {
+            rewardPreset = stageMeta.repeatedReward;
+        } else {
+            stageState.firstTimeCleared = true;
+            rewardPreset = stageMeta.firstClearanceReward;
+        }
+
+        const items = await Game.lootGenerator.getLootFromTable(rewardPreset.loot);
+        await this._user.inventory.addItemTemplates(items);
+
+        this._user.addSoftCurrency(rewardPreset.soft);
+        await this._user.addExperience(rewardPreset.exp);
+
+        stageState.collected = true;
+
+        return stageState;
     }
 
     getTrialState(trialType, trialId) {
@@ -249,8 +311,13 @@ class Trials {
         };
     }
 
-    getCardsState() {
-        return this._cards.state;
+    fetchFightMeta(trialType, trialId, stageId, fightIndex) {
+        fightIndex *= 1;
+
+        const trialsMeta = this._getTrialsMeta(trialType);
+        const stageMeta = this._getStageMeta(trialsMeta, trialId, stageId);
+
+        return this._getFightMeta(stageMeta, fightIndex);
     }
 
     addAttempts(trialType, count, isFree) {
@@ -333,7 +400,11 @@ class Trials {
     }
 
     _getTrialTypeState(trialType) {
-        return this._state[trialType];
+        const state = this._state[trialType];
+        if (!state) {
+            throw Errors.UnknownTrialType;
+        }
+        return state;
     }
 
     _getTrialState(trialType, trialId) {

@@ -270,6 +270,10 @@ class LootGenerator {
             itemsToRoll = table.itemsToRoll;
         }
 
+        if (!itemsToRoll) {
+            itemsToRoll = 1;
+        }
+
         if (lootContext.lootCount) {
             itemsToRoll *= lootContext.lootCount;
         }

@@ -1504,12 +1504,20 @@ class User {
         return this._trials.challengeFight(trialType, trialId, stageId, fightIndex);
     }
 
-    fetchTrialCardsState() {
-        return this._trials.getCardsState();
+    fetchTrialFightMeta(trialType, trialId, stageId, fightIndex) {
+        return this._trials.fetchFightMeta(trialType, trialId, stageId, fightIndex);
     }
 
-    attackTrial(trialType) {
-        return this._trials.attack(trialType);
+    async attackTrial(trialType) {
+        return await this._trials.attack(trialType);
+    }
+
+    async collectTrialStageReward(trialType, trialId, stageId) {
+        return await this._trials.collectTrialStageReward(trialType, trialId, stageId);
+    }
+
+    async chooseTrialCard(trialType, cardIndex) {
+        return await this._trials.pickCard(trialType, cardIndex);
     }
 }
 

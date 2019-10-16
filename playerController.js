@@ -107,8 +107,10 @@ class PlayerController extends IPaymentListener {
         // Trials
         this._socket.on(Operations.FetchTrialState, this._gameHandler(this._fetchTrialState.bind(this)));
         this._socket.on(Operations.ChallengeTrialFight, this._gameHandler(this._challengeTrialFight.bind(this)));
-        this._socket.on(Operations.FetchCardsState, this._gameHandler(this._fetchTrialCardsState.bind(this)));
+        this._socket.on(Operations.CollectTrialStageReward, this._gameHandler(this._collectTrialStageReward.bind(this)));
+        this._socket.on(Operations.FetchTrialFightMeta, this._gameHandler(this._fetchTrialFightMeta.bind(this)));
         this._socket.on(Operations.AttackTrial, this._gameHandler(this._attackTrial.bind(this)));
+        this._socket.on(Operations.ChooseTrialCard, this._gameHandler(this._chooseTrialCard.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1057,12 +1059,20 @@ class PlayerController extends IPaymentListener {
         return user.challengeTrial(data.trialType, data.trialId, data.stageId, data.fightIndex);
     }
 
-    async _fetchTrialCardsState(user) {
-        return user.fetchTrialCardsState();
+    async _collectTrialStageReward(user, data) {
+        return await user.collectTrialStageReward(data.trialType, data.trialId, data.stageId);
+    }
+
+    async _fetchTrialFightMeta(user, data) {
+        return user.fetchTrialFightMeta(data.trialType, data.trialId, data.stageId, data.fightIndex);
     }
 
     async _attackTrial(user, data) {
-        return user.attackTrial(data.trialType);
+        return await user.attackTrial(data.trialType);
+    }
+
+    async _chooseTrialCard(user, data) {
+        return await user.chooseTrialCard(data.trialType, data.cardIndex * 1);
     }
 }
 

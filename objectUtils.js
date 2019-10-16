@@ -46,22 +46,22 @@ module.exports = {
                 continue;
             }
 
+            const newValue = newObj[i];
+
             if (typeof (oldObj[i]) == "object") {
                 if (!newObj.hasOwnProperty(i)) {
                     changes[i] = "";
                     fieldsDetected = true;
                 } else {
                     let innerChanges = {};
-                    if (this.detectRemovals(oldObj[i], newObj[i], innerChanges)) {
+                    if (this.detectRemovals(oldObj[i], newValue, innerChanges)) {
                         fieldsDetected = true;
                         changes[i] = innerChanges;
                     }
                 }
-            } else {
-                if (!newObj || !newObj.hasOwnProperty(i)) {
-                    changes[i] = "";
-                    fieldsDetected = true;
-                }
+            } else if (!newObj.hasOwnProperty(i)) {
+                changes[i] = "";
+                fieldsDetected = true;
             }
         }
 
@@ -78,28 +78,31 @@ module.exports = {
                 continue;
             }
 
-            const newObject = newObj[i];
-            const oldObject = oldObj[i];
+            const newValue = newObj[i];
+            const oldValue = oldObj[i];
 
-            if (Array.isArray(newObject) || Array.isArray(oldObject)) {
+            if (Array.isArray(newValue) || Array.isArray(oldValue)) {
+                changes[i] = newValue;
                 //skip arrays
                 continue;
             }
 
-            if (typeof (newObject) == "object") {
+            if (typeof (newValue) == "object") {
                 if (!oldObj.hasOwnProperty(i)) {
-                    changes[i] = newObject;
+                    changes[i] = newValue;
                     fieldsDetected = true;
-                } else {
+                } else if (oldValue) {
                     let innerChanges = {};
-                    if (this.detectChanges(oldObject, newObject, innerChanges)) {
+                    if (this.detectChanges(oldValue, newValue, innerChanges)) {
                         fieldsDetected = true;
                         changes[i] = innerChanges;
                     }
+                } else {
+                    changes[i] = newValue;
                 }
             } else {
-                if (!oldObj || !oldObj.hasOwnProperty(i) || oldObject !== newObject) {
-                    changes[i] = newObject;
+                if (!oldObj || !oldObj.hasOwnProperty(i) || oldValue !== newValue) {
+                    changes[i] = newValue;
                     fieldsDetected = true;
                 }
             }

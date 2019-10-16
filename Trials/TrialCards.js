@@ -16,7 +16,7 @@ class TrialCards {
         this._choiceMeta = choiceMeta;
         this._meta = meta;
 
-        this._cardWeights = new WeightedList(this._meta.cardsWeights);
+        this._cardWeights = new WeightedList(this._meta.cardWeights.weights);
     }
 
     get state() {
@@ -24,25 +24,28 @@ class TrialCards {
     }
 
     rollCards(trialType, hitsCount) {
-        // hitsCount used for pity system
-        if (hitsCount == 0) {
-            // always trigger
-            return this._rollCardsAndResetIncreasedRollChance(trialType);
-        }
+        // // hitsCount used for pity system
+        // if (hitsCount == 0) {
+        //     // always trigger
+        //     return this._rollCardsAndResetIncreasedRollChance(trialType);
+        // }
 
-        const chanceInc = this._getCardsChanceRollIncrease(trialType);
-        const choiceMeta = this._choiceMeta[trialType];
-        if (Random.intRange(0, 100) <= choiceMeta.cardsChoiceChance + chanceInc) {
-            return this._rollCardsAndResetIncreasedRollChance(trialType);
-        }
+        // const chanceInc = this._getCardsChanceRollIncrease(trialType);
+        // const choiceMeta = this._choiceMeta[trialType];
+        // if (Random.intRange(0, 100) <= choiceMeta.cardsChoiceChance + chanceInc) {
+        //     return this._rollCardsAndResetIncreasedRollChance(trialType);
+        // }
 
-        this._setCardsChanceRollIncrease(trialType, chanceInc + choiceMeta.cardsChanceIncreaseStep);
+        // this._setCardsChanceRollIncrease(trialType, chanceInc + choiceMeta.cardsChanceIncreaseStep);
+        return null;
     }
 
     async activateCard(fightState, fightMeta, cardIndex) {
-        const cardEffect = fightState.cards[cardIndex];
+        const cardEffect = Random.shuffle(fightState.cards)[cardIndex];
         const cardMeta = fightMeta.cards[cardEffect];
-        const modValue = this._modifyValue(cardMeta.value, cardModifierType);
+
+        const cardBaseValue = cardMeta ? cardMeta.value : 0;
+        const modValue = this._modifyValue(cardBaseValue, cardEffect);
 
         const response = {
             value: modValue,
@@ -87,16 +90,16 @@ class TrialCards {
         this._state.points = (this._state.points || 0) + points;
     }
 
-    _modifyValue(value, cardModifierType) {
-        const modifier = this._meta.cardModifiers[cardModifierType];
+    _modifyValue(value, cardEffect) {
+        const modifier = this._meta.cardModifiers[cardEffect];
 
         // no modifier, do not do anything
         if (!modifier) {
             return value;
         }
 
-        const level = (this._state.modifiers[cardModifierType] || 0);
-        const modValue = modifier.levels[level];
+        const level = (this._state.modifiers[cardEffect] || 0);
+        const modValue = modifier.levels[level].value;
 
         switch (modifier.type) {
             case TrialCardModifiers.FlatValue:
@@ -121,7 +124,7 @@ class TrialCards {
     }
 
     _getCardsState(trialType) {
-        const state = this._state[trialType];
+        let state = this._state[trialType];
         if (!state) {
             state = {
                 rollInc: 0
