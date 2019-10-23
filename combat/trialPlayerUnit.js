@@ -14,6 +14,20 @@ class TrialPlayerUnit extends Unit {
 
         super(currentStats, maxStats);
     }
+
+    get attackPenalty() {
+        return this._attackPenalty;
+    }
+
+    set attackPenalty(value) {
+        this._attackPenalty = value;
+    }
+
+    getAttack() {
+        const attackData = super.getAttack(false);
+        attackData.attack *= this.attackPenalty;
+        return attackData;
+    }
 }
 
 module.exports = TrialPlayerUnit;

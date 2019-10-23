@@ -31,6 +31,10 @@ class Crafting {
             throw Errors.NoTemplate;
         }
 
+        if (itemTemplate.type != ItemType.Equipment || itemTemplate.enchantable) {
+            throw Errors.ItemNotEnchantable;
+        }
+
         let enchantingInProcess = await Game.craftingQueue.isEnchantingInProcess(this._userId, itemId);
         if (enchantingInProcess) {
             throw Errors.EnchantingInProcess;
@@ -42,8 +46,13 @@ class Crafting {
         if (enchantLevel >= enchantingMeta.maxEnchanting) {
             throw Errors.MaxEnchantLevel;
         }
-
-        let stepData = enchantingMeta.steps[itemTemplate.rarity].steps[enchantLevel];
+        
+        let enchantingSteps = enchantingMeta.armour;
+        if (this.isWeapon(itemTemplate.equipmentType)) {
+            enchantingSteps = enchantingMeta.weapon;
+        }
+        
+        let stepData = enchantingSteps[itemTemplate.rarity].steps[enchantLevel];
 
         if (!(await this._inventory.hasEnoughIngridients(stepData.ingridients))) {
             throw Errors.NoRecipeIngridients;
@@ -78,6 +87,11 @@ class Crafting {
         }
 
         return await this.enchantPayed(itemId);
+    }
+
+    isWeapon(equipmentType) {
+        const equipmentSlot = getSlot(equipmentType);
+        return equipmentSlot == EquipmentSlots.MainHand || equipmentSlot == EquipmentSlots.OffHand;
     }
 
     async enchantPayed(itemId) {

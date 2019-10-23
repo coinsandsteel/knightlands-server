@@ -2,7 +2,7 @@
 const TrialCards = require("./TrialCards");
 import TrialType from "../knightlands-shared/trial_type";
 import Game from "./../game";
-import TrialCardsEffect from "../knightlands-shared/trial_cards_effect";
+import Elements from "../knightlands-shared/elements";
 const { Collections } = require("../database");
 import Errors from "../knightlands-shared/errors";
 import CharacterStat from "../knightlands-shared/character_stat";
@@ -109,6 +109,22 @@ class Trials {
         return response;
     }
 
+    async summonTrialCards(trialType) {
+        const currentFight = this._getChallengedFight(trialType);
+        if (!currentFight) {
+            throw Errors.TrialFightFinished;
+        }
+        // trigger cards of hate (based on chance and hits)
+        const cards = this._cards.rollCards(trialType, currentFight.hits);
+        if (cards) {
+            currentFight.cards = cards;
+        }
+
+        console.log(JSON.stringify(currentFight, null, 2));
+
+        return cards;
+    }
+
     async attack(trialType) {
         const currentFight = this._getChallengedFight(trialType);
         if (!currentFight) {
@@ -118,10 +134,27 @@ class Trials {
         const playerCombatUnit = new TrialPlayerUnit(this._user.maxStats, currentFight.playerHealth, currentFight.maxPlayerHealth);
         const enemyCombatUnit = new FloorEnemyUnit(currentFight.attack, currentFight.health);
 
+        const trialsMeta = this._getTrialsMeta(trialType);
+        const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
+        let attackPenalty = 1;
+        // apply penalty if stage's element is not physical 
+        if (stageMeta.element != Elements.Physical) {
+            const weaponCombatData = await this._user.getWeaponCombatData();
+            // no weapon or element doesn't match
+            if (!weaponCombatData || stageMeta.element != weaponCombatData.element) {
+                attackPenalty = trialsMeta.unmatchedElementPenalty;
+            }
+        }
+
+        playerCombatUnit.attackPenalty = attackPenalty;
         const attackResult = playerCombatUnit.attack(enemyCombatUnit);
         const response = {
             attackResult
         };
+
+        if (enemyCombatUnit.isAlive) {
+            enemyCombatUnit.attack(playerCombatUnit);
+        }
 
         currentFight.health = enemyCombatUnit.getHealth();
         currentFight.playerHealth = playerCombatUnit.getHealth();
@@ -133,11 +166,6 @@ class Trials {
         if (fightFinished) {
             response.fightFinished = true;
         } else {
-            // trigger cards of hate (based on chance and hits)
-            response.cards = this._cards.rollCards(trialType, currentFight.hits);
-            if (response.cards) {
-                currentFight.cards = response.cards;
-            }
             currentFight.hits++;
         }
 
@@ -175,9 +203,17 @@ class Trials {
                 }
             }
 
+            this._cards.mana += this._generalTrialsMeta.manaPerFight;
+
             if (allFinished) {
                 stageState.cleared = true;
                 stageState.finishedFights = {};
+
+                // if first time clear - grant card leveling points
+                if (!stageState.firstTimeCleared) {
+                    // TODO move to database?
+                    this._cards.addPoints(1);
+                }
             }
         }
 
@@ -239,6 +275,8 @@ class Trials {
             throw Errors.TrialNoAttempts;
         }
 
+        this._consumeAttempt(trialType);
+
         stageState.cleared = false;
         stageState.collected = false;
 
@@ -252,6 +290,7 @@ class Trials {
             stageId: stageMeta.id,
             id: fightMeta.id,
             index: fightIndex,
+            stageId,
             trialId,
             hits: 0 // used for pity system
         };
@@ -289,12 +328,24 @@ class Trials {
         const items = await Game.lootGenerator.getLootFromTable(rewardPreset.loot);
         await this._user.inventory.addItemTemplates(items);
 
-        this._user.addSoftCurrency(rewardPreset.soft);
-        await this._user.addExperience(rewardPreset.exp);
+        const softCollected = this._user.addSoftCurrency(rewardPreset.soft);
+        const expCollected = await this._user.addExperience(rewardPreset.exp);
 
         stageState.collected = true;
 
-        return stageState;
+        return {
+            items,
+            soft: softCollected,
+            exp: expCollected
+        };
+    }
+
+    improveCard(cardEffect) {
+        this._cards.improveCard(cardEffect);
+    }
+
+    resetPoints() {
+        this._cards.resetPoints();
     }
 
     getTrialState(trialType, trialId) {

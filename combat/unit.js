@@ -7,10 +7,8 @@ class Unit {
         this._maxStats = maxStats;
     }
 
-    // returns {min, max}
-    getAttack(raid) {
-        let attack = this.getStat(CharacterStat.Attack) + (raid ? this.getStat(CharacterStat.RaidDamage) : 0);
-
+    getAttack() {
+        let attack = this.getStat(CharacterStat.Attack);
         const crit = this.isCritical();
         if (crit) {
             attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);

@@ -304,7 +304,7 @@ class Raid extends EventEmitter {
         }
 
         if (totalDamageInflicted > 0) {
-            attacker.addExperience(exp);
+            await attacker.addExperience(exp);
             attacker.addSoftCurrency(gold);
 
             let damageLog = {

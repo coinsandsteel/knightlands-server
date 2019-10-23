@@ -1,8 +1,10 @@
 import TrialCardsEffect from "../knightlands-shared/trial_cards_effect";
 import TrialCardModifiers from "../knightlands-shared/trial_card_modifiers";
+import TrialCardsResolver from "../knightlands-shared/trial_cards_resolver";
 import Random from "../random";
+import Errors from "../knightlands-shared/errors";
 const WeightedList = require("../js-weighted-list");
-const CardsToRoll = 3;
+const CardsToRoll = 4;
 
 class TrialCards {
     constructor(user, state, meta, choiceMeta) {
@@ -17,14 +19,48 @@ class TrialCards {
         this._meta = meta;
 
         this._cardWeights = new WeightedList(this._meta.cardWeights.weights);
+        this._resolver = new TrialCardsResolver(this._state.modifiers, this._meta.cardModifiers);
+    }
+
+    get mana() {
+        return this._state.mana || 0;
+    }
+
+    set mana(value) {
+        if (value > this._meta.maxMana) {
+            value = this._meta.maxMana;
+        }
+
+        this._state.mana = value;
     }
 
     get state() {
         return this._state;
     }
 
+    get points() {
+        return this._state.points || 0;
+    }
+
+    set points(value) {
+        this._state.points = value;
+    }
+
+    get totalPoints() {
+        return this._state.totalPoints || 0;
+    }
+
+    set totalPoints(value) {
+        this._state.totalPoints = value;
+    }
+
     rollCards(trialType, hitsCount) {
-        // // hitsCount used for pity system
+        if (this.mana < this._meta.cardSummonCost) {
+            throw Errors.TrialsNotEnoughMana;
+        }
+
+        this.mana -= this._meta.cardSummonCost;
+        // hitsCount used for pity system
         // if (hitsCount == 0) {
         //     // always trigger
         //     return this._rollCardsAndResetIncreasedRollChance(trialType);
@@ -37,15 +73,12 @@ class TrialCards {
         // }
 
         // this._setCardsChanceRollIncrease(trialType, chanceInc + choiceMeta.cardsChanceIncreaseStep);
-        return null;
+        return this._rollCardsAndResetIncreasedRollChance(trialType);
     }
 
     async activateCard(fightState, fightMeta, cardIndex) {
         const cardEffect = Random.shuffle(fightState.cards)[cardIndex];
-        const cardMeta = fightMeta.cards[cardEffect];
-
-        const cardBaseValue = cardMeta ? cardMeta.value : 0;
-        const modValue = this._modifyValue(cardBaseValue, cardEffect);
+        const modValue = this._resolver.getCurrentValue(fightMeta, cardEffect);
 
         const response = {
             value: modValue,
@@ -55,7 +88,7 @@ class TrialCards {
         switch (cardEffect) {
             case TrialCardsEffect.GiveResource:
                 await this._user.inventory.autoCommitChanges(async inv => {
-                    await inv.addItemTemplate(modifier.itemId, modValue);
+                    await inv.addItemTemplate(fightMeta.cards[cardEffect].item, modValue);
                 });
                 break;
 
@@ -86,41 +119,65 @@ class TrialCards {
         return response;
     }
 
-    addPoints(points) {
-        this._state.points = (this._state.points || 0) + points;
+    improveCard(cardEffect) {
+        const modifier = this._getModifierMeta(cardEffect);
+        if (!modifier) {
+            throw Errors.TrialInvalidCard;
+        }
+
+        let level = this._getCardLevel(cardEffect);
+        if (modifier.levels.length <= level) {
+            throw Errors.TrialCardMaxLevel;
+        }
+
+        level += 1;
+
+        const upgradeCost = this._meta.upgradeCost[level];
+        if (this.points < upgradeCost) {
+            throw Errors.TrialNotEnoughPoints;
+        }
+
+        this.points -= upgradeCost;
+        this._setCardLevel(cardEffect, level);
     }
 
-    _modifyValue(value, cardEffect) {
-        const modifier = this._meta.cardModifiers[cardEffect];
+    addPoints(points) {
+        this.points += points;
+        this.totalPoints += points;
+    }
 
-        // no modifier, do not do anything
-        if (!modifier) {
-            return value;
+    get resetResetPrice() {
+        return this._resolver.getResetPrice(this.totalPoints - this.points);
+    }
+
+    resetPoints() {
+        if (this.resetResetPrice > this._user.softCurrency) {
+            throw Errors.NotEnoughSoft;
         }
 
-        const level = (this._state.modifiers[cardEffect] || 0);
-        const modValue = modifier.levels[level].value;
-
-        switch (modifier.type) {
-            case TrialCardModifiers.FlatValue:
-                value += modValue;
-                break;
-
-            case TrialCardModifiers.IncreaseRelatively:
-                value = Math.floor(value * (100 + modValue) / 100);
-                break;
-
-            case TrialCardModifiers.DecreaseRelatively:
-                value = Math.floor(value * (100 - modValue) / 100);
-                break;
+        this._user.addSoftCurrency(-this.resetResetPrice);
+        this.points = this.totalPoints;
+        // reset all cards to 0 level
+        for (const i in this._state.modifiers) {
+            this._state.modifiers[i] = 0;
         }
+    }
 
-        return value;
+    _setCardLevel(cardEffect, level) {
+        this._state.modifiers[cardEffect] = level;
+    }
+
+    _getCardLevel(cardEffect) {
+        return (this._state.modifiers[cardEffect] || 0);
+    }
+
+    _getModifierMeta(cardEffect) {
+        return this._meta.cardModifiers[cardEffect];
     }
 
     _rollCardsAndResetIncreasedRollChance(trialType) {
-        this._setCardsChanceRollIncrease(trialType, 0);
-        return this._cardWeights.peek(CardsToRoll);
+        // this._setCardsChanceRollIncrease(trialType, 0);
+        return this._cardWeights.peek(this._meta.cardsToRoll);
     }
 
     _getCardsState(trialType) {

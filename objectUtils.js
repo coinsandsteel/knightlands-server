@@ -83,6 +83,7 @@ module.exports = {
 
             if (Array.isArray(newValue) || Array.isArray(oldValue)) {
                 changes[i] = newValue;
+                fieldsDetected = true;
                 //skip arrays
                 continue;
             }

@@ -181,11 +181,15 @@ class User {
     }
 
     addSoftCurrency(value, ignorePassiveBonuses = false) {
-        if (!ignorePassiveBonuses) {
+        if (value > 0 && !ignorePassiveBonuses) {
             value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
         }
 
-        this._inventory.modifyCurrency(CurrencyType.Soft, Math.round(value));
+        value = Math.round(value);
+
+        this._inventory.modifyCurrency(CurrencyType.Soft, value);
+
+        return value;
     }
 
     addHardCurrency(value) {
@@ -205,11 +209,12 @@ class User {
         this._data.chests[chest] = Game.now;
     }
 
-    // returns levels gained
     async addExperience(exp) {
-        let character = this._data.character;
-        let levelBeforeExp = character.level;
-        character.exp += exp * (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
+        const totalExp = exp * (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
+        
+        const character = this._data.character;
+        character.exp += totalExp;
+
         const maxLevels = this._expTable.length;
         const previousLevel = character.level;
         while (character.level < maxLevels) {
@@ -238,7 +243,7 @@ class User {
             this._restoreTimers();
         }
 
-        return character.level - levelBeforeExp;
+        return totalExp;
     }
 
     _restoreTimers() {
@@ -964,10 +969,6 @@ class User {
             user.character = character;
         }
 
-        if (!user.character.passiveStats) {
-            user.character.passiveStats = { ...DefaultStats };
-        }
-
         if (!user.questsProgress) {
             user.questsProgress = {
                 completedRecords: {}, // keep track of completed quests to unlock next stages
@@ -1322,7 +1323,7 @@ class User {
                     this.freeTowerAttempts = quantity;
                     break;
 
-                case "trialsArmour":
+                case "armourTrials":
                     this._trials.addAttempts(TrialType.Armour, quantity, true);
                     break;
 
@@ -1518,6 +1519,18 @@ class User {
 
     async chooseTrialCard(trialType, cardIndex) {
         return await this._trials.pickCard(trialType, cardIndex);
+    }
+
+    async improveTrialCard(cardEffect) {
+        this._trials.improveCard(cardEffect);
+    }
+
+    async resetTrialCards() {
+        this._trials.resetPoints();
+    }
+
+    async summonTrialCards(trialType) {
+        return this._trials.summonTrialCards(trialType);
     }
 }
 

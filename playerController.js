@@ -111,6 +111,9 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchTrialFightMeta, this._gameHandler(this._fetchTrialFightMeta.bind(this)));
         this._socket.on(Operations.AttackTrial, this._gameHandler(this._attackTrial.bind(this)));
         this._socket.on(Operations.ChooseTrialCard, this._gameHandler(this._chooseTrialCard.bind(this)));
+        this._socket.on(Operations.ImproveTrialCard, this._gameHandler(this._improveTrialCard.bind(this)));
+        this._socket.on(Operations.ResetTrialCards, this._gameHandler(this._resetTrialCards.bind(this)));
+        this._socket.on(Operations.SummonTrialCards, this._gameHandler(this._summonTrialCards.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1073,6 +1076,18 @@ class PlayerController extends IPaymentListener {
 
     async _chooseTrialCard(user, data) {
         return await user.chooseTrialCard(data.trialType, data.cardIndex * 1);
+    }
+
+    async _improveTrialCard(user, data) {
+        await user.improveTrialCard(data.cardEffect);
+    }
+
+    async _resetTrialCards(user) {
+        await user.resetTrialCards();
+    }
+
+    async _summonTrialCards(user, data) {
+        return await user.summonTrialCards(data.trialType);
     }
 }
 
