@@ -6,6 +6,7 @@ import Elements from "../knightlands-shared/elements";
 const { Collections } = require("../database");
 import Errors from "../knightlands-shared/errors";
 import CharacterStat from "../knightlands-shared/character_stat";
+import random from "../random";
 
 const FloorEnemyUnit = require("../combat/floorEnemyUnit");
 const TrialPlayerUnit = require("../combat/trialPlayerUnit");
@@ -20,7 +21,7 @@ class Trials {
         return {
             trials: {},
             unlockedTrials: {},
-            freeAttempts: 0,
+            freeAttempts: 3,
             attempts: 0
         };
     }
@@ -74,8 +75,25 @@ class Trials {
         if (!this._state[TrialType.Weapon]) {
             this._state[TrialType.Weapon] = this._createTrialState();
 
-            const firstTrialId = this._trialsMeta[TrialType.Weapon].trialUnlockOrder[0];
+            const trialMeta = this._trialsMeta[TrialType.Weapon];
+            const firstTrialId = trialMeta.trialUnlockOrder[0];
             this._state[TrialType.Weapon].unlockedTrials[firstTrialId] = true;
+
+            // randomize stage element
+            const stageElements = {};
+            // to ensure consistency it won't be total random but instead we will use randomized order of all possible elements
+            const shuffledElements = random.shuffle([Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness]);
+            // loop through all trials and stages and just assign elements
+            let stageIndex = 0;
+            for (let i in trialMeta.trials) {
+                const trialFightMeta = trialMeta.trials[i];
+                for (let stageId in trialFightMeta.stages) {
+                    stageElements[stageId] = shuffledElements[stageIndex % shuffledElements.length];
+                    stageIndex++;
+                }
+            }
+
+            this._state[TrialType.Weapon].elements = stageElements;
         }
 
         if (!this._state.cards) {
@@ -138,10 +156,11 @@ class Trials {
         const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
         let attackPenalty = 1;
         // apply penalty if stage's element is not physical 
-        if (stageMeta.element != Elements.Physical) {
+        if (trialType == TrialType.Weapon) {
             const weaponCombatData = await this._user.getWeaponCombatData();
+            const element = trialsMeta.elements[stageMeta.id];
             // no weapon or element doesn't match
-            if (!weaponCombatData || stageMeta.element != weaponCombatData.element) {
+            if (!weaponCombatData || element != weaponCombatData.element) {
                 attackPenalty = trialsMeta.unmatchedElementPenalty;
             }
         }

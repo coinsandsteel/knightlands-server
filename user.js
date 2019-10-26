@@ -1481,21 +1481,7 @@ class User {
         return new TowerPlayerUnit(this.maxStats, towerFloor.userHealth, towerFloor.userMaxHealth);
     }
 
-    // Trial
-    _createTrial() {
-        return {
-            lastStage: 0,
-            freeAttempts: 0,
-            currentFight: {
-                index: 0,
-                playerHealth: 0,
-                playerMaxHealth: 0,
-                enemyHealth: 0,
-                enemyMaxHealth: 0,
-                hits: 0
-            }
-        };
-    }
+    // Trials
 
     getTrialState(trialType, trialId) {
         return this._trials.getTrialState(trialType, trialId);
