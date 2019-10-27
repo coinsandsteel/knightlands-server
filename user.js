@@ -1518,6 +1518,10 @@ class User {
     async summonTrialCards(trialType) {
         return this._trials.summonTrialCards(trialType);
     }
+
+    grantTrialAttempts(trialType, count) {
+        this._trials.addAttempts(trialType, count, false);
+    }
 }
 
 module.exports = User;

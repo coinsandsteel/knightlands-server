@@ -103,6 +103,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ClaimTowerFloorRewards, this._gameHandler(this._claimTowerFloorRewards.bind(this)));
         this._socket.on(Operations.CancelTowerFloor, this._gameHandler(this._cancelTowerFloor.bind(this)));
         this._socket.on(Operations.FetchChallengedTowerFloor, this._gameHandler(this._fetchChallengedTowerFloor.bind(this)));
+        this._socket.on(Operations.PurchaseTowerAttempts, this._gameHandler(this._purchaseTowerAttempts.bind(this)));
+        this._socket.on(Operations.FetchTowerAttemptsStatus, this._gameHandler(this._fetchTowerAttemptsStatus.bind(this)));
 
         // Trials
         this._socket.on(Operations.FetchTrialState, this._gameHandler(this._fetchTrialState.bind(this)));
@@ -114,6 +116,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ImproveTrialCard, this._gameHandler(this._improveTrialCard.bind(this)));
         this._socket.on(Operations.ResetTrialCards, this._gameHandler(this._resetTrialCards.bind(this)));
         this._socket.on(Operations.SummonTrialCards, this._gameHandler(this._summonTrialCards.bind(this)));
+        this._socket.on(Operations.PurchaseTrialAttempts, this._gameHandler(this._purchaseTrialAttempts.bind(this)));
+        this._socket.on(Operations.FetchTrialAttemptsStatus, this._gameHandler(this._fetchTrialAttemptsStatus.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1053,6 +1057,14 @@ class PlayerController extends IPaymentListener {
         return null;
     }
 
+    async _purchaseTowerAttempts(user, data) {
+        return await Game.userPremiumService.requestTowerAttemptsPurchase(this.address, data.iapIndex * 1);
+    }
+
+    async _fetchTowerAttemptsStatus(user) {
+        return await Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
+    }
+
     // Trials
     async _fetchTrialState(user, data) {
         return user.getTrialState(data.trialType, data.trialId);
@@ -1088,6 +1100,17 @@ class PlayerController extends IPaymentListener {
 
     async _summonTrialCards(user, data) {
         return await user.summonTrialCards(data.trialType);
+    }
+
+    async _fetchTrialAttemptsStatus(user, data) {
+        const status =  await Game.userPremiumService.getTrialAttemptsPurchaseStatus(this.address, data.trialType);
+        return status;
+    }
+    
+    async _purchaseTrialAttempts(user, data) {
+        const status =  await Game.userPremiumService.requestTrialAttemptsPurchase(this.address, data.trialType, data.iapIndex * 1);
+        console.log(status);
+        return status;
     }
 }
 
