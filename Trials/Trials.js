@@ -153,12 +153,13 @@ class Trials {
         const enemyCombatUnit = new FloorEnemyUnit(currentFight.attack, currentFight.health);
 
         const trialsMeta = this._getTrialsMeta(trialType);
+        const trialsState = this._getTrialTypeState(trialType);
         const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
         let attackPenalty = 1;
         // apply penalty if stage's element is not physical 
         if (trialType == TrialType.Weapon) {
             const weaponCombatData = await this._user.getWeaponCombatData();
-            const element = trialsMeta.elements[stageMeta.id];
+            const element = trialsState.elements[stageMeta.id];
             // no weapon or element doesn't match
             if (!weaponCombatData || element != weaponCombatData.element) {
                 attackPenalty = trialsMeta.unmatchedElementPenalty;
