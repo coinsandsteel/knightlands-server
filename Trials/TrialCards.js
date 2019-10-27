@@ -13,6 +13,8 @@ class TrialCards {
 
         if (!this._state.modifiers) {
             this._state.modifiers = {};
+            this._state.points = 0;
+            this._state.totalPoints = 0;
         }
 
         this._choiceMeta = choiceMeta;

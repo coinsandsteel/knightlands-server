@@ -597,8 +597,10 @@ class Inventory {
         if (item.equipped) {
             // if item is equipped make current stack non equipped
             const itemStack = this.getItemById(item.id);
-            itemStack.equipped = false;
-            this.setItemUpdated(itemStack, true);
+            if (itemStack) {
+                itemStack.equipped = false;
+                this.setItemUpdated(itemStack, true);
+            }
 
             item.unique = true;
             item.id = this.nextId;
