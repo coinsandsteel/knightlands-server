@@ -274,15 +274,19 @@ class User {
     }
 
     setTimerValue(stat, value) {
-        this.getTimer(stat).value = value;
         this._advanceTimer(stat);
+        this.getTimer(stat).value = value;
     }
 
     modifyTimerValue(stat, value) {
         let timer = this.getTimer(stat);
         if (timer) {
-            timer.value += value;
             this._advanceTimer(stat);
+            timer.value += value;
+            
+            if (timer.value > this.getMaxStatValue(stat)) {
+                timer.value = this.getMaxStatValue(stat);
+            }
         }
     }
 
@@ -363,6 +367,8 @@ class User {
         timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
         // adjust regen time to accomodate rounding
         timer.lastRegenTime += valueRenerated * timer.regenTime;
+
+        this._originalData.character.timers[stat] = cloneDeep(timer);
     }
 
     async generateNonce() {
@@ -923,6 +929,8 @@ class User {
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
+
+        console.log(JSON.stringify(changes, null, 2));
 
         // apply new data as original
         return {
