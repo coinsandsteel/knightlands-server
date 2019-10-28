@@ -283,7 +283,7 @@ class User {
         if (timer) {
             this._advanceTimer(stat);
             timer.value += value;
-            
+
             if (timer.value > this.getMaxStatValue(stat)) {
                 timer.value = this.getMaxStatValue(stat);
             }
@@ -929,8 +929,6 @@ class User {
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
-
-        console.log(JSON.stringify(changes, null, 2));
 
         // apply new data as original
         return {
