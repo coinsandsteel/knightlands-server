@@ -26,6 +26,11 @@ class PlayerController extends IPaymentListener {
         super();
 
         this._socket = socket;
+
+        if (socket.authToken) {
+            this.address = socket.authToken.address;
+        }
+
         this._db = Game.db;
         this._raidManager = Game.raidManager;
         this._lootGenerator = Game.lootGenerator;
@@ -122,10 +127,6 @@ class PlayerController extends IPaymentListener {
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
-    get address() {
-        return this._socket.authToken ? this._socket.authToken.address : undefined;
-    }
-
     get socket() {
         return this._socket;
     }
@@ -188,6 +189,8 @@ class PlayerController extends IPaymentListener {
             try {
                 let result = await this._signVerifier.verifySign(user.nonce, data.message, user.address);
                 if (result) {
+                    this.address = user.address;
+
                     this._socket.setAuthToken({
                         address: user.address,
                         nonce: user.nonce
