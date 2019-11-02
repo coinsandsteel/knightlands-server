@@ -82,6 +82,10 @@ class Game extends EventEmitter {
         return new Date().getTime();
     }
 
+    get nowMs() {
+        return Math.floor(this.now / 1000); 
+    }
+
     async _getExpTable() {
         let table = await this._db.collection(Collections.ExpTable).findOne({
             _id: 1
