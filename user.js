@@ -351,7 +351,7 @@ class User {
     }
 
     _advanceTimer(stat) {
-        let now = Math.floor(new Date().getTime() / 1000); // milliseconds to seconds
+        let now = Game.nowMs; 
         let character = this._data.character;
         let timer = this.getTimer(stat);
 
@@ -362,13 +362,15 @@ class User {
 
         let timePassed = now - timer.lastRegenTime;
         let valueRenerated = Math.floor(timePassed / timer.regenTime);
-        timer.value += valueRenerated;
-        // clamp to max value
-        timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
-        // adjust regen time to accomodate rounding
-        timer.lastRegenTime += valueRenerated * timer.regenTime;
 
-        this._originalData.character.timers[stat] = cloneDeep(timer);
+        if (valueRenerated > 0) {
+            // adjust regen time to accomodate rounding
+            timer.lastRegenTime += valueRenerated * timer.regenTime;
+            timer.value += valueRenerated;
+            // clamp to max value
+            timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
+            this._originalData.character.timers[stat] = cloneDeep(timer);
+        }
     }
 
     async generateNonce() {
@@ -771,19 +773,20 @@ class User {
         this._inventory.removeItem(itemToUse.id, count);
 
         let actionData = template.action;
+        const actionValue = actionData.value * count;
         // based on action perform necessary actions
         switch (actionData.action) {
             case ItemActions.RefillTimer:
                 if (actionData.relative) {
                     // % restoration from maximum base 
-                    this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionData.value / 100);
+                    this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionValue / 100);
                 } else {
-                    this.modifyTimerValue(actionData.stat, actionData.value);
+                    this.modifyTimerValue(actionData.stat, actionValue);
                 }
                 break;
 
             case ItemActions.AddExperience:
-                await this.addExperience(actionData.value);
+                await this.addExperience(actionValue);
                 break;
 
             case ItemActions.OpenBox:
@@ -1233,6 +1236,7 @@ class User {
         let i = 0;
         const length = templates.length;
         const baseStatValue = this.getTimerValue(stat);
+        const maxStatValue = this.getMaxStatValue(stat);
         let relativeValue = 0;
         let absoluteValue = 0;
         for (; i < length; ++i) {
@@ -1244,7 +1248,7 @@ class User {
             }
 
             if (template.action.relative) {
-                relativeValue += (baseStatValue * template.action.value * itemEntry.count) / 100;
+                relativeValue += (maxStatValue * template.action.value * itemEntry.count) / 100;
             } else {
                 absoluteValue += (template.action.value * itemEntry.count);
             }
