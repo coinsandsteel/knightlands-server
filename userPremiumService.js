@@ -11,6 +11,7 @@ class UserPremiumService {
         this.BeastBoostPurchaseTag = "beast_boost_purchase";
         this.TrialAttemptsPurchaseTag = "trial_attempts_purchase";
         this.TowerAttemptsPurchaseTag = "tower_attempts_purchase";
+        this.GoldExchangeTag = "gold_exchange_purchase";
     }
 
     async init(iapExecutor) {
@@ -71,6 +72,54 @@ class UserPremiumService {
 
             iapExecutor.mapIAPtoEvent(iap.iap, Events.TowerAttemptsPurchased);
         });
+
+        this.goldExchangeMeta = await this._db.collection(Collections.Meta).findOne({_id: "goldExchange"});
+        this.goldExchangeMeta.iaps.forEach(iap=>{
+            iapExecutor.registerAction(iap.iap, async context=>{
+                return await this._premiumBoostGoldExchange(context.user, context.count);
+            });
+    
+            iapExecutor.mapIAPtoEvent(iap.iap, Events.GoldExchangeBoostPurchased);
+        });
+    }
+
+    async requireGoldExchangeBoost(userId, count) {
+        if (!Number.isInteger(count) || count < 1) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const iapMeta = this.goldExchangeMeta.iaps.find(x=>x.count == count);
+        if (!iapMeta) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let iapContext = {
+            user: userId,
+            count: count
+        };
+
+        // check if payment request already created
+        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.GoldExchangeTag);
+        if (hasPendingPayment) {
+            throw Errors.PaymentIsPending;
+        }
+
+        try {
+            return await Game.paymentProcessor.requestPayment(
+                userId,
+                iapMeta.iap,
+                this.GoldExchangeTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
+    }
+
+    async getGoldExchangePremiumStatus(userId) {
+        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.GoldExchangeTag, {
+            "context.user": userId
+        });
     }
 
     async requestTowerAttemptsPurchase(userId, purchaseIndex) {
@@ -101,7 +150,7 @@ class UserPremiumService {
             return await Game.paymentProcessor.requestPayment(
                 userId,
                 iapMeta.iap,
-                this.TrialAttemptsPurchased,
+                this.TowerAttemptsPurchaseTag,
                 iapContext
             );
         } catch (exc) {
@@ -171,6 +220,13 @@ class UserPremiumService {
         return await Game.paymentProcessor.fetchPaymentStatus(userId, this.BeastBoostPurchaseTag, {
             "context.user": userId
         });
+    }
+
+    async _premiumBoostGoldExchange(userId, count) {
+        const user = await Game.getUser(userId);
+        const response = user.goldExchange.premiumBoost(count);
+        await user.commitChanges();
+        return response;
     }
 
     async _grantItem(userId, itemTemplate, count) {

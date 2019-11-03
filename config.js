@@ -10,5 +10,9 @@ module.exports = {
     },
     raids: {
         checkpointInterval: 5000
+    },
+    game: {
+        attackCooldown: 500,
+        dailyRewardCycle: 86400000
     }
 };

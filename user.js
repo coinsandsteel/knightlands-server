@@ -34,12 +34,13 @@ const PlayerUnit = require("./combat/playerUnit");
 const TowerPlayerUnit = require("./combat/towerPlayerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
+const GoldExchange = require("./goldExchange");
 const ItemActions = require("./knightlands-shared/item_actions");
+const Config = require("./config");
 
 const DefaultRegenTimeSeconds = 120;
 const TimerRefillReset = 86400000;
 const AdventureRefreshInterval = 86400000;
-const DailyRewardCycle = 86400000;
 const BeastMaxBoost = 50;
 
 const {
@@ -156,6 +157,10 @@ class User {
 
     get maxStats() {
         return this._data.character.stats;
+    }
+
+    get goldExchange() {
+        return this._goldExchange;
     }
 
     async getWeaponCombatData() {
@@ -419,11 +424,13 @@ class User {
         this._crafting = new Crafting(this._address, this._inventory, this._data.character.equipment);
         this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
         this._trials = new Trials(this._data.trials, this);
+        this._goldExchange = new GoldExchange(this._data.goldExchange, this);
 
         this._advanceTimers();
 
         await this._inventory.loadAll();
         await this._trials.init();
+        await this._goldExchange.init();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
@@ -1051,6 +1058,17 @@ class User {
             user.trials = {};
         }
 
+        if (!user.hasOwnProperty("goldExchange")) {
+            user.goldExchange = {
+                cycle: 0,
+                freeObtains: 0,
+                freeBoosts: 0,
+                premiumBoosts: 0,
+                level: 0,
+                exp: 0
+            };
+        }
+
         return user;
     }
 
@@ -1295,25 +1313,25 @@ class User {
         const dailyRewards = this._processDailyReward(dailyRewardsMeta);
 
         return {
-            readyToCollect: dailyRewards.cycle < this._getDailyRewardCycle(),
+            readyToCollect: dailyRewards.cycle < this.getDailyRewardCycle(),
             step: dailyRewards.step,
-            untilNext: DailyRewardCycle - Game.now % DailyRewardCycle
+            untilNext: Config.game.dailyRewardCycle - Game.now % Config.game.dailyRewardCycle
         };
     }
 
     async getDailyRefillsStatus() {
         return {
-            readyToCollect: this._data.dailyRefillCollect < this._getDailyRewardCycle(),
-            untilNext: DailyRewardCycle - Game.now % DailyRewardCycle
+            readyToCollect: this._data.dailyRefillCollect < this.getDailyRewardCycle(),
+            untilNext: Config.game.dailyRewardCycle - Game.now % Config.game.dailyRewardCycle
         };
     }
 
     async collectDailyRefills() {
-        if (this._data.dailyRefillCollect >= this._getDailyRewardCycle()) {
+        if (this._data.dailyRefillCollect >= this.getDailyRewardCycle()) {
             throw Errors.DailyRefillCollected;
         }
 
-        this._data.dailyRefillCollect = this._getDailyRewardCycle();
+        this._data.dailyRefillCollect = this.getDailyRewardCycle();
 
         const dailyRefillsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
         const length = dailyRefillsMeta.length;
@@ -1344,13 +1362,13 @@ class User {
         }
     }
 
-    _getDailyRewardCycle() {
-        return Math.floor(Game.now / DailyRewardCycle);
+    getDailyRewardCycle() {
+        return Math.floor(Game.now / Config.game.dailyRewardCycle);
     }
 
     _processDailyReward(dailyRewardsMeta) {
         const dailyRewardCollect = this._data.dailyRewardCollect;
-        const currentRewardCycle = this._getDailyRewardCycle();
+        const currentRewardCycle = this.getDailyRewardCycle();
         const missedDays = currentRewardCycle - dailyRewardCollect.cycle;
 
         if (missedDays > 1) {
@@ -1368,7 +1386,7 @@ class User {
         const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);
 
-        if (dailyRewardCollect.cycle >= this._getDailyRewardCycle()) {
+        if (dailyRewardCollect.cycle >= this.getDailyRewardCycle()) {
             throw Errors.DailyRewardCollected;
         }
 
@@ -1381,7 +1399,7 @@ class User {
 
         await this.inventory.addItemTemplate(item.item, item.quantity);
 
-        dailyRewardCollect.cycle = this._getDailyRewardCycle();
+        dailyRewardCollect.cycle = this.getDailyRewardCycle();
         dailyRewardCollect.step++;
 
         this._data.dailyRewardCollect = dailyRewardCollect;

@@ -12,6 +12,7 @@ const IPaymentListener = require("./payment/IPaymentListener");
 const ItemActions = require("./knightlands-shared/item_actions");
 const Inventory = require("./inventory");
 import CharacterStat from "./knightlands-shared/character_stat";
+const Config = require("./config");
 
 const {
     Collections
@@ -35,6 +36,7 @@ class PlayerController extends IPaymentListener {
         this._raidManager = Game.raidManager;
         this._lootGenerator = Game.lootGenerator;
         this._signVerifier = Game.blockchain;
+        this._opThrottles = {};
 
         // admin functions
         this._socket.on(Operations.GetQuestData, this._getQuestData.bind(this));
@@ -60,12 +62,12 @@ class PlayerController extends IPaymentListener {
         // raids
         this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
         this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
-        this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this)));
+        this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
 
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
-        this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this)));
+        this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this), "quest", Config.game.attackCooldown));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
         this._socket.on(Operations.OpenChest, this._gameHandler(this._openChest.bind(this)));
         this._socket.on(Operations.GetChestsStatus, this._gameHandler(this._getChestsStatus.bind(this)));
@@ -103,7 +105,7 @@ class PlayerController extends IPaymentListener {
         // Tower 
         this._socket.on(Operations.FetchTowerFloors, this._gameHandler(this._fetchTowerFloors.bind(this)));
         this._socket.on(Operations.ChallengeTowerFloor, this._gameHandler(this._challengeTowerFloor.bind(this)));
-        this._socket.on(Operations.AttackTowerFloor, this._gameHandler(this._attackTowerFloor.bind(this)));
+        this._socket.on(Operations.AttackTowerFloor, this._gameHandler(this._attackTowerFloor.bind(this), "tower", Config.game.attackCooldown));
         this._socket.on(Operations.SkipTowerFloor, this._gameHandler(this._skipTowerFloor.bind(this)));
         this._socket.on(Operations.ClaimTowerFloorRewards, this._gameHandler(this._claimTowerFloorRewards.bind(this)));
         this._socket.on(Operations.CancelTowerFloor, this._gameHandler(this._cancelTowerFloor.bind(this)));
@@ -116,13 +118,20 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ChallengeTrialFight, this._gameHandler(this._challengeTrialFight.bind(this)));
         this._socket.on(Operations.CollectTrialStageReward, this._gameHandler(this._collectTrialStageReward.bind(this)));
         this._socket.on(Operations.FetchTrialFightMeta, this._gameHandler(this._fetchTrialFightMeta.bind(this)));
-        this._socket.on(Operations.AttackTrial, this._gameHandler(this._attackTrial.bind(this)));
+        this._socket.on(Operations.AttackTrial, this._gameHandler(this._attackTrial.bind(this), "trial", Config.game.attackCooldown));
         this._socket.on(Operations.ChooseTrialCard, this._gameHandler(this._chooseTrialCard.bind(this)));
         this._socket.on(Operations.ImproveTrialCard, this._gameHandler(this._improveTrialCard.bind(this)));
         this._socket.on(Operations.ResetTrialCards, this._gameHandler(this._resetTrialCards.bind(this)));
         this._socket.on(Operations.SummonTrialCards, this._gameHandler(this._summonTrialCards.bind(this)));
         this._socket.on(Operations.PurchaseTrialAttempts, this._gameHandler(this._purchaseTrialAttempts.bind(this)));
         this._socket.on(Operations.FetchTrialAttemptsStatus, this._gameHandler(this._fetchTrialAttemptsStatus.bind(this)));
+
+        // Gold exchange
+        this._socket.on(Operations.BoostGoldExchange, this._gameHandler(this._boostGoldExchange.bind(this)));
+        this._socket.on(Operations.PremiumBoostGoldExchange, this._gameHandler(this._premiumBoostGoldExchange.bind(this)));
+        this._socket.on(Operations.ObtainGoldFromGoldExchange, this._gameHandler(this._obtainGoldFromGoldExchange.bind(this)));
+        this._socket.on(Operations.GetGoldExchangeMeta, this._gameHandler(this._getGoldExchangeMeta.bind(this)));
+        this._socket.on(Operations.FetchGoldExchangePremiumBoostStatus, this._gameHandler(this._fetchGoldExchangePremiumStatus.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -248,8 +257,17 @@ class PlayerController extends IPaymentListener {
         respond(null, zones);
     }
 
-    _gameHandler(handler, responseTransformation) {
+    _gameHandler(handler, throttleId = "default", throttle = 0) {
         return async (data, respond) => {
+            if (throttle > 0) {
+                if (this._opThrottles[throttleId] >= Game.now) {
+                    respond("throttle");
+                    return;
+                } else {
+                    this._opThrottles[throttleId] = Game.now + throttle;
+                }
+            }
+
             let user = await this.getUser(this.address);
 
             try {
@@ -931,7 +949,7 @@ class PlayerController extends IPaymentListener {
             }
         }).toArray();
 
-        
+
 
         const floorMeta = floorData.find(x => x._id != "misc");
         if (!floorMeta) {
@@ -1106,14 +1124,34 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchTrialAttemptsStatus(user, data) {
-        const status =  await Game.userPremiumService.getTrialAttemptsPurchaseStatus(this.address, data.trialType);
+        const status = await Game.userPremiumService.getTrialAttemptsPurchaseStatus(this.address, data.trialType);
         return status;
     }
-    
+
     async _purchaseTrialAttempts(user, data) {
-        const status =  await Game.userPremiumService.requestTrialAttemptsPurchase(this.address, data.trialType, data.iapIndex * 1);
-        console.log(status);
+        const status = await Game.userPremiumService.requestTrialAttemptsPurchase(this.address, data.trialType, data.iapIndex * 1);
         return status;
+    }
+
+    // Gold Exchange
+    async _boostGoldExchange(user, data) {
+        return user.goldExchange.freeBoost();
+    }
+
+    async _premiumBoostGoldExchange(user, data) {
+        return await Game.userPremiumService.requireGoldExchangeBoost(this.address, data.count * 1);
+    }
+
+    async _obtainGoldFromGoldExchange(user, data) {
+        return user.goldExchange.obtainGold();
+    }
+
+    async _getGoldExchangeMeta(user) {
+        return user.goldExchange.levelMeta;
+    }
+
+    async _fetchGoldExchangePremiumStatus() {
+        return await Game.userPremiumService.getGoldExchangePremiumStatus(this.address);
     }
 }
 
