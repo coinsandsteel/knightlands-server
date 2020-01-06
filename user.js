@@ -1,7 +1,6 @@
 'use strict';
 
 import CharacterStats from "./knightlands-shared/character_stat";
-import Elements from "./knightlands-shared/elements";
 
 import CharacterStat, {
     StatConversions,
@@ -35,6 +34,7 @@ const TowerPlayerUnit = require("./combat/towerPlayerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
 const GoldExchange = require("./goldExchange");
+const DailyQuests = require("./dailyQuests");
 const ItemActions = require("./knightlands-shared/item_actions");
 const Config = require("./config");
 
@@ -161,6 +161,10 @@ class User {
 
     get goldExchange() {
         return this._goldExchange;
+    }
+
+    get dailyQuests() {
+        return this._dailyQuests;
     }
 
     async getWeaponCombatData() {
@@ -425,18 +429,21 @@ class User {
         this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
         this._trials = new Trials(this._data.trials, this);
         this._goldExchange = new GoldExchange(this._data.goldExchange, this);
+        this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
 
         this._advanceTimers();
 
         await this._inventory.loadAll();
         await this._trials.init();
         await this._goldExchange.init();
+        await this._dailyQuests.init();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
 
         // calculate stats from items and stats from buffs
         await this._calculateFinalStats(true);
+        await this.commitChanges();
 
         return this;
     }
@@ -1058,7 +1065,7 @@ class User {
             user.trials = {};
         }
 
-        if (!user.hasOwnProperty("goldExchange")) {
+        if (!user.goldExchange) {
             user.goldExchange = {
                 cycle: 0,
                 freeObtains: 0,
@@ -1067,6 +1074,10 @@ class User {
                 level: 0,
                 exp: 0
             };
+        }
+
+        if (!user.dailyQuests) {
+            user.dailyQuests = {};
         }
 
         return user;

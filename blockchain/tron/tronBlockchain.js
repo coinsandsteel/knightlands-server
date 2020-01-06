@@ -50,9 +50,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         let lastBlockInfo = await this._tronWeb.trx.getCurrentBlock();
         await this._updateLastScanTimestamp(lastBlockInfo.block_header.raw_data.number);
 
-        setTimeout(() => {
-            this._watchNewBlocks();
-        }, NewBlockScanInterval);
+        setTimeout(this._watchNewBlocks.bind(this), NewBlockScanInterval);
     }
 
     isAddress(addr) {

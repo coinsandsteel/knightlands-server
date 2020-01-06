@@ -386,13 +386,13 @@ class LootGenerator {
 
             // roll rarity group
             let roll = Random.range(0, totalWeight, true);
-            console.log(`rarity roll ${roll} ${totalWeight}` );
+            // console.log(`rarity roll ${roll} ${totalWeight}` );
 
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
-                console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
+                // console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
                 if (roll <= groupsWeights[rarity]) {
                     break;
                 }
@@ -524,6 +524,17 @@ class LootGenerator {
         };
 
         this._addLootToTable(items, hash, newItem);
+    }
+
+    rollLootRecord(record) {
+        let min = record.minCount;
+        let max =  record.maxCount;
+        let count = Math.round(Random.range(min, max, true));
+
+        return {
+            item: record.itemId,
+            quantity: count
+        };
     }
 
     _addLootToTable(items, hash, loot) {

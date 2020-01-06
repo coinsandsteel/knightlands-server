@@ -133,6 +133,12 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.GetGoldExchangeMeta, this._gameHandler(this._getGoldExchangeMeta.bind(this)));
         this._socket.on(Operations.FetchGoldExchangePremiumBoostStatus, this._gameHandler(this._fetchGoldExchangePremiumStatus.bind(this)));
 
+        // Daily quests
+        this._socket.on(Operations.RefreshDailyTasks, this._gameHandler(this._refreshDailyTasks.bind(this)));
+        this._socket.on(Operations.AcceptDailyTask, this._gameHandler(this._acceptDailyTasks.bind(this)));
+        this._socket.on(Operations.CancelDailyTask, this._gameHandler(this._cancelDailyTasks.bind(this)));
+        this._socket.on(Operations.ClaimDailyTasksRewards, this._gameHandler(this._claimDailyTasksRewards.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -146,6 +152,8 @@ class PlayerController extends IPaymentListener {
         if (this._user) {
             this._user.dispose();
         }
+        
+        this.address = null;
     }
 
     onAuthenticated() {
@@ -949,8 +957,6 @@ class PlayerController extends IPaymentListener {
             }
         }).toArray();
 
-
-
         const floorMeta = floorData.find(x => x._id != "misc");
         if (!floorMeta) {
             throw Errors.IncorrectArguments;
@@ -1152,6 +1158,23 @@ class PlayerController extends IPaymentListener {
 
     async _fetchGoldExchangePremiumStatus() {
         return await Game.userPremiumService.getGoldExchangePremiumStatus(this.address);
+    }
+
+    // Daily Quests
+    async _refreshDailyTasks(user) {
+        user.dailyQuests.refreshTasks();
+    }
+
+    async _acceptDailyTasks(user, data) {
+        user.dailyQuests.acceptTask(data.index * 1);
+    }
+
+    async _cancelDailyTasks(user) {
+        user.dailyQuests.cancelTask();
+    }
+
+    async _claimDailyTasksRewards(user) {
+        return await user.dailyQuests.claimRewards();
     }
 }
 

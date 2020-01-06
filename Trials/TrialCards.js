@@ -1,10 +1,8 @@
 import TrialCardsEffect from "../knightlands-shared/trial_cards_effect";
-import TrialCardModifiers from "../knightlands-shared/trial_card_modifiers";
 import TrialCardsResolver from "../knightlands-shared/trial_cards_resolver";
 import Random from "../random";
 import Errors from "../knightlands-shared/errors";
 const WeightedList = require("../js-weighted-list");
-const CardsToRoll = 4;
 
 class TrialCards {
     constructor(user, state, meta, choiceMeta) {

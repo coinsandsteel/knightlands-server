@@ -9,7 +9,7 @@ const morgan = require('morgan');
 const healthChecker = require('sc-framework-health-check');
 const cors = require('cors');
 const Operations = require("./knightlands-shared/operations");
-const MongoClient = require("mongodb").MongoClient;
+const { MongoClient } = require("mongodb");
 
 const Database = require("./database");
 

@@ -310,8 +310,8 @@ class PaymentProcessor extends EventEmitter {
             });
 
             let iapExecuctionResult = await this._executeIAP(request._id, request.iap, request.context);
-
             let listener = this._getListeners(request.userId)[0];
+            
             if (listener) {
                 // let listener know that payment arrived
                 await listener.onPayment(request.iap, this._iapExecutor.getEventByIAP(request.iap), iapExecuctionResult);

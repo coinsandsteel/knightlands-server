@@ -11,6 +11,7 @@ class GoldExchange {
 
     async init() {
         this._meta = await Game.db.collection(Collections.Meta).findOne({_id: "goldExchange"});
+        this._checkCycle();
     }
 
     get levelMeta() {
