@@ -93,7 +93,7 @@ class TrialCards {
                 break;
 
             case TrialCardsEffect.GiveGold:
-                this._user.addSoftCurrency(modValue, true);
+                await this._user.addSoftCurrency(modValue, true);
                 break;
 
             case TrialCardsEffect.GiveExp:
@@ -150,12 +150,12 @@ class TrialCards {
         return this._resolver.getResetPrice(this.totalPoints - this.points);
     }
 
-    resetPoints() {
+    async resetPoints() {
         if (this.resetResetPrice > this._user.softCurrency) {
             throw Errors.NotEnoughSoft;
         }
 
-        this._user.addSoftCurrency(-this.resetResetPrice);
+        await this._user.addSoftCurrency(-this.resetResetPrice);
         this.points = this.totalPoints;
         // reset all cards to 0 level
         for (const i in this._state.modifiers) {

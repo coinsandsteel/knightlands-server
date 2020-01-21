@@ -12,10 +12,16 @@ const {
 const ItemType = require("../knightlands-shared/item_type");
 
 class Crafting {
-    constructor(userId, inventory, equipment) {
+    constructor(user, inventory, equipment) {
         this._equipment = equipment;
         this._inventory = inventory;
-        this._userId = userId;
+        this._user = user;
+
+        console.log(`create Crafting ${this._user}`)
+    }
+
+    get _userId() {
+        return this._user.address;
     }
 
     async enchantItem(itemId, currency) {
@@ -76,7 +82,7 @@ class Crafting {
             }
 
             // deduct fee
-            this._inventory.modifyCurrency(currency, -enchantCost);
+            await this._inventory.modifyCurrency(currency, -enchantCost);
         }
 
         this._inventory.consumeIngridients(stepData.ingridients);
@@ -95,21 +101,21 @@ class Crafting {
     }
 
     async enchantPayed(itemId) {
-        return await this._inventory.autoCommitChanges(inventory => {
-            let item = this._getItemById(itemId);
-            if (item) {
-                if (!item.unique) {
-                    item = inventory.makeUnique(item);
-                }
+        await this._user.daily.dailyQuests.onItemEnchanted(1);
 
-                item.enchant = (item.enchant || 0) + 1;
-                inventory.setItemUpdated(item);
-
-                return item.id;
+        let item = this._getItemById(itemId);
+        if (item) {
+            if (!item.unique) {
+                item = this._inventory.makeUnique(item);
             }
 
-            return false;
-        });
+            item.enchant = (item.enchant || 0) + 1;
+            this._inventory.setItemUpdated(item);
+
+            return item.id;
+        }
+
+        return false;
     }
 
     // check pre-conditions, ask for payment if necessary
@@ -139,7 +145,7 @@ class Crafting {
             }
 
             // deduct fee
-            this._inventory.modifyCurrency(currency, -recipeCost);
+            await this._inventory.modifyCurrency(currency, -recipeCost);
         }
 
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
@@ -220,7 +226,7 @@ class Crafting {
         return item.id;
     }
 
-    async upgradeItem(itemId, materials, count) {
+    async levelUpItem(itemId, materials, count) {
         itemId *= 1;
 
         if (!Number.isInteger(count) || count < 1) {
@@ -252,6 +258,7 @@ class Crafting {
         }
 
         let level = item.level;
+        const oldLevel = item.level;
         let exp = item.exp;
 
         try {
@@ -335,6 +342,8 @@ class Crafting {
             const material = materials[i];
             this._inventory.modifyStack(this._inventory.getItemById(material), -count);
         }
+
+        await this._user.dailyQuests.onItemLeveled(level - oldLevel);
 
         return item.id;
     }

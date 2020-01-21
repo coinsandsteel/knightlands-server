@@ -189,25 +189,25 @@ class User {
         return new PlayerUnit(this, stats);
     }
 
-    addSoftCurrency(value, ignorePassiveBonuses = false) {
+    async addSoftCurrency(value, ignorePassiveBonuses = false) {
         if (value > 0 && !ignorePassiveBonuses) {
             value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
         }
 
         value = Math.round(value);
 
-        this._inventory.modifyCurrency(CurrencyType.Soft, value);
+        await this._inventory.modifyCurrency(CurrencyType.Soft, value);
 
         return value;
     }
 
-    addHardCurrency(value) {
-        this._inventory.modifyCurrency(CurrencyType.Hard, value);
+    async addHardCurrency(value) {
+        await this._inventory.modifyCurrency(CurrencyType.Hard, value);
     }
 
-    addDkt(value) {
+    async addDkt(value) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
-        this._inventory.modifyCurrency(CurrencyType.Dkt, Math.round(value));
+        await this._inventory.modifyCurrency(CurrencyType.Dkt, Math.round(value));
     }
 
     getChests() {
@@ -243,8 +243,8 @@ class User {
                 // assign currencies
                 let levelMeta = levelUpMeta.records[i];
                 if (levelMeta) {
-                    this.addSoftCurrency(levelMeta.soft);
-                    this.addHardCurrency(levelMeta.hard);
+                    await this.addSoftCurrency(levelMeta.soft);
+                    await this.addHardCurrency(levelMeta.hard);
                 }
             }
 
@@ -424,8 +424,8 @@ class User {
         userData = this._validateUser(userData);
 
         this._data = userData;
-        this._inventory = new Inventory(this._address, this._db);
-        this._crafting = new Crafting(this._address, this._inventory, this._data.character.equipment);
+        this._inventory = new Inventory(this, this._db);
+        this._crafting = new Crafting(this, this._inventory, this._data.character.equipment);
         this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
         this._trials = new Trials(this._data.trials, this);
         this._goldExchange = new GoldExchange(this._data.goldExchange, this);
@@ -579,7 +579,7 @@ class User {
             this.inventory.removeItemByTemplate(trainingMeta.stats[i].resource, resourceRequired[i]);
         }
 
-        this.addSoftCurrency(-totalGoldRequired);
+        await this.addSoftCurrency(-totalGoldRequired);
         this._recalculateStats = true;
     }
 
@@ -901,8 +901,8 @@ class User {
         }
     }
 
-    async upgradeItem(itemId, materials, count) {
-        return await this._crafting.upgradeItem(itemId, materials, count);
+    async levelUpItem(itemId, materials, count) {
+        return await this._crafting.levelUpItem(itemId, materials, count);
     }
 
     async enchantItem(itemId, currency) {
@@ -952,6 +952,12 @@ class User {
             changes,
             removals
         };
+    }
+
+    async autoCommitChanges(changeCallback) {
+        let response = await changeCallback();
+        await this.commitChanges();
+        return response;
     }
 
     _validateUser(user) {
@@ -1133,8 +1139,8 @@ class User {
 
         let price = adventuresMeta.prices[slotIndex];
 
-        this.addHardCurrency(-price.hard);
-        this.addSoftCurrency(-price.soft);
+        await this.addHardCurrency(-price.hard);
+        await this.addSoftCurrency(-price.soft);
 
         let slot = await this._createNewAdventureSlot();
         adventures.adventures.push(slot);
@@ -1429,7 +1435,7 @@ class User {
 
         const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
 
-        const result = this._addExperienceToBeast(boostCount, beastMeta, regular);
+        const result = await this._addExperienceToBeast(boostCount, beastMeta, regular);
 
         if (regular) {
             const softRequired = boostCount * beastMeta.softPrice;
@@ -1438,7 +1444,7 @@ class User {
                 throw Errors.NotEnoughSoft;
             }
 
-            this.addSoftCurrency(-softRequired);
+            await this.addSoftCurrency(-softRequired);
         } else {
             const ticketItem = this.inventory.getItemByTemplate(beastMeta.ticketItem);
             if (!ticketItem) {
@@ -1455,7 +1461,7 @@ class User {
         return result;
     }
 
-    _addExperienceToBeast(boostCount, beastMeta, regular) {
+    async _addExperienceToBeast(boostCount, beastMeta, regular) {
         let currentBeast = beastMeta.levels[this._data.beast.index];
         if (this._data.beast.level >= currentBeast.levels.length) {
             throw Errors.BeastMaxLevel;
@@ -1466,6 +1472,7 @@ class User {
         let expRequired = currentBeast.levels[this._data.beast.level].expRequired;
 
         let boostCritCount = 0;
+        let levelsGained = 0;
 
         while (boostCount > 0) {
             boostCount--;
@@ -1482,6 +1489,7 @@ class User {
             if (this._data.beast.exp >= expRequired) {
                 this._data.beast.exp -= expRequired;
                 this._data.beast.level++;
+                levelsGained++;
                 this._recalculateStats = true;
 
                 if (this._data.beast.level >= currentBeast.levels.length) {
@@ -1491,6 +1499,8 @@ class User {
         }
 
         this._data.beast.exp = Math.round(this._data.beast.exp);
+
+        await this.dailyQuests.onBeastBoosted(levelsGained);
 
         return {
             crits: boostCritCount,
@@ -1551,7 +1561,7 @@ class User {
     }
 
     async resetTrialCards() {
-        this._trials.resetPoints();
+        await this._trials.resetPoints();
     }
 
     async summonTrialCards(trialType) {

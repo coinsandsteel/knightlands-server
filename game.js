@@ -1,7 +1,7 @@
 'use strict';
 
 const User = require("./user");
-const EventEmitter = require('events');
+import EventEmitter from 'events';
 const PlayerController = require("./playerController");
 const Inventory = require("./inventory");
 const ItemTemplates = require("./itemTemplates");
@@ -120,17 +120,9 @@ class Game extends EventEmitter {
         return user;
     }
 
-    async loadInventory(userId) {
-        // load player inventory. If player online - use loaded inventory. Or load inventory directly;
-        let userInventory;
-        let playerOnline = this.getPlayerController(userId);
-        if (playerOnline) {
-            userInventory = (await playerOnline.getUser()).inventory;
-        } else {
-            userInventory = new Inventory(userId, this._db);
-        }
-
-        return userInventory;
+    async loadInventory(address) {
+        const user = await this.getUser(address);
+        return user.inventory;
     }
 
     getPlayerController(userId) {

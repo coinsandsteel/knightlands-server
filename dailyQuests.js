@@ -210,7 +210,7 @@ class DailyQuests {
 
             this._data.completedTasks[currentTask.index] = true;
             this._data.points += rarityRulesSet.points;
-            this._user.addSoftCurrency(rarityRulesSet.soft);
+            await this._user.addSoftCurrency(rarityRulesSet.soft);
             await this._user.addExperience(rarityRulesSet.exp);
 
             this._data.completedTasksCount++;

@@ -78,7 +78,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
 
         // Crafting
-        this._socket.on(Operations.UpgradeItem, this._gameHandler(this._upgradeItem.bind(this)));
+        this._socket.on(Operations.UpgradeItem, this._gameHandler(this._levelUpItem.bind(this)));
         this._socket.on(Operations.UnbindItem, this._gameHandler(this._unbindItem.bind(this)));
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
         this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
@@ -349,6 +349,7 @@ class PlayerController extends IPaymentListener {
         let itemsToDrop = 0;
         let questComplete = false;
         let damages = [];
+        let engages = 0;
 
         if (isBoss) {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
@@ -376,6 +377,7 @@ class PlayerController extends IPaymentListener {
             let playerUnit = user.getCombatUnit();
 
             while (user.enoughHp && bossUnit.isAlive) {
+                engages++;
                 // exp and gold are calculated based on damage inflicted
                 let attackResult = playerUnit.attack(bossUnit);
                 damages.push(attackResult);
@@ -390,7 +392,7 @@ class PlayerController extends IPaymentListener {
                 bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (attackResult.damage / bossUnit.getMaxHealth());
                 let softCurrencyGained = Math.floor(bossProgress.gold);
                 bossProgress.gold -= softCurrencyGained;
-                user.addSoftCurrency(softCurrencyGained);
+                await user.addSoftCurrency(softCurrencyGained);
 
                 // if just 1 hit 
                 if (data.max !== true) {
@@ -447,11 +449,12 @@ class PlayerController extends IPaymentListener {
             let softCurrencyGained = 0;
 
             while (hits-- > 0) {
+                engages++;
                 await user.addExperience(quest.exp);
                 softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }
 
-            user.addSoftCurrency(softCurrencyGained);
+            await user.addSoftCurrency(softCurrencyGained);
 
             // will reset if current quest is not complete 
             questComplete = true;
@@ -481,6 +484,10 @@ class PlayerController extends IPaymentListener {
 
         if (items) {
             await user.addLoot(items);
+        }
+
+        if (engages > 0) {
+            await user.dailyQuests.onQuestEngaged(engages);
         }
 
         return damages;
@@ -642,13 +649,13 @@ class PlayerController extends IPaymentListener {
                     throw Errors.NotEnoughCurrency;
                 }
 
-                user.addHardCurrency(-refillCost.hard);
+                await user.addHardCurrency(-refillCost.hard);
             } else if (refillCost.soft > 0) {
                 if (refillCost.soft > user.softCurrency) {
                     throw Errors.NotEnoughCurrency;
                 }
 
-                user.addSoftCurrency(-refillCost.soft);
+                await user.addSoftCurrency(-refillCost.soft);
             }
 
             user.refillTimer(stat);
@@ -746,26 +753,24 @@ class PlayerController extends IPaymentListener {
             throw "no reward";
         }
 
-        console.log(JSON.stringify(rewards, null, 2))
-
         await user.loadInventory();
-        user.addSoftCurrency(rewards.gold);
+        await user.addSoftCurrency(rewards.gold);
         await user.addExperience(rewards.exp);
         user.inventory.addItemTemplates(rewards.items);
-        user.addDkt(rewards.dkt);
-        user.addHardCurrency(rewards.hardCurrency);
+        await user.addDkt(rewards.dkt);
+        await user.addHardCurrency(rewards.hardCurrency);
 
         return rewards;
     }
 
     // crafting
     // if item never have been modified server will return new item id for created unique version
-    async _upgradeItem(user, data) {
+    async _levelUpItem(user, data) {
         const { materials, itemId, count } = data;
 
-        let upgradedItemId = await user.upgradeItem(itemId, materials, count);
+        let leveledItemId = await user.levelUpItem(itemId, materials, count);
 
-        return upgradedItemId;
+        return leveledItemId;
     }
 
     async _unbindItem(user, data) {
@@ -1058,7 +1063,7 @@ class PlayerController extends IPaymentListener {
 
         const items = await Game.lootGenerator.getLootFromTable(loot);
 
-        this._user.addSoftCurrency(floorMeta.softCurrency);
+        await this._user.addSoftCurrency(floorMeta.softCurrency);
         await this._user.addExperience(floorMeta.exp);
         await this._user.inventory.addItemTemplates(items);
 
@@ -1149,7 +1154,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _obtainGoldFromGoldExchange(user, data) {
-        return user.goldExchange.obtainGold();
+        return await user.goldExchange.obtainGold();
     }
 
     async _getGoldExchangeMeta(user) {

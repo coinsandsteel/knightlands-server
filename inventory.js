@@ -6,12 +6,14 @@ const {
 
 import ItemType from "./knightlands-shared/item_type";
 import Game from "./game";
+import CurrencyType from "./knightlands-shared/currency_type";
 import ItemProperties from "./knightlands-shared/item_properties";
 
 class Inventory {
-    constructor(userId, db) {
+    constructor(user, db) {
         this._db = db;
-        this._userId = userId;
+        this._userId = user.address;
+        this._user = user;
         this._items = [];
         this._itemsByTemplate = {};
         this._itemsById = new Map(); // keeps index in items array
@@ -23,6 +25,10 @@ class Inventory {
         // keep track of changes to commit later
         this._removedItems = new Map();
         this._newItems = new Map();
+    }
+
+    static get CurrencyUpdated() {
+        return "cur";
     }
 
     static get Changed() {
@@ -40,15 +46,17 @@ class Inventory {
         return this._currencies[currency] || 0;
     }
 
-    setCurrency(currency, value) {
-        this._currencies[currency] = value * 1;
-    }
-
-    modifyCurrency(currency, value) {
+    async modifyCurrency(currency, value) {
         if (!this._currencies[currency]) {
-            this.setCurrency(currency, value);
+            this._currencies[currency] = value * 1;
         } else {
             this._currencies[currency] += value * 1;
+        }
+
+        if (currency == CurrencyType.Soft && value < 0) {
+            await this._user.dailyQuests.onGoldSpent(value);
+        } else if (currency == CurrencyType.Hard && value < 0) {
+            await this._user.dailyQuests.onPremiumPurchase(value);
         }
     }
 
@@ -322,7 +330,7 @@ class Inventory {
         let templates = await Game.itemTemplates.getTemplates(templateIds);
         let i = 0;
         for (; i < length; ++i) {
-            this._addItemTemplate(templates[i], itemQuantities[templates[i]._id]);
+            await this._addItemTemplate(templates[i], itemQuantities[templates[i]._id]);
         }
     }
 
@@ -370,9 +378,9 @@ class Inventory {
         return count;
     }
 
-    _addItemTemplate(template, count) {
+    async _addItemTemplate(template, count) {
         if (template.type == ItemType.Currency) {
-            this.modifyCurrency(template.currencyType, template.quantity * count);
+            await this.modifyCurrency(template.currencyType, template.quantity * count);
             return;
         }
 

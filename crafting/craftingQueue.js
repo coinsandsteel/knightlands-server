@@ -19,7 +19,7 @@ class CraftingQueue {
     async init(iapExecutor) {
         console.log("Registering Crafting IAPs...");
 
-        let allRecipes = await this._db.collection(Collections.CraftingRecipes).find({crafted:true}).toArray();
+        let allRecipes = await this._db.collection(Collections.CraftingRecipes).find({ crafted: true }).toArray();
         allRecipes.forEach(recipe => {
             if (!recipe.iap) {
                 return;
@@ -32,10 +32,10 @@ class CraftingQueue {
             iapExecutor.mapIAPtoEvent(recipe.iap, Events.CraftingStatus);
         });
 
-        let enchantingSteps = await this._db.collection(Collections.Meta).findOne({_id: "enchanting_meta"});
+        let enchantingSteps = await this._db.collection(Collections.Meta).findOne({ _id: "enchanting_meta" });
         for (let rarity in enchantingSteps.steps) {
             let stepData = enchantingSteps.steps[rarity];
-            stepData.steps.forEach(step=>{
+            stepData.steps.forEach(step => {
                 if (!step.iap) {
                     return;
                 }
@@ -43,21 +43,14 @@ class CraftingQueue {
                 iapExecutor.registerAction(step.iap, async context => {
                     return await this._enchantItem(context.user, context.itemId);
                 });
-    
+
                 iapExecutor.mapIAPtoEvent(step.iap, Events.ItemEnchanted);
             });
         }
     }
 
     async _craftRecipe(userId, recipeId) {
-        let user;
-        let controller = await Game.getPlayerController(userId);
-        if (controller) {
-            user = await controller.getUser();
-        } else {
-            user = await Game.loadUser(userId);
-        }
-
+        let user = await Game.getUser(userId);
         return await user.crafting.craftPayedRecipe(recipeId);
     }
 
@@ -95,15 +88,10 @@ class CraftingQueue {
     }
 
     async _enchantItem(userId, itemId) {
-        let user;
-        let controller = await Game.getPlayerController(userId);
-        if (controller) {
-            user = await controller.getUser();
-        } else {
-            user = await Game.loadUser(userId);
-        }
-
-        return await user.crafting.enchantPayed(itemId);
+        let user = await Game.getUser(userId);
+        return await user.autoCommitChanges(async ()=>{
+            return await user.crafting.enchantPayed(itemId);
+        });
     }
 
     async requestEnchantingPayment(userId, iap, item) {

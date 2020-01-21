@@ -210,13 +210,13 @@ class Presale {
 
             if (newBonus) {
                 let refererInventory = await Game.loadInventory(args.referer);
-                await refererInventory.autoCommitChanges(inv => {
-                    inv.modifyCurrency(CurrencyType.Dkt, changes.referer);
+                await refererInventory.autoCommitChanges(async inv => {
+                    await inv.modifyCurrency(CurrencyType.Dkt, changes.referer);
                 });
 
                 let userInventory = await Game.loadInventory(args.user);
-                await userInventory.autoCommitChanges(inv => {
-                    inv.modifyCurrency(CurrencyType.Dkt, changes.referee);
+                await userInventory.autoCommitChanges(async inv => {
+                    await inv.modifyCurrency(CurrencyType.Dkt, changes.referee);
                 });
 
                 await this._db.collection(Collections.PresaleChests).updateOne({ user: args.user }, { $set: { referralBonus: referralBonus } });

@@ -49,7 +49,7 @@ class GoldExchange {
         return this._data;
     }
 
-    obtainGold() {
+    async obtainGold() {
         this._checkCycle();
 
         if (this._data.freeObtains >= this._meta.freeExchanges) {
@@ -57,7 +57,7 @@ class GoldExchange {
         }
 
         this._data.freeObtains++;
-        this._user.addSoftCurrency(this._meta.levels[this._data.level].obtainedGold);
+        await this._user.addSoftCurrency(this._meta.levels[this._data.level].obtainedGold);
     }
 
     _checkCycle() {

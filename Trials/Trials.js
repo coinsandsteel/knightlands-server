@@ -189,6 +189,13 @@ class Trials {
             currentFight.hits++;
         }
 
+        if (trialType == TrialType.Armour) {
+            await this._user.dailyQuests.onArmourTrialsEngaged(1);
+        } else if (trialType == TrialType.Weapon) {
+            await this._user.dailyQuests.onAWeaponTrialsEngaged(1);
+        }
+        
+
         return response;
     }
 
@@ -210,7 +217,7 @@ class Trials {
             const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
             // reward soft and exp
             const fightMeta = this._getFightMeta(stageMeta, currentFight.index);
-            this._user.addSoftCurrency(fightMeta.soft);
+            await this._user.addSoftCurrency(fightMeta.soft);
             await this._user.addExperience(fightMeta.exp);
 
             // check if all fights are finished
@@ -348,7 +355,7 @@ class Trials {
         const items = await Game.lootGenerator.getLootFromTable(rewardPreset.loot);
         await this._user.inventory.addItemTemplates(items);
 
-        const softCollected = this._user.addSoftCurrency(rewardPreset.soft);
+        const softCollected = await this._user.addSoftCurrency(rewardPreset.soft);
         const expCollected = await this._user.addExperience(rewardPreset.exp);
 
         stageState.collected = true;
@@ -364,8 +371,8 @@ class Trials {
         this._cards.improveCard(cardEffect);
     }
 
-    resetPoints() {
-        this._cards.resetPoints();
+    async resetPoints() {
+        await this._cards.resetPoints();
     }
 
     getTrialState(trialType, trialId) {

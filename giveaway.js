@@ -226,7 +226,7 @@ class Giveaway {
             // give welcome loot
             let user = await Game.loadUser(walletAddress);
 
-            user.addSoftCurrency(WelcomeGifts.softCurrency);
+            await user.addSoftCurrency(WelcomeGifts.softCurrency);
             await user.loadInventory();
             await user.inventory.addItemTemplates(WelcomeGifts.items);
 
