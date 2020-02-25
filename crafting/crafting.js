@@ -101,7 +101,7 @@ class Crafting {
     }
 
     async enchantPayed(itemId) {
-        await this._user.daily.dailyQuests.onItemEnchanted(1);
+        await this._user.dailyQuests.onItemEnchanted(1);
 
         let item = this._getItemById(itemId);
         if (item) {

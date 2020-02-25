@@ -4,7 +4,7 @@ const ObjectUtils = require("./objectUtils");
 // TODO support arrays
 function _buildPaths(key, changes, paths = {}) {
     for (let i in changes) {
-        if (typeof (changes[i]) == "object") {
+        if (typeof (changes[i]) == "object" && !Array.isArray(changes[i])) {
             let innerPath = _buildPaths(i, changes[i]);
             if (Object.keys(innerPath).length > 0) {
                 for (let j in innerPath) {

@@ -1458,6 +1458,8 @@ class User {
             this.inventory.removeItem(ticketItem.id, boostCount);
         }
 
+        await this.dailyQuests.onBeastBoosted(boostCount);
+
         return result;
     }
 
@@ -1472,7 +1474,6 @@ class User {
         let expRequired = currentBeast.levels[this._data.beast.level].expRequired;
 
         let boostCritCount = 0;
-        let levelsGained = 0;
 
         while (boostCount > 0) {
             boostCount--;
@@ -1499,8 +1500,6 @@ class User {
         }
 
         this._data.beast.exp = Math.round(this._data.beast.exp);
-
-        await this.dailyQuests.onBeastBoosted(levelsGained);
 
         return {
             crits: boostCritCount,

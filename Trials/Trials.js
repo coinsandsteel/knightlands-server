@@ -192,7 +192,7 @@ class Trials {
         if (trialType == TrialType.Armour) {
             await this._user.dailyQuests.onArmourTrialsEngaged(1);
         } else if (trialType == TrialType.Weapon) {
-            await this._user.dailyQuests.onAWeaponTrialsEngaged(1);
+            await this._user.dailyQuests.onWeaponTrialsEngaged(1);
         }
         
 

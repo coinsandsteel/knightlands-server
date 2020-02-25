@@ -54,9 +54,9 @@ class Inventory {
         }
 
         if (currency == CurrencyType.Soft && value < 0) {
-            await this._user.dailyQuests.onGoldSpent(value);
+            await this._user.dailyQuests.onGoldSpent(-value);
         } else if (currency == CurrencyType.Hard && value < 0) {
-            await this._user.dailyQuests.onPremiumPurchase(value);
+            await this._user.dailyQuests.onPremiumPurchase(-value);
         }
     }
 

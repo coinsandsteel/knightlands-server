@@ -45,6 +45,7 @@
   "readmeFilename": "README.md",
   "scripts": {
     "start": "node -r esm server.js",
+    "debug": "node -r esm server.js --inspect-workers 5999",
     "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
   }
 }

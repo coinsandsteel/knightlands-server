@@ -1009,6 +1009,8 @@ class PlayerController extends IPaymentListener {
         towerFloor.health = floorEnemyUnit.getHealth();
         towerFloor.userHealth = userUnit.getHealth();
 
+        await user.dailyQuests.onTowerAttacked(1);
+
         return {
             ...attackResult,
             enemyHealth: towerFloor.health,

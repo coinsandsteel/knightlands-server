@@ -3,7 +3,7 @@ import Game from "./game";
 import Errors from "./knightlands-shared/errors";
 import Random from "./random";
 const Rarity = require("./knightlands-shared/rarity");
-const DailyQuestType = require("./knightlands-shared/daily_quest_type");
+import DailyQuestType from "./knightlands-shared/daily_quest_type";
 
 class DailyQuests {
     constructor(data, user) {
@@ -61,6 +61,10 @@ class DailyQuests {
         await this._advanceTask(DailyQuestType.DailyWeaponTrial, count);
     }
 
+    async onTowerAttacked(count = 1) {
+        await this._advanceTask(DailyQuestType.DailyTower, count);
+    }
+
     async onQuestEngaged(times = 1) {
         await this._advanceTask(DailyQuestType.DailyWeaponTrial, times);
     }
@@ -73,20 +77,23 @@ class DailyQuests {
         const items = [];
         for (let index = 0; index < this._data.rewards.length; index++) {
             const rewardRecord = this._data.rewards[index];
-            if (rewardRecord.pointsRequired < this._data.claimedPoints && rewardRecord.pointsRequired >= this._data.points) {
+            if (rewardRecord.pointsRequired > this._data.claimedPoints && rewardRecord.pointsRequired <= this._data.points) {
                 this._data.claimedPoints = rewardRecord.pointsRequired;
 
                 const rolledItem = Game.lootGenerator.rollLootRecord(rewardRecord.loot);
                 if (this._data.doubleRewards) {
                     rolledItem.quantity *= 2;
                 }
+
                 items.push(rolledItem);                
             }
         }
 
         if (items.length > 0) {
-            await this._user.inventory.addItemTemplates(item);
+            await this._user.inventory.addItemTemplates(items);
         }
+
+        return items;
     }
 
     cancelTask() {
@@ -118,8 +125,8 @@ class DailyQuests {
             let notAllowed = false;
             if (this._data.currentTask) {
                 notAllowed = true;
-            } else if (this._data.freeRefreshes < this._meta.freeRefreshes) {
-                this._data.freeRefreshes++;
+            } else if (this._data.freeRefreshes > 0) {
+                this._data.freeRefreshes--;
             } else {
                 const item = this._user.inventory.getItemByTemplate(this._meta.refreshItem);
                 if (item) {
@@ -171,7 +178,7 @@ class DailyQuests {
 
         if (this._data.cycle != rewardCycle) {
             this._data.cycle = rewardCycle;
-            this._data.freeRefreshes = 0;
+            this._data.freeRefreshes += this._meta.freeRefreshes;
             this._data.points = 0;
             this._data.claimedPoints = 0;
             this._data.completedTasksCount = 0;
@@ -200,11 +207,18 @@ class DailyQuests {
 
         const currentTask = this._data.currentTask;
 
-        if (currentTask.type == taskType) {
-            currentTask.progress += count;
+        if (currentTask.type != taskType) {
+            return;
         }
 
         if (currentTask.progress >= currentTask.maxProgress) {
+            return;
+        }
+
+        currentTask.progress += count;
+
+        if (currentTask.progress >= currentTask.maxProgress) {
+            currentTask.progress = currentTask.maxProgress;
             // complete task
             const rarityRulesSet = this._meta.rarityRules.find(x => x.rarity == currentTask.rarity);
 

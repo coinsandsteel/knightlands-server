@@ -48,6 +48,12 @@ module.exports = {
 
             const newValue = newObj[i];
 
+            if (newValue == null || newValue == undefined) {
+                changes[i] = "";
+                fieldsDetected = true;
+                continue;
+            }
+
             if (typeof (oldObj[i]) == "object") {
                 if (!newObj.hasOwnProperty(i)) {
                     changes[i] = "";
@@ -81,6 +87,11 @@ module.exports = {
             const newValue = newObj[i];
             const oldValue = oldObj[i];
 
+            if (newValue == null || newValue == undefined) {
+                // field is removed
+                continue;
+            }
+
             if (Array.isArray(newValue) || Array.isArray(oldValue)) {
                 changes[i] = newValue;
                 fieldsDetected = true;
@@ -88,7 +99,8 @@ module.exports = {
                 continue;
             }
 
-            if (typeof (newValue) == "object") {
+            // typeof (null) == "object" wtf
+            if (newValue != null && typeof (newValue) == "object") {
                 if (!oldObj.hasOwnProperty(i)) {
                     changes[i] = newValue;
                     fieldsDetected = true;
@@ -100,6 +112,7 @@ module.exports = {
                     }
                 } else {
                     changes[i] = newValue;
+                    fieldsDetected = true;
                 }
             } else {
                 if (!oldObj || !oldObj.hasOwnProperty(i) || oldValue !== newValue) {
