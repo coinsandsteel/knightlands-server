@@ -360,7 +360,7 @@ class User {
     }
 
     _advanceTimer(stat) {
-        let now = Game.nowMs; 
+        let now = Game.nowSec; 
         let character = this._data.character;
         let timer = this.getTimer(stat);
 

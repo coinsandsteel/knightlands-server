@@ -6,6 +6,7 @@ import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
 const ObjectId = require("mongodb").ObjectID;
 const EventEmitter = require('events');
+const Config = require("../config");
 
 const PaymentErrorCodes = {
     UknownPaymentId: "UknownPaymentId",
@@ -91,6 +92,8 @@ class PaymentProcessor extends EventEmitter {
                 "status": payment.status,
                 "paymentId": payment._id.valueOf(),
                 "price": payment.price,
+                "nonce": payment.nonce,
+                "timestamp": payment.timestamp,
                 "context": payment.context,
                 "signature": payment.signature,
                 "id": payment._id
@@ -129,7 +132,9 @@ class PaymentProcessor extends EventEmitter {
                 userId,
                 tag,
                 claimed: false
-            }, { ...filter }]
+            }, 
+            { ...filter }, 
+            { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }]
         }).toArray();
     }
 
@@ -162,8 +167,10 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown iap";
         }
 
-        let price = Game.currencyConversionService.convertToNative(iapObject.price);
+        const nonce = Number(await this._blockchain.getPaymentNonce(userId));
 
+        let price = Game.currencyConversionService.convertToNative(iapObject.price);
+        let timestamp = Game.nowSec;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,
             iap,
@@ -172,13 +179,15 @@ class PaymentProcessor extends EventEmitter {
             status: PaymentStatus.WaitingForTx,
             claimed: false,
             context,
-            price
+            price,
+            nonce,
+            timestamp
         });
 
         let paymentId = inserted.insertedId.valueOf() + "";
 
         // create iap + price + paymentId signed message for smart contract and return it
-        let signature = await this._blockchain.sign(iap, paymentId, price);
+        let signature = await this._blockchain.sign(iap, paymentId, price, nonce, timestamp);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
             $set: {
@@ -190,6 +199,8 @@ class PaymentProcessor extends EventEmitter {
             signature,
             iap,
             price,
+            nonce,
+            timestamp,
             paymentId
         };
     }

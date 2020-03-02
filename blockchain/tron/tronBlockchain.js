@@ -6,6 +6,7 @@ const TronWeb = require("tronweb");
 const { Collections } = require("../../database");
 
 const PaymentGateway = require("./PaymentGateway.json");
+const Dividends = require("./Dividends.json");
 const PresaleChestGateway = require("./PresaleChestGateway.json");
 const Presale = require("./Presale.json");
 
@@ -44,6 +45,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._paymentContract = this._tronWeb.contract(PaymentGateway.abi, PaymentGateway.address);
         this._presale = this._tronWeb.contract(Presale.abi, Presale.address);
         this._presaleChestsGateway = this._tronWeb.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
+        this._dividends = this._tronWeb.contract(Dividends.abi, Dividends.address);
     }
 
     async _watchNewBlocks() {
@@ -233,7 +235,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             //     transaction: signedTransaction,
             //     output
             // });
-            this._emitPaymentFailed(txID, paymentId, userId);
+            this._emitPaymentFailed(txID, paymentId, userId, output.result);
         }
 
         if (emitSuccess) {
@@ -249,6 +251,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
     async _ensureConnected() {
         await this._tronWeb.isConnected();
+    }
+
+    async getPaymentNonce(walletAddress) {
+        const result =  await this._paymentContract.methods.nonces(walletAddress).call();
+        return result.valueOf();
     }
 }
 

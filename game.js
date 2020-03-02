@@ -82,7 +82,7 @@ class Game extends EventEmitter {
         return new Date().getTime();
     }
 
-    get nowMs() {
+    get nowSec() {
         return Math.floor(this.now / 1000); 
     }
 
