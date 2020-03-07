@@ -207,7 +207,7 @@ class User {
 
     async addDkt(value) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
-        await this._inventory.modifyCurrency(CurrencyType.Dkt, Math.round(value));
+        await this._inventory.modifyCurrency(CurrencyType.Dkt, value);
     }
 
     getChests() {
