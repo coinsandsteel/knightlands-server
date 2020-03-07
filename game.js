@@ -22,7 +22,8 @@ class Game extends EventEmitter {
         lootGenerator, 
         currencyConversionService, 
         craftingQueue,
-        userPremiumService
+        userPremiumService,
+        dividends
     ) {
         this._server = server;
         this._db = db;
@@ -34,8 +35,13 @@ class Game extends EventEmitter {
         this._craftingQueue = craftingQueue;
         this._itemTemplates = new ItemTemplates(db);
         this._userPremiumService = userPremiumService;
+        this._dividends = dividends;
 
         this._players = {};
+    }
+
+    get dividends() {
+        return this._dividends;
     }
 
     get db() {

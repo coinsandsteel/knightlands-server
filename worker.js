@@ -23,6 +23,7 @@ const CurrencyConversionService = require("./payment/CurrencyConversionService")
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
 const UserPremiumService = require("./userPremiumService");
+const Dividends = require("./dividends/dividends");
 
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
@@ -73,6 +74,7 @@ class Worker extends SCWorker {
     this._blockchain = BlockchainFactory(Config.blockchain, this._db);
     this._iapExecutor = new IAPExecutor(this._db);
     this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
+    this._dividends = new Dividends(this._db, this._blockchain);
 
     this._raidManager = new RaidManager(this._db, this._paymentProcessor);
     this._craftingQueue = new CraftingQueue(this._db);
@@ -96,7 +98,8 @@ class Worker extends SCWorker {
       this._lootGenerator, 
       this._currencyConversionService, 
       this._craftingQueue,
-      this._userPremiumService
+      this._userPremiumService,
+      this._dividends
     );
 
     this._giveaway = new Giveaway(app);

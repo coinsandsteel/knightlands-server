@@ -9,6 +9,7 @@ const PaymentGateway = require("./PaymentGateway.json");
 const Dividends = require("./Dividends.json");
 const PresaleChestGateway = require("./PresaleChestGateway.json");
 const Presale = require("./Presale.json");
+const DKT = require("./DKT.json");
 
 const NewBlockScanInterval = 10000;
 const TxFailureScanInterval = 5000;
@@ -30,6 +31,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this.PaymentFailed = "PurchaseFailed";
         this.PresaleChestTransfer = "PresaleChestTransfer";
         this.PresaleChestPurchased = "PresaleChestPurchased";
+        this.TransactionFailed = "TransactionFailed";
 
         this._eventsReceived = 0;
 
@@ -46,6 +48,15 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._presale = this._tronWeb.contract(Presale.abi, Presale.address);
         this._presaleChestsGateway = this._tronWeb.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
         this._dividends = this._tronWeb.contract(Dividends.abi, Dividends.address);
+        this._stakingToken = this._tronWeb.contract(DKT.abi, DKT.address);
+    }
+
+    get PaymentGatewayAddress() {
+        return PaymentGateway.address;
+    }
+
+    get DividendTokenAddress() {
+        return DKT.address;
     }
 
     async _watchNewBlocks() {
@@ -160,12 +171,13 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         });
     }
 
-    _emitPaymentFailed(transaction, paymentId, userId, reason) {
-        this.emit(this.PaymentFailed, {
+    _emitTransactionFailed(contractAddress, transaction, payload, userId, reason) {
+        this.emit(this.TransactionFailed, {
             transactionId: transaction,
-            paymentId,
+            payload,
             userId,
-            reason
+            reason,
+            contractAddress
         });
     }
 
@@ -196,7 +208,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         return await this._tronWeb.trx.sign(hash);
     }
 
-    async sendTransaction(paymentId, userId, signedTransaction) {
+    async sendTransaction(contractAddress, payload, userId, signedTransaction) {
         const broadCastResponse = await this._tronWeb.trx.sendRawTransaction(signedTransaction);
 
         if (broadCastResponse.code) {
@@ -206,26 +218,26 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 reason = this._tronWeb.toUtf8(broadCastResponse.message);
             }
 
-            this._emitPaymentFailed(signedTransaction.txID, paymentId, userId, reason);
+            this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
             return;
         }
 
-        this._trackTransactionFailure(paymentId, userId, signedTransaction.txID);
+        this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
 
         return signedTransaction.txID;
     }
 
-    async trackTransactionStatus(paymentId, userId, transactionId) {
-        this._trackTransactionFailure(paymentId, userId, transactionId, true);
+    async trackTransactionStatus(suppliedId, userId, transactionId) {
+        this._trackTransactionFailure(suppliedId, userId, transactionId, true);
     }
 
     // track failure, success will be tracked using events
-    async _trackTransactionFailure(paymentId, userId, txID, emitSuccess = false) {
+    async _trackTransactionFailure(contractAddress, suppliedId, userId, txID, emitSuccess = false) {
         const output = await this._tronWeb.trx.getTransactionInfo(txID);
 
         if (!Object.keys(output).length) {
             return setTimeout(() => {
-                this._trackTransactionFailure(paymentId, userId, txID, emitSuccess);
+                this._trackTransactionFailure(contractAddress, suppliedId, userId, txID, emitSuccess);
             }, TxFailureScanInterval);
         }
 
@@ -235,7 +247,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             //     transaction: signedTransaction,
             //     output
             // });
-            this._emitPaymentFailed(txID, paymentId, userId, output.result);
+            this._emitTransactionFailed(contractAddress, txID, suppliedId, userId, output.result);
         }
 
         if (emitSuccess) {
@@ -255,6 +267,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
     async getPaymentNonce(walletAddress) {
         const result =  await this._paymentContract.methods.nonces(walletAddress).call();
+        return result.valueOf();
+    }
+
+    async getDividendTokenNonce(walletAddress) {
+        const result =  await this._stakingToken.methods.nonces(walletAddress).call();
         return result.valueOf();
     }
 }

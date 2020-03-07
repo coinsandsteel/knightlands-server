@@ -27,7 +27,7 @@ class PaymentProcessor extends EventEmitter {
         this._listeners = {};
 
         this._blockchain.on(this._blockchain.Payment, this._handleBlockchainPayment.bind(this));
-        this._blockchain.on(this._blockchain.PaymentFailed, this._handlePaymentFailed.bind(this));
+        this._blockchain.on(this._blockchain.TransactionFailed, this._handlePaymentFailed.bind(this));
     }
 
     registerAsPaymentListener(userId, listener) {
@@ -132,8 +132,8 @@ class PaymentProcessor extends EventEmitter {
                 userId,
                 tag,
                 claimed: false
-            }, 
-            { ...filter }, 
+            },
+            { ...filter },
             { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }]
         }).toArray();
     }
@@ -186,7 +186,7 @@ class PaymentProcessor extends EventEmitter {
 
         let paymentId = inserted.insertedId.valueOf() + "";
 
-        // create iap + price + paymentId signed message for smart contract and return it
+        // create signature for the smart contract and return it
         let signature = await this._blockchain.sign(iap, paymentId, price, nonce, timestamp);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
@@ -264,7 +264,7 @@ class PaymentProcessor extends EventEmitter {
         }
 
         try {
-            let transactionId = await this._blockchain.sendTransaction(paymentId, userId, signedTransaction);
+            let transactionId = await this._blockchain.sendTransaction(this._blockchain.PaymentGatewayAddress, paymentId, userId, signedTransaction);
             if (transactionId) {
                 await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {
                     $set: {
@@ -322,7 +322,7 @@ class PaymentProcessor extends EventEmitter {
 
             let iapExecuctionResult = await this._executeIAP(request._id, request.iap, request.context);
             let listener = this._getListeners(request.userId)[0];
-            
+
             if (listener) {
                 // let listener know that payment arrived
                 await listener.onPayment(request.iap, this._iapExecutor.getEventByIAP(request.iap), iapExecuctionResult);
@@ -333,9 +333,13 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async _handlePaymentFailed(args) {
-        const { transactionId, paymentId, userId } = args;
+        const { transactionId, payload, userId, contractAddress } = args;
 
-        let paymentObjectId = new ObjectId(paymentId);
+        if (contractAddress != this._blockchain.PaymentGatewayAddress) {
+            return;
+        }
+
+        let paymentObjectId = new ObjectId(payload);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({
             _id: paymentObjectId

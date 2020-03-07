@@ -29,7 +29,7 @@ export default {
         const maxWeight = array[array.length - 1].weight;
         for (let i = 0; i < sampleSize; ++i) {
             let roll = this.intRange(0, maxWeight);
-            const index = bounds.gt(array, roll, weightSampleComparator);
+            const index = bounds.ge(array, roll, weightSampleComparator);
             sampled[i] = array[index];
         }
 

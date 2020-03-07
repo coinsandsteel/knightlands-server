@@ -56,7 +56,8 @@ module.exports = {
         DropZoneModifiers: "drop_zone_modifiers",
         Adventures: "adventures",
         AdventuresList: "adventures_list",
-        TowerMeta: "tower_meta"
+        TowerMeta: "tower_meta",
+        DivTokenRequests: "div_token_requests"
     },
 
 
