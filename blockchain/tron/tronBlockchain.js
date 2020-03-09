@@ -2,6 +2,7 @@ const IBlockchainListener = require("../IBlockchainListener");
 const IBlockchainSigner = require("../IBlockchainSigner");
 const ClassAggregation = require("../../classAggregation");
 const TronWeb = require("tronweb");
+const web3utls = require('web3-utils');
 
 const { Collections } = require("../../database");
 
@@ -32,6 +33,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this.PresaleChestTransfer = "PresaleChestTransfer";
         this.PresaleChestPurchased = "PresaleChestPurchased";
         this.TransactionFailed = "TransactionFailed";
+        this.DividendTokenWithdrawal = "DividendTokenWithdrawal";
 
         this._eventsReceived = 0;
 
@@ -96,7 +98,6 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             while (true) {
                 let events = await this._tronWeb.getEventResult(contactAddress, options);
                 const length = events.length;
-    
                 if (length == 0) {
                     break;
                 }
@@ -130,6 +131,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._watchEvent("Purchase", PaymentGateway.address, this._emitPayment);
         this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
         this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
+        this._watchEvent("Transfer", DKT.address, this._emitWithdrawal);
 
         console.log("Scan finished.");
     }
@@ -171,6 +173,18 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         });
     }
 
+    _emitWithdrawal(transaction, timestamp, eventData) {
+        if (eventData.from == "0x0000000000000000000000000000000000000000") {
+            this.emit(this.DividendTokenWithdrawal, {
+                success: true,
+                to: this._tronWeb.address.fromHex(eventData.to),
+                amount: eventData.value,
+                timestamp: timestamp / 1000,
+                tx: transaction
+            });
+        }
+    }
+
     _emitTransactionFailed(contractAddress, transaction, payload, userId, reason) {
         this.emit(this.TransactionFailed, {
             transactionId: transaction,
@@ -179,6 +193,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             reason,
             contractAddress
         });
+    }
+
+    addressForSigning(address) {
+        // https://github.com/TRON-US/tronweb/blob/master/src/utils/abi.js
+        return this._tronWeb.address.toHex(address).replace(/^(41)/, '');
     }
 
     async verifySign(nonce, message, address) {
@@ -190,22 +209,23 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         }
     }
 
+    _isHex(string) {
+        return (typeof string === 'string'
+            && !isNaN(parseInt(string, 16))
+            && /^(0x|)[a-fA-F0-9]+$/.test(string));
+    }
+
     async sign(...args) {
-        let encoded = "";
         args.forEach(arg => {
-            let hex = this._tronWeb.toHex(arg).substr(2);
-            if (typeof arg === 'number') {
-                // pad with 0
-                hex = hex.padStart(64, "0");
+            if (this._isHex(arg)) {
+                // assume that hex is address until other hex values will be used
+                arg = web3utls.toChecksumAddress(arg);
             }
 
-            encoded += hex;
+            params.push(arg);
         });
 
-        let result = hexToBytes(encoded);
-        let hash = this._tronWeb.sha3(result);
-
-        return await this._tronWeb.trx.sign(hash);
+        return await this._tronWeb.trx.sign(web3utls.soliditySha3(...params));
     }
 
     async sendTransaction(contractAddress, payload, userId, signedTransaction) {
@@ -227,17 +247,17 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         return signedTransaction.txID;
     }
 
-    async trackTransactionStatus(suppliedId, userId, transactionId) {
-        this._trackTransactionFailure(suppliedId, userId, transactionId, true);
+    async trackTransactionStatus(contractAddress, payload, userId, transactionId) {
+        this._trackTransactionFailure(contractAddress, payload, userId, transactionId, true);
     }
 
     // track failure, success will be tracked using events
-    async _trackTransactionFailure(contractAddress, suppliedId, userId, txID, emitSuccess = false) {
+    async _trackTransactionFailure(contractAddress, payload, userId, txID, emitSuccess = false) {
         const output = await this._tronWeb.trx.getTransactionInfo(txID);
 
         if (!Object.keys(output).length) {
             return setTimeout(() => {
-                this._trackTransactionFailure(contractAddress, suppliedId, userId, txID, emitSuccess);
+                this._trackTransactionFailure(contractAddress, payload, userId, txID, emitSuccess);
             }, TxFailureScanInterval);
         }
 
@@ -247,7 +267,8 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             //     transaction: signedTransaction,
             //     output
             // });
-            this._emitTransactionFailed(contractAddress, txID, suppliedId, userId, output.result);
+            console.log("TX failed", contractAddress, JSON.stringify(output));
+            this._emitTransactionFailed(contractAddress, txID, payload, userId, output.result);
         }
 
         if (emitSuccess) {
