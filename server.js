@@ -9,6 +9,8 @@
 
 require('dotenv').config();
 
+require('util').inspect.defaultOptions.depth = null
+
 var path = require('path');
 var argv = require('minimist')(process.argv.slice(2));
 var scHotReboot = require('sc-hot-reboot');
@@ -87,7 +89,7 @@ var start = function () {
     console.log('   >> WorkerCluster PID:', workerClusterInfo.pid);
   });
 
-  if (socketCluster.options.environment === 'dev') {
+  if (socketCluster.options.environment === 'dev' || socketCluster.options.environment === 'local') {
     // This will cause SC workers to reboot when code changes anywhere in the app directory.
     // The second options argument here is passed directly to chokidar.
     // See https://github.com/paulmillr/chokidar#api for details.

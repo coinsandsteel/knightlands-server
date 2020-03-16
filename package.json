@@ -3,7 +3,6 @@
   "description": "Knightlands backend",
   "version": "1.0.0",
   "main": "server,js",
-  "type": "module",
   "esm": {
     "force": true
   },
@@ -33,7 +32,8 @@
     "socketcluster-client": "^14.0.0",
     "tinyqueue": "^2.0.3",
     "tronweb": "^2.6.8",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "web3-utils": "^1.2.6"
   },
   "keywords": [
     "websocket",
@@ -44,7 +44,8 @@
   ],
   "readmeFilename": "README.md",
   "scripts": {
-    "start": "node -r esm server.js",
+    "start-dev": "env NODE_ENV=dev node -r esm server.js",
+    "start-local": "env NODE_ENV=local node -r esm server.js",
     "debug": "node -r esm server.js --inspect-workers 5999",
     "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
   }

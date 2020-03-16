@@ -241,13 +241,15 @@ class PaymentProcessor extends EventEmitter {
         const length = requests.length;
         for (; i < length; ++i) {
             let request = requests[i];
-            await this._blockchain.trackTransactionStatus(request._id, request.userId, request.transactionId);
+            await this._blockchain.trackTransactionStatus(this._blockchain.PaymentGatewayAddress, request._id, request.userId, request.transactionId);
         }
 
         console.log("Track pending iaps finished.");
     }
 
     async acceptPayment(userId, paymentId, signedTransaction) {
+        console.log("acceptPayment...")
+
         // send tx on behalf of player
         let requestNonce = new ObjectId(paymentId);
 
@@ -264,6 +266,7 @@ class PaymentProcessor extends EventEmitter {
         }
 
         try {
+            console.log("sending transaction...");
             let transactionId = await this._blockchain.sendTransaction(this._blockchain.PaymentGatewayAddress, paymentId, userId, signedTransaction);
             if (transactionId) {
                 await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {

@@ -139,6 +139,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.CancelDailyTask, this._gameHandler(this._cancelDailyTasks.bind(this)));
         this._socket.on(Operations.ClaimDailyTasksRewards, this._gameHandler(this._claimDailyTasksRewards.bind(this)));
 
+        // Dividends
+        this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
+        this._socket.on(Operations.FetchPendingDividendTokenWithdrawal, this._gameHandler(this._fetchPendingDividenTokenWithdrawal.bind(this)));
+        this._socket.on(Operations.SendDividendTokenWithdrawal, this._gameHandler(this._sendDividendTokenWithdrawal.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -166,6 +171,14 @@ class PlayerController extends IPaymentListener {
         this._socket.emit(eventToTrigger, {
             iap,
             context
+        });
+    }
+
+    async onDividendTokenWithdrawal(success) {
+        let dkt = this._user.dkt;
+        console.log("on div token withdrawal", JSON.stringify({ success, dkt: dkt }, null, 2));
+        this._socket.emit(Events.DivTokenWithdrawal, {
+            success
         });
     }
 
@@ -1182,6 +1195,20 @@ class PlayerController extends IPaymentListener {
 
     async _claimDailyTasksRewards(user) {
         return await user.dailyQuests.claimRewards();
+    }
+
+    // Dividends
+
+    async _withdrawDividendToken(user, data) {
+        return await Game.dividends.requestTokenWithdrawal(user, data.amount);
+    }
+
+    async _fetchPendingDividenTokenWithdrawal(user) {
+        return await Game.dividends.getPendingWithdrawal(user.address);
+    }
+
+    async _sendDividendTokenWithdrawal(user, data) {
+        return await Game.dividends.acceptTransaction(user.address, data.tx);
     }
 }
 

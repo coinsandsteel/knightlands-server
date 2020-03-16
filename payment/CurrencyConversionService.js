@@ -27,7 +27,7 @@ class CurrencyConversionService {
 
         let env = (process.env.ENV || "dev");
 
-        this._endPoint = (env == "dev" || env == "test") ? config.sandboxEndpoint : config.endpoint;
+        this._endPoint = (env == "dev" || env == "test" || end == "local") ? config.sandboxEndpoint : config.endpoint;
 
         this._conversionRates = {};
 

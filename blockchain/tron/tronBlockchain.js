@@ -40,8 +40,20 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this._eventWatchers = {};
 
         this._db = db;
+
+        const mode = process.env.ENV || "dev";
+        let nodeEndpoint = "https://api.trongrid.io";
+        switch (mode) {
+            case "dev":
+                nodeEndpoint = "https://api.shasta.trongrid.io";
+                break;
+            case "local":
+                nodeEndpoint = "http://localhost:9090";
+                break;
+        }
+
         this._tronWeb = new TronWeb({
-            fullHost: (process.env.ENV || 'dev') == 'prod' ? 'https://api.trongrid.io' : 'https://api.shasta.trongrid.io',
+            fullHost: nodeEndpoint,
             privateKey: "b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200"
         });
 
@@ -59,6 +71,19 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
     get DividendTokenAddress() {
         return DKT.address;
+    }
+
+    getBigIntDivTokenAmount(amount) {
+        return Math.floor(amount * Math.pow(10, 6));
+    }
+
+    getNumberDivTokenAmount(bigInt) {
+        const str = bigInt.toString();
+        let decimal = "0";
+        if (str != "0") {
+            decimal = str.slice(0, str.length-6) + "." + str.slice(str.length-6);
+        }
+        return Number(decimal);
     }
 
     async _watchNewBlocks() {
@@ -216,8 +241,9 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     async sign(...args) {
+        const params = [];
         args.forEach(arg => {
-            if (this._isHex(arg)) {
+            if (web3utls.isAddress(arg)) {
                 // assume that hex is address until other hex values will be used
                 arg = web3utls.toChecksumAddress(arg);
             }

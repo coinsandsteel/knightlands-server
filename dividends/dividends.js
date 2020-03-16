@@ -48,20 +48,22 @@ class Dividends {
 
         // generate signature 
         const nonce = Number(await this._blockchain.getDividendTokenNonce(address));
-        const signature = await this._blockchain.sign(this._blockchain.addressForSigning(address), amount, nonce);
+
+        const bigIntAmount = this._blockchain.getBigIntDivTokenAmount(amount);
+        const signature = await this._blockchain.sign(this._blockchain.addressForSigning(address), bigIntAmount, nonce);
 
         await this._db.collection(Collections.DivTokenWithdrawals).insertOne({
             userId: address,
             request_timestamp: Game.nowSec,
             status: TransactionStatus.WaitingForTx,
-            amount,
+            amount: bigIntAmount,
             nonce,
             signature
         });
 
         await inventory.modifyCurrency(CurrencyType.Dkt, -amount);
 
-        return { nonce, signature, amount };
+        return { nonce, signature, amount: bigIntAmount };
     }
 
     async getPendingWithdrawal(address) {
@@ -90,18 +92,32 @@ class Dividends {
                 });
             }
         } catch (exc) {
-            await this._db.collection(Collections.DivTokenWithdrawals).updateOne({ userId }, {
+            await this._db.collection(Collections.DivTokenWithdrawals).updateOne({ _id: request._id }, {
                 $set: {
                     status: TransactionStatus.Failed
                 }
             });
 
-            let controller = Game.getPlayerController(userId);
-            if (controller) {
-                await controller.onDividendTokenWithdrawal(false);
-            }
+            await this._refundAndNotifyFail(userId, request.amount);
 
             throw exc;
+        }
+    }
+
+    async _refundAndNotifyFail(userId, amount) {
+        amount = this._blockchain.getNumberDivTokenAmount(amount);
+        
+        // refund DKT
+        const inventory = await Game.loadInventory(userId);
+        if (inventory) {
+            await inventory.autoCommitChanges(async inv => {
+                await inv.modifyCurrency(CurrencyType.Dkt, amount);
+            });
+        }
+
+        let controller = Game.getPlayerController(userId);
+        if (controller) {
+            await controller.onDividendTokenWithdrawal(false);
         }
     }
 
@@ -116,18 +132,7 @@ class Dividends {
             }
         });
 
-        // refund DKT
-        const inventory = await Game.loadInventory(payload.userId);
-        if (inventory) {
-            await inventory.autoCommitChanges(async inv=>{
-                await inv.modifyCurrency(CurrencyType.Dkt, payload.payload);
-            });
-        }
-
-        let controller = Game.getPlayerController(payload.userId);
-        if (controller) {
-            await controller.onDividendTokenWithdrawal(false);
-        }
+        await this._refundAndNotifyFail(payload.userId, payload.payload);
     }
 
     async _handleWithdrawal(payload) {
@@ -141,7 +146,7 @@ class Dividends {
         // notify user about successfull withdrawal
         let controller = Game.getPlayerController(payload.to);
         if (controller) {
-            await controller.onDividendTokenWithdrawal(true, payload.amount);
+            await controller.onDividendTokenWithdrawal(true);
         }
     }
 }

@@ -57,7 +57,7 @@ module.exports = {
         Adventures: "adventures",
         AdventuresList: "adventures_list",
         TowerMeta: "tower_meta",
-        DivTokenRequests: "div_token_requests"
+        DivTokenWithdrawals: "div_token_withdrawals"
     },
 
 

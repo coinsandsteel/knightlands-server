@@ -39,7 +39,7 @@ class Worker extends SCWorker {
     var httpServer = this.httpServer;
     var scServer = this.scServer;
 
-    if (environment === 'dev') {
+    if (environment === 'dev' || environment === 'local') {
       // Log every HTTP request. See https://github.com/expressjs/morgan for other
       // available formats.
       app.use(morgan('dev'));
@@ -108,6 +108,7 @@ class Worker extends SCWorker {
     await this._presale.init();
     await this._blockchain.start();
     await this._paymentProcessor.start();
+    await this._dividends.init();
 
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);
