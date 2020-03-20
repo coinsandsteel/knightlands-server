@@ -255,20 +255,22 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     async sendTransaction(contractAddress, payload, userId, signedTransaction) {
-        const broadCastResponse = await this._tronWeb.trx.sendRawTransaction(signedTransaction);
+        try {
+            const broadCastResponse = await this._tronWeb.trx.sendRawTransaction(signedTransaction);
 
-        if (broadCastResponse.code) {
-            let reason;
+            if (broadCastResponse.code) {
+                let reason;
 
-            if (broadCastResponse.message) {
-                reason = this._tronWeb.toUtf8(broadCastResponse.message);
+                if (broadCastResponse.message) {
+                    reason = this._tronWeb.toUtf8(broadCastResponse.message);
+                }
+
+                this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
+                return;
             }
-
-            this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
-            return;
+        } catch {
+            this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
         }
-
-        this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
 
         return signedTransaction.txID;
     }
