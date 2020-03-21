@@ -12,13 +12,13 @@ class ItemTemplates {
         return templates.length == 1 ? templates[0] : null;
     }
 
-    async getTemplates(templateIds) {
+    async getTemplates(templateIds, asLookupTable = false) {
         if (!Array.isArray(templateIds)) {
             templateIds = [templateIds];
         }
 
         let templatesToLoad = [];
-        let templates = [];
+        let templates = asLookupTable ? {} : [];
 
         {
             let i = 0;
@@ -28,7 +28,11 @@ class ItemTemplates {
                 if (!template) {
                     templatesToLoad.push(templateIds[i]);
                 } else {
-                    templates.push(template);
+                    if (asLookupTable) {
+                        templates[template._id] = template;
+                    } else {
+                        templates.push(template);
+                    }
                 }
             }
         }
@@ -42,9 +46,14 @@ class ItemTemplates {
             let i = 0;
             const length = loadedTemplates.length;
             for (; i < length; ++i) {
-                let t = loadedTemplates[i];
-                this._templates.set(t._id, t);
-                templates.push(t);
+                let template = loadedTemplates[i];
+                this._templates.set(template._id, template);
+                
+                if (asLookupTable) {
+                    templates[template._id] = template;
+                } else {
+                    templates.push(template);
+                }
             }
         }
 

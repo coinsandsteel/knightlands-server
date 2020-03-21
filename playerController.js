@@ -82,6 +82,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.UnbindItem, this._gameHandler(this._unbindItem.bind(this)));
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
         this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
+        this._socket.on(Operations.DisenchantItems, this._gameHandler(this._disenchantItems.bind(this)));
 
         // Adventures
         this._socket.on(Operations.BuyAdventureSlot, this._gameHandler(this._buyAdventureSlot.bind(this)));
@@ -828,6 +829,10 @@ class PlayerController extends IPaymentListener {
         }
 
         return await user.enchantItem(itemId, currency);
+    }
+
+    async _disenchantItems(user, data) {
+        return await user.crafting.disenchantItems(data.items);
     }
 
     async _fetchCraftingStatus(data, respond) {

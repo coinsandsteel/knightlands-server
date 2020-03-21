@@ -348,6 +348,53 @@ class Crafting {
         return item.id;
     }
 
+    async disenchantItems(items) {
+        const disMeta = await this._getDisenchantingMeta();
+
+        // verify and count resulting materials
+        const itemIds = Object.keys(items);
+        const inventoryItems = await this._user.inventory.getItemById(itemIds);
+        
+        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x=>x.template), true);
+        const materials = {};
+
+        let index = 0;
+        const length = inventoryItems.length;
+
+        for (; index < length; ++index) {
+            const item = inventoryItems[index];
+            if (!items[item.id]) {
+                throw Errors.NoItem;
+            }
+
+            const itemsToDisenchant = parseInt(items[item.id]);
+            if (item.count < itemsToDisenchant) {
+                throw Errors.NoEnoughItems;
+            }
+
+            const template = templates[item.template];
+            if (template.type != ItemType.Equipment || template.equipmentType == EquipmentSlots.Pet) {
+                throw Errors.IncorrectArguments;
+            }
+
+            const disRarityMeta = disMeta[template.rarity];
+            if (!disRarityMeta) {
+                throw Errors.IncorrectArguments;
+            }
+
+            materials[disRarityMeta.dustItem] = materials[disRarityMeta.dustItem] || {
+                item: disRarityMeta.dustItem,
+                quantity: 0
+            };
+
+            materials[disRarityMeta.dustItem].quantity += disRarityMeta.dropAmountMin * itemsToDisenchant;
+        }
+
+        console.log(materials);
+        
+        await this._user.inventory.addItemTemplates(Object.values(materials));
+    }
+
     _getItemById(itemId) {
         let item = this._inventory.getItemById(itemId);
         if (!item || item.equipped) {
@@ -373,6 +420,12 @@ class Crafting {
     async _getUpgradeMeta() {
         return await Game.db.collection(Collections.Meta).findOne({
             _id: "upgrade_meta"
+        });
+    }
+
+    async _getDisenchantingMeta() {
+        return await Game.db.collection(Collections.Meta).findOne({
+            _id: "disenchanting_meta"
         });
     }
 

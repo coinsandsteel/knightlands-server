@@ -321,7 +321,6 @@ class Inventory {
             }
         }
 
-
         let templatesLeft = templateIds.length;
         if (templatesLeft === 0) {
             return;
@@ -385,7 +384,7 @@ class Inventory {
         }
 
         let templates = this._getItemTemplates(template._id);
-
+        console.log(templates);
         if (templates.length > 0) {
             let i = 0;
             const length = templates.length;
@@ -506,6 +505,17 @@ class Inventory {
     }
 
     getItemById(id) {
+        if (Array.isArray(id)) {
+            const total = id.length;
+            let items = new Array(total);
+            let index = 0;
+            
+            for (; index < total; ++index) {
+                items[index] = this._items[this._itemsById.get(id[index] * 1)];
+            }
+            return items;
+        }
+
         id *= 1;
         // index -> item
         return this._items[this._itemsById.get(id)];
@@ -591,6 +601,10 @@ class Inventory {
     }
 
     modifyStack(item, inc) {
+        if (isNaN(item.count)) {
+            item.count = 0;
+        }
+        
         item.count += inc;
 
         if (item.count <= 0) {
