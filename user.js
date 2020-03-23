@@ -378,7 +378,7 @@ class User {
             timer.value += valueRenerated;
             // clamp to max value
             timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
-            this._originalData.character.timers[stat] = cloneDeep(timer);
+            // this._originalData.character.timers[stat] = cloneDeep(timer);
         }
     }
 

@@ -384,7 +384,6 @@ class Inventory {
         }
 
         let templates = this._getItemTemplates(template._id);
-        console.log(templates);
         if (templates.length > 0) {
             let i = 0;
             const length = templates.length;
@@ -471,8 +470,21 @@ class Inventory {
         return true;
     }
 
+    removeItems(items) {    
+        let index = 0;
+        const length = items.length;
+        for (; index < length; ++index) {
+            const { item, count } = items[index];
+            this._removeItem(item, count);
+        }
+    }
+
     removeItem(itemId, count = 1) {
         let item = this.getItemById(itemId);
+        return this._removeItem(item, count);
+    }
+
+    _removeItem(item, count) {
         if (!item || item.count < count) {
             return 0;
         }
@@ -494,7 +506,7 @@ class Inventory {
 
                 let item = templates[i];
                 if (item.count >= count) {
-                    this.removeItem(item.id, count);
+                    this._removeItem(item, count);
                     count = 0;
                 } else {
                     this.deleteItemById(item.id);
@@ -604,7 +616,7 @@ class Inventory {
         if (isNaN(item.count)) {
             item.count = 0;
         }
-        
+
         item.count += inc;
 
         if (item.count <= 0) {

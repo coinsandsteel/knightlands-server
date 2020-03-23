@@ -3,6 +3,7 @@ import Errors from "../knightlands-shared/errors";
 const { Collections } = require("../database");
 import CurrencyType from "../knightlands-shared/currency_type";
 import Random from "./../random";
+import Rarity from "../knightlands-shared/rarity";
 
 const {
     EquipmentSlots,
@@ -348,6 +349,74 @@ class Crafting {
         return item.id;
     }
 
+    async disenchantConvert(conversions) {
+        const disMeta = await this._getDisenchantingMeta();
+
+        const itemIds = Object.keys(conversions);
+        const inventoryItems = await this._user.inventory.getItemById(itemIds);
+        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x=>x.template), true);
+
+        const materials = {};
+        const itemsToRemove = {};
+
+        let index = 0;
+        const length = inventoryItems.length;
+
+        for (; index < length; ++index) {
+            const item = inventoryItems[index];
+            const template = templates[item.template];
+
+            const disRarityMeta = disMeta[template.rarity];
+            if (!disRarityMeta) {
+                throw Errors.IncorrectArguments;
+            }
+
+            if (item.template != disRarityMeta.dustItem) {
+                throw Errors.IncorrectArguments;
+            }
+
+            const toConvert = parseInt(conversions[item.id]);
+            if (!toConvert || isNaN(toConvert)) {
+                throw Errors.IncorrectArguments;
+            }
+
+            itemsToRemove[item.id] = itemsToRemove[item.id] || {
+                item,
+                count: 0
+            };
+            itemsToRemove[item.id].count += toConvert * disRarityMeta.upgradeCost;
+
+            let nextRarity = Rarity.Rare;
+            switch (template.rarity) {
+                case Rarity.Rare:
+                    nextRarity = Rarity.Epic;
+                    break;
+                
+                case Rarity.Epic:
+                    nextRarity = Rarity.Legendary;
+                    break;
+            }
+
+            const nextDisRarityMeta = disMeta[nextRarity];
+            if (!nextDisRarityMeta) {
+                throw Errors.IncorrectArguments;
+            }
+
+            materials[nextDisRarityMeta.dustItem] = materials[nextDisRarityMeta.dustItem] || {
+                item: nextDisRarityMeta.dustItem,
+                quantity: 0
+            };
+
+            materials[nextDisRarityMeta.dustItem].quantity += toConvert;
+        }
+
+        const materialItems = Object.values(materials);
+        await this._user.inventory.addItemTemplates(materialItems);
+        this._user.inventory.removeItems(Object.values(itemsToRemove));
+        
+        return materialItems;
+    }
+
     async disenchantItems(items) {
         const disMeta = await this._getDisenchantingMeta();
 
@@ -357,6 +426,7 @@ class Crafting {
         
         const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x=>x.template), true);
         const materials = {};
+        const itemsToRemove = {};
 
         let index = 0;
         const length = inventoryItems.length;
@@ -368,7 +438,14 @@ class Crafting {
             }
 
             const itemsToDisenchant = parseInt(items[item.id]);
-            if (item.count < itemsToDisenchant) {
+
+            itemsToRemove[item.id] = itemsToRemove[item.id] || {
+                item,
+                count: 0
+            };
+            itemsToRemove[item.id].count += itemsToDisenchant;
+
+            if (item.count < itemsToRemove[item.id].count) {
                 throw Errors.NoEnoughItems;
             }
 
@@ -390,9 +467,11 @@ class Crafting {
             materials[disRarityMeta.dustItem].quantity += disRarityMeta.dropAmountMin * itemsToDisenchant;
         }
 
-        console.log(materials);
+        const materialItems = Object.values(materials);
+        await this._user.inventory.addItemTemplates(materialItems);
+        this._user.inventory.removeItems(Object.values(itemsToRemove));
         
-        await this._user.inventory.addItemTemplates(Object.values(materials));
+        return materialItems;
     }
 
     _getItemById(itemId) {
