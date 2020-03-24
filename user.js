@@ -1386,11 +1386,6 @@ class User {
     _processDailyReward(dailyRewardsMeta) {
         const dailyRewardCollect = this._data.dailyRewardCollect;
         const currentRewardCycle = this.getDailyRewardCycle();
-        const missedDays = currentRewardCycle - dailyRewardCollect.cycle;
-
-        if (missedDays > 1) {
-            dailyRewardCollect.step = 0;
-        }
 
         if (dailyRewardCollect.step < 0 || dailyRewardCollect.step >= dailyRewardsMeta.length) {
             dailyRewardCollect.step = 0;

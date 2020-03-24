@@ -268,7 +268,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
                 return;
             }
-        } catch {
+        } catch (e) {
             this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
         }
 
