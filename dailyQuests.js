@@ -61,6 +61,10 @@ class DailyQuests {
         await this._advanceTask(DailyQuestType.DailyWeaponTrial, count);
     }
 
+    async onAccessoryTrialsEngaged(count = 1) {
+        await this._advanceTask(DailyQuestType.DailyAccessoryTrial, count);
+    }
+
     async onTowerAttacked(count = 1) {
         await this._advanceTask(DailyQuestType.DailyTower, count);
     }

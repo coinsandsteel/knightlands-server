@@ -40,7 +40,7 @@ class Trials {
 
         const trialsMeta = await Game.db.collection(Collections.Meta).find({
             _id: {
-                $in: [`${TrialType.Armour}_trials`, `${TrialType.Weapon}_trials`, "trials"]
+                $in: [`${TrialType.Armour}_trials`, `${TrialType.Weapon}_trials`, `${TrialType.Accessory}_trials`, "trials"]
             }
         }).toArray();
 
@@ -56,9 +56,15 @@ class Trials {
                     cardsChoiceChance: meta.cardsChoiceChance,
                     cardsChanceIncreaseStep: meta.cardsChanceIncreaseStep
                 };
-            } else {
+            } else if (meta._id == `${TrialType.Weapon}_trials`) {
                 this._trialsMeta[TrialType.Weapon] = meta;
                 cardsRollMeta[TrialType.Weapon] = {
+                    cardsChoiceChance: meta.cardsChoiceChance,
+                    cardsChanceIncreaseStep: meta.cardsChanceIncreaseStep
+                };
+            } else if (meta._id == `${TrialType.Accessory}_trials`) {
+                this._trialsMeta[TrialType.Accessory] = meta;
+                cardsRollMeta[TrialType.Accessory] = {
                     cardsChoiceChance: meta.cardsChoiceChance,
                     cardsChanceIncreaseStep: meta.cardsChanceIncreaseStep
                 };
@@ -94,6 +100,13 @@ class Trials {
             }
 
             this._state[TrialType.Weapon].elements = stageElements;
+        }
+
+        if (!this._state[TrialType.Accessory]) {
+            this._state[TrialType.Accessory] = this._createTrialState();
+
+            const firstTrialId = this._trialsMeta[TrialType.Accessory].trialUnlockOrder[0];
+            this._state[TrialType.Accessory].unlockedTrials[firstTrialId] = true;
         }
 
         if (!this._state.cards) {
@@ -137,8 +150,6 @@ class Trials {
         if (cards) {
             currentFight.cards = cards;
         }
-
-        console.log(JSON.stringify(currentFight, null, 2));
 
         return cards;
     }
@@ -193,6 +204,13 @@ class Trials {
             await this._user.dailyQuests.onArmourTrialsEngaged(1);
         } else if (trialType == TrialType.Weapon) {
             await this._user.dailyQuests.onWeaponTrialsEngaged(1);
+        }  else if (trialType == TrialType.Accessory) {
+            await this._user.dailyQuests.onAccessoryTrialsEngaged(1);
+        }
+
+        if (trialType == TrialType.Accessory) {
+            // accessory trial consumes on every attack instead
+            this._consumeAttempt(trialType);
         }
         
 
@@ -302,7 +320,10 @@ class Trials {
             throw Errors.TrialNoAttempts;
         }
 
-        this._consumeAttempt(trialType);
+        if (trialType != TrialType.Accessory) {
+            // accessory trial consumes on every attack instead
+            this._consumeAttempt(trialType);
+        }
 
         stageState.cleared = false;
         stageState.collected = false;
