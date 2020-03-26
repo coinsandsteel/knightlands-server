@@ -55,8 +55,13 @@ class Crafting {
         }
         
         let enchantingSteps = enchantingMeta.armour;
+
         if (this.isWeapon(itemTemplate.equipmentType)) {
             enchantingSteps = enchantingMeta.weapon;
+        } else if (this.isAccessory(itemTemplate.equipmentType)) {
+            enchantingSteps = enchantingMeta.accessory;
+        } else if (!this.isArmour(itemTemplate.equipmentType)) {
+            throw Errors.ItemNotEnchantable;
         }
         
         let stepData = enchantingSteps[itemTemplate.rarity].steps[enchantLevel];
@@ -99,6 +104,20 @@ class Crafting {
     isWeapon(equipmentType) {
         const equipmentSlot = getSlot(equipmentType);
         return equipmentSlot == EquipmentSlots.MainHand || equipmentSlot == EquipmentSlots.OffHand;
+    }
+
+    isAccessory(equipmentType) {
+        const equipmentSlot = getSlot(equipmentType);
+        return equipmentSlot == EquipmentSlots.Ring || equipmentSlot == EquipmentSlots.Necklace;
+    }
+
+    isArmour(equipmentType) {
+        const equipmentSlot = getSlot(equipmentType);
+        return equipmentSlot == EquipmentSlots.Boots || 
+        equipmentSlot == EquipmentSlots.Cape || 
+        equipmentSlot == EquipmentSlots.Chest || 
+        equipmentSlot == EquipmentSlots.Gloves || 
+        equipmentSlot == EquipmentSlots.Helmet;
     }
 
     async enchantPayed(itemId) {

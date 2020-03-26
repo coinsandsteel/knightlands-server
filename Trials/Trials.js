@@ -160,6 +160,16 @@ class Trials {
             throw Errors.TrialFightFinished;
         }
 
+        if (trialType == TrialType.Accessory) {
+            // accessory trial consumes on every attack instead
+            this._consumeAttempt(trialType);
+
+            // check if there is enough attempts
+            if (!this._hasAttempts(trialType)) {
+                throw Errors.TrialNoAttempts;
+            }
+        }
+
         const playerCombatUnit = new TrialPlayerUnit(this._user.maxStats, currentFight.playerHealth, currentFight.maxPlayerHealth);
         const enemyCombatUnit = new FloorEnemyUnit(currentFight.attack, currentFight.health);
 
@@ -206,11 +216,6 @@ class Trials {
             await this._user.dailyQuests.onWeaponTrialsEngaged(1);
         }  else if (trialType == TrialType.Accessory) {
             await this._user.dailyQuests.onAccessoryTrialsEngaged(1);
-        }
-
-        if (trialType == TrialType.Accessory) {
-            // accessory trial consumes on every attack instead
-            this._consumeAttempt(trialType);
         }
         
 

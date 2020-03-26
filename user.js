@@ -1375,6 +1375,10 @@ class User {
                 case "weaponTrials":
                     this._trials.addAttempts(TrialType.Weapon, quantity, true);
                     break;
+
+                case "accessoryTrials":
+                    this._trials.addAttempts(TrialType.Accessory, quantity, true);
+                    break;
             }
         }
     }
