@@ -23,7 +23,8 @@ class Game extends EventEmitter {
         currencyConversionService, 
         craftingQueue,
         userPremiumService,
-        dividends
+        dividends,
+        leaderboards
     ) {
         this._server = server;
         this._db = db;
@@ -36,8 +37,13 @@ class Game extends EventEmitter {
         this._itemTemplates = new ItemTemplates(db);
         this._userPremiumService = userPremiumService;
         this._dividends = dividends;
+        this._leaderboards = leaderboards;
 
         this._players = {};
+    }
+
+    get leaderboards() {
+        return this._leaderboards;
     }
 
     get dividends() {

@@ -53,7 +53,7 @@ class Crafting {
         if (enchantLevel >= enchantingMeta.maxEnchanting) {
             throw Errors.MaxEnchantLevel;
         }
-        
+
         let enchantingSteps = enchantingMeta.armour;
 
         if (this.isWeapon(itemTemplate.equipmentType)) {
@@ -63,7 +63,7 @@ class Crafting {
         } else if (!this.isArmour(itemTemplate.equipmentType)) {
             throw Errors.ItemNotEnchantable;
         }
-        
+
         let stepData = enchantingSteps[itemTemplate.rarity].steps[enchantLevel];
 
         if (!(await this._inventory.hasEnoughIngridients(stepData.ingridients))) {
@@ -94,7 +94,7 @@ class Crafting {
         this._inventory.consumeIngridients(stepData.ingridients);
 
         // roll success 
-        if (Random.range(0, 100, true) > stepData.successRate) {
+        if (currency == CurrencyType.Soft && Random.range(0, 100, true) > stepData.successRate) {
             return false;
         }
 
@@ -113,11 +113,11 @@ class Crafting {
 
     isArmour(equipmentType) {
         const equipmentSlot = getSlot(equipmentType);
-        return equipmentSlot == EquipmentSlots.Boots || 
-        equipmentSlot == EquipmentSlots.Cape || 
-        equipmentSlot == EquipmentSlots.Chest || 
-        equipmentSlot == EquipmentSlots.Gloves || 
-        equipmentSlot == EquipmentSlots.Helmet;
+        return equipmentSlot == EquipmentSlots.Boots ||
+            equipmentSlot == EquipmentSlots.Cape ||
+            equipmentSlot == EquipmentSlots.Chest ||
+            equipmentSlot == EquipmentSlots.Gloves ||
+            equipmentSlot == EquipmentSlots.Helmet;
     }
 
     async enchantPayed(itemId) {
@@ -139,9 +139,7 @@ class Crafting {
     }
 
     // check pre-conditions, ask for payment if necessary
-    async craftRecipe(recipeId, currency) {
-        recipeId *= 1;
-
+    async craftRecipe(recipeId, currency, amount) {
         let recipe = await this._loadRecipe(recipeId);
         if (!recipe) {
             throw Errors.NoRecipe;
@@ -152,13 +150,15 @@ class Crafting {
         }
 
         if (currency == CurrencyType.Fiat) {
-            return await Game.craftingQueue.requestCraftingPayment(this._userId, recipe);
+            return await Game.craftingQueue.requestCraftingPayment(this._userId, recipe, amount);
         } else {
             // check the balance
             let recipeCost = recipe.soft;
             if (currency == CurrencyType.Hard) {
                 recipeCost = recipe.hard;
             }
+
+            recipeCost *= amount;
 
             if (this._inventory.getCurrency(currency) < recipeCost) {
                 throw Errors.NotEnoughCurrency;
@@ -170,22 +170,28 @@ class Crafting {
 
         // consume ingridients now, even if it's fiat payment, they will be forced to pay money.
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
-        await this._inventory.consumeItemsFromCraftingRecipe(recipe);
+        await this._inventory.consumeItemsFromCraftingRecipe(recipe, amount);
 
-        return await this.craftPayedRecipe(recipe);
+        return await this.craftPayedRecipe(recipe, amount);
     }
 
     // just craft as final step
-    async craftPayedRecipe(recipe) {
+    async craftPayedRecipe(recipe, amount) {
         if (typeof recipe != "object") {
             recipe = await this._loadRecipe(recipe);
         }
 
         await this._inventory.autoCommitChanges(async inv => {
-            await inv.addItemTemplate(recipe.resultItem);
+            await inv.addItemTemplates({
+                item: recipe.resultItem,
+                quantity: amount
+            });
         });
 
-        return recipe;
+        return {
+            recipe,
+            amount
+        };
     }
 
     async unbindItem(itemId, items) {
@@ -213,7 +219,7 @@ class Crafting {
 
             // if item is not equipped and item is not yet unique
             // if it same item as target - make sure it has enough stack size for material count + unique
-            if (!item.equipped && !item.unique && materialItem.count < items[i]+1) {
+            if (!item.equipped && !item.unique && materialItem.count < items[i] + 1) {
                 throw Errors.NotEnoughMaterial;
             }
 
@@ -355,7 +361,7 @@ class Crafting {
 
         item.level = level;
         item.exp = Math.round(exp);
-        
+
         this._inventory.setItemUpdated(item);
 
         for (let i = 0; i < materials.length; ++i) {
@@ -373,7 +379,7 @@ class Crafting {
 
         const itemIds = Object.keys(conversions);
         const inventoryItems = await this._user.inventory.getItemById(itemIds);
-        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x=>x.template), true);
+        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x => x.template), true);
 
         const materials = {};
         const itemsToRemove = {};
@@ -410,7 +416,7 @@ class Crafting {
                 case Rarity.Rare:
                     nextRarity = Rarity.Epic;
                     break;
-                
+
                 case Rarity.Epic:
                     nextRarity = Rarity.Legendary;
                     break;
@@ -432,7 +438,7 @@ class Crafting {
         const materialItems = Object.values(materials);
         await this._user.inventory.addItemTemplates(materialItems);
         this._user.inventory.removeItems(Object.values(itemsToRemove));
-        
+
         return materialItems;
     }
 
@@ -442,8 +448,8 @@ class Crafting {
         // verify and count resulting materials
         const itemIds = Object.keys(items);
         const inventoryItems = await this._user.inventory.getItemById(itemIds);
-        
-        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x=>x.template), true);
+
+        const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x => x.template), true);
         const materials = {};
         const itemsToRemove = {};
 
@@ -489,7 +495,7 @@ class Crafting {
         const materialItems = Object.values(materials);
         await this._user.inventory.addItemTemplates(materialItems);
         this._user.inventory.removeItems(Object.values(itemsToRemove));
-        
+
         return materialItems;
     }
 

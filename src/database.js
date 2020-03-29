@@ -22,7 +22,7 @@ function _buildPaths(key, changes, paths = {}) {
 }
 
 module.exports = {
-    ConnectionString: "mongodb://localhost:27017/knightlands",
+    ConnectionString: "mongodb://127.0.0.1:27017/knightlands",
     Collections: {
         Users: "users",
         Zones: "zones",

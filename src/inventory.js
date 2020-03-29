@@ -590,16 +590,18 @@ class Inventory {
         }
     }
 
-    async consumeItemsFromCraftingRecipe(recipe) {
+    async consumeItemsFromCraftingRecipe(recipe, amount) {
         let i = 0;
         const length = recipe.ingridients.length;
         for (; i < length; ++i) {
             let ingridient = recipe.ingridients[i];
-            if (ingridient.maxLevelRequired) {
-                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
-                this.deleteItemById(item.id);
-            } else {
-                this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+            for (let j = 0; j < amount; ++j) {
+                if (ingridient.maxLevelRequired) {
+                    let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
+                    this.deleteItemById(item.id);
+                } else {
+                    this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+                }
             }
         }
     }

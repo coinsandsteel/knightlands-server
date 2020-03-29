@@ -4,7 +4,7 @@ const { Collections } = require("./../database");
 import Game from "./../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
-const ObjectId = require("mongodb").ObjectID;
+const ObjectId = require("../rankings/node_modules/mongodb").ObjectID;
 const EventEmitter = require('events');
 const Config = require("../config");
 
@@ -149,7 +149,7 @@ class PaymentProcessor extends EventEmitter {
         return !!request;
     }
 
-    async requestPayment(userId, iap, tag, context) {
+    async requestPayment(userId, iap, tag, context, count = 1) {
         let fetchPaymentStatus = await this.fetchPaymentStatus(userId, tag, {
             iap,
             context
@@ -169,7 +169,7 @@ class PaymentProcessor extends EventEmitter {
 
         const nonce = Number(await this._blockchain.getPaymentNonce(userId));
 
-        let price = Game.currencyConversionService.convertToNative(iapObject.price);
+        let price = Game.currencyConversionService.convertToNative(iapObject.price) * count;
         let timestamp = Game.nowSec;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,

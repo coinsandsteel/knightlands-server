@@ -913,10 +913,6 @@ class User {
         return await this._crafting.unbindItem(itemId, items);
     }
 
-    async craftRecipe(recipeId, currency) {
-        return await this._crafting.craftRecipe(recipeId, currency);
-    }
-
     async commitChanges(inventoryChangesMode) {
         await this._calculateFinalStats();
 

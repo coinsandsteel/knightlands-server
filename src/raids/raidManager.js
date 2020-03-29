@@ -9,7 +9,7 @@ const Events = require("./../knightlands-shared/events");
 import Elements from "./../knightlands-shared/elements";
 const EquipmentType = require("./../knightlands-shared/equipment_type");
 import Game from "./../game";
-const ObjectId = require("mongodb").ObjectID;
+const ObjectId = require("../rankings/node_modules/mongodb").ObjectID;
 import Errors from "./../knightlands-shared/errors";
 import random from "../random";
 

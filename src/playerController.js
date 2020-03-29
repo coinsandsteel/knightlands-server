@@ -797,7 +797,14 @@ class PlayerController extends IPaymentListener {
     }
 
     async _craftItem(user, data) {
-        const { recipeId, currency } = data;
+        let { recipeId, currency, amount } = data;
+
+        recipeId = parseInt(recipeId);
+        amount = parseInt(amount);
+        
+        if (amount < 1) {
+            throw Errors.IncorrectArguments;
+        }
 
         let unknownCurrency = true;
         for (const key in CurrencyType) {
@@ -811,7 +818,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return await user.craftRecipe(recipeId, currency);
+        return await user.crafting.craftRecipe(recipeId, currency, amount);
     }
 
     async _enchantItem(user, data) {

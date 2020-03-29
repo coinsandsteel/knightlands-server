@@ -50,7 +50,7 @@ class UserPremiumService {
 
         const trialsMeta = await this._db.collection(Collections.Meta).find({
             _id: {
-                $in: [`${TrialType.Armour}_trials`, `${TrialType.Weapon}_trials`]
+                $in: [`${TrialType.Armour}_trials`, `${TrialType.Weapon}_trials`, `${TrialType.Accessory}_trials`]
             }
         }).toArray();
 

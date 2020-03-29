@@ -26,7 +26,7 @@ class CraftingQueue {
             }
 
             iapExecutor.registerAction(recipe.iap, async context => {
-                return await this._craftRecipe(context.user, context.recipe);
+                return await this._craftRecipe(context.user, context.recipe, context.amount);
             });
 
             iapExecutor.mapIAPtoEvent(recipe.iap, Events.CraftingStatus);
@@ -49,15 +49,16 @@ class CraftingQueue {
         }
     }
 
-    async _craftRecipe(userId, recipeId) {
+    async _craftRecipe(userId, recipeId, amount) {
         let user = await Game.getUser(userId);
-        return await user.crafting.craftPayedRecipe(recipeId);
+        return await user.crafting.craftPayedRecipe(recipeId, amount);
     }
 
-    async requestCraftingPayment(userId, recipe) {
+    async requestCraftingPayment(userId, recipe, amount) {
         let iapContext = {
             user: userId,
-            recipe: recipe._id
+            recipe: recipe._id,
+            amount
         };
 
         // check if payment request already created
@@ -71,7 +72,8 @@ class CraftingQueue {
                 userId,
                 recipe.iap,
                 this.CraftPaymentTag,
-                iapContext
+                iapContext,
+                amount
             );
         } catch (exc) {
             throw exc;
