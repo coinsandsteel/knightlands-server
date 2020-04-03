@@ -9,7 +9,7 @@ const morgan = require('morgan');
 const healthChecker = require('sc-framework-health-check');
 const cors = require('cors');
 const Operations = require("./knightlands-shared/operations");
-import { MongoClient } from "./rankings/node_modules/mongodb";
+import { MongoClient } from "mongodb";
 
 const Database = require("./database");
 
@@ -29,7 +29,7 @@ import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
 import Game from "./game";
 
-import LeaderBoardsManager from "./rankings/LeaderboardsManager.ts";
+import Rankings from "./rankings/Rankings.ts";
 
 class Worker extends SCWorker {
   async run() {
@@ -82,13 +82,7 @@ class Worker extends SCWorker {
     this._craftingQueue = new CraftingQueue(this._db);
     this._userPremiumService = new UserPremiumService(this._db);
     this._lootGenerator = new LootGenerator(this._db);
-    this._leaderboards = new LeaderBoardsManager(this._db);
-
-    await this._raidManager.init(this._iapExecutor);
-    await this._craftingQueue.init(this._iapExecutor);
-    await this._userPremiumService.init(this._iapExecutor);
-    await this._lootGenerator.init(this._iapExecutor);
-    await this._leaderboards.init();
+    this._rankings = new Rankings(this._db);
     
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
@@ -103,12 +97,17 @@ class Worker extends SCWorker {
       this._craftingQueue,
       this._userPremiumService,
       this._dividends,
-      this._leaderboards
+      this._rankings
     );
 
     this._giveaway = new Giveaway(app);
     this._presale = new Presale(app);
 
+    await this._raidManager.init(this._iapExecutor);
+    await this._craftingQueue.init(this._iapExecutor);
+    await this._userPremiumService.init(this._iapExecutor);
+    await this._lootGenerator.init(this._iapExecutor);
+    await this._rankings.init();
     await this._presale.init();
     await this._blockchain.start();
     await this._paymentProcessor.start();

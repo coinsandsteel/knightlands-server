@@ -3,7 +3,6 @@
 const User = require("./user");
 import EventEmitter from 'events';
 const PlayerController = require("./playerController");
-const Inventory = require("./inventory");
 const ItemTemplates = require("./itemTemplates");
 const { Collections } = require("./database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
@@ -24,7 +23,7 @@ class Game extends EventEmitter {
         craftingQueue,
         userPremiumService,
         dividends,
-        leaderboards
+        rankings
     ) {
         this._server = server;
         this._db = db;
@@ -37,13 +36,13 @@ class Game extends EventEmitter {
         this._itemTemplates = new ItemTemplates(db);
         this._userPremiumService = userPremiumService;
         this._dividends = dividends;
-        this._leaderboards = leaderboards;
+        this._rankings = rankings;
 
         this._players = {};
     }
 
-    get leaderboards() {
-        return this._leaderboards;
+    get rankings() {
+        return this._rankings;
     }
 
     get dividends() {

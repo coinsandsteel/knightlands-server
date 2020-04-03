@@ -146,6 +146,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchPendingDividendTokenWithdrawal, this._gameHandler(this._fetchPendingDividenTokenWithdrawal.bind(this)));
         this._socket.on(Operations.SendDividendTokenWithdrawal, this._gameHandler(this._sendDividendTokenWithdrawal.bind(this)));
 
+        // Tournaments
+        this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
+        this._socket.on(Operations.JoinTournament, this._gameHandler(this._joinTournament.bind(this)));
+        this._socket.on(Operations.ClaimTournamentRewards, this._gameHandler(this._claimTournamentRewards.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -748,12 +753,12 @@ class PlayerController extends IPaymentListener {
         data.hits *= 1;
 
         if (!Number.isInteger(data.hits)) {
-            throw "incorrect hits";
+            throw Errors.IncorrectArguments;
         }
 
         let raid = this._raidManager.getRaid(data.raidId);
         if (!raid) {
-            throw "incorrect raid";
+            throw Errors.InvalidRaid;
         }
 
         await raid.attack(user, data.hits);
@@ -765,7 +770,7 @@ class PlayerController extends IPaymentListener {
         let rewards = await this._raidManager.claimLoot(user, data.raidId);
 
         if (!rewards) {
-            throw "no reward";
+            throw Errors.NoRewards;
         }
 
         await user.loadInventory();
@@ -1226,6 +1231,28 @@ class PlayerController extends IPaymentListener {
 
     async _sendDividendTokenWithdrawal(user, data) {
         return await Game.dividends.acceptTransaction(user.address, data.tx);
+    }
+
+    // Tournaments
+    async _fetchTournaments(user, data) {
+        return await Game.rankings.tournaments.getRunningTournaments();
+    }
+
+    async _joinTournament(user, data) {
+        return await Game.rankings.tournaments.join(user.address, data.tournamentId);
+    }
+
+    async _claimTournamentRewards(user, data) {
+        let rewards = await Game.rankings.tournaments.claimRewards(user.address, data.tournamentId);
+
+        if (!rewards) {
+            throw Errors.NoRewards;
+        }
+
+        await user.loadInventory();
+        user.inventory.addItemTemplates(rewards.items);
+
+        return rewards;
     }
 }
 

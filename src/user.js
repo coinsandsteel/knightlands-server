@@ -82,7 +82,7 @@ class User {
 
         return data;
     }
-
+    
     get id() {
         return this._data._id;
     }

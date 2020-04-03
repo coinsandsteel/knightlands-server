@@ -4,7 +4,7 @@ const { Collections } = require("./../database");
 import Game from "./../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
-const ObjectId = require("../rankings/node_modules/mongodb").ObjectID;
+import { ObjectId } from "mongodb";
 const EventEmitter = require('events');
 const Config = require("../config");
 

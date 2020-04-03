@@ -9,7 +9,7 @@ const Events = require("./../knightlands-shared/events");
 import Elements from "./../knightlands-shared/elements";
 const EquipmentType = require("./../knightlands-shared/equipment_type");
 import Game from "./../game";
-const ObjectId = require("../rankings/node_modules/mongodb").ObjectID;
+import { ObjectId } from "mongodb";
 import Errors from "./../knightlands-shared/errors";
 import random from "../random";
 
@@ -158,7 +158,7 @@ class RaidManager {
 
     async summonRaid(summoner, stage, raidTemplateId) {
         raidTemplateId *= 1;
-        
+
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         if (!raitTemplate) {

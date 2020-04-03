@@ -9,7 +9,7 @@ class LeaderboardsManager {
     }
 
     async init() {
-        let leaderboardsConfiguration = await this._db.collection(Collections.Meta).findOne({ _id: "leadreboards" });
+        let leaderboardsConfiguration = await this._db.collection(Collections.Meta).findOne({ _id: "leaderboards" });
 
         // first start all-time permanent leaderboards without rewards, just for the info
 
