@@ -194,7 +194,7 @@ class LootGenerator {
     }
 
     async getLootFromTable(table, itemsToRoll, lootCount = 1) {
-        let { items, itemsHash } = await this._rollGuaranteedLootFromTable(table.guaranteedRecords);
+        let { items, itemsHash } = await this._rollGuaranteedLootFromTable(table.guaranteedRecords, null, null, null, lootCount);
         return await this._rollItemsFromLootTable({
             itemsToRoll,
             lootCount
@@ -219,7 +219,7 @@ class LootGenerator {
         return await this._rollItemsFromLootTable(lootContext, table, table.weights, items, itemsHash);
     }
 
-    async _rollGuaranteedLootFromTable(guaranteedRecords, tableTag, items, itemsHash) {
+    async _rollGuaranteedLootFromTable(guaranteedRecords, tableTag, items, itemsHash, lootCount) {
         if (!items) {
             items = [];
         }
@@ -234,7 +234,7 @@ class LootGenerator {
             let record = guaranteedRecords[i];
             await this._addRecordToTable({
                 tableTag
-            }, items, itemsHash, record, true);
+            }, items, itemsHash, record, true, lootCount);
         }
 
         return {
@@ -469,7 +469,7 @@ class LootGenerator {
         return true;
     }
 
-    async _addRecordToTable(lootContext, items, hash, record, guaranteed = false) {
+    async _addRecordToTable(lootContext, items, hash, record, guaranteed = false, lootCount = 1) {
         let dropModifier;
 
         if (lootContext.tableTag) {
@@ -507,8 +507,8 @@ class LootGenerator {
             }
         }
 
-        let min = record.minCount;
-        let max =  record.maxCount;
+        let min = record.minCount * lootCount;
+        let max =  record.maxCount * lootCount;
 
         if (dropModifier) {
             min = Math.ceil(dropModifier.quantity * (1 - dropModifier.spread));

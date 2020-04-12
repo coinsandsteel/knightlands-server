@@ -4,7 +4,7 @@ const { Collections } = require("../database");
 import CurrencyType from "../knightlands-shared/currency_type";
 import Random from "./../random";
 import Rarity from "../knightlands-shared/rarity";
-
+import RankingType from "../knightlands-shared/ranking_type";
 const {
     EquipmentSlots,
     getSlot
@@ -181,11 +181,14 @@ class Crafting {
             recipe = await this._loadRecipe(recipe);
         }
 
+        const template = await Game.itemTemplates.getTemplate(recipe.resultItem);
+        await Game.rankings.updateRank(this._userId, {
+            type: RankingType.CraftedItemsByRarity,
+            rarity: template.rarity
+        }, amount);
+
         await this._inventory.autoCommitChanges(async inv => {
-            await inv.addItemTemplates({
-                item: recipe.resultItem,
-                quantity: amount
-            });
+            await inv.addItemTemplate(recipe.resultItem, amount);
         });
 
         return {
@@ -369,7 +372,12 @@ class Crafting {
             this._inventory.modifyStack(this._inventory.getItemById(material), -count);
         }
 
-        await this._user.dailyQuests.onItemLeveled(level - oldLevel);
+        const levelsGained = level - oldLevel;
+        await this._user.dailyQuests.onItemLeveled(levelsGained);
+        await Game.rankings.updateRank(this._userId, {
+            type: RankingType.LevelItemsByRarity,
+            rarity: itemTemplate.rarity
+        }, levelsGained);
 
         return item.id;
     }
@@ -486,6 +494,7 @@ class Crafting {
 
             materials[disRarityMeta.dustItem] = materials[disRarityMeta.dustItem] || {
                 item: disRarityMeta.dustItem,
+                rarity: template.rarity,
                 quantity: 0
             };
 
@@ -495,6 +504,13 @@ class Crafting {
         const materialItems = Object.values(materials);
         await this._user.inventory.addItemTemplates(materialItems);
         this._user.inventory.removeItems(Object.values(itemsToRemove));
+
+        for (const material of materialItems) {
+            await Game.rankings.updateRank(this._userId, {
+                type: RankingType.DisenchantedItemsByRarity,
+                rarity: material.rarity
+            }, material.quantity);
+        }
 
         return materialItems;
     }

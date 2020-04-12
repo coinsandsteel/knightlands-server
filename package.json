@@ -66,7 +66,7 @@
   "scripts": {
     "build": "tsc",
     "start:watch": "nodemon",
-    "start": "node -r esm -r ts-node/register ./src/server.js",
+    "start": "node -r esm -r ts-node/register ./src/server.js --inspect-workers 5999",
     "start:dev": "env NODE_ENV=dev node -r esm server.js",
     "start:local": "env NODE_ENV=local node -r esm server.js",
     "debug": "node -r esm server.js --inspect-workers 5999",

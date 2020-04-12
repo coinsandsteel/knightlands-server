@@ -7,14 +7,13 @@ const {
 const CBuffer = require("./../CBuffer");
 const Unit = require("./../combat/unit");
 import CharacterStats from "./../knightlands-shared/character_stat";
-import Elements from "./../knightlands-shared/elements";
-const EquipmentType = require("./../knightlands-shared/equipment_type");
 import Game from "../game";
 const EventEmitter = require("events");
 const Events = require("./../knightlands-shared/events");
 const Config = require("./../config");
 import Random from "./../random";
 import Errors from "./../knightlands-shared/errors";
+import RankingType from "../knightlands-shared/ranking_type";
 
 import RaidChallengeType from "./../knightlands-shared/raid_challenge";
 const TopDamageDealers = require("./topDamageDealersChallenge");
@@ -218,11 +217,11 @@ class Raid extends EventEmitter {
 
     async attack(attacker, hits) {
         if (!this.isParticipant(attacker.address)) {
-            throw "not part of the raid";
+            throw Errors.InvalidRaid;
         }
 
         if (HitsDamage[hits] === undefined) {
-            throw "incorrect hits";
+            throw Errors.IncorrectArguments;
         }
 
         let combatUnit = attacker.getCombatUnit({
@@ -239,7 +238,7 @@ class Raid extends EventEmitter {
             throw Errors.NoStamina;
         }
 
-        attacker.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
+        await attacker.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
 
         let bonusDamage = HitsDamage[hits];
         let totalDamageInflicted = 0;
@@ -325,6 +324,15 @@ class Raid extends EventEmitter {
                     this._challenges[i].finalize();
                 }
             }
+
+            await Game.rankings.updateRank(attacker.address, {
+                type: RankingType.DamageInRaids
+            }, totalDamageInflicted);
+
+            await Game.rankings.updateRank(attacker.address, {
+                type: RankingType.DamageInParticularRaid,
+                raid: this._template._id
+            }, totalDamageInflicted);
         }
     }
 

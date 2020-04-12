@@ -350,20 +350,6 @@ class RaidManager {
         let participantId = `participants.${userId}`;
         matchQuery.$match[participantId] = { $exists: true };
 
-        let inclusiveProject = {
-            $project: {
-                raidTemplateId: 1,
-                stage: 1,
-                timeLeft: 1,
-                busySlots: 1,
-                bossState: 1,
-                finished: 1,
-                id: 1,
-                _id: 0
-            }
-        };
-        inclusiveProject.$project[participantId] = 1;
-
         return await this._db.collection(Collections.Raids).aggregate([
             matchQuery,
             {
@@ -371,7 +357,19 @@ class RaidManager {
                     "id": { "$toString": "$_id" }
                 }
             },
-            inclusiveProject
+            {
+                $project: {
+                    raidTemplateId: 1,
+                    stage: 1,
+                    timeLeft: 1,
+                    busySlots: 1,
+                    bossState: 1,
+                    finished: 1,
+                    id: 1,
+                    _id: 0,
+                    [participantId]: 1
+                }
+            }
         ]).toArray();
     }
 

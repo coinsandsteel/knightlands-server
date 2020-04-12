@@ -7,7 +7,7 @@ const {
 import ItemType from "./knightlands-shared/item_type";
 import Game from "./game";
 import CurrencyType from "./knightlands-shared/currency_type";
-import ItemProperties from "./knightlands-shared/item_properties";
+import RankingType from "./knightlands-shared/ranking_type";
 
 class Inventory {
     constructor(user, db) {
@@ -55,6 +55,9 @@ class Inventory {
 
         if (currency == CurrencyType.Soft && value < 0) {
             await this._user.dailyQuests.onGoldSpent(-value);
+            await Game.rankings.updateRank(this._userId, {
+                type: RankingType.GoldSpent
+            }, -value);
         } else if (currency == CurrencyType.Hard && value < 0) {
             await this._user.dailyQuests.onPremiumPurchase(-value);
         }
@@ -383,6 +386,8 @@ class Inventory {
             return;
         }
 
+        let stacked = false;
+
         let templates = this._getItemTemplates(template._id);
         if (templates.length > 0) {
             let i = 0;
@@ -394,11 +399,20 @@ class Inventory {
                 }
 
                 this.modifyStack(item, count);
-                return;
+                stacked = true;
+                break;
             }
         }
 
-        this.addItem(this.createItem(template._id, count));
+        if (!stacked) {
+            this.addItem(this.createItem(template._id, count));
+        }
+
+        await Game.rankings.updateRank(this._userId, {
+            type: RankingType.CollectedItemsByRarity,
+            rarity: template.rarity,
+            itemType: template.type
+        }, count);
     }
 
     async addItemTemplate(template, quantity = 1) {
@@ -571,7 +585,13 @@ class Inventory {
                 continue;
             }
 
-            let itemTemplate = await Game.db.itemTemplates.getTemplate(item.template);
+            let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
+            if (!meta) {
+                meta = await Game.db.collection(Collections.Meta).findOne({
+                    _id: "meta"
+                });
+            }
+
             let maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][2];
             if (item.level == maxLevel) {
                 return item;

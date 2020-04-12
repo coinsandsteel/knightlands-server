@@ -1,29 +1,15 @@
 import { Collection } from "mongodb";
 import { Lock } from "../utils/lock";
 import { IRankingTypeHandler } from "./IRankingTypeHandler";
-import bounds from "binary-search-bounds";
-
-export enum RankingType {
-    EnergySpent,
-    StaminaSpent,
-    DamageInRaids,
-    ExpGained,
-    GoldLooted,
-    DktEarned,
-    GoldSpent,
-    DamageInParticularRaid,
-    CollectedItemsByRarity,
-    CraftedItemsByRarity,
-    DisenchantedItemsByRarity
-}
 
 export interface RankingState {
     typeOptions: RankingOptions;
 }
 
 export interface RankingOptions {
-    type: RankingType;
-    raid?: number;
+    type: number;
+    itemType?: string;
+    raid?: string;
     rarity?: string;
 }
 
@@ -38,15 +24,13 @@ export interface RankingTable {
 }
 
 export class Ranking implements IRankingTypeHandler {
-    // static readonly RankChanged = "_evt_rank_changed";
-
-    _typeOptions: RankingOptions;
-    _pageSize: number;
-    _collection: Collection;
-    _rankingTable: RankingTable;
-    _lock: Lock;
-    _id: string;
-    _participantsCache: { [key: string]: boolean };
+    private _typeOptions: RankingOptions;
+    private _pageSize: number;
+    private _collection: Collection;
+    private _rankingTable: RankingTable;
+    private _lock: Lock;
+    private _id: string;
+    private _participantsCache: { [key: string]: boolean };
 
     constructor(collection: Collection, tableId: string, state: RankingState) {
         this._lock = new Lock();
@@ -55,6 +39,7 @@ export class Ranking implements IRankingTypeHandler {
         this._typeOptions = state.typeOptions;
         this._pageSize = 20;
         this._collection = collection;
+        this._participantsCache = {};
     }
 
     async init() {
@@ -65,6 +50,12 @@ export class Ranking implements IRankingTypeHandler {
     }
 
     async updateRank(id: string, options: RankingOptions, value: number) {
+        console.log("update rank", ...arguments);
+
+        if (value == 0) {
+            return;
+        }
+
         if (
             this._typeOptions.type != options.type ||
             this._typeOptions.raid != options.raid ||
@@ -73,21 +64,28 @@ export class Ranking implements IRankingTypeHandler {
             return;
         }
 
-        await this._collection.updateOne(
-            { tableId: this._id, "records.id": id },
-            {
-                $inc: { "records.$.score": value }
-            }
-        );
+        console.log("update rank records for", this._id);
+
+        await this._lock.acquire(this._id);
+        try {
+            await this._collection.updateOne(
+                { tableId: this._id, "records.id": id },
+                {
+                    $inc: { "records.$.score": value }
+                }
+            );
+
+            this._rankingTable = null;
+        } finally {
+            this._lock.release(this._id);
+        }
     }
 
     async removeRank(id: string) {
         await this._collection.updateOne(
             { tableId: this._id },
             {
-                $pull: {
-                    records: { id }
-                }
+                $pull: { records: { id } }
             }
         );
 
@@ -101,7 +99,7 @@ export class Ranking implements IRankingTypeHandler {
             {
                 $push: {
                     records: {
-                        $each: [{ score: 0 }],
+                        $each: [{ score: 0, id }],
                         $sort: { score: 1 }
                     }
                 }
@@ -112,13 +110,21 @@ export class Ranking implements IRankingTypeHandler {
         this._participantsCache[id] = true;
     }
 
-    async hasParticipant(id: string) {
+    hasParticipant(id: string) {
         return this._participantsCache[id];
     }
 
+    totalParticipants() {
+        return Object.keys(this._participantsCache).length;
+    }
+
     async getRankings(page: number) {
-        let table = await this._getRankingTable();
-        return table.records.slice(page * this._pageSize, page * this._pageSize + this._pageSize);
+        const table = await this._getRankingTable();
+        const rangeEnd = page * this._pageSize + this._pageSize;
+        return {
+            records: table.records.slice(page * this._pageSize, rangeEnd),
+            finished: table.records.length <= rangeEnd
+        };
     }
 
     async getParticipant(id: string) {
@@ -126,17 +132,10 @@ export class Ranking implements IRankingTypeHandler {
     }
 
     async getParticipantRank(id: string) {
-        let participants = await this.getParticipants();
-        let rank = bounds.eq(
-            participants,
-            { id, score: 0 },
-            (x, y) => {
-                return x.id.localeCompare(y.id, 'en', { sensitivity: 'base' });
-            }
-        );
-
+        let participants = await this._getSearchTable();
+        let rank = participants.findIndex(x=>x.id == id);
         if (rank != -1) {
-            return { ...participants[rank], rank };
+            return { ...participants[rank], rank: rank+1 };
         }
 
         return null;
@@ -147,20 +146,28 @@ export class Ranking implements IRankingTypeHandler {
         return table.records;
     }
 
+    async _getSearchTable() {
+        await this._getRankingTable();
+        return this._rankingTable.records;
+    }
+
     private async _getRankingTable() {
         if (!this._rankingTable) {
-            await this._lock.acquire(this._id);
             await this._reloadRankingTable();
         }
         return this._rankingTable;
     }
 
     private async _reloadRankingTable() {
+        await this._lock.acquire(this._id);
+
         try {
             if (!this._rankingTable) {
-                this._rankingTable = {
-                    records: (await this._collection.find({ tableId: this._id }).toArray())
-                };
+                const table = await this._collection.findOne({ "tableId": this._id });
+                this._rankingTable = table || { records: [] };
+                this._rankingTable.records.sort((x, y) => {
+                    return y.score - x.score;
+                });
             }
         } finally {
             this._lock.release(this._id);

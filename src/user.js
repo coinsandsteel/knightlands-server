@@ -18,6 +18,7 @@ import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
+import RankingType from "./knightlands-shared/ranking_type";
 
 const {
     EquipmentSlots,
@@ -208,6 +209,9 @@ class User {
     async addDkt(value) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
         await this._inventory.modifyCurrency(CurrencyType.Dkt, value);
+        await Game.rankings.updateRank(this.address, {
+            type: RankingType.DktEarned
+        }, value);
     }
 
     getChests() {
@@ -252,6 +256,10 @@ class User {
             this._restoreTimers();
         }
 
+        await Game.rankings.updateRank(this.address, {
+            type: RankingType.ExpGained
+        }, totalExp);
+
         return totalExp;
     }
 
@@ -287,14 +295,25 @@ class User {
         this.getTimer(stat).value = value;
     }
 
-    modifyTimerValue(stat, value) {
+    async modifyTimerValue(stat, value) {
         let timer = this.getTimer(stat);
         if (timer) {
             this._advanceTimer(stat);
             timer.value += value;
 
             if (timer.value > this.getMaxStatValue(stat)) {
+                value -= (timer.value - this.getMaxStatValue(stat));
                 timer.value = this.getMaxStatValue(stat);
+            }
+
+            if (stat == CharacterStat.Energy && value < 0) {
+                await Game.rankings.updateRank(this.address, {
+                    type: RankingType.EnergySpent
+                }, -value);
+            } else if (stat == CharacterStat.Stamina && value < 0) {
+                await Game.rankings.updateRank(this.address, {
+                    type: RankingType.StaminaSpent
+                }, -value);
             }
         }
     }
@@ -625,11 +644,11 @@ class User {
                 mainHandType = template.equipmentType;
             } else if (slot == EquipmentSlots.OffHand) {
                 offHandType = template.equipmentType;
-            }
+            }   
 
-            for (let stat in template.stats) {
-                let statValue = this._itemStatResolver.getStatValue(template.rarity, slot, equippedItem.level, equippedItem.enchant, stat, template.stats[stat]);
-                finalStats[stat] += statValue;
+            let stats = this._itemStatResolver.convertStats(template, equippedItem.level, equippedItem.enchant);
+            for (let stat in stats) {
+                finalStats[stat] += stats[stat];
             }
         }
 
@@ -735,8 +754,10 @@ class User {
                 if (max > item.count) {
                     max = item.count;
                 }
-                for (let stat in item.stats) {
-                    finalStats[stat] += this._itemStatResolver.getStatValueForCharm(item.rarity, item.level, 0, stat, item.stats[stat]) * max;
+
+                let stats = this._itemStatResolver.convertStats(item, item.level, 0);
+                for (let stat in stats) {
+                    finalStats[stat] += stats[stat];
                 }
             }
 
@@ -793,9 +814,9 @@ class User {
             case ItemActions.RefillTimer:
                 if (actionData.relative) {
                     // % restoration from maximum base 
-                    this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionValue / 100);
+                    await this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionValue / 100);
                 } else {
-                    this.modifyTimerValue(actionData.stat, actionValue);
+                    await this.modifyTimerValue(actionData.stat, actionValue);
                 }
                 break;
 
@@ -1485,7 +1506,6 @@ class User {
             if (this._data.beast.exp >= expRequired) {
                 this._data.beast.exp -= expRequired;
                 this._data.beast.level++;
-                levelsGained++;
                 this._recalculateStats = true;
 
                 if (this._data.beast.level >= currentBeast.levels.length) {

@@ -58,6 +58,7 @@ class PlayerController extends IPaymentListener {
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
+        this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
 
         // raids
         this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
@@ -65,7 +66,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
 
-        this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
+        
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this), "quest", Config.game.attackCooldown));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
@@ -150,7 +151,21 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
         this._socket.on(Operations.JoinTournament, this._gameHandler(this._joinTournament.bind(this)));
         this._socket.on(Operations.ClaimTournamentRewards, this._gameHandler(this._claimTournamentRewards.bind(this)));
+        this._socket.on(Operations.FetchTournamentRankings, this._gameHandler(this._fetchTournamentRankings.bind(this)));
+        this._socket.on(Operations.GetTournamentInfo, this._gameHandler(this._getTournamentInfo.bind(this)));
+        this._socket.on(Operations.GetFinishedTournaments, this._gameHandler(this._getFinishedTournaments.bind(this)));
+        this._socket.on(Operations.GetTournamentRewards, this._gameHandler(this._getTournamentRewards.bind(this)));
 
+        // Races
+        this._socket.on(Operations.FetchRaces, this._gameHandler(this._fetchRaces.bind(this)));
+        this._socket.on(Operations.JoinRace, this._gameHandler(this._joinRace.bind(this)));
+        this._socket.on(Operations.GetRaceInfo, this._gameHandler(this._getRaceInfo.bind(this)));
+        this._socket.on(Operations.GetRaceRewards, this._gameHandler(this._getRaceRewards.bind(this)));
+        this._socket.on(Operations.ClaimRaceRewards, this._gameHandler(this._claimRaceRewards.bind(this)));
+        this._socket.on(Operations.FetchRaceRankings, this._gameHandler(this._fetchRaceRankings.bind(this)));
+        this._socket.on(Operations.GetFinishedRaces, this._gameHandler(this._getFinishedRaces.bind(this)));
+        this._socket.on(Operations.GetRaceShop, this._gameHandler(this._getRaceShop.bind(this)));
+        
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -464,7 +479,7 @@ class PlayerController extends IPaymentListener {
             questProgress.hits += hits;
             itemsToDrop = hits;
 
-            user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
+            await user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
 
             let softCurrencyGained = 0;
 
@@ -773,10 +788,9 @@ class PlayerController extends IPaymentListener {
             throw Errors.NoRewards;
         }
 
-        await user.loadInventory();
         await user.addSoftCurrency(rewards.gold);
         await user.addExperience(rewards.exp);
-        user.inventory.addItemTemplates(rewards.items);
+        await user.inventory.addItemTemplates(rewards.items);
         await user.addDkt(rewards.dkt);
         await user.addHardCurrency(rewards.hardCurrency);
 
@@ -1235,7 +1249,7 @@ class PlayerController extends IPaymentListener {
 
     // Tournaments
     async _fetchTournaments(user, data) {
-        return await Game.rankings.tournaments.getRunningTournaments();
+        return await Game.rankings.tournaments.getTournamentsInfo(user.address);
     }
 
     async _joinTournament(user, data) {
@@ -1244,15 +1258,69 @@ class PlayerController extends IPaymentListener {
 
     async _claimTournamentRewards(user, data) {
         let rewards = await Game.rankings.tournaments.claimRewards(user.address, data.tournamentId);
-
         if (!rewards) {
             throw Errors.NoRewards;
         }
 
-        await user.loadInventory();
-        user.inventory.addItemTemplates(rewards.items);
+        await user.inventory.addItemTemplates(rewards);
 
         return rewards;
+    }
+
+    async _fetchTournamentRankings(user, data) {
+        return await Game.rankings.tournaments.getRankings(data.tournamentId, parseInt(data.page));
+    }
+
+    async _getTournamentInfo(user, data) {        
+        return await Game.rankings.tournaments.getRank(data.tournamentId, user.address);
+    }
+
+    async _getFinishedTournaments(user, data) {
+        return await Game.rankings.tournaments.getFinishedTournaments(user.address);
+    }
+
+    async _getTournamentRewards(user, data) {
+        return await Game.rankings.tournaments.getRewards(data.tournamentId);
+    }
+
+    // Races
+    async _fetchRaces(user, data) {
+        return await Game.rankings.races.getRacesInfo(user.address);
+    }
+
+    async _joinRace(user, data) {
+        return await Game.rankings.races.join(user.address, data.raceId);
+    }
+
+    async _claimRaceRewards(user, data) {
+        let rewards = await Game.rankings.races.claimRewards(user.address, data.raceId);
+        if (!rewards) {
+            throw Errors.NoRewards;
+        }
+
+        await user.inventory.addItemTemplates(rewards);
+
+        return rewards;
+    }
+
+    async _getRaceInfo(user, data) {        
+        return await Game.rankings.races.getRank(data.raceId, user.address);
+    }
+
+    async _fetchRaceRankings(user, data) {
+        return await Game.rankings.races.getRankings(data.raceId, parseInt(data.page));
+    }
+
+    async _getFinishedRaces(user, data) {
+        return await Game.rankings.races.getFinishedRaces(user.address);
+    }
+
+    async _getRaceRewards(user, data) {
+        return await Game.rankings.races.getRewards(data.raceId);
+    }
+
+    async _getRaceShop() {
+        return await Game.rankings.races.getShop();
     }
 }
 

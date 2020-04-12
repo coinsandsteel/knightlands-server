@@ -1,4 +1,5 @@
-import { RankingOptions, RankingState } from "./Ranking";
+import { RankingOptions, RankingState } from "./../Ranking";
+import { ObjectID } from "mongodb";
 
 export interface TournamentConfiguration {
     duration: number;
@@ -12,7 +13,7 @@ export interface TournamentRewardSchema {
 }
 
 export interface TournamentRewardsMeta {
-    tier: string|number;
+    tier: number;
     rewards: Array<TournamentRewardSchema>;
 }
 
@@ -27,16 +28,16 @@ export enum TournamentState {
 }
 
 export interface TournamentRecord {
-    _id: string;
+    _id: ObjectID;
     state: TournamentState;
-    tier: string|number;
+    tier: number|string;
     startTime: number;
     duration: number;
-    rewards: Array<TournamentRewardSchema>;
+    rewards: TournamentRewardsMeta;
     rankingState: RankingState;
     looted: { [key: string]: boolean };
 }
 
-export interface Tournaments {
-    runningTournaments: Array<string>;
+export interface TournamentsState {
+    runningTournaments: Array<ObjectID>;
 }
