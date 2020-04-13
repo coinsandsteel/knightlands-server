@@ -1,7 +1,7 @@
 import { Db } from "mongodb";
 import { Collections } from "../database";
 import TournamentManager from "./Tournaments/TournamentsManager";
-import LeaderboardsManager from "./LeaderboardsManager";
+import LeaderboardsManager from "./Leaderboards/LeaderboardsManager";
 import RacesManager from "./Races/RacesManager";
 import { RankingOptions } from "./Ranking";
 import { IRankingTypeHandler } from "./IRankingTypeHandler";

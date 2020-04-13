@@ -12,22 +12,20 @@ import { IRankingTypeHandler } from "../IRankingTypeHandler";
 
 
 export class Race extends EventEmitter implements IRankingTypeHandler {
-    static readonly Finished = "_evt_race_finished";
+    static readonly Finished = "_evt_racefinished";
 
     private _db: Db;
     private _state: RaceRecord;
     private _ranking: Ranking;
-    private _finished: boolean;
     private _timeout: any;
-    private _loaded: boolean;
 
+    finished: boolean;
     targetsHit: number;
 
     constructor(db: Db) {
         super();
 
         this._db = db;
-        this._loaded = false;
         this.targetsHit = 0;
     }
 
@@ -52,7 +50,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     get target() {
-        return this.config.baseTarget * this._state.targetMultiplier;
+        return Math.floor(this.config.baseTarget * this._state.targetMultiplier);
     }
 
     get rewards() {
@@ -74,7 +72,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
-        if (this._finished) {
+        if (this.finished) {
             return;
         }
 
@@ -85,7 +83,6 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         }
         
         await this._ranking.updateRank(userId, options, value);
-        await this._handleRankUpdate();
 
         userRank = <RankingRecord>await this.getUserRank(userId);
         if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
@@ -93,6 +90,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             // can claim reward, track player
             await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
         }
+
+        await this._handleRankUpdate();
     }
 
     async create(config: RaceConfiguration, targetMultiplier: number, rewardsMultiplier: number) {
@@ -159,8 +158,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     private async _launch() {
-        this._loaded = true;
-        this._finished = false;
+        this.finished = false;
         let duration = this._state.config.duration;
         let startTime = this._state.startTime;
         let nextFinish = duration - (Game.nowSec - startTime);
@@ -171,7 +169,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     private async _handleRankUpdate() {
         let totalRewards = this.config.rewards.length;
-        const target = this._state.targetMultiplier * this._state.config.baseTarget;
+        const target = this.target;
         const players = await this._ranking.getParticipants();
         if (players.length > 0) {
             // results are ordered in desc order by score
@@ -192,11 +190,11 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     private async _finish() {
-        if (this._finished) {
+        if (this.finished) {
             return;
         }
 
-        this._finished = true;
+        this.finished = true;
         lt.clearTimeout(this._timeout);
 
         const users = await this._ranking.getParticipants();

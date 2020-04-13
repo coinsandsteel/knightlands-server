@@ -1,5 +1,5 @@
 import { Db } from "mongodb";
-import { Collections } from "../database";
+import { Collections } from "../../database";
 
 class LeaderboardsManager {
     _db:Db;

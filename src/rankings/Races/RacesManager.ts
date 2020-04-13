@@ -60,7 +60,7 @@ class RacesManager implements IRankingTypeHandler {
             _id: userId
         });
 
-        if (lastRaceRecord && Game.now - lastRaceRecord.lastRace < this._meta.winnerCooldown) {
+        if (lastRaceRecord && Game.nowSec - lastRaceRecord.lastRace < this._meta.winnerCooldown) {
             throw Errors.CantJoinRace;
         }
 
@@ -235,6 +235,9 @@ class RacesManager implements IRankingTypeHandler {
             info.currentRace = await this.getRank(currentRace.id, userId);
         }
 
+        let cooldown = await this._db.collection(Collections.RaceWinners).findOne({ _id: userId });
+        info.cooldown = cooldown ? Game.nowSec - cooldown.lastRace : 0;
+
         return info;
     }
 
@@ -251,6 +254,7 @@ class RacesManager implements IRankingTypeHandler {
             let race = new Race(this._db);
             promises.push(race.load(raceId));
             races.push(race);
+            race.on(Race.Finished, this._handleRaceFinished.bind(this));
         }
 
         await Promise.all(promises);
@@ -290,6 +294,7 @@ class RacesManager implements IRankingTypeHandler {
                 )
             );
             races.push(race);
+            race.on(Race.Finished, this._handleRaceFinished.bind(this));
             this._tiersRunning[race.tier] = true;
         }
 
@@ -409,7 +414,11 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     private _addRace(race: Race) {
-        race.on(Race.Finished, this._handleRaceFinished.bind(this));
+        if (race.finished) {
+            // sometimes during load race might finish, handle this edge case
+            return;
+        }
+
         this._races.push(race);
         this._tiersRunning[race.tier] = true;
     }
