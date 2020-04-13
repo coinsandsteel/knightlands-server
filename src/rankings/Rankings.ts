@@ -21,6 +21,8 @@ class Rankings implements IRankingTypeHandler {
         await this._db.collection(Collections.TournamentTables).createIndex({ tableId: 1, "records.id": 1 }, { unique: true });
         await this._db.collection(Collections.TournamentTables).createIndex({ tableId: 1, "records.score": 1 });
 
+        await this._db.collection(Collections.RaceTables).createIndex({ tableId: 1, "records.id": 1 }, { unique: true });
+        await this._db.collection(Collections.RaceTables).createIndex({ tableId: 1, "records.score": 1 });
 
         this.tournaments = new TournamentManager(this._db);
         this.leaderboards = new LeaderboardsManager(this._db);

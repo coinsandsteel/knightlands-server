@@ -19,6 +19,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     private _ranking: Ranking;
     private _finished: boolean;
     private _timeout: any;
+    private _loaded: boolean;
 
     targetsHit: number;
 
@@ -26,6 +27,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         super();
 
         this._db = db;
+        this._loaded = false;
         this.targetsHit = 0;
     }
 
@@ -38,7 +40,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     get finalDuration() {
-        return this._state.finalDuration || Game.now - this._state.startTime;
+        return this._state.finalDuration || Game.nowSec - this._state.startTime;
     }
 
     get type() {
@@ -57,9 +59,11 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         return this.config.rewards.map(x=>Math.ceil(x * this._state.rewardsMultiplier))
     }
 
+    get winners() {
+        return Object.keys(this._state.looted);
+    }
+
     async add(userId: string) {
-        this._state.looted[userId] = false;
-        await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
         await this._ranking.addRank(userId);
     }
 
@@ -75,13 +79,20 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         }
 
         let userRank = <RankingRecord>await this.getUserRank(userId);
-        if (userRank.rank <= this._state.config.rewards.length) {
+        if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
             // already reached the target
             return;
         }
         
         await this._ranking.updateRank(userId, options, value);
         await this._handleRankUpdate();
+
+        userRank = <RankingRecord>await this.getUserRank(userId);
+        if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
+            this._state.looted[userId] = false;
+            // can claim reward, track player
+            await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
+        }
     }
 
     async create(config: RaceConfiguration, targetMultiplier: number, rewardsMultiplier: number) {
@@ -95,6 +106,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             looted: {},
             finalDuration: 0
         };
+
+        this._state = state;
 
         const insertionResult = await this._db.collection(Collections.Races).insertOne(state);
 
@@ -111,7 +124,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     async getUserRank(userId: string) {
         let rank = await this._ranking.getParticipantRank(userId);
-        if (rank && rank.score < this.target) {
+        if (rank && (rank.score < this.target || rank.rank > this.config.rewards.length)) {
             rank.rank = 0;
         }
         return rank;
@@ -146,6 +159,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     private async _launch() {
+        this._loaded = true;
         this._finished = false;
         let duration = this._state.config.duration;
         let startTime = this._state.startTime;
@@ -156,7 +170,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     private async _handleRankUpdate() {
-        let totalRewards = this._state.config.rewards.length;
+        let totalRewards = this.config.rewards.length;
         const target = this._state.targetMultiplier * this._state.config.baseTarget;
         const players = await this._ranking.getParticipants();
         if (players.length > 0) {
@@ -171,7 +185,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                 }
             }
 
-            if (i == totalRewards) {
+            if (i ==  this.config.rewards.length) {
                 await this._finish();
             }
         }
@@ -194,7 +208,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         const finalDuration = this.finalDuration;
 
         this._state.state = RaceState.Finished;
-        await this._db.collection(Collections.Tournaments).updateOne({ _id: this.id }, { $set: { "state": Race.Finished, finalDuration } });
+        await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "state": RaceState.Finished, finalDuration } });
 
         // let other interested services know
         this.emit(Race.Finished, this.id);

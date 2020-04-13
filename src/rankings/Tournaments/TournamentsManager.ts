@@ -13,10 +13,12 @@ class TournamentsManager implements IRankingTypeHandler {
     private _meta: TournamentsMeta;
     private _state: TournamentsState;
     private _tournamets: Tournament[];
+    private _tiersRunning: { [key: number]: boolean };
 
     constructor(db: Db) {
         this._db = db;
         this._tournamets = [];
+        this._tiersRunning = {};
     }
 
     async init() {
@@ -84,7 +86,7 @@ class TournamentsManager implements IRankingTypeHandler {
             throw Errors.NoSuchTournament;
         }
 
-        return tournamentState.rewards.rewards.map(x=>{
+        return tournamentState.rewards.rewards.map(x => {
             let copyX = {
                 ...x,
             };
@@ -150,7 +152,7 @@ class TournamentsManager implements IRankingTypeHandler {
         return await tournament.getRankings(page);
     }
 
-    async getRank(tournamentId:string, userId: string) {
+    async getRank(tournamentId: string, userId: string) {
         let tournament = await this._getTournament(tournamentId);
         if (tournament) {
             return {
@@ -168,12 +170,14 @@ class TournamentsManager implements IRankingTypeHandler {
             list.push(t.clientInfo());
         }
 
-        let currentTournament = this._findTournamentWithUser(userId);
-
-        let info = {
-            list,
-            currentTournament: (await this.getRank(currentTournament.id, userId))
+        let info: any = {
+            list
         };
+
+        let currentTournament = this._findTournamentWithUser(userId);
+        if (currentTournament) {
+            info.currentTournament = await this.getRank(currentTournament.id, userId);
+        }
 
         return info;
     }
@@ -188,17 +192,21 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     private async _loadTournaments() {
-        console.log("TournamentsManager schedule tournaments finish...");
+        console.log("TournamentsManager load tournaments...");
 
+        let promises = [];
         let tournaments = [];
         for (const tournamentId of this._state.runningTournaments) {
             let tournament = new Tournament(this._db);
 
-            tournaments.push(tournament.load(tournamentId));
-            this._addTournament(tournament);
+            promises.push(tournament.load(tournamentId));
+            tournaments.push(tournament);
         }
 
-        await Promise.all(tournaments);
+        await Promise.all(promises);
+        for (const tourney of tournaments) {
+            this._addTournament(tourney);
+        }
     }
 
     private async _launchNewTournaments() {
@@ -214,7 +222,7 @@ class TournamentsManager implements IRankingTypeHandler {
         let promises = [];
         for (let [tier, template] of Object.entries(this._meta.templates)) {
             // if tournament exist - skip 
-            if (this._tournamets.find(x => x.tier == tier)) {
+            if (this._tiersRunning[tier]) {
                 continue;
             }
 
@@ -225,15 +233,16 @@ class TournamentsManager implements IRankingTypeHandler {
 
             promises.push(tournament.create(tier, typeOptions, template.duration, rewards));
             tournaments.push(tournament);
-        }
-
-        for (const tournament of tournaments) {
-            this._addTournament(tournament);
+            this._tiersRunning[tournament.tier] = true;
         }
 
         const tournamentIds = await Promise.all(promises);
         for (const tournamentId of tournamentIds) {
             this._state.runningTournaments.push(tournamentId);
+        }
+
+        for (const tournament of tournaments) {
+            this._addTournament(tournament);
         }
 
         await this._save();
@@ -257,6 +266,7 @@ class TournamentsManager implements IRankingTypeHandler {
     private _addTournament(tournament: Tournament) {
         tournament.on(Tournament.Finished, this._handleTournametFinished.bind(this));
         this._tournamets.push(tournament);
+        this._tiersRunning[tournament.tier] = true;
     }
 
     private async _handleTournametFinished(tournamentId: ObjectId) {

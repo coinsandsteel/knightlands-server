@@ -1,14 +1,15 @@
 import { Db, ObjectId } from "mongodb";
 import { Collections } from "../../database";
-import { RacesState, RacesMeta, RaceConfiguration, RaceState, RaceRecord } from "./RaceTypes";
+import { RacesState, RacesMeta, RaceState, RaceRecord, RaceConfiguration } from "./RaceTypes";
 import { Race } from "./Race";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
-import { RankingOptions, RankingRecord } from "../Ranking";
+import { RankingRecord, RankingOptions } from "../Ranking";
 import Errors from "../../knightlands-shared/errors";
 import random from "../../random";
 import Game from "../../game";
 import RankingType from "../../knightlands-shared/ranking_type";
 import { Lock } from "../../utils/lock";
+import { RaceShop } from "./RaceShop";
 
 class RacesManager implements IRankingTypeHandler {
     private _db: Db;
@@ -16,22 +17,31 @@ class RacesManager implements IRankingTypeHandler {
     private _state: RacesState;
     private _races: Race[];
     private _lock: Lock;
+    private _tiersRunning: { [key: number]: boolean };
+    private _shop: RaceShop;
 
     constructor(db: Db) {
         this._db = db;
         this._races = [];
         this._lock = new Lock();
+        this._tiersRunning = {};
     }
 
     async init() {
         this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "races" });
         this._state = await this._db.collection(Collections.Races).findOne({ _id: "state" });
 
+        this._shop = new RaceShop(this._meta.shop);
+
         if (this._state) {
             await this._loadRaces();
         }
 
         await this._launchNewRaces();
+    }
+
+    async purchaseFromRaceShop(user: any, lotId: number) {
+        await this._shop.purchaseItem(user, lotId);
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
@@ -45,13 +55,22 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     async join(userId: string, raceId: string) {
-        let tournament = this._findRaceWithUser(userId);
-        if (tournament) {
-            await tournament.remove(userId);
+        // if player recently won a race - wait for a cooldown
+        const lastRaceRecord = await this._db.collection(Collections.RaceWinners).findOne({
+            _id: userId
+        });
+
+        if (lastRaceRecord && Game.now - lastRaceRecord.lastRace < this._meta.winnerCooldown) {
+            throw Errors.CantJoinRace;
         }
 
-        tournament = await this._getRace(raceId);
-        await tournament.add(userId);
+        let race = this._findRaceWithUser(userId);
+        if (race) {
+            await race.remove(userId);
+        }
+
+        race = await this._getRace(raceId);
+        await race.add(userId);
     }
 
     async claimRewards(userId: string, raceId: string) {
@@ -69,7 +88,7 @@ class RacesManager implements IRankingTypeHandler {
         await raceInstance.loadFromState(raceState);
 
         if (!raceInstance.hasUser(userId)) {
-            throw Errors.NotInTournament;
+            throw Errors.NotInRace;
         }
 
         let userRank = <RankingRecord>await raceInstance.getUserRank(userId);
@@ -112,10 +131,10 @@ class RacesManager implements IRankingTypeHandler {
             throw Errors.NoSuchTournament;
         }
 
-        let rewards = raceState.config.rewards.map((x, index)=> {
+        let rewards = raceState.config.rewards.map((x, index) => {
             return {
-                minRank: index+1,
-                maxRank: index+1,
+                minRank: index + 1,
+                maxRank: index + 1,
                 loot: [{
                     itemId: this._meta.shop.currencyItem,
                     minCount: this._getReward(x, raceState.config)
@@ -152,9 +171,13 @@ class RacesManager implements IRankingTypeHandler {
                 throw Errors.NotInRace;
             }
 
+            if (userRank.rank == 0) {
+                continue;
+            }
+
             raceState.rank = userRank;
 
-            let rewards = raceState.config.rewards.map(x=> {
+            let rewards = raceState.config.rewards.map(x => {
                 return {
                     item: this._meta.shop.currencyItem,
                     quantity: this._getReward(x, raceState.config)
@@ -201,12 +224,16 @@ class RacesManager implements IRankingTypeHandler {
             });
         }
 
-        let currentRace = this._findRaceWithUser(userId);
 
-        let info = {
-            list,
-            currentRace: (await this.getRank(currentRace.id, userId))
+
+        let info: any = {
+            list
         };
+
+        let currentRace = this._findRaceWithUser(userId);
+        if (currentRace) {
+            info.currentRace = await this.getRank(currentRace.id, userId);
+        }
 
         return info;
     }
@@ -216,17 +243,21 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     private async _loadRaces() {
-        console.log("RacesManager schedule races finish...");
+        console.log("RacesManager load races...");
 
         let races = [];
+        let promises = [];
         for (const raceId of this._state.runningRaces) {
             let race = new Race(this._db);
-
-            races.push(race.load(raceId));
-            this._addRace(race);
+            promises.push(race.load(raceId));
+            races.push(race);
         }
 
-        await Promise.all(races);
+        await Promise.all(promises);
+
+        for (const race of races) {
+            this._addRace(race);
+        }
     }
 
     private async _launchNewRaces() {
@@ -242,10 +273,10 @@ class RacesManager implements IRankingTypeHandler {
 
         let races = [];
         let promises = [];
-        
+
         for (let [tier, templates] of Object.entries(this._meta.templates)) {
-            // if race exist - skip 
-            if (this._races.find(x => x.tier == tier)) {
+            // if tier exist - skip 
+            if (this._tiersRunning[tier]) {
                 continue;
             }
 
@@ -259,10 +290,7 @@ class RacesManager implements IRankingTypeHandler {
                 )
             );
             races.push(race);
-        }
-
-        for (const race of races) {
-            this._addRace(race);
+            this._tiersRunning[race.tier] = true;
         }
 
         const raceIds = await Promise.all(promises);
@@ -270,35 +298,39 @@ class RacesManager implements IRankingTypeHandler {
             this._state.runningRaces.push(raceId);
         }
 
+        for (const race of races) {
+            this._addRace(race);
+        }
+
         await this._save();
     }
 
-    private _getTargetMultiplier(tier: number|string, rankingOptions: RankingOptions): number {
+    private _getTargetMultiplier(tier: number | string, rankingOptions: RankingOptions): number {
         const key = this._multiplierKey(tier, rankingOptions);
         return this._state.targetMultipliers[key] || 1;
     }
 
-    private _getRewardsMultiplier(tier: number|string, rankingOptions: RankingOptions): number {
+    private _getRewardsMultiplier(tier: number | string, rankingOptions: RankingOptions): number {
         const key = this._multiplierKey(tier, rankingOptions);
         return this._state.rewardsMultiplier[key] || 1;
     }
 
     private _handleRaceMultipliers(raceDuration: number, targetsHit: number, raceConfig: RaceConfiguration) {
         this._calculateMultiplier(
-            raceDuration, 
-            targetsHit, 
-            raceConfig, 
-            this._state.targetMultipliers, 
+            raceDuration,
+            targetsHit,
+            raceConfig,
+            this._state.targetMultipliers,
             this._state.rewardsMultiplier
         );
     }
 
     private _calculateMultiplier(
-        raceDuration: number, 
-        targetsHit: number, 
-        raceConfig: RaceConfiguration, 
-        targetMultipliers: {[key: string]: number},
-        rewardsMultiplier: {[key: string]: number}
+        raceDuration: number,
+        targetsHit: number,
+        raceConfig: RaceConfiguration,
+        targetMultipliers: { [key: string]: number },
+        rewardsMultiplier: { [key: string]: number }
     ) {
         const targetScalingMeta = this._meta.targetScaling;
         const multiplierKey = this._multiplierKey(raceConfig.tier, raceConfig.type);
@@ -322,7 +354,7 @@ class RacesManager implements IRankingTypeHandler {
         }
 
         currentMultiplier = currentMultiplier > targetScalingMeta.maxMultiplier ? targetScalingMeta.maxMultiplier : currentMultiplier;
-        targetMultipliers[multiplierKey] = currentMultiplier;
+        targetMultipliers[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, currentMultiplier);
         rewardsMultiplier[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, Math.log(Math.pow(currentMultiplier, targetScalingMeta.rewardsPowerScale)) + 1);
     }
 
@@ -337,17 +369,17 @@ class RacesManager implements IRankingTypeHandler {
         };
 
         this._calculateMultiplier(
-            race.finalDuration, 
-            race.targetsHit, 
-            race.config, 
-            targetMultiplier, 
+            race.finalDuration,
+            race.targetsHit,
+            race.config,
+            targetMultiplier,
             rewardsMultiplier
         );
 
         return { targetMultiplier: targetMultiplier[key], rewardsMultiplier: rewardsMultiplier[key] }
     }
 
-    private _multiplierKey(tier: number|string, rankingOptions: RankingOptions): string {
+    private _multiplierKey(tier: number | string, rankingOptions: RankingOptions): string {
         let key = `${tier}_${rankingOptions.type}`;
         switch (rankingOptions.type) {
             case RankingType.CollectedItemsByRarity:
@@ -379,6 +411,7 @@ class RacesManager implements IRankingTypeHandler {
     private _addRace(race: Race) {
         race.on(Race.Finished, this._handleRaceFinished.bind(this));
         this._races.push(race);
+        this._tiersRunning[race.tier] = true;
     }
 
     private async _getRace(raceId: string) {
@@ -391,7 +424,7 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     async _handleRaceFinished(raceId: ObjectId) {
-        console.log(`Race ${raceId} has been finished.`);        
+        console.log(`Race ${raceId} has been finished.`);
 
         let race: Race;
         {
@@ -411,7 +444,31 @@ class RacesManager implements IRankingTypeHandler {
         }
 
         if (race) {
-            this._handleRaceMultipliers(race.finalDuration, race.targetsHit, race.config); 
+            this._handleRaceMultipliers(race.finalDuration, race.targetsHit, race.config);
+
+            // winners should not be able to join other races for a while
+            const updates = [];
+            for (const winner of race.winners) {
+                updates.push({
+                    updateOne: {
+                        filter: {
+                            "_id": winner
+                        },
+                        update: {
+                            $set: {
+                                lastRace: Game.nowSec
+                            }
+                        },
+                        upsert: true
+                    }
+                });
+            }
+
+            if (updates.length > 0) {
+                await this._db.collection(Collections.RaceWinners).bulkWrite(updates);
+            }
+
+            delete this._tiersRunning[race.tier];
         }
 
         await this._launchNewRaces();

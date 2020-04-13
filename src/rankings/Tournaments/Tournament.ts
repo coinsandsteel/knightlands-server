@@ -60,6 +60,8 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
             }
         };
 
+        this._state = state;
+
         const insertionResult = await this._db.collection(Collections.Tournaments).insertOne(state);
 
         state._id = insertionResult.insertedId;

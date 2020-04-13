@@ -28,11 +28,12 @@ interface RaceTargetScalingMeta {
 interface RaceReward {
     item: number;
     quantity: number;
+    price: number;
 }
 
 export interface RaceShopConfiguration {
     currencyItem: number;
-    items: { [key: string]: RaceReward };
+    items: { [key: number]: RaceReward };
 }
 
 export interface RacesMeta {

@@ -165,6 +165,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchRaceRankings, this._gameHandler(this._fetchRaceRankings.bind(this)));
         this._socket.on(Operations.GetFinishedRaces, this._gameHandler(this._getFinishedRaces.bind(this)));
         this._socket.on(Operations.GetRaceShop, this._gameHandler(this._getRaceShop.bind(this)));
+        this._socket.on(Operations.PurchaseRaceShop, this._gameHandler(this._purchaseFromRaceShop.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1321,6 +1322,10 @@ class PlayerController extends IPaymentListener {
 
     async _getRaceShop() {
         return await Game.rankings.races.getShop();
+    }
+
+    async _purchaseFromRaceShop(user, data) {
+        return await Game.rankings.races.purchaseFromRaceShop(user, data.lotId);
     }
 }
 
