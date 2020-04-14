@@ -19,10 +19,10 @@ class Rankings implements IRankingTypeHandler {
 
     async init() {
         await this._db.collection(Collections.TournamentTables).createIndex({ tableId: 1, "records.id": 1 }, { unique: true });
-        await this._db.collection(Collections.TournamentTables).createIndex({ tableId: 1, "records.score": 1 });
+        await this._db.collection(Collections.TournamentTables).createIndex({ tableId: 1, "records.score": -1 });
 
         await this._db.collection(Collections.RaceTables).createIndex({ tableId: 1, "records.id": 1 }, { unique: true });
-        await this._db.collection(Collections.RaceTables).createIndex({ tableId: 1, "records.score": 1 });
+        await this._db.collection(Collections.RaceTables).createIndex({ tableId: 1, "records.score": -1 });
 
         this.tournaments = new TournamentManager(this._db);
         this.leaderboards = new LeaderboardsManager(this._db);
@@ -34,8 +34,13 @@ class Rankings implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
-        await this.tournaments.updateRank(userId, options, value);
-        await this.races.updateRank(userId, options, value);
+        let promises = [];
+        
+        promises.push(this.tournaments.updateRank(userId, options, value));
+        promises.push(this.races.updateRank(userId, options, value));
+        promises.push(this.leaderboards.updateRank(userId, options, value));
+
+        await Promise.all(promises);
     }
 };
 

@@ -62,7 +62,8 @@ module.exports = {
         TournamentTables: "tournaments_tables",
         Races: "races",
         RaceTables: "race_tables",
-        RaceWinners: "race_winners"
+        RaceWinners: "race_winners",
+        Leaderboards: "leaderboards"
     },
 
 

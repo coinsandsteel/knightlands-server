@@ -1,20 +1,60 @@
 import { Db } from "mongodb";
 import { Collections } from "../../database";
+import { LeaderboardsMeta } from "./LeaderboardTypes";
+import { Leaderboard } from "./Leaderboard";
+import { IRankingTypeHandler } from "../IRankingTypeHandler";
+import { RankingOptions } from "../Ranking";
 
-class LeaderboardsManager {
-    _db:Db;
+class LeaderboardsManager implements IRankingTypeHandler {
+    private _db: Db;
+    private _meta: LeaderboardsMeta;
+    private _leaderboards: Array<Leaderboard>
 
     constructor(db: Db) {
         this._db = db;
+        this._leaderboards = [];
+    }
+
+    async updateRank(userId: string, options: RankingOptions, value: number) {
+        let promises = [];
+        for (const leaderboard of this._leaderboards) {
+            promises.push(leaderboard.updateRank(userId, options, value));
+        }
+
+        await Promise.all(promises);
+    }
+
+    async getUserRank(type: number, userId: string) {
+        const board = this._leaderboards.find(x => x.type == type);
+        if (!board) {
+            return null;
+        }
+
+        return await board.getUserRank(userId);
+    }
+
+    async getRankings(type: number, page: number) {
+        const board = this._leaderboards.find(x => x.type == type);
+        if (!board) {
+            return null;
+        }
+
+        return await board.getRankings(page);
     }
 
     async init() {
-        let leaderboardsConfiguration = await this._db.collection(Collections.Meta).findOne({ _id: "leaderboards" });
+        console.log("Initializing leaderboards...");
 
-        // first start all-time permanent leaderboards without rewards, just for the info
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "leaderboards" });
 
-        // now setup weekly leaderboards with rewards at the end
-        
+        const promises = [];
+        for (const definition of this._meta.definitions) {
+            const leaderboard = new Leaderboard(20);
+            this._leaderboards.push(leaderboard);
+            promises.push(leaderboard.init(this._db, definition.type));
+        }
+
+        await Promise.all(promises);
     }
 };
 

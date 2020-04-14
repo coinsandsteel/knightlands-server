@@ -1,24 +1,93 @@
-import { EventEmitter } from "events";
-import { Db } from "mongodb";
+import { Db, Collection } from "mongodb";
+import { IRankingTypeHandler } from "../IRankingTypeHandler";
+import { RankingOptions } from "../Ranking";
+import { Collections } from "../../database";
+import RankingType from "../../knightlands-shared/ranking_type";
 
-export class Leaderboard extends EventEmitter {
-    _db: Db;
+export class Leaderboard implements IRankingTypeHandler {
+    private _collection: Collection;
+    private _typeOptions: RankingOptions;
+    private _pageSize: number;
 
-    constructor(db: Db) {
-        super();
-
-        this._db = db;
+    type: number;
+    
+    constructor(pageSize: number) {
+        this._pageSize = pageSize;
     }
 
-    async create(duration: number, ) {
+    async init(db: Db, options: RankingOptions) {
+        let key = `${options.type}`;
+        // switch (options.type) {
+        //     case RankingType.CollectedItemsByRarity:
+        //     case RankingType.CraftedItemsByRarity:
+        //     case RankingType.DisenchantedItemsByRarity:
+        //     case RankingType.LevelItemsByRarity:
+        //         key += `_${options.rarity}`;
+        //         break;
+        // }
 
+        this.type = options.type;
+        this._typeOptions = options;
+
+        this._collection = db.collection(`${Collections.Leaderboards}_${key}`);
+        await this._collection.createIndex({ score: -1 });
     }
 
-    async load(id: string|number) {
+    async updateRank(userId: string, options: RankingOptions, value: number) {
+        console.log("update leaderboard rank", ...arguments);
 
+        if (value == 0) {
+            return;
+        }
+
+        if (
+            this._typeOptions.type != options.type ||
+            this._typeOptions.raid != options.raid ||
+            this._typeOptions.rarity != options.rarity
+        ) {
+            return;
+        }
+
+        console.log("update leaderboard record for", userId);
+
+        await this._collection.updateOne(
+            { _id: userId },
+            {
+                $inc: { score: value },
+                $setOnInsert: { id: userId }
+            },
+            { upsert: true }
+        );
     }
 
-    async save() {
+    async getRankings(page: number) {
+        const total = await this._collection.find({}).count();
+        const records = await this._collection.find({})
+            .sort({ score: -1 })
+            .skip(page * this._pageSize)
+            .limit(this._pageSize)
+            .toArray();
+        return {
+            records,
+            finished: total <= page * this._pageSize + this._pageSize
+        };
+    }
 
+    async getUserRank(userId: string) {
+        let userRecord = await this._collection.findOne({ _id: userId });
+        let score = userRecord ? userRecord.score : 0;
+        if (score == 0) {
+            return null;
+        }
+        
+        let rank = await this._collection.find({ score: { $gt: score } }).count() + 1;
+        return {
+            id: this.type,
+            rank: {
+                rank,
+                id: userId,
+                score
+            }
+        };
     }
 };

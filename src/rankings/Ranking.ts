@@ -133,9 +133,9 @@ export class Ranking implements IRankingTypeHandler {
 
     async getParticipantRank(id: string) {
         let participants = await this._getSearchTable();
-        let rank = participants.findIndex(x=>x.id == id);
+        let rank = participants.findIndex(x => x.id == id);
         if (rank != -1) {
-            return { ...participants[rank], rank: rank+1 };
+            return { ...participants[rank], rank: rank + 1 };
         }
 
         return null;
@@ -153,24 +153,20 @@ export class Ranking implements IRankingTypeHandler {
 
     private async _getRankingTable() {
         if (!this._rankingTable) {
-            await this._reloadRankingTable();
+            await this._lock.acquire(this._id);
+
+            try {
+                if (!this._rankingTable) {
+                    const table = await this._collection.findOne({ "tableId": this._id });
+                    this._rankingTable = table || { records: [] };
+                    this._rankingTable.records.sort((x, y) => {
+                        return y.score - x.score;
+                    });
+                }
+            } finally {
+                this._lock.release(this._id);
+            }
         }
         return this._rankingTable;
-    }
-
-    private async _reloadRankingTable() {
-        await this._lock.acquire(this._id);
-
-        try {
-            if (!this._rankingTable) {
-                const table = await this._collection.findOne({ "tableId": this._id });
-                this._rankingTable = table || { records: [] };
-                this._rankingTable.records.sort((x, y) => {
-                    return y.score - x.score;
-                });
-            }
-        } finally {
-            this._lock.release(this._id);
-        }
     }
 }

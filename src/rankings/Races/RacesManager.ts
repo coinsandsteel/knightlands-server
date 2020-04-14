@@ -358,9 +358,14 @@ class RacesManager implements IRankingTypeHandler {
             currentMultiplier *= (1 - scaleIndex);
         }
 
-        currentMultiplier = currentMultiplier > targetScalingMeta.maxMultiplier ? targetScalingMeta.maxMultiplier : currentMultiplier;
-        targetMultipliers[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, currentMultiplier);
-        rewardsMultiplier[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, Math.log(Math.pow(currentMultiplier, targetScalingMeta.rewardsPowerScale)) + 1);
+        currentMultiplier = Math.max(targetScalingMeta.minMultiplier, currentMultiplier > targetScalingMeta.maxMultiplier ? targetScalingMeta.maxMultiplier : currentMultiplier);
+        targetMultipliers[multiplierKey] = currentMultiplier;
+
+        if (currentMultiplier > 1) {
+            rewardsMultiplier[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, Math.log(Math.pow(currentMultiplier, targetScalingMeta.rewardsPowerScale)) + 1);
+        } else {
+            rewardsMultiplier[multiplierKey] = currentMultiplier;
+        }
     }
 
     private _predictMultipliers(race: Race) {
