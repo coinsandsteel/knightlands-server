@@ -236,7 +236,7 @@ class RacesManager implements IRankingTypeHandler {
         }
 
         let cooldown = await this._db.collection(Collections.RaceWinners).findOne({ _id: userId });
-        info.cooldown = cooldown ? Game.nowSec - cooldown.lastRace : 0;
+        info.cooldown = cooldown ? this._meta.winnerCooldown - (Game.nowSec - cooldown.lastRace) : 0;
 
         return info;
     }
