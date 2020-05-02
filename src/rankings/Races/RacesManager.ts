@@ -212,7 +212,7 @@ class RacesManager implements IRankingTypeHandler {
 
         return null;
     }
-
+    
     async getRacesInfo(userId: string) {
         let list = [];
         for (const t of this._races) {
