@@ -30,21 +30,12 @@ export interface UnitAbilitiesMeta {
 
 export interface AbilityPoolRecord {
     weight: number;
-    ability: number;
+    key: number; // ability id
 }
 
 export interface AbilityPool {
     totalWeight: number;
     abilities: AbilityPoolRecord;
-}
-
-export interface GeneralUnitMeta {
-    id: number;
-    unitType: number;
-    stars: number;
-    abilityValueMultiplier: number;
-    fixedAbilities: number[];
-    abilityPool: AbilityPool;
 }
 
 export interface UnitLevelingStep {
@@ -83,15 +74,9 @@ export interface UnitFusionMeta {
     maxLevelByStars: UnitStarsLevel[];
 }
 
-export interface GeneralsMeta {
-    units: { [key: string]: GeneralUnitMeta };
-    leveling: UnitLevelingMeta;
-    fusionMeta: UnitFusionMeta;
-    essenceItem: number;
-}
-
-export interface TroopUnitMeta {
+export interface UnitMeta {
     id: number;
+    troop: boolean;
     unitType: number;
     stars: number;
     abilityValueMultiplier: number;
@@ -101,8 +86,7 @@ export interface TroopUnitMeta {
     abilityPool: AbilityPool;
 }
 
-export interface TroopsMeta {
-    units: { [key: string]: GeneralUnitMeta };
+export interface UnitsMeta {
     leveling: UnitLevelingMeta;
     fusionMeta: UnitFusionMeta;
     essenceItem: number;
@@ -117,4 +101,17 @@ export interface LegionSlotMeta {
 export interface ArmyMeta {
     soulsFromBanishment: number[];
     slots: LegionSlotMeta[];
+}
+
+export interface ArmyUnit {
+    troop: boolean;
+    id: number;
+    template: number;
+    promotiions: number;
+    level: number;
+    abilities: number[];
+}
+
+export interface Legion {
+    units: { [key: string]: number };
 }

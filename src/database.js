@@ -63,7 +63,8 @@ module.exports = {
         Races: "races",
         RaceTables: "race_tables",
         RaceWinners: "race_winners",
-        Leaderboards: "leaderboards"
+        Leaderboards: "leaderboards",
+        Armies: "armies"
     },
 
 

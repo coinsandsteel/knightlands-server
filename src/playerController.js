@@ -170,6 +170,11 @@ class PlayerController extends IPaymentListener {
         // Leaderboards
         this._socket.on(Operations.GetLeaderboardRankings, this._gameHandler(this._getLeaderboardRankings.bind(this)));
         this._socket.on(Operations.GetLeaderboardRank, this._gameHandler(this._getLeaderboardRank.bind(this)));
+
+        // Army
+        this._socket.on(Operations.GetArmy, this._gameHandler(this._getArmy.bind(this)));
+        this._socket.on(Operations.SetLegionSlot, this._gameHandler(this._setLegionSlot.bind(this)));
+        this._socket.on(Operations.SummonArmyUnit, this._gameHandler(this._summonArmyUnit.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1339,6 +1344,19 @@ class PlayerController extends IPaymentListener {
 
     async _getLeaderboardRank(user, data) {
         return await Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.address);
+    }
+
+    // Armies
+    async _getArmy(user, data) {
+        return await Game.armyManager.getArmy(unit.address);
+    }
+
+    async _setLegionSlot(user, data) {
+        await Game.armyManager.setLegionSlot(user, data.legionIndex, data.slotId, data.unitId);
+    }
+
+    async _summonArmyUnit(user, data) {
+        
     }
 }
 
