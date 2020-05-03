@@ -23,7 +23,8 @@ class Game extends EventEmitter {
         craftingQueue,
         userPremiumService,
         dividends,
-        rankings
+        rankings,
+        armyManager
     ) {
         this._server = server;
         this._db = db;
@@ -37,8 +38,13 @@ class Game extends EventEmitter {
         this._userPremiumService = userPremiumService;
         this._dividends = dividends;
         this._rankings = rankings;
+        this._armyManager = armyManager;
 
         this._players = {};
+    }
+
+    get armyManager() {
+        return this._armyManager;
     }
 
     get rankings() {

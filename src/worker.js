@@ -24,6 +24,7 @@ const Giveaway = require("./giveaway");
 const Presale = require("./presale");
 const UserPremiumService = require("./userPremiumService");
 const Dividends = require("./dividends/dividends");
+import { ArmyManager } from "./army/ArmyManager";
 
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
@@ -83,6 +84,7 @@ class Worker extends SCWorker {
     this._userPremiumService = new UserPremiumService(this._db);
     this._lootGenerator = new LootGenerator(this._db);
     this._rankings = new Rankings(this._db);
+    this._armyManager = new ArmyManager(this._db);
     
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
@@ -97,7 +99,8 @@ class Worker extends SCWorker {
       this._craftingQueue,
       this._userPremiumService,
       this._dividends,
-      this._rankings
+      this._rankings,
+      this._armyManager
     );
 
     this._giveaway = new Giveaway(app);
@@ -112,6 +115,7 @@ class Worker extends SCWorker {
     await this._blockchain.start();
     await this._paymentProcessor.start();
     await this._dividends.init();
+    await this._armyManager.init();
 
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);
