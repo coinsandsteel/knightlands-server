@@ -35,7 +35,7 @@ export interface AbilityPoolRecord {
 
 export interface AbilityPool {
     totalWeight: number;
-    abilities: AbilityPoolRecord;
+    abilities: AbilityPoolRecord[];
 }
 
 export interface UnitLevelingStep {
@@ -107,11 +107,41 @@ export interface ArmyUnit {
     troop: boolean;
     id: number;
     template: number;
-    promotiions: number;
+    promotions: number;
     level: number;
     abilities: number[];
 }
 
 export interface Legion {
     units: { [key: string]: number };
+}
+
+export interface UnitSummon {
+    unit: number;
+    weight: number;
+}
+
+export interface SummonGroup {
+    stars: number;
+    weight: number;
+    generalsWeight: number;
+    troopsWeight: number;
+}
+
+export interface SummonMeta {
+    summonGroups: { [key: string]: SummonGroup };
+    weights: number[];
+    totalWeight: number;
+}
+
+export interface ContentMeta {
+    units: UnitSummon[];
+    totalWeight: number;
+}
+
+export interface ArmySummonMeta {
+    normalSummon: SummonMeta;
+    advancedSummon: SummonMeta;
+    troops: { [stars: number]: ContentMeta };
+    generals: { [stars: number]: ContentMeta };
 }

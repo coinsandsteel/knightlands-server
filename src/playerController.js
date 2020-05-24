@@ -1356,7 +1356,8 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonArmyUnit(user, data) {
-        
+        let count = data.count;
+        let units = await Game.armyManager.summontUnits(user, count, data.summonType);
     }
 }
 
