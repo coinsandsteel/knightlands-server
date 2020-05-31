@@ -7,6 +7,7 @@ import Errors from "../knightlands-shared/errors";
 import { ArmySummoner } from "./ArmySummoner";
 import Events from "../knightlands-shared/events";
 import ArmySummonType from "../knightlands-shared/army_summon_type";
+import SummonType from "../knightlands-shared/army_summon_type";
 
 export class ArmyManager {
     private _db: Db;
@@ -42,7 +43,7 @@ export class ArmyManager {
         this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
         this._summonMeta.advancedSummon.iaps.forEach(iap => {
             iapExecutor.registerAction(iap.iap, async context => {
-                return await this.summontUnits(context.user, context.count, context.summonType);
+                return await this.summontUnits(context.user, context.count, context.summonType, true);
             });
             iapExecutor.mapIAPtoEvent(iap.iap, Events.UnitSummoned);
         });
@@ -60,7 +61,8 @@ export class ArmyManager {
         let iapContext = {
             user: userId,
             summonType: summonType,
-            count: summonMeta.count
+            count: summonMeta.count,
+            iap
         };
 
         let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.PaymentTag);
@@ -78,6 +80,10 @@ export class ArmyManager {
         } catch (exc) {
             throw exc;
         }
+    }
+
+    async getSummonStatus(userId) {
+        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.PaymentTag, {});
     }
 
     async getArmy(unitId: string) {
@@ -115,10 +121,26 @@ export class ArmyManager {
         return await this._armiesCollection.findOne({ _id: userId }, { "units": 0 });
     }
 
-    async summontUnits(userId: string, count: number, summonType: number) {
-        let lastUnitId = await this._armiesCollection.findOne({ _id: userId }, { "lastUnitId": 1 });
-        lastUnitId = lastUnitId || 0;
+    async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
+        let unitRecord = (await this._armiesCollection.findOneAndUpdate({ _id: userId }, {
+            $setOnInsert: {
+                lastUnitId: 0,
+                lastSummon: {}
+            },
+        }, { projection: { "units": 0 }, upsert: true, returnOriginal: false })).value;
 
+        let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
+        let resetCycle = 86400000 / summonMeta.freeOpens;
+        let timeUntilNextFreeOpening = Game.nowSec - (unitRecord.lastSummon[summonType] || 0);
+        if (timeUntilNextFreeOpening > resetCycle) {
+            // free summon
+            count = 1;
+        } else {
+            // check if user has enough tickets
+            
+        }
+
+        let lastUnitId = unitRecord.lastUnitId;
         const newUnits = await this._summoner.summon(count, summonType);
         // assign ids
         for (const unit of newUnits) {
@@ -126,7 +148,9 @@ export class ArmyManager {
         }
 
         // add to user's army
-        await this._armiesCollection.update({ _id: userId }, { $push: { units: newUnits }, $set: { "lastSummon": { [summonType]: Game.nowSec } } }, { upsert: true });
+        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon: { [summonType]: Game.nowSec }, lastUnitId } }, { upsert: true });
+
+        return newUnits;
     }
 
     private createLegions() {

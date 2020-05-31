@@ -134,10 +134,11 @@ export interface SummonMetaIap {
 }
 
 export interface SummonMeta {
-    summonGroups: { [key: string]: SummonGroup };
-    weights: number[];
+    summonGroups: SummonGroup[];
     totalWeight: number;
     iaps: SummonMetaIap[];
+    freeOpens: number;
+    ticketItem: number;
 }
 
 export interface ContentMeta {

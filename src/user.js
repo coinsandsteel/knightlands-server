@@ -434,7 +434,7 @@ class User {
                 $setOnInsert: userData,
             },
             {
-                returnNewDocument: true,
+                returnOriginal: false,
                 upsert: true
             }
         )).value;
