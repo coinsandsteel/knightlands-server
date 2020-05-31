@@ -8,6 +8,7 @@ const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";
 const ItemType = require("./knightlands-shared/item_type");
 import Game from "./game";
+import Errors from "./knightlands-shared/errors";
 const Events = require("./knightlands-shared/events");
 
 class LootGenerator {
@@ -51,7 +52,7 @@ class LootGenerator {
         // check if payment request already created
         let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.ChestPaymentTag);
         if (hasPendingPayment) {
-            throw "opening in process already";
+            throw Errors.PaymentIsPending;
         }
 
         try {

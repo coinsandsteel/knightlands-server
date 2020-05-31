@@ -2,21 +2,24 @@ import Game from "../game";
 import { Db, Collection, ObjectId } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
-import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta } from "./ArmyTypes";
+import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
 import { ArmySummoner } from "./ArmySummoner";
-const WeightedList = require("../js-weighted-list");
+import Events from "../knightlands-shared/events";
+import ArmySummonType from "../knightlands-shared/army_summon_type";
 
 export class ArmyManager {
     private _db: Db;
     private _lock: Lock;
     private _meta: ArmyMeta;
+    private _summonMeta: ArmySummonMeta;
     private _troops: UnitsMeta;
     private _generals: UnitsMeta;
     private _units: { [key: string]: UnitMeta };
     private _abilities: UnitAbilitiesMeta;
     private _armiesCollection: Collection;
     private _summoner: ArmySummoner;
+    private PaymentTag = "ArmySummonTag";
 
     constructor(db: Db) {
         this._db = db;
@@ -27,7 +30,7 @@ export class ArmyManager {
         this._armiesCollection = this._db.collection(Collections.Armies);
     }
 
-    async init() {
+    async init(iapExecutor) {
         console.log("Initializing army manager...");
 
         this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army" });
@@ -36,7 +39,45 @@ export class ArmyManager {
         this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" });
         this._units = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
 
+        this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
+        this._summonMeta.advancedSummon.iaps.forEach(iap => {
+            iapExecutor.registerAction(iap.iap, async context => {
+                return await this.summontUnits(context.user, context.count, context.summonType);
+            });
+            iapExecutor.mapIAPtoEvent(iap.iap, Events.UnitSummoned);
+        });
+
         await this._summoner.init();
+    }
+
+    async requestSummon(userId: string, iap: number, summonType: number) {
+        let summonData = summonType == ArmySummonType.Advanced ? this._summonMeta.advancedSummon : this._summonMeta.normalSummon;
+        let summonMeta = summonData.iaps.find(x => x.iap === iap);
+        if (!summonMeta) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let iapContext = {
+            user: userId,
+            summonType: summonType,
+            count: summonMeta.count
+        };
+
+        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.PaymentTag);
+        if (hasPendingPayment) {
+            throw Errors.PaymentIsPending;
+        }
+
+        try {
+            return await Game.paymentProcessor.requestPayment(
+                userId,
+                iap,
+                this.PaymentTag,
+                iapContext
+            );
+        } catch (exc) {
+            throw exc;
+        }
     }
 
     async getArmy(unitId: string) {
@@ -44,11 +85,11 @@ export class ArmyManager {
     }
 
     async setLegionSlot(user: any, legionIndex: number, slotId: number, unitId: number) {
-        const unitExists = await this._armiesCollection.findOne({ _id: user.address, "units.id": unitId }, { $project: { "units.$": 1, "legions": 1 }});
+        const unitExists = await this._armiesCollection.findOne({ _id: user.address, "units.id": unitId }, { $project: { "units.$": 1, "legions": 1 } });
         if (!unitExists) {
             throw Errors.ArmyNoUnit;
         }
-        
+
         const slot = this._meta.slots.find(x => x.id == slotId);
         if (!slot) {
             throw Errors.IncorrectArguments;
@@ -70,8 +111,12 @@ export class ArmyManager {
         legions[legionIndex].units[slotId] = unitId;
     }
 
-    async summontUnits(user: any, count: number, summonType: number) {
-        let lastUnitId = await this._armiesCollection.findOne({ _id: user.address }, { "lastUnitId": 1 });
+    async getSummonOverview(userId: string) {
+        return await this._armiesCollection.findOne({ _id: userId }, { "units": 0 });
+    }
+
+    async summontUnits(userId: string, count: number, summonType: number) {
+        let lastUnitId = await this._armiesCollection.findOne({ _id: userId }, { "lastUnitId": 1 });
         lastUnitId = lastUnitId || 0;
 
         const newUnits = await this._summoner.summon(count, summonType);
@@ -81,11 +126,11 @@ export class ArmyManager {
         }
 
         // add to user's army
-        await this._armiesCollection.update({ _id: user.address }, { $push: { units: newUnits } }, { upsert: true });
+        await this._armiesCollection.update({ _id: userId }, { $push: { units: newUnits }, $set: { "lastSummon": { [summonType]: Game.nowSec } } }, { upsert: true });
     }
 
     private createLegions() {
-        
+
     }
 }
 

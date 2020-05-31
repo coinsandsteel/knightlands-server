@@ -128,10 +128,16 @@ export interface SummonGroup {
     troopsWeight: number;
 }
 
+export interface SummonMetaIap {
+    iap: number;
+    count: number;
+}
+
 export interface SummonMeta {
     summonGroups: { [key: string]: SummonGroup };
     weights: number[];
     totalWeight: number;
+    iaps: SummonMetaIap[];
 }
 
 export interface ContentMeta {

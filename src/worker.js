@@ -115,7 +115,7 @@ class Worker extends SCWorker {
     await this._blockchain.start();
     await this._paymentProcessor.start();
     await this._dividends.init();
-    await this._armyManager.init();
+    await this._armyManager.init(this._iapExecutor);
 
     scServer.on("connection", socket => {
       Game.handleIncomingConnection(socket);

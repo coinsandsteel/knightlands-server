@@ -175,6 +175,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.GetArmy, this._gameHandler(this._getArmy.bind(this)));
         this._socket.on(Operations.SetLegionSlot, this._gameHandler(this._setLegionSlot.bind(this)));
         this._socket.on(Operations.SummonArmyUnit, this._gameHandler(this._summonArmyUnit.bind(this)));
+        this._socket.on(Operations.GetArmySummonInfo, this._gameHandler(this._summonArmyInfo.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1356,8 +1357,17 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonArmyUnit(user, data) {
-        let count = data.count;
-        let units = await Game.armyManager.summontUnits(user, count, data.summonType);
+        const { iap, count, summonType } = data;
+
+        if (iap) {
+            return await this.armyManager.requestSummon(user.address, iap, summonType);
+        } 
+
+        return await Game.armyManager.summontUnits(user.address, count, summonType);
+    }
+
+    async _summonArmyInfo(user, data) {
+        return await Game.armyManager.getSummonOverview(user.address);
     }
 }
 
