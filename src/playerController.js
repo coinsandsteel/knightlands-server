@@ -992,7 +992,7 @@ class PlayerController extends IPaymentListener {
         const startIndex = page * TowerFloorPageSize;
         const toSkip = (page + 1) * TowerFloorPageSize;
 
-        // _id is an index of the floor, let's take advantage to use index
+        // _id is an index of the floor, let's take advantage of it
         const floors = await this._db.collection(Collections.TowerMeta).find({ _id: { $lt: toSkip, $gte: startIndex } }).sort({ _id: -1 }).toArray();
 
         return {
@@ -1361,7 +1361,7 @@ class PlayerController extends IPaymentListener {
         const { iap, count, summonType } = data;
 
         if (iap) {
-            return await this.armyManager.requestSummon(user.address, iap, summonType);
+            return await Game.armyManager.requestSummon(user.address, iap, summonType);
         } 
 
         return await Game.armyManager.summontUnits(user.address, count, summonType);

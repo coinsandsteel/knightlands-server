@@ -127,7 +127,7 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async fetchPendingPayments(userId, tag, filter = {}) {
-        return await this._db.collection(Collections.PaymentRequests).find({
+        let query = {
             $and: [{ $or: [{ status: PaymentStatus.Pending }, { status: PaymentStatus.WaitingForTx }] }, {
                 userId,
                 tag,
@@ -135,7 +135,9 @@ class PaymentProcessor extends EventEmitter {
             },
             { ...filter },
             { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }]
-        }).toArray();
+        };
+        console.log(query)
+        return await this._db.collection(Collections.PaymentRequests).find(query).toArray();
     }
 
     async hasPendingRequestByContext(userId, context, tag) {

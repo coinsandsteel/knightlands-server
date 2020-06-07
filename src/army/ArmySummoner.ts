@@ -94,7 +94,7 @@ export class ArmySummoner {
                 break;
         }
 
-        if (randomAbilitiesCount > 0) {
+        if (randomAbilitiesCount > 0 && template.abilityPool.abilities.length >= randomAbilitiesCount) {
             const weightedList = new WeightedList(template.abilityPool.abilities);
             abilities.push(...weightedList.peek(randomAbilitiesCount))
         }

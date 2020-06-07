@@ -130,14 +130,25 @@ export class ArmyManager {
         }, { projection: { "units": 0 }, upsert: true, returnOriginal: false })).value;
 
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
-        let resetCycle = 86400000 / summonMeta.freeOpens;
-        let timeUntilNextFreeOpening = Game.nowSec - (unitRecord.lastSummon[summonType] || 0);
-        if (timeUntilNextFreeOpening > resetCycle) {
-            // free summon
-            count = 1;
-        } else {
-            // check if user has enough tickets
-            
+
+        if (!payed) {
+            let resetCycle = 86400 / summonMeta.freeOpens;
+            let timeUntilNextFreeOpening = Game.nowSec - (unitRecord.lastSummon[summonType] || 0);
+            if (timeUntilNextFreeOpening > resetCycle) {
+                // free summon
+                count = 1;
+            } else {
+                // check if user has enough tickets
+                const inventory = await Game.loadInventory(userId);
+                const ticketItem = inventory.getItemByTemplate(summonMeta.ticketItem);
+                if (!ticketItem) {
+                    throw Errors.NoEnoughItems;
+                }
+
+                await inventory.autoCommitChanges(()=>{
+                    inventory.removeItem(ticketItem.id, count);
+                })
+            }
         }
 
         let lastUnitId = unitRecord.lastUnitId;
@@ -148,7 +159,9 @@ export class ArmyManager {
         }
 
         // add to user's army
-        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon: { [summonType]: Game.nowSec }, lastUnitId } }, { upsert: true });
+        let lastSummon = unitRecord.lastSummon;
+        lastSummon[summonType] = Game.nowSec;
+        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
 
         return newUnits;
     }
