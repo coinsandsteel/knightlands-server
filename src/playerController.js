@@ -1350,7 +1350,7 @@ class PlayerController extends IPaymentListener {
 
     // Armies
     async _getArmy(user, data) {
-        return await Game.armyManager.getArmy(unit.address);
+        return await Game.armyManager.getArmy(user.address);
     }
 
     async _setLegionSlot(user, data) {
