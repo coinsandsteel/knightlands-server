@@ -547,6 +547,10 @@ class Inventory {
         return this._items[this._itemsById.get(id)];
     }
 
+    async hasItems(template, count) {
+        return this.countItemsByTemplate(template) >= count;
+    }
+
     async hasEnoughIngridients(ingridients) {
         let enoughResources = true;
         let i = 0;
@@ -558,7 +562,7 @@ class Inventory {
         // NOTICE doesn't support max level items >1 quantity!
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            if (this.countItemsByTemplate(ingridient.itemId) < ingridient.quantity) {
+            if (this.hasItems(ingridient.itemId, ingridient.quantity)) {
                 enoughResources = false;
                 break;
             }

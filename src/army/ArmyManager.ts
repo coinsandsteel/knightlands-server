@@ -5,18 +5,20 @@ import { Lock } from "../utils/lock";
 import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
 import { ArmySummoner } from "./ArmySummoner";
+import { ArmyUnits } from "./ArmyUnits";
 import Events from "../knightlands-shared/events";
 import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
 
 export class ArmyManager {
     private _db: Db;
+    private _units: ArmyUnits;
+    private _unitTemplates: { [key: string]: UnitMeta }
     private _lock: Lock;
     private _meta: ArmyMeta;
     private _summonMeta: ArmySummonMeta;
     private _troops: UnitsMeta;
     private _generals: UnitsMeta;
-    private _units: { [key: string]: UnitMeta };
     private _abilities: UnitAbilitiesMeta;
     private _armiesCollection: Collection;
     private _summoner: ArmySummoner;
@@ -26,6 +28,7 @@ export class ArmyManager {
         this._db = db;
         this._lock = new Lock();
         this._summoner = new ArmySummoner(db);
+        this._units = new ArmyUnits(db);
 
         // keep army in separated collection
         this._armiesCollection = this._db.collection(Collections.Armies);
@@ -38,7 +41,7 @@ export class ArmyManager {
         this._generals = await this._db.collection(Collections.Meta).findOne({ _id: "generals" });
         this._troops = await this._db.collection(Collections.Meta).findOne({ _id: "troops" });
         this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" });
-        this._units = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
+        this._unitTemplates = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
 
         this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
         this._summonMeta.advancedSummon.iaps.forEach(iap => {
@@ -164,6 +167,52 @@ export class ArmyManager {
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
 
         return newUnits;
+    }
+
+    async levelUp(userId: any, unitId: number) {
+        const unitRecord = await this._units.getUserUnit(userId, unitId);
+        if (!unitRecord) {
+            throw Errors.ArmyNoUnit;
+        }
+
+        const unit = unitRecord[unitId];
+        const meta = unit.troop ? this._troops : this._generals;
+        const template = this._unitTemplates[unit.template];
+
+        if (!template) {
+            throw Errors.ArmyUnitUnknown;
+        }
+
+        const stars = template.stars + unit.promotions;
+        const maxLevelRecord = meta.fusionMeta.maxLevelByStars.find(x => x.stars == stars);
+        if (!maxLevelRecord) {
+            throw Errors.UnexpectedArmyUnit;
+        }
+
+        if (unit.level >= maxLevelRecord.maxLevel) {
+            throw Errors.ArmyUnitMaxLvl;
+        }
+
+        const levelRecord = meta.leveling.levelingSteps[unit.level - 1];
+        if (!levelRecord) {
+            throw Errors.UnexpectedArmyUnit;
+        }
+
+        const user = await Game.getUser(userId);
+        if (user.softCurrency < levelRecord.gold) {
+            throw Errors.NotEnoughSoft;
+        }
+
+        if (!user.inventory.hasItems(meta.essenceItem, levelRecord.essence)) {
+            throw Errors.NotEnoughEssence;
+        }
+
+        await user.addSoftCurrency(-levelRecord.gold);
+        await user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
+        unit.level++;
+        await this._units.onUnitUpdated(userId, unit);
+
+        return unit;
     }
 
     private createLegions() {
