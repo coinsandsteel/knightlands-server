@@ -547,7 +547,7 @@ class Inventory {
         return this._items[this._itemsById.get(id)];
     }
 
-    async hasItems(template, count) {
+    hasItems(template, count) {
         return this.countItemsByTemplate(template) >= count;
     }
 
