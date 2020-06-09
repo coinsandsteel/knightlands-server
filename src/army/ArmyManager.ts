@@ -94,7 +94,10 @@ export class ArmyManager {
     }
 
     async setLegionSlot(user: any, legionIndex: number, slotId: number, unitId: number) {
-        const unitExists = await this._armiesCollection.findOne({ _id: user.address, "units.id": unitId }, { $project: { "units.$": 1, "legions": 1 } });
+        const unitExists = await this._armiesCollection.findOne(
+            { _id: user.address, "units.id": unitId }, 
+            { $project: { "units.$": 1, "legions": 1 } }
+        );
         if (!unitExists) {
             throw Errors.ArmyNoUnit;
         }
@@ -121,16 +124,11 @@ export class ArmyManager {
     }
 
     async getSummonOverview(userId: string) {
-        return await this._armiesCollection.findOne({ _id: userId }, { "units": 0 });
+        return this.loadArmyProfile(userId);
     }
 
     async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
-        let unitRecord = (await this._armiesCollection.findOneAndUpdate({ _id: userId }, {
-            $setOnInsert: {
-                lastUnitId: 0,
-                lastSummon: {}
-            },
-        }, { projection: { "units": 0 }, upsert: true, returnOriginal: false })).value;
+        let unitRecord = await this.loadArmyProfile(userId);
 
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
@@ -148,7 +146,7 @@ export class ArmyManager {
                     throw Errors.NoEnoughItems;
                 }
 
-                await inventory.autoCommitChanges(()=>{
+                await inventory.autoCommitChanges(() => {
                     inventory.removeItem(ticketItem.id, count);
                 })
             }
@@ -215,8 +213,29 @@ export class ArmyManager {
         return unit;
     }
 
-    private createLegions() {
+    private async loadArmyProfile(userId: string) {
+        return (await this._armiesCollection.findOneAndUpdate(
+            { _id: userId },
+            {
+                $setOnInsert: {
+                    lastUnitId: 0,
+                    lastSummon: {},
+                    legions: this.createLegions()
+                }
+            },
+            { projection: { "units": 0 }, upsert: true, returnOriginal: false }
+        )).value;
+    }
 
+    private createLegions() {
+        let legions = [];
+        // create 5 legions
+        for (let i = 0; i < 5; ++i) {
+            legions.push({
+                units: {}
+            });
+        }
+        return legions;
     }
 }
 
