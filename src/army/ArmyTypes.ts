@@ -110,6 +110,7 @@ export interface ArmyUnit {
     promotions: number;
     level: number;
     abilities: number[];
+    items: { [key: string]: any };
 }
 
 export interface Legion {

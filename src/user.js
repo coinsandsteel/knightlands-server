@@ -882,16 +882,16 @@ class User {
         }
 
         if (itemToEquip.equipped) {
-            throw "already equipped";
+            throw Errors.ItemEquipped;
         }
 
         let template = await await Game.itemTemplates.getTemplate(itemToEquip.template);
         if (!template) {
-            throw "no such template";
+            throw Errors.NoTemplate;
         }
 
         if (template.type != ItemType.Equipment) {
-            throw "not equipment";
+            throw Errors.NotEquipment;
         }
 
         let slotId = getSlot(template.equipmentType);

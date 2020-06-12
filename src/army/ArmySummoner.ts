@@ -61,7 +61,8 @@ export class ArmySummoner {
                     promotions: 0,
                     id: 0,
                     level: 1,
-                    abilities: abilities
+                    abilities: abilities,
+                    items: {}
                 };
             }
         }

@@ -9,6 +9,21 @@ import { ArmyUnits } from "./ArmyUnits";
 import Events from "../knightlands-shared/events";
 import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
+import { EquipmentSlots, getSlot } from "../knightlands-shared/equipment_slot";
+import ItemType from "../knightlands-shared/item_type";
+
+const TroopEquipmentSlots = [
+    EquipmentSlots.MainHand,
+    EquipmentSlots.OffHand
+];
+
+const GeneralEquipmentSlots = [
+    EquipmentSlots.Boots,
+    EquipmentSlots.Helmet,
+    EquipmentSlots.Chest,
+    EquipmentSlots.Gloves,
+    EquipmentSlots.Cape
+];
 
 export class ArmyManager {
     private _db: Db;
@@ -93,9 +108,9 @@ export class ArmyManager {
         return await this._armiesCollection.findOne({ _id: unitId });
     }
 
-    async setLegionSlot(user: any, legionIndex: number, slotId: number, unitId: number) {
+    async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
         const unitExists = await this._armiesCollection.findOne(
-            { _id: user.address, "units.id": unitId }, 
+            { _id: userId, "units.id": unitId },
             { $project: { "units.$": 1, "legions": 1 } }
         );
         if (!unitExists) {
@@ -111,7 +126,7 @@ export class ArmyManager {
             throw Errors.IncorrectArguments;
         }
 
-        if (slot.levelRequired > user.level) {
+        if (slot.levelRequired > userLevel) {
             throw Errors.IncorrectArguments;
         }
 
@@ -121,6 +136,11 @@ export class ArmyManager {
         }
 
         legions[legionIndex].units[slotId] = unitId;
+
+        await this._armiesCollection.updateOne(
+            { _id: userId },
+            { $set: { [`legions.${legionIndex}`]: legions[legionIndex] } }
+        )
     }
 
     async getSummonOverview(userId: string) {
@@ -211,6 +231,73 @@ export class ArmyManager {
         await this._units.onUnitUpdated(userId, unit);
 
         return unit;
+    }
+
+    async equipItem(userId: string, unitId: number, itemId: number) {
+        const unitRecord = await this._units.getUserUnit(userId, unitId);
+        if (!unitRecord) {
+            throw Errors.ArmyNoUnit;
+        }
+
+        const inventory = await Game.loadInventory(userId);
+        const item = inventory.getItemById(itemId);
+        if (!item) {
+            throw Errors.NoItem;
+        }
+
+        if (item.equipped) {
+            throw Errors.ItemEquipped;
+        }
+
+        const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
+        if (!itemTemplate) {
+            throw Errors.NoTemplate;
+        }
+
+        if (itemTemplate.type != ItemType.Equipment) {
+            throw Errors.NotEquipment;
+        }
+
+        const unit = unitRecord[unitId];
+        // check if slot is correct
+        const slots = unit.troop ? TroopEquipmentSlots : GeneralEquipmentSlots;
+        const itemSlot = getSlot(itemTemplate.equipmentType);
+        if (slots.findIndex(x => x == itemSlot) == -1) {
+            throw Errors.IncorrectArguments;
+        }
+
+        item.equipped = true;
+
+        const copy = { ...item };
+        copy.count = 1;
+
+        const equippedItem = unit.items[itemSlot];
+        if (equippedItem) {
+            delete unit.items[itemSlot];
+            inventory.addItem(equippedItem).equipped = false;
+        }
+
+        unit.items[itemSlot] = copy;
+
+        inventory.removeItem(item.id);
+
+        await this._units.onUnitUpdated(userId, unit);
+    }
+
+    async unequipItem(userId: string, unitId: number, slotId: number) {
+        const unitRecord = await this._units.getUserUnit(userId, unitId);
+        if (!unitRecord) {
+            throw Errors.ArmyNoUnit;
+        }
+
+        const unit = unitRecord[unitId];
+        const equippedItem = unit.items[slotId];
+        if (equippedItem) {
+            delete unit.items[slotId];
+            const inventory = await Game.loadInventory(userId);
+            inventory.addItem(equippedItem).equipped = false;
+            await this._units.onUnitUpdated(userId, unit);
+        }
     }
 
     private async loadArmyProfile(userId: string) {

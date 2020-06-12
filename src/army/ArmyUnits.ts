@@ -1,6 +1,8 @@
 import { Collections } from "../database";
 import { Db } from "mongodb";
 import { ArmyUnit } from "./ArmyTypes";
+import Game from "../game";
+import Events from "../knightlands-shared/events";
 
 export class ArmyUnits {
     private _db: Db;
@@ -24,6 +26,8 @@ export class ArmyUnits {
             { _id: userId, "units.id": unit.id },
             { $set: { "units.$": unit } }
         );
+
+        Game.emitPlayerEvent(userId, Events.UnitUpdated, { unit });
     }
 
     private getCache(userId: string) {

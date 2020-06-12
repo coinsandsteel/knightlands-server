@@ -178,6 +178,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.GetArmySummonInfo, this._gameHandler(this._summonArmyInfo.bind(this)));
         this._socket.on(Operations.FetchArmySummonStatus, this._gameHandler(this._fetchSummonArmyUnitPaymentStatus.bind(this)));
         this._socket.on(Operations.LevelUpArmyUnit, this._gameHandler(this._levelUpArmyUnit.bind(this)));
+        this._socket.on(Operations.UnitEquipItem, this._gameHandler(this._unitEquipItem.bind(this)));
+        this._socket.on(Operations.UnitUnequipItem, this._gameHandler(this._unitUnequipItem.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1355,7 +1357,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _setLegionSlot(user, data) {
-        await Game.armyManager.setLegionSlot(user, data.legionIndex, data.slotId, data.unitId);
+        await Game.armyManager.setLegionSlot(user.address, user.level, data.legionIndex, data.slotId, data.unitId);
     }
 
     async _summonArmyUnit(user, data) {
@@ -1378,6 +1380,14 @@ class PlayerController extends IPaymentListener {
 
     async _levelUpArmyUnit(user, data) {
         return await Game.armyManager.levelUp(user.address, data.unitId);
+    }
+
+    async _unitEquipItem(user, data)  {
+        return await Game.armyManager.equipItem(user.address, data.unitId, data.itemId);
+    }
+
+    async _unitUnequipItem(user, data) {
+        return await Game.armyManager.unequipItem(user.address, data.unitId, data.slotId);
     }
 }
 
