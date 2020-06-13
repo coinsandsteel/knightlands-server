@@ -27,7 +27,15 @@ export class ArmyUnits {
             { $set: { "units.$": unit } }
         );
 
-        Game.emitPlayerEvent(userId, Events.UnitUpdated, { unit });
+        Game.emitPlayerEvent(userId, Events.UnitUpdated, unit);
+    }
+
+    async removeUnits(userId: string, ids: number[]) {
+        await this._db.collection(Collections.Armies).updateOne(
+            { _id: userId },
+            { $pull: { "units": { "id": { $in: ids } } } }
+        );
+        Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
     }
 
     private getCache(userId: string) {

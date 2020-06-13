@@ -49,6 +49,7 @@ export interface UnitLevelingMeta {
 }
 
 export interface UnitFusionIngridient {
+    id: number;
     unit: number;
     stars: number;
     copy: boolean;

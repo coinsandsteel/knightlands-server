@@ -266,10 +266,9 @@ export class ArmyManager {
             throw Errors.IncorrectArguments;
         }
 
-        item.equipped = true;
-
         const copy = { ...item };
         copy.count = 1;
+        copy.equipped = true;
 
         const equippedItem = unit.items[itemSlot];
         if (equippedItem) {
@@ -298,6 +297,69 @@ export class ArmyManager {
             inventory.addItem(equippedItem).equipped = false;
             await this._units.onUnitUpdated(userId, unit);
         }
+    }
+
+    async promote(userId: string, unitId: number, units: { [k: string]: number[] }) {
+        // units - { ingridient id -> unit ids }
+        const unitRecord = await this._units.getUserUnit(userId, unitId);
+        if (!unitRecord) {
+            throw Errors.ArmyNoUnit;
+        }
+
+        const unit = unitRecord[unitId];
+        const meta = unit.troop ? this._troops : this._generals;
+        const template = this._unitTemplates[unit.template];
+        const stars = template.stars + unit.promotions;
+        const fusionTemplates = meta.fusionMeta.templates;
+        const fusionTemplate = fusionTemplates[stars];
+        if (!fusionTemplate) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let toRemove = [];
+        const usedUnits = {};
+        for (const ingridient of fusionTemplate.ingridients) {
+            const unitsForFusion = units[ingridient.id];
+            if (!unitsForFusion || unitsForFusion.length != ingridient.amount) {
+                throw Errors.IncorrectArguments;
+            }
+
+            toRemove = toRemove.concat(unitsForFusion);
+
+            const targetUnits = await this._units.getUserUnits(userId, unitsForFusion);
+            
+            for(const unitId in targetUnits) {
+                const targetUnit = targetUnits[unitId];
+                if (usedUnits[targetUnit.id]) {
+                    throw Errors.IncorrectArguments;
+                }
+                const targetUnitTemplate = this._unitTemplates[targetUnit.template];
+                
+                if (ingridient.copy) {
+                    if (unit.template != targetUnit.template) {
+                        throw Errors.IncorrectArguments;
+                    }
+                }
+    
+                if (ingridient.stars) {
+                    if (targetUnitTemplate.stars + targetUnit.promotions != ingridient.stars) {
+                        throw Errors.IncorrectArguments;
+                    }
+                }
+    
+                if (ingridient.sameElement) {
+                    if (targetUnitTemplate.element != template.element) {
+                        throw Errors.IncorrectArguments;
+                    }
+                }
+            }
+        }
+
+        // everything is ok, promote unit
+        unit.promotions++;
+        await this._units.onUnitUpdated(userId, unit);
+        // remove ingridient units
+        await this._units.removeUnits(userId, toRemove);
     }
 
     private async loadArmyProfile(userId: string) {

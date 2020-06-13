@@ -897,14 +897,12 @@ class User {
         let slotId = getSlot(template.equipmentType);
         await this.unequipItem(slotId);
 
-        itemToEquip.equipped = true;
+        const copy = { ...itemToEquip };
+        copy.equipped = true;
+        copy.count = 1; // make it count as 1, otherwise players will dupe it
 
         // put into equipment and remove from inventory
-        this._data.character.equipment[slotId] = {
-            ...itemToEquip
-        };
-        this._data.character.equipment[slotId].count = 1; // make it count as 1, otherwise players will dupe it
-
+        this._data.character.equipment[slotId] = copy;
         this._inventory.removeItem(itemToEquip.id);
 
         this._recalculateStats = true;
