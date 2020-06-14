@@ -111,7 +111,7 @@ export class ArmyManager {
     async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
         const unitExists = await this._armiesCollection.findOne(
             { _id: userId, "units.id": unitId },
-            { $project: { "units.$": 1, "legions": 1 } }
+            { $project: { "units": 0, "legions": 1 } }
         );
         if (!unitExists) {
             throw Errors.ArmyNoUnit;
@@ -122,7 +122,9 @@ export class ArmyManager {
             throw Errors.IncorrectArguments;
         }
 
-        if (unitExists.units[0].troop != slot.troop) {
+        const unitRecord = await this._units.getUserUnit(userId, unitId);
+
+        if (unitRecord[unitId].troop != slot.troop) {
             throw Errors.IncorrectArguments;
         }
 
