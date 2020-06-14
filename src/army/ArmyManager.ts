@@ -382,6 +382,9 @@ export class ArmyManager {
         }
 
         const unitRecords = await this._units.getUserUnits(userId, units);
+        if (!unitRecords) {
+            throw Errors.ArmyNoUnit;
+        }
 
         const resourcesUsed = {
             gold: 0,
