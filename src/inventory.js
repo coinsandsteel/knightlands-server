@@ -381,6 +381,10 @@ class Inventory {
     }
 
     async _addItemTemplate(template, count) {
+        if (count <= 0) {
+            return;
+        }
+
         if (template.type == ItemType.Currency) {
             await this.modifyCurrency(template.currencyType, template.quantity * count);
             return;

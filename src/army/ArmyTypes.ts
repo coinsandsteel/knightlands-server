@@ -99,9 +99,18 @@ export interface LegionSlotMeta {
     levelRequired: number;
 }
 
+interface Refund {
+    gold: number;
+    troopEssence: number;
+    generalEssence: number;
+    souls: number;
+}
+
 export interface ArmyMeta {
+    soulsItem: number;
     soulsFromBanishment: number[];
     slots: LegionSlotMeta[];
+    refund: Refund;
 }
 
 export interface ArmyUnit {
@@ -112,6 +121,9 @@ export interface ArmyUnit {
     level: number;
     abilities: number[];
     items: { [key: string]: any };
+    gold: number;
+    essence: number;
+    souls: number;
 }
 
 export interface Legion {

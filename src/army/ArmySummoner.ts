@@ -62,7 +62,10 @@ export class ArmySummoner {
                     id: 0,
                     level: 1,
                     abilities: abilities,
-                    items: {}
+                    items: {},
+                    gold: 0,
+                    essence: 0,
+                    souls: 0
                 };
             }
         }

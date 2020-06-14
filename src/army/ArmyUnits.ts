@@ -35,6 +35,12 @@ export class ArmyUnits {
             { _id: userId },
             { $pull: { "units": { "id": { $in: ids } } } }
         );
+        const cache = this.getCache(userId);
+        if (cache) {
+            for (const id of ids) {
+                delete cache[id];
+            }
+        }
         Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
     }
 

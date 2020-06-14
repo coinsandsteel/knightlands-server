@@ -225,6 +225,9 @@ export class ArmyManager {
             throw Errors.NotEnoughEssence;
         }
 
+        unit.gold += levelRecord.gold;
+        unit.essence += levelRecord.essence;
+
         await user.addSoftCurrency(-levelRecord.gold);
         await user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
         unit.level++;
@@ -355,11 +358,92 @@ export class ArmyManager {
             }
         }
 
+        // check souls
+        const inventory = await Game.loadInventory(userId);
+        if (inventory.countItemsByTemplate(this._meta.soulsItem) < fusionTemplate.price) {
+            throw Errors.NotEnoughResource;
+        }
+
+        inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.price);
+        unit.souls += fusionTemplate.price;
+
         // everything is ok, promote unit
         unit.promotions++;
         await this._units.onUnitUpdated(userId, unit);
         // remove ingridient units
         await this._units.removeUnits(userId, toRemove);
+    }
+
+    async banish(userId: string, units: number[]) {
+        if (units.length > 10) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const unitRecords = await this._units.getUserUnits(userId, units);
+
+        const resourcesUsed = {
+            gold: 0,
+            troopEssence: 0,
+            generalEssence: 0,
+            souls: 0
+        };
+
+        const duplicates = {};
+        for (const unitId of units) {
+            const unit = unitRecords[unitId];
+
+            if (!unit) {
+                throw Errors.ArmyNoUnit;
+            }
+
+            if (duplicates[unit.id]) {
+                throw Errors.IncorrectArguments;
+            }
+
+            duplicates[unit.id] = true;
+
+            resourcesUsed.gold += unit.gold;
+            resourcesUsed.souls += unit.souls * this._meta.refund.souls;
+
+            const template = this._unitTemplates[unit.template];
+            resourcesUsed.souls += this._meta.soulsFromBanishment[unit.promotions + template.stars];
+
+            if (unit.troop) {
+                resourcesUsed.troopEssence += unit.essence;
+            } else {
+                resourcesUsed.generalEssence += unit.essence;
+            }
+        }
+
+        const inventory = await Game.loadInventory(userId);
+
+        for (const unitId of units) {
+            const unit = unitRecords[unitId];
+            // unequip items
+            for (const itemSlot in unit.items) {
+                const equippedItem = unit.items[itemSlot];
+                if (equippedItem) {
+                    delete unit.items[itemSlot];
+                    inventory.addItem(equippedItem).equipped = false;
+                }
+            }
+        }
+
+        resourcesUsed.gold *= this._meta.refund.gold;
+        resourcesUsed.troopEssence *= this._meta.refund.troopEssence;
+        resourcesUsed.generalEssence *= this._meta.refund.generalEssence;
+
+        // remove units
+        await this._units.removeUnits(userId, units);
+        // refund
+        const user = await Game.getUser(userId);
+        await user.addSoftCurrency(resourcesUsed.gold);
+        
+        await inventory.addItemTemplates([
+            { item: this._troops.essenceItem, quantity: resourcesUsed.troopEssence },
+            { item: this._generals.essenceItem, quantity: resourcesUsed.generalEssence },
+            { item: this._meta.soulsItem, quantity: resourcesUsed.souls }
+        ]);
     }
 
     private async loadArmyProfile(userId: string) {
