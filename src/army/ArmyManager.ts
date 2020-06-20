@@ -109,39 +109,74 @@ export class ArmyManager {
     }
 
     async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
-        const unitExists = await this._armiesCollection.findOne(
-            { _id: userId, "units.id": unitId },
+        const userRecord = await this._armiesCollection.findOne(
+            { _id: userId },
             { $project: { "units": 0, "legions": 1 } }
         );
-        if (!unitExists) {
+
+        if (!userRecord) {
             throw Errors.ArmyNoUnit;
         }
 
-        const slot = this._meta.slots.find(x => x.id == slotId);
-        if (!slot) {
-            throw Errors.IncorrectArguments;
-        }
-
-        const unitRecord = await this._units.getUserUnit(userId, unitId);
-
-        if (unitRecord[unitId].troop != slot.troop) {
-            throw Errors.IncorrectArguments;
-        }
-
-        if (slot.levelRequired > userLevel) {
-            throw Errors.IncorrectArguments;
-        }
-
-        const legions: Legion[] = unitExists.legions || this.createLegions();
+        const legions: Legion[] = userRecord.legions || this.createLegions();
         if (legionIndex < 0 || legions.length <= legionIndex) {
             throw Errors.IncorrectArguments;
         }
 
-        legions[legionIndex].units[slotId] = unitId;
+        const legion = legions[legionIndex];
+        
+        let unit;
+
+        if (!unitId) {
+            const prevUnitId = legion.units[slotId];
+            const unitRecord = await this._units.getUserUnit(userId, prevUnitId);
+            if (unitRecord) {
+                // empty slot
+                unit = unitRecord[prevUnitId];
+                if (unit) {
+                    unit.legion = -1;
+                }
+            }
+
+            delete legion.units[slotId];
+            await this._armiesCollection.updateOne(
+                { _id: userId },
+                { $set: { [`legions.${legionIndex}`]: legion } }
+            )
+        } else {
+            const slot = this._meta.slots.find(x => x.id == slotId);
+            if (!slot) {
+                throw Errors.IncorrectArguments;
+            }
+
+            const unitRecord = await this._units.getUserUnit(userId, unitId);
+            if (unitRecord[unitId].troop != slot.troop) {
+                throw Errors.IncorrectArguments;
+            }
+
+            if (slot.levelRequired > userLevel) {
+                throw Errors.IncorrectArguments;
+            }
+
+            // can't set same unit in multiple slots
+            for (const slotId in legion.units) {
+                if (legion.units[slotId] == unitId) {
+                    throw Errors.IncorrectArguments;
+                }
+            }
+
+            legion.units[slotId] = unitId;
+            unit = unitRecord[unitId];
+            unit.legion = legionIndex;
+        }
+
+        if (unit) {
+            await this._units.onUnitUpdated(userId, unit);
+        }
 
         await this._armiesCollection.updateOne(
             { _id: userId },
-            { $set: { [`legions.${legionIndex}`]: legions[legionIndex] } }
+            { $set: { [`legions.${legionIndex}`]: legion } }
         )
     }
 
@@ -332,26 +367,26 @@ export class ArmyManager {
             toRemove = toRemove.concat(unitsForFusion);
 
             const targetUnits = await this._units.getUserUnits(userId, unitsForFusion);
-            
-            for(const unitId in targetUnits) {
+
+            for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
                 if (usedUnits[targetUnit.id]) {
                     throw Errors.IncorrectArguments;
                 }
                 const targetUnitTemplate = this._unitTemplates[targetUnit.template];
-                
+
                 if (ingridient.copy) {
                     if (unit.template != targetUnit.template) {
                         throw Errors.IncorrectArguments;
                     }
                 }
-    
+
                 if (ingridient.stars) {
                     if (targetUnitTemplate.stars + targetUnit.promotions != ingridient.stars) {
                         throw Errors.IncorrectArguments;
                     }
                 }
-    
+
                 if (ingridient.sameElement) {
                     if (targetUnitTemplate.element != template.element) {
                         throw Errors.IncorrectArguments;
@@ -443,7 +478,7 @@ export class ArmyManager {
         // refund
         const user = await Game.getUser(userId);
         await user.addSoftCurrency(resourcesUsed.gold);
-        
+
         await inventory.addItemTemplates([
             { item: this._troops.essenceItem, quantity: resourcesUsed.troopEssence },
             { item: this._generals.essenceItem, quantity: resourcesUsed.generalEssence },

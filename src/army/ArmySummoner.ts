@@ -65,7 +65,8 @@ export class ArmySummoner {
                     items: {},
                     gold: 0,
                     essence: 0,
-                    souls: 0
+                    souls: 0,
+                    legion: -1
                 };
             }
         }

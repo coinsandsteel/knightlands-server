@@ -124,6 +124,7 @@ export interface ArmyUnit {
     gold: number;
     essence: number;
     souls: number;
+    legion: number;
 }
 
 export interface Legion {
