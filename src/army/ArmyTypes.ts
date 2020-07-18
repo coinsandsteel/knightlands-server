@@ -8,6 +8,7 @@ export interface UnitAbilityMeta {
     id: number;
     type: string;
     unitType?: number;
+    unitType2?: number;
     item?: number;
     max?: number;
     general?: number;
@@ -23,9 +24,24 @@ export interface UnitAbilityMeta {
     levels: UnitAbilityLevel[];
 }
 
+export interface UnitAbilityFiller {
+    weight: number;
+    id: number;
+}
+
+export interface UnitAbilityFillers {
+    weight: number;
+    abilities: UnitAbilityFiller[];
+}
+
 export interface UnitAbilitiesMeta {
     troops: { [key: string]: UnitAbilityMeta };
     general: { [key: string]: UnitAbilityMeta };
+
+    fillers: {
+        troops: UnitAbilityFillers,
+        generals: UnitAbilityFillers
+    };
 }
 
 export interface AbilityPoolRecord {
