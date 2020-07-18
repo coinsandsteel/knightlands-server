@@ -42,10 +42,6 @@ class Raid extends EventEmitter {
         this._challenges = [];
     }
 
-    get stage() {
-        return this._data.stage;
-    }
-
     get id() {
         return this._data._id.valueOf();
     }
@@ -54,8 +50,8 @@ class Raid extends EventEmitter {
         return !this._bossUnit.isAlive || this._data.timeLeft < 1;
     }
 
-    get stageData() {
-        return this._template.stages[this._data.stage];
+    get template() {
+        return this._template;
     }
 
     get defeat() {
@@ -102,7 +98,7 @@ class Raid extends EventEmitter {
     }
 
     get isFull() {
-        return this._data.busySlots >= this.stageData.maxSlots;
+        return this._data.busySlots >= this.template.maxSlots;
     }
 
     async init(data) {
@@ -128,8 +124,8 @@ class Raid extends EventEmitter {
 
         {
             // randomly chose up to challengeCount challenges
-            let challengesToChoose = this.stageData.challengeCount;
-            let challengesMeta = this.stageData.challenges;
+            let challengesToChoose = this.template.challengeCount;
+            let challengesMeta = this.template.challenges;
             let i = 0;
             const length = challengesMeta.length;
             let indicies = [];
@@ -202,7 +198,7 @@ class Raid extends EventEmitter {
     }
 
     async join(userId) {
-        if (this._data.busySlots >= this.stageData.maxSlots) {
+        if (this._data.busySlots >= this.template.maxSlots) {
             throw Errors.RaidIsFull;
         }
 
@@ -263,8 +259,8 @@ class Raid extends EventEmitter {
 
         
         while (hitsToPerform > 0) {
-            exp += this.stageData.exp;
-            gold += this.stageData.gold;
+            exp += this.template.exp;
+            gold += this.template.gold;
 
             hitsToPerform--;
             // boss attacks first to avoid abusing 1 hp tactics
@@ -281,7 +277,7 @@ class Raid extends EventEmitter {
                 // set loot flag in here to avoid sharp spike after raid is finished
                 if (this._data.loot[attacker.address] === undefined) {
                     // check if at least first loot damage threshold is reached and set loot record
-                    let loot = this.stageData.loot;
+                    let loot = this.template.loot;
                     if (loot && loot.length > 0) {
                         if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
                             this._data.loot[attacker.address] = false;
@@ -367,7 +363,7 @@ class Raid extends EventEmitter {
     async claimLoot(userId) {
         // determine raid loot record based on user damage
         let chosenLoot;
-        let raidStage = this.stageData;
+        let raidStage = this.template;
         let userDamage = this._data.participants[userId];
         {
             let i = 0;

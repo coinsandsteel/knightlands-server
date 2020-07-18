@@ -764,7 +764,7 @@ class PlayerController extends IPaymentListener {
         let user = await this.getUser(this.address);
 
         try {
-            let payment = await this._raidManager.summonRaid(user, data.stage, data.raid);
+            let payment = await this._raidManager.summonRaid(user, data.raid);
             respond(null, payment);
         } catch (exc) {
             console.log(exc);

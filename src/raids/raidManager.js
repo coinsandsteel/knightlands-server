@@ -84,10 +84,9 @@ class RaidManager {
 
     }
 
-    async _getNextDktFactor(raidTemplateId, stage, peek = false) {
+    async _getNextDktFactor(raidTemplateId, peek = false) {
         let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
-            raid: raidTemplateId,
-            stage: stage
+            raid: raidTemplateId
         });
 
         if (!factor) {
@@ -103,8 +102,7 @@ class RaidManager {
             factor.step++;
             // save 
             await this._db.collection(Collections.RaidsDktFactors).updateOne({
-                raid: raidTemplateId,
-                stage: stage
+                raid: raidTemplateId
             }, { $set: factor }, {
                 upsert: true
             });
@@ -138,7 +136,7 @@ class RaidManager {
         try {
             return await this._paymentProcessor.requestPayment(
                 userId,
-                raid.stageData.joinIap,
+                raid.template.joinIap,
                 this.JoinPaymentTag,
                 iapContext
             );
@@ -156,7 +154,7 @@ class RaidManager {
         await raid.join(userId);
     }
 
-    async summonRaid(summoner, stage, raidTemplateId) {
+    async summonRaid(summoner, raidTemplateId) {
         raidTemplateId *= 1;
 
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
@@ -165,23 +163,14 @@ class RaidManager {
             throw Errors.InvalidRaid;
         }
 
-        stage = stage * 1;
-
-        if (raitTemplate.stages.length <= stage) {
-            throw Errors.InvalidRaid;
-        }
-
         // check if there is enough crafting materials
-        let raidStage = raitTemplate.stages[stage];
-
-        let summonRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
+        let summonRecipe = await this._loadSummonRecipe(raitTemplate.summonRecipe);
         if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
             throw "no essences";
         }
 
         let iapContext = {
             summoner: summoner.address,
-            stage: stage,
             raidTemplateId: raidTemplateId
         };
 
@@ -193,7 +182,7 @@ class RaidManager {
 
         try {
             return await this._paymentProcessor.requestPayment(summoner.address,
-                raidStage.iap,
+                raitTemplate.iap,
                 this.SummonPaymentTag,
                 iapContext
             );
@@ -202,21 +191,20 @@ class RaidManager {
         }
     }
 
-    async _summonRaid(summonerId, stage, raidTemplateId) {
+    async _summonRaid(summonerId, raidTemplateId) {
         // consume crafting resources
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         let userInventory = await Game.loadInventory(summonerId);
         await userInventory.autoCommitChanges(async inventory => {
-            let raidStage = raidTemplate.stages[stage];
             // consume crafting materials
-            let craftingRecipe = await this._loadSummonRecipe(raidStage.summonRecipe);
+            let craftingRecipe = await this._loadSummonRecipe(raidTemplate.summonRecipe);
             inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
         });
 
         const raid = new Raid(this._db);
-        let currentFactor = await this._getNextDktFactor(raidTemplateId, stage);
-        await raid.create(summonerId, stage, raidTemplateId, currentFactor);
+        let currentFactor = await this._getNextDktFactor(raidTemplateId);
+        await raid.create(summonerId, raidTemplateId, currentFactor);
         this._addRaid(raid);
 
         return {
@@ -225,20 +213,19 @@ class RaidManager {
     }
 
     // build an array of raids in process of summoning
-    async getSummonStatus(userId, raidTemplateId, stage) {
+    async getSummonStatus(userId, raidTemplateId) {
         raidTemplateId *= 1;
 
         let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
-            "context.raidTemplateId": raidTemplateId,
-            "context.stage": stage
+            "context.raidTemplateId": raidTemplateId
         });
 
         if (!status) {
             status = {};
         }
 
-        status.dktFactor = await this._getNextDktFactor(raidTemplateId, stage, true);
-        status.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId, stage });
+        status.dktFactor = await this._getNextDktFactor(raidTemplateId, true);
+        status.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId });
         status.weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
 
         return status;
@@ -252,8 +239,8 @@ class RaidManager {
         return status;
     }
 
-    async fetchRaidCurrentMeta(raidTemplateId, stage) {
-        let weakness = await this._db.collection(Collections.RaidsWeaknessRotations).find({ raid: raidTemplateId, stage });
+    async fetchRaidCurrentMeta(raidTemplateId) {
+        let weakness = await this._db.collection(Collections.RaidsWeaknessRotations).find({ raid: raidTemplateId });
         weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
         return weakness;
     }
@@ -281,8 +268,7 @@ class RaidManager {
                 "$lookup": {
                     "from": "raid_weakness_rotations",
                     "let": {
-                        "raid": "$raidTemplateId",
-                        "stage": "$stage"
+                        "raid": "$raidTemplateId"
                     },
                     "pipeline": [
                         {
@@ -293,12 +279,6 @@ class RaidManager {
                                             "$eq": [
                                                 "$raid",
                                                 "$$raid"
-                                            ]
-                                        },
-                                        {
-                                            "$eq": [
-                                                "$stage",
-                                                "$$stage"
                                             ]
                                         }
                                     ]
@@ -360,7 +340,6 @@ class RaidManager {
             {
                 $project: {
                     raidTemplateId: 1,
-                    stage: 1,
                     timeLeft: 1,
                     busySlots: 1,
                     bossState: 1,
@@ -390,24 +369,21 @@ class RaidManager {
 
         let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
         allRaids.forEach(raid => {
-            raid.stages.forEach(stage => {
-                if (stage.iap) {
-                    iapExecutor.registerAction(stage.iap, async (context) => {
-                        return await this._summonRaid(context.summoner, context.stage, context.raidTemplateId);
-                    });
+            if (raid.iap) {
+                iapExecutor.registerAction(raid.iap, async (context) => {
+                    return await this._summonRaid(context.summoner, context.raidTemplateId);
+                });
 
-                    iapExecutor.mapIAPtoEvent(stage.iap, Events.RaidSummonStatus);
-                }
+                iapExecutor.mapIAPtoEvent(raid.iap, Events.RaidSummonStatus);
+            }
 
-                if (stage.joinIap) {
-                    iapExecutor.registerAction(stage.joinIap, async (context) => {
-                        return await this._joinRaid(context.userId, context.raidId);
-                    });
+            if (raid.joinIap) {
+                iapExecutor.registerAction(raid.joinIap, async (context) => {
+                    return await this._joinRaid(context.userId, context.raidId);
+                });
 
-                    iapExecutor.mapIAPtoEvent(stage.joinIap, Events.RaidJoinStatus);
-                }
-            });
-
+                iapExecutor.mapIAPtoEvent(raid.joinIap, Events.RaidJoinStatus);
+            }
         });
     }
 
@@ -492,12 +468,7 @@ class RaidManager {
             const length = allRaidsWeaknesses.length;
             for (let i = 0; i < length; i++) {
                 const weakness = allRaidsWeaknesses[i];
-                let stages = weaknessLookup[weakness.raid];
-                if (!stages) {
-                    stages = {};
-                    weaknessLookup[weakness.raid] = stages;
-                }
-                stages[weakness.stage] = weakness;
+                weaknessLookup[weakness.raid] = weakness;
             }
         }
 
@@ -505,43 +476,33 @@ class RaidManager {
         const length = allRaids.length;
         for (let i = 0; i < length; i++) {
             const raidTemplate = allRaids[i];
-            for (let j = 0; j < raidTemplate.stages.length; j++) {
-                let missing = false;
-                let stages = weaknessLookup[raidTemplate._id];
-                if (!stages) {
-                    stages = {};
-                    weaknessLookup[raidTemplate._id] = stages;
-                }
+            let missing = false;
+            let weakness = weaknessLookup[raidTemplate._id];
+            if (weakness) {
+                weakness.current = weakness.next;
+                weakness.next = this._rollRaidWeaknesses();
+            } else {
+                weakness = {
+                    current: this._rollRaidWeaknesses(),
+                    next: this._rollRaidWeaknesses(),
+                    raid: raidTemplate._id
+                };
+                weaknessLookup[raidTemplate._id] = weakness;
+                missing = true;
+            }
 
-                let weakness = stages[j];
-                if (weakness) {
-                    weakness.current = weakness.next;
-                    weakness.next = this._rollRaidWeaknesses();
-                } else {
-                    weakness = {
-                        current: this._rollRaidWeaknesses(),
-                        next: this._rollRaidWeaknesses(),
-                        raid: raidTemplate._id,
-                        stage: j
-                    };
-                    stages[j] = weakness;
-                    missing = true;
-                }
-
-                if ((onlyMissing && missing) || !onlyMissing) {
-                    queries.push({
-                        updateOne: {
-                            filter: {
-                                raid: weakness.raid,
-                                stage: weakness.stage
-                            },
-                            update: {
-                                $set: weakness
-                            },
-                            upsert: true
-                        }
-                    });
-                }
+            if ((onlyMissing && missing) || !onlyMissing) {
+                queries.push({
+                    updateOne: {
+                        filter: {
+                            raid: weakness.raid
+                        },
+                        update: {
+                            $set: weakness
+                        },
+                        upsert: true
+                    }
+                });
             }
         }
 
