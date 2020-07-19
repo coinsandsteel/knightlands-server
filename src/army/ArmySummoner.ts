@@ -109,6 +109,9 @@ export class ArmySummoner {
                 if (Random.intRange(1, 100) <= fillerPool.weight) {
                     abilities.push(...fillerList.peek(1, false))
                 } else {
+                    console.log(
+                        `roll unit random abilities for ${template.id}`
+                    )
                     abilities.push(...perUnitList.peek(1, false))
                 }
             }

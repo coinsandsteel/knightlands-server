@@ -149,12 +149,22 @@ export class ArmyManager {
                 throw Errors.IncorrectArguments;
             }
 
-            const unitRecord = await this._units.getUserUnit(userId, unitId);
-            if (unitRecord[unitId].troop != slot.troop) {
+            const unitRecord = (await this._units.getUserUnit(userId, unitId))[unitId];
+            if (unitRecord.troop != slot.troop) {
                 throw Errors.IncorrectArguments;
             }
 
             if (slot.levelRequired > userLevel) {
+                throw Errors.IncorrectArguments;
+            }
+
+            // can't set same unit template
+            let ids = [];
+            for (const slotId in legion.units) {
+                ids.push(legion.units[slotId]);
+            }
+            const usedUnits = await this._units.getUserUnits(userId, ids);
+            if (usedUnits[unitRecord.template]) {
                 throw Errors.IncorrectArguments;
             }
 
@@ -166,7 +176,7 @@ export class ArmyManager {
             }
 
             legion.units[slotId] = unitId;
-            unit = unitRecord[unitId];
+            unit = unitRecord;
             unit.legion = legionIndex;
         }
 
