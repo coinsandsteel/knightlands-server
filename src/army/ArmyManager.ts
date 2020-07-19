@@ -164,8 +164,10 @@ export class ArmyManager {
                 ids.push(legion.units[slotId]);
             }
             const usedUnits = await this._units.getUserUnits(userId, ids);
-            if (usedUnits[unitRecord.template]) {
-                throw Errors.IncorrectArguments;
+            for (const id in usedUnits) {
+                if (usedUnits[id].template == unitRecord.template) {
+                    throw Errors.IncorrectArguments;
+                }
             }
 
             // can't set same unit in multiple slots

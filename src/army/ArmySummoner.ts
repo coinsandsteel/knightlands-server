@@ -106,12 +106,9 @@ export class ArmySummoner {
 
             while (randomAbilitiesCount-- > 0 ) {
                 // first determine if filler passsive must be rolled
-                if (Random.intRange(1, 100) <= fillerPool.weight) {
+                if (Random.intRange(1, 100) <= fillerPool.weight || perUnitList.length == 0) {
                     abilities.push(...fillerList.peek(1, false))
                 } else {
-                    console.log(
-                        `roll unit random abilities for ${template.id}`
-                    )
                     abilities.push(...perUnitList.peek(1, false))
                 }
             }
