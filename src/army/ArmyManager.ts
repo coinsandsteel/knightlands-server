@@ -127,12 +127,13 @@ export class ArmyManager {
         
         let unit;
 
+        const prevUnitId = legion.units[slotId];
+        const prevUnitRecord = await this._units.getUserUnit(userId, prevUnitId);
+
         if (!unitId) {
-            const prevUnitId = legion.units[slotId];
-            const unitRecord = await this._units.getUserUnit(userId, prevUnitId);
-            if (unitRecord) {
+            if (prevUnitRecord) {
                 // empty slot
-                unit = unitRecord[prevUnitId];
+                unit = prevUnitRecord[prevUnitId];
                 if (unit) {
                     unit.legion = -1;
                 }
@@ -150,7 +151,7 @@ export class ArmyManager {
             }
 
             const unitRecord = (await this._units.getUserUnit(userId, unitId))[unitId];
-            if (unitRecord.troop != slot.troop) {
+            if (!unitRecord || unitRecord.troop != slot.troop) {
                 throw Errors.IncorrectArguments;
             }
 
@@ -158,18 +159,20 @@ export class ArmyManager {
                 throw Errors.IncorrectArguments;
             }
 
-            // can't set same unit template
-            let ids = [];
-            for (const slotId in legion.units) {
-                ids.push(legion.units[slotId]);
-            }
-            const usedUnits = await this._units.getUserUnits(userId, ids);
-            for (const id in usedUnits) {
-                if (usedUnits[id].template == unitRecord.template) {
-                    throw Errors.IncorrectArguments;
+            // can't set same unit template, except if previous unit is same template
+            if (!prevUnitRecord || unitRecord.template != prevUnitRecord[prevUnitId].template) {
+                let ids = [];
+                for (const slotId in legion.units) {
+                    ids.push(legion.units[slotId]);
+                }
+                const usedUnits = await this._units.getUserUnits(userId, ids);
+                for (const id in usedUnits) {
+                    if (usedUnits[id].template == unitRecord.template) {
+                        throw Errors.IncorrectArguments;
+                    }
                 }
             }
-
+            
             // can't set same unit in multiple slots
             for (const slotId in legion.units) {
                 if (legion.units[slotId] == unitId) {
