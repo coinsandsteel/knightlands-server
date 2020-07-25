@@ -559,6 +559,7 @@ class Inventory {
         let enoughResources = true;
         let i = 0;
         const length = ingridients.length;
+        // TODO cache it
         let meta = await Game.db.collection(Collections.Meta).findOne({
             _id: "meta"
         });
@@ -566,7 +567,7 @@ class Inventory {
         // NOTICE doesn't support max level items >1 quantity!
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            if (this.hasItems(ingridient.itemId, ingridient.quantity)) {
+            if (!this.hasItems(ingridient.itemId, ingridient.quantity)) {
                 enoughResources = false;
                 break;
             }
