@@ -13,7 +13,7 @@ import { ObjectId } from "mongodb";
 import Errors from "./../knightlands-shared/errors";
 import random from "../random";
 
-const WeaknessRotationCycle = 86400000;
+const WeaknessRotationCycle = 86400000 * 7;
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
 const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.Bow, EquipmentType.Wand, EquipmentType.Spear];
 
@@ -85,31 +85,31 @@ class RaidManager {
     }
 
     async _getNextDktFactor(raidTemplateId, peek = false) {
-        let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
-            raid: raidTemplateId
-        });
+        // let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
+        //     raid: raidTemplateId
+        // });
 
-        if (!factor) {
-            factor = {
-                step: 0
-            }
-        }
+        // if (!factor) {
+        //     factor = {
+        //         step: 0
+        //     }
+        // }
 
-        let factorSettings = this._factorSettings[stage];
-        let factorValue = 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factorSettings.multiplier;
+        // let factorSettings = this._factorSettings[stage];
+        // let factorValue = 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factorSettings.multiplier;
 
-        if (!peek) {
-            factor.step++;
-            // save 
-            await this._db.collection(Collections.RaidsDktFactors).updateOne({
-                raid: raidTemplateId
-            }, { $set: factor }, {
-                upsert: true
-            });
-        }
+        // if (!peek) {
+        //     factor.step++;
+        //     // save 
+        //     await this._db.collection(Collections.RaidsDktFactors).updateOne({
+        //         raid: raidTemplateId
+        //     }, { $set: factor }, {
+        //         upsert: true
+        //     });
+        // }
 
 
-        return factorValue;
+        return 1;
     }
 
     async joinRaid(userId, raidId) {
@@ -154,7 +154,7 @@ class RaidManager {
         await raid.join(userId);
     }
 
-    async summonRaid(summoner, raidTemplateId) {
+    async summonRaid(summoner, raidTemplateId, free) {
         raidTemplateId *= 1;
 
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
@@ -164,30 +164,36 @@ class RaidManager {
         }
 
         // check if there is enough crafting materials
-        let summonRecipe = await this._loadSummonRecipe(raitTemplate.summonRecipe);
+        let data = free ? raitTemplate.soloData : raitTemplate.data;
+        let summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
+        
         if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
             throw "no essences";
         }
 
-        let iapContext = {
-            summoner: summoner.address,
-            raidTemplateId: raidTemplateId
-        };
-
-        // check if payment request already created
-        let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(summoner.address, iapContext, this.SummonPaymentTag);
-        if (hasPendingPayment) {
-            throw "summoning in process already";
-        }
-
-        try {
-            return await this._paymentProcessor.requestPayment(summoner.address,
-                raitTemplate.iap,
-                this.SummonPaymentTag,
-                iapContext
-            );
-        } catch (exc) {
-            throw exc;
+        if (!free) {
+            let iapContext = {
+                summoner: summoner.address,
+                raidTemplateId: raidTemplateId
+            };
+    
+            // check if payment request already created
+            let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(summoner.address, iapContext, this.SummonPaymentTag);
+            if (hasPendingPayment) {
+                throw "summoning in process already";
+            }
+    
+            try {
+                return await this._paymentProcessor.requestPayment(summoner.address,
+                    data.iap,
+                    this.SummonPaymentTag,
+                    iapContext
+                );
+            } catch (exc) {
+                throw exc;
+            }
+        } else {
+            return await this._summonRaid(summoner.address, raidTemplateId);
         }
     }
 
