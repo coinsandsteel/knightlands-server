@@ -193,24 +193,25 @@ class RaidManager {
                 throw exc;
             }
         } else {
-            return await this._summonRaid(summoner.address, raidTemplateId);
+            return await this._summonRaid(summoner.address, raidTemplateId, true);
         }
     }
 
-    async _summonRaid(summonerId, raidTemplateId) {
+    async _summonRaid(summonerId, raidTemplateId, isFree) {
         // consume crafting resources
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
+        const data = isFree ? raidTemplate.soloData : raidTemplate.data;
 
         let userInventory = await Game.loadInventory(summonerId);
         await userInventory.autoCommitChanges(async inventory => {
             // consume crafting materials
-            let craftingRecipe = await this._loadSummonRecipe(raidTemplate.summonRecipe);
+            let craftingRecipe = await this._loadSummonRecipe(data.summonRecipe);
             inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
         });
 
         const raid = new Raid(this._db);
         let currentFactor = await this._getNextDktFactor(raidTemplateId);
-        await raid.create(summonerId, raidTemplateId, currentFactor);
+        await raid.create(summonerId, raidTemplateId, currentFactor, isFree);
         this._addRaid(raid);
 
         return {
@@ -351,6 +352,7 @@ class RaidManager {
                     bossState: 1,
                     finished: 1,
                     id: 1,
+                    isFree: 1,
                     _id: 0,
                     [participantId]: 1
                 }
@@ -375,16 +377,16 @@ class RaidManager {
 
         let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
         allRaids.forEach(raid => {
-            if (raid.iap) {
-                iapExecutor.registerAction(raid.iap, async (context) => {
-                    return await this._summonRaid(context.summoner, context.raidTemplateId);
+            if (raid.data.iap) { 
+                iapExecutor.registerAction(raid.data.iap, async (context) => {
+                    return await this._summonRaid(context.summoner, context.raidTemplateId, false);
                 });
 
                 iapExecutor.mapIAPtoEvent(raid.iap, Events.RaidSummonStatus);
             }
 
-            if (raid.joinIap) {
-                iapExecutor.registerAction(raid.joinIap, async (context) => {
+            if (raid.data.joinIap) {
+                iapExecutor.registerAction(raid.data.joinIap, async (context) => {
                     return await this._joinRaid(context.userId, context.raidId);
                 });
 

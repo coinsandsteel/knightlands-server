@@ -51,41 +51,41 @@ class Raid extends EventEmitter {
     }
 
     get template() {
-        return this._template;
+        return this._data.isFree ? this._template.soloData : this._template.data;
     }
 
     get defeat() {
         return !this._bossUnit.isAlive;
     }
 
-    async create(summonerId, stage, raidTemplateId, dktFactor) {
+    async create(summonerId, raidTemplateId, dktFactor, isFree) {
         raidTemplateId *= 1;
         
         let raidEntry = {
             summoner: summonerId,
-            stage,
             raidTemplateId,
             participants: {},
             challenges: {},
             finished: false,
             dktFactor,
             loot: {},
-            damageLog: []
+            damageLog: [],
+            isFree
         };
 
         raidEntry.participants[summonerId] = 0;
 
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
-        let raidStage = raidTemplate.stages[stage];
+        let raidData = isFree ? raidTemplate.soloData : raidTemplate.data;
 
-        raidEntry.creationTime = new Date().getTime() / 1000;
-        raidEntry.duration = raidStage.duration;
+        raidEntry.creationTime = Game.nowSec;
+        raidEntry.duration = raidData.duration;
         raidEntry.timeLeft = Math.floor(raidEntry.duration - (Game.now / 1000 - raidEntry.creationTime));
         raidEntry.busySlots = 1; // summoner
 
         let bossState = {};
-        bossState[CharacterStats.Health] = raidStage.health;
-        bossState[CharacterStats.Attack] = raidStage.attack;
+        bossState[CharacterStats.Health] = raidData.health;
+        bossState[CharacterStats.Attack] = raidData.attack;
         raidEntry.bossState = bossState;
 
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
@@ -118,7 +118,7 @@ class Raid extends EventEmitter {
 
     async _initFromData(data) {
         this._template = await this._loadRaidTemplate(data.raidTemplateId);
-        this._weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: data.raidTemplateId, stage: data.stage });
+        this._weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: data.raidTemplateId });
 
         this._data = data;
 
