@@ -382,7 +382,7 @@ class RaidManager {
                     return await this._summonRaid(context.summoner, context.raidTemplateId, false);
                 });
 
-                iapExecutor.mapIAPtoEvent(raid.iap, Events.RaidSummonStatus);
+                iapExecutor.mapIAPtoEvent(raid.data.iap, Events.RaidSummonStatus);
             }
 
             if (raid.data.joinIap) {
@@ -390,7 +390,7 @@ class RaidManager {
                     return await this._joinRaid(context.userId, context.raidId);
                 });
 
-                iapExecutor.mapIAPtoEvent(raid.joinIap, Events.RaidJoinStatus);
+                iapExecutor.mapIAPtoEvent(raid.data.joinIap, Events.RaidJoinStatus);
             }
         });
     }
