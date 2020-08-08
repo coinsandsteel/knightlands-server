@@ -846,7 +846,7 @@ class User {
                 template: templateId,
                 duration: actionData.duration,
                 value: actionData.value,
-                raid: actionData.raid,
+                raid: actionData.raid || -1,
                 relative: actionData.relative,
                 stat: actionData.stat
             };
@@ -870,7 +870,7 @@ class User {
             $set: {
                 "character.buffs": this._data.character.buffs
             }
-        });
+        }, { upsert: true });
     }
 
     async equipItem(itemId) {
@@ -944,6 +944,7 @@ class User {
         } = buildUpdateQuery(this._originalData, this._data);
 
         if (updateQuery || removeQuery) {
+            console.log(JSON.stringify(updateQuery, null, 2))
             let finalQuery = {};
             if (updateQuery) {
                 finalQuery.$set = updateQuery;
