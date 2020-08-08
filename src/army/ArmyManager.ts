@@ -1,11 +1,15 @@
 import Game from "../game";
-import { Db, Collection, ObjectId } from "mongodb";
+import { Db, Collection } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
 import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
+import ItemStatResolver from "../knightlands-shared/item_stat_resolver";
+import ArmyResolver from "../knightlands-shared/army_resolver";
 import { ArmySummoner } from "./ArmySummoner";
+import { ArmyLegions } from "./ArmyLegions";
 import { ArmyUnits } from "./ArmyUnits";
+import { ArmyCombatLegion } from "./ArmyCombatLegion";
 import Events from "../knightlands-shared/events";
 import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
@@ -37,6 +41,8 @@ export class ArmyManager {
     private _abilities: UnitAbilitiesMeta;
     private _armiesCollection: Collection;
     private _summoner: ArmySummoner;
+    private _armyResolver: ArmyResolver;
+    private _legions: ArmyLegions;
     private PaymentTag = "ArmySummonTag";
 
     constructor(db: Db) {
@@ -44,6 +50,7 @@ export class ArmyManager {
         this._lock = new Lock();
         this._summoner = new ArmySummoner(db);
         this._units = new ArmyUnits(db);
+        this._legions = new ArmyLegions(db);
 
         // keep army in separated collection
         this._armiesCollection = this._db.collection(Collections.Armies);
@@ -67,6 +74,21 @@ export class ArmyManager {
         });
 
         await this._summoner.init();
+
+        const genericMeta = await this._db.collection(Collections.Meta).findOne({
+            _id: "meta"
+        });
+
+        this._armyResolver = new ArmyResolver(
+            this._abilities,
+            new ItemStatResolver(
+                genericMeta.statConversions,
+                genericMeta.itemPower,
+                genericMeta.itemPowerSlotFactors,
+                genericMeta.charmItemPower
+            ),
+            this._unitTemplates
+        );
     }
 
     async requestSummon(userId: string, iap: number, summonType: number) {
@@ -109,22 +131,8 @@ export class ArmyManager {
     }
 
     async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
-        const userRecord = await this._armiesCollection.findOne(
-            { _id: userId },
-            { $project: { "units": 0, "legions": 1 } }
-        );
+        const legion = await this._loadLegion(userId, legionIndex);
 
-        if (!userRecord) {
-            throw Errors.ArmyNoUnit;
-        }
-
-        const legions: Legion[] = userRecord.legions || this.createLegions();
-        if (legionIndex < 0 || legions.length <= legionIndex) {
-            throw Errors.IncorrectArguments;
-        }
-
-        const legion = legions[legionIndex];
-        
         let unit;
 
         const prevUnitId = legion.units[slotId];
@@ -172,7 +180,7 @@ export class ArmyManager {
                     }
                 }
             }
-            
+
             // can't set same unit in multiple slots
             for (const slotId in legion.units) {
                 if (legion.units[slotId] == unitId) {
@@ -189,10 +197,7 @@ export class ArmyManager {
             await this._units.onUnitUpdated(userId, unit);
         }
 
-        await this._armiesCollection.updateOne(
-            { _id: userId },
-            { $set: { [`legions.${legionIndex}`]: legion } }
-        )
+        await this._legions.onLegionUpdated(userId, legion);
     }
 
     async getSummonOverview(userId: string) {
@@ -200,13 +205,12 @@ export class ArmyManager {
     }
 
     async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
-        let unitRecord = await this.loadArmyProfile(userId);
-
+        let armyProfile = await this.loadArmyProfile(userId);
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
         if (!payed) {
             let resetCycle = 86400 / summonMeta.freeOpens;
-            let timeUntilNextFreeOpening = Game.nowSec - (unitRecord.lastSummon[summonType] || 0);
+            let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
             if (timeUntilNextFreeOpening > resetCycle) {
                 // free summon
                 count = 1;
@@ -224,7 +228,7 @@ export class ArmyManager {
             }
         }
 
-        let lastUnitId = unitRecord.lastUnitId;
+        let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summon(count, summonType);
         // assign ids
         for (const unit of newUnits) {
@@ -232,7 +236,7 @@ export class ArmyManager {
         }
 
         // add to user's army
-        let lastSummon = unitRecord.lastSummon;
+        let lastSummon = armyProfile.lastSummon;
         lastSummon[summonType] = Game.nowSec;
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
 
@@ -501,6 +505,22 @@ export class ArmyManager {
         ]);
     }
 
+    async createCombatLegion(userId: string, legionIndex: number) {
+        const combatLegion = new ArmyCombatLegion(
+            userId,
+            legionIndex,
+            this._armyResolver, 
+            await this._units.getAllUnits(userId),
+            this._units,
+            this._legions
+        );
+        return combatLegion;
+    }
+
+    private async _loadLegion(userId: string, legionIndex: number) {
+        return await this._legions.getLegion(userId, legionIndex);
+    }
+
     private async loadArmyProfile(userId: string) {
         return (await this._armiesCollection.findOneAndUpdate(
             { _id: userId },
@@ -508,22 +528,11 @@ export class ArmyManager {
                 $setOnInsert: {
                     lastUnitId: 0,
                     lastSummon: {},
-                    legions: this.createLegions()
+                    legions: this._legions.createLegions()
                 }
             },
             { projection: { "units": 0 }, upsert: true, returnOriginal: false }
         )).value;
-    }
-
-    private createLegions() {
-        let legions = [];
-        // create 5 legions
-        for (let i = 0; i < 5; ++i) {
-            legions.push({
-                units: {}
-            });
-        }
-        return legions;
     }
 }
 

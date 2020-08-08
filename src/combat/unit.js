@@ -52,14 +52,13 @@ class Unit {
     }
 
     isCritical() {
-        return Random.range(0, 100, true) <= this.getStat(CharacterStat.CriticalChance);
+        return Random.range(1, 100, true) <= this.getStat(CharacterStat.CriticalChance);
     }
 
     attackRaid(raidBoss, bonusDamage) {
         let { attack, crit } = this.getAttack();
 
         attack += this.getStat(CharacterStat.RaidDamage);
-
         attack *= bonusDamage;
 
         return { damage: raidBoss._applyDamage(attack), crit };

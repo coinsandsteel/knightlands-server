@@ -83,7 +83,7 @@ class User {
 
         return data;
     }
-    
+
     get id() {
         return this._data._id;
     }
@@ -224,7 +224,7 @@ class User {
 
     async addExperience(exp) {
         const totalExp = exp * (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
-        
+
         const character = this._data.character;
         character.exp += totalExp;
 
@@ -379,7 +379,7 @@ class User {
     }
 
     _advanceTimer(stat) {
-        let now = Game.nowSec; 
+        let now = Game.nowSec;
         let character = this._data.character;
         let timer = this.getTimer(stat);
 
@@ -445,7 +445,12 @@ class User {
         this._data = userData;
         this._inventory = new Inventory(this, this._db);
         this._crafting = new Crafting(this, this._inventory, this._data.character.equipment);
-        this._itemStatResolver = new ItemStatResolver(this._meta.statConversions, this._meta.itemPower, this._meta.itemPowerSlotFactors, this._meta.charmItemPower);
+        this._itemStatResolver = new ItemStatResolver(
+            this._meta.statConversions, 
+            this._meta.itemPower, 
+            this._meta.itemPowerSlotFactors, 
+            this._meta.charmItemPower
+        );
         this._trials = new Trials(this._data.trials, this);
         this._goldExchange = new GoldExchange(this._data.goldExchange, this);
         this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
@@ -644,7 +649,7 @@ class User {
                 mainHandType = template.equipmentType;
             } else if (slot == EquipmentSlots.OffHand) {
                 offHandType = template.equipmentType;
-            }   
+            }
 
             let stats = this._itemStatResolver.convertStats(template, equippedItem.level, equippedItem.enchant);
             for (let stat in stats) {

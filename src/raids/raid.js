@@ -18,13 +18,7 @@ import RankingType from "../knightlands-shared/ranking_type";
 import RaidChallengeType from "./../knightlands-shared/raid_challenge";
 const TopDamageDealers = require("./topDamageDealersChallenge");
 
-const HitsDamage = {
-    1: 1,
-    5: 1.01,
-    10: 1.025,
-    20: 1.07,
-    50: 1.2
-}
+const ExtraDamagePerAdditionalHit = 0.01;
 
 class Raid extends EventEmitter {
     constructor(db) {
@@ -40,6 +34,7 @@ class Raid extends EventEmitter {
 
         this._damageLog = new CBuffer(15);
         this._challenges = [];
+        this._armyCache = {};
     }
 
     get id() {
@@ -123,7 +118,7 @@ class Raid extends EventEmitter {
         this._data = data;
 
         {
-            // randomly chose up to challengeCount challenges
+            // randomly choose up to challengeCount challenges
             let challengesToChoose = this.template.challengeCount;
             let challengesMeta = this.template.challenges;
             let i = 0;
@@ -211,13 +206,19 @@ class Raid extends EventEmitter {
         });
     }
 
-    async attack(attacker, hits) {
-        if (!this.isParticipant(attacker.address)) {
-            throw Errors.InvalidRaid;
+    async _getArmy(attacker, legionIndex) {
+        const army = this._armyCache[attacker];
+        if (!army || army.index != legionIndex) {
+            army = await Game.armyManager.createCombatLegion(attacker, legionIndex)
+            this._armyCache[attacker] = army;
         }
 
-        if (HitsDamage[hits] === undefined) {
-            throw Errors.IncorrectArguments;
+        return army;
+    }
+
+    async attack(attacker, hits, legionIndex) {
+        if (!this.isParticipant(attacker.address)) {
+            throw Errors.InvalidRaid;
         }
 
         let combatUnit = attacker.getCombatUnit({
@@ -236,7 +237,7 @@ class Raid extends EventEmitter {
 
         await attacker.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
 
-        let bonusDamage = HitsDamage[hits];
+        let bonusDamage = ExtraDamagePerAdditionalHit * hits;
         let totalDamageInflicted = 0;
         let hitsToPerform = hits;
 
@@ -257,6 +258,7 @@ class Raid extends EventEmitter {
             }
         }
 
+        const army = await this._getArmy(attacker, legionIndex);
         
         while (hitsToPerform > 0) {
             exp += this.template.exp;
@@ -268,8 +270,16 @@ class Raid extends EventEmitter {
 
             if (combatUnit.isAlive) {
                 let attackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
-                const damageDone = attackResult.damage;
+
+                const damageLog = {};
+
+                let damageDone = attackResult.damage;
+
+                damageLog.playerDamage = damageDone;
+
                 const crit = attackResult.crit;
+
+                const armyDamageLog = army.attackRaid(this._bossUnit, bonusDamage);
 
                 totalDamageInflicted += damageDone;
                 this._data.participants[attacker.address] += damageDone;

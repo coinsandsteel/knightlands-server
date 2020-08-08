@@ -145,6 +145,7 @@ export interface ArmyUnit {
 
 export interface Legion {
     units: { [key: string]: number };
+    index: number;
 }
 
 export interface UnitSummon {

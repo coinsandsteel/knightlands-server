@@ -7,10 +7,12 @@ import Events from "../knightlands-shared/events";
 export class ArmyUnits {
     private _db: Db;
     private _cache: { [key: string]: { [key: string]: ArmyUnit } };
+    private _allUnits: { [key: string]: ArmyUnit[] };
 
     constructor(db: Db) {
         this._db = db;
         this._cache = {};
+        this._allUnits = {};
     }
 
     async getUserUnits(userId: string, ids: number[]) {
@@ -44,6 +46,20 @@ export class ArmyUnits {
         Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
     }
 
+    async getAllUnits(userId: string) {
+        if (!this._allUnits[userId]) {
+            let userRecord = await this._db.collection(Collections.Armies).findOne(
+                { _id: userId }
+            );
+    
+            if (userRecord) {
+                this._allUnits[userId] = userRecord.units;
+            }
+        }
+
+        return this._allUnits[userId] || [];
+    }
+
     private getCache(userId: string) {
         return this._cache[userId];
     }
@@ -58,25 +74,20 @@ export class ArmyUnits {
         }
 
         if (!this.isCacheExist(userId)) {
-            let userRecord = await this._db.collection(Collections.Armies).findOne(
-                { _id: userId }
-            );
-
             // build an index
-            if (userRecord) {
-                const { units } = userRecord;
+            const units = await this.getAllUnits(userId);
 
-                const cacheRecord = {};
-                let i = 0;
-                const length = units.length;
-                for (; i < length; ++i) {
-                    const unit = units[i];
-                    cacheRecord[unit.id] = unit;
-                }
+            const cacheRecord = {};
+            let i = 0;
+            const length = units.length;
+            for (; i < length; ++i) {
+                const unit = units[i];
+                cacheRecord[unit.id] = unit;
+            }
 
-                if (length > 0) {
-                    this._cache[userId] = cacheRecord;
-                }
+            this._allUnits[userId] = units;
+            if (length > 0) {
+                this._cache[userId] = cacheRecord;
             }
         }
 
