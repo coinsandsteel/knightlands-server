@@ -263,7 +263,7 @@ class Raid extends EventEmitter {
 
         const attackLog = {
             raid: this.id,
-            playerDamage: 0,
+            player: { damage: 0, crit: false },
             armyDamage: {},
             procs: {},
             health: 0,
@@ -290,7 +290,8 @@ class Raid extends EventEmitter {
                 const damageDone = playerAttackResult.damage + armyAttackResult.totalDamageOutput;
                 damageLog.damage += damageDone;
 
-                attackLog.playerDamage += playerAttackResult.damage;
+                attackLog.player.damage += playerAttackResult.damage;
+                attackLog.player.crit = attackLog.player.crit || playerAttackResult.crit;
                 attackLog.health += armyAttackResult.healthRestored;
                 attackLog.stamina += armyAttackResult.staminaRestored;
                 attackLog.energy += armyAttackResult.energyRestored;
