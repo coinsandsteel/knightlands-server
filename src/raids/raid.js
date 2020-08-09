@@ -32,7 +32,7 @@ class Raid extends EventEmitter {
 
         this._db = db;
 
-        this._damageLog = new CBuffer(15);
+        this._damageLog = new CBuffer(20);
         this._challenges = [];
         this._armyCache = {};
     }
@@ -79,8 +79,8 @@ class Raid extends EventEmitter {
         raidEntry.busySlots = 1; // summoner
 
         let bossState = {};
-        bossState[CharacterStats.Health] = raidData.health;
-        bossState[CharacterStats.Attack] = raidData.attack;
+        bossState[CharacterStats.Health] = parseInt(raidData.health);
+        bossState[CharacterStats.Attack] = parseInt(raidData.attack);
         raidEntry.bossState = bossState;
 
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
@@ -151,8 +151,8 @@ class Raid extends EventEmitter {
         }
 
         let maxStats = {};
-        maxStats[CharacterStats.Health] = this._template.health;
-        maxStats[CharacterStats.Attack] = this._template.attack;
+        maxStats[CharacterStats.Health] = parseInt(this._template.health);
+        maxStats[CharacterStats.Attack] = parseInt(this._template.attack);
 
         this._bossUnit = new Unit(this._data.bossState, maxStats);
 
@@ -206,11 +206,11 @@ class Raid extends EventEmitter {
         });
     }
 
-    async _getArmy(attacker, legionIndex) {
-        const army = this._armyCache[attacker];
+    async _getArmy(attackerId, legionIndex) {
+        let army = this._armyCache[attackerId];
         if (!army || army.index != legionIndex) {
-            army = await Game.armyManager.createCombatLegion(attacker, legionIndex)
-            this._armyCache[attacker] = army;
+            army = await Game.armyManager.createCombatLegion(attackerId, legionIndex)
+            this._armyCache[attackerId] = army;
         }
 
         return army;
@@ -230,15 +230,11 @@ class Raid extends EventEmitter {
         }
 
         // check if player has enough stamina for requested hits
-        let staminaRequired = hits;
-        if (attacker.getTimerValue(CharacterStats.Stamina) < staminaRequired) {
+        if (attacker.getTimerValue(CharacterStats.Stamina) < hits) {
             throw Errors.NoStamina;
         }
 
-        await attacker.modifyTimerValue(CharacterStats.Stamina, -staminaRequired);
-
-        let bonusDamage = ExtraDamagePerAdditionalHit * hits;
-        let totalDamageInflicted = 0;
+        let bonusDamage = 1 + ExtraDamagePerAdditionalHit * hits;
         let hitsToPerform = hits;
 
         let exp = 0;
@@ -258,31 +254,56 @@ class Raid extends EventEmitter {
             }
         }
 
-        const army = await this._getArmy(attacker, legionIndex);
-        
-        while (hitsToPerform > 0) {
+        const army = await this._getArmy(attacker.address, legionIndex);
+        const damageLog = {
+            by: attacker.address,
+            damage: 0,
+            hits: 0
+        };
+
+        const attackLog = {
+            raid: this.id,
+            playerDamage: 0,
+            armyDamage: {},
+            procs: {},
+            health: 0,
+            energy: 0,
+            stamina: 0,
+            bossDamage: 0
+        };
+
+        while (hitsToPerform > 0 && combatUnit.isAlive && this._bossUnit.isAlive) {
             exp += this.template.exp;
             gold += this.template.gold;
 
             hitsToPerform--;
+
             // boss attacks first to avoid abusing 1 hp tactics
-            this._bossUnit.attack(combatUnit);
+            attackLog.bossDamage += this._bossUnit.attack(combatUnit);
 
             if (combatUnit.isAlive) {
-                let attackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
+                damageLog.hits++;
 
-                const damageLog = {};
+                let playerAttackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
+                const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, combatUnit);
 
-                let damageDone = attackResult.damage;
+                const damageDone = playerAttackResult.damage + armyAttackResult.totalDamageOutput;
+                damageLog.damage += damageDone;
 
-                damageLog.playerDamage = damageDone;
+                attackLog.playerDamage += playerAttackResult.damage;
+                attackLog.health += armyAttackResult.healthRestored;
+                attackLog.stamina += armyAttackResult.staminaRestored;
+                attackLog.energy += armyAttackResult.energyRestored;
 
-                const crit = attackResult.crit;
+                for (const unitId in armyAttackResult.unitsDamageOutput) {
+                    const unitDamage = attackLog.armyDamage[unitId];
+                    attackLog.armyDamage[unitId] = (unitDamage||0) + armyAttackResult.unitsDamageOutput[unitId];
+                }
 
-                const armyDamageLog = army.attackRaid(this._bossUnit, bonusDamage);
-
-                totalDamageInflicted += damageDone;
-                this._data.participants[attacker.address] += damageDone;
+                for (const unitId in armyAttackResult.damageProcs) {
+                    const unitDamage = attackLog.procs[unitId];
+                    attackLog.procs[unitId] = (unitDamage||0) + armyAttackResult.damageProcs[unitId];
+                }
 
                 // set loot flag in here to avoid sharp spike after raid is finished
                 if (this._data.loot[attacker.address] === undefined) {
@@ -294,6 +315,8 @@ class Raid extends EventEmitter {
                         }
                     }
                 }
+
+                const crit = playerAttackResult.crit;
 
                 // notify current challenges
                 this.emit(this.Hit, attacker, damageDone, crit);
@@ -308,24 +331,22 @@ class Raid extends EventEmitter {
             }
         }
 
-        if (totalDamageInflicted > 0) {
+        await attacker.modifyTimerValue(CharacterStats.Stamina, -damageLog.hits);
+
+        if (damageLog.damage > 0) {
+            this._data.participants[attacker.address] += damageLog.damage;
+            this._damageLog.push(damageLog);
+
             await attacker.addExperience(exp);
             await attacker.addSoftCurrency(gold);
 
-            let damageLog = {
-                by: attacker.address,
-                damage: totalDamageInflicted,
-                hits: hits - hitsToPerform
-            };
-            this._damageLog.push(damageLog);
-
             this._publishEvent({ event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
+            Game.emitPlayerEvent(attacker.address, Events.RaidDamaged, attackLog);
 
             // finalize challenges to detect final changes inside 
             {
                 let i = 0;
                 const length = this._challenges.length;
-
                 for (; i < length; ++i) {
                     this._challenges[i].finalize();
                 }
@@ -333,12 +354,12 @@ class Raid extends EventEmitter {
 
             await Game.rankings.updateRank(attacker.address, {
                 type: RankingType.DamageInRaids
-            }, totalDamageInflicted);
+            }, damageLog.damage);
 
             await Game.rankings.updateRank(attacker.address, {
                 type: RankingType.DamageInParticularRaid,
                 raid: this._template._id
-            }, totalDamageInflicted);
+            }, damageLog.damage);
         }
     }
 

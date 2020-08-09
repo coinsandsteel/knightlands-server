@@ -139,35 +139,36 @@ class Worker extends SCWorker {
       }
     });
 
-    this.scServer.addMiddleware(this.scServer.MIDDLEWARE_SUBSCRIBE, async (req) => {
-      let authToken = req.socket.authToken;
+    // TODO: migrate to latest socketcluster
+    // this.scServer.addMiddleware(this.scServer.MIDDLEWARE_SUBSCRIBE, async req => {
+    //   let authToken = req.socket.authToken;
 
-      if (authToken && authToken.address) {
-        if (req.channel.substr(0, 4) === "raid") {
-          // check if user is part of the raid
-          let user = await Game.loadUser(authToken.address);
-          if (!user) {
-            req.socket.disconnect(DisconnectCodes.NotAuthorized);
-            throw 'You are not authorized';
-          }
+    //   if (authToken && authToken.address) {
+    //     if (req.channel.substr(0, 4) === "raid") {
+    //       // check if user participates in the raid
+    //       let user = await Game.loadUser(authToken.address);
+    //       if (!user) {
+    //         req.socket.disconnect(DisconnectCodes.NotAuthorized);
+    //         throw 'You are not authorized';
+    //       }
 
-          let raidId = req.channel.substr(5);
-          let raid = Game.raidManager.getRaid(raidId);
-          if (!raid) {
-            req.socket.disconnect(DisconnectCodes.NotAllowed);
-            throw 'incorrect raid';
-          }
+    //       let raidId = req.channel.substr(5);
+    //       let raid = Game.raidManager.getRaid(raidId);
+    //       if (!raid) {
+    //         req.socket.disconnect(DisconnectCodes.NotAllowed);
+    //         throw 'incorrect raid';
+    //       }
 
-          // if (!raid.isParticipant(user.address)) {
-          //   req.socket.disconnect(DisconnectCodes.NotAllowed);
-          //   throw 'not participant';
-          // }
-        }
-      } else if (req.channel != 'presale') {
-        req.socket.disconnect(DisconnectCodes.NotAuthorized);
-        throw 'You are not authorized';
-      }
-    });
+    //       // if (!raid.isParticipant(user.address)) {
+    //       //   req.socket.disconnect(DisconnectCodes.NotAllowed);
+    //       //   throw 'not participant';
+    //       // }
+    //     }
+    //   } else if (req.channel != 'presale') {
+    //     req.socket.disconnect(DisconnectCodes.NotAuthorized);
+    //     throw 'You are not authorized';
+    //   }
+    // });
 
     this.scServer.addMiddleware(this.scServer.MIDDLEWARE_PUBLISH_IN, (req, next) => {
       next('not allowed');

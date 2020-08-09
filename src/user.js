@@ -949,12 +949,12 @@ class User {
         } = buildUpdateQuery(this._originalData, this._data);
 
         if (updateQuery || removeQuery) {
-            console.log(JSON.stringify(updateQuery, null, 2))
+            // console.log(JSON.stringify(updateQuery, null, 2))
             let finalQuery = {};
             if (updateQuery) {
                 finalQuery.$set = updateQuery;
             }
-
+            // console.log(JSON.stringify(removeQuery, null, 2))
             if (removeQuery) {
                 finalQuery.$unset = removeQuery;
             }

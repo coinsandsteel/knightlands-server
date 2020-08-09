@@ -58,7 +58,7 @@ module.exports = {
                 if (!newObj.hasOwnProperty(i)) {
                     changes[i] = "";
                     fieldsDetected = true;
-                } else {
+                } else if (!Array.isArray(newValue)) {
                     let innerChanges = {};
                     if (this.detectRemovals(oldObj[i], newValue, innerChanges)) {
                         fieldsDetected = true;

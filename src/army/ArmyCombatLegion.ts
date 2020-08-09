@@ -26,30 +26,36 @@ export class ArmyCombatLegion {
         this._legionIndex = legionIndex;
         this._legions = legions;
         this._armyUnits = armyUnits;
-        this._unitIndex = this._armyResolver.buildOwnedUnitsIndex(allUnits);
+        this._unitIndex = this._armyResolver.buildUnitsIndex(allUnits);
     }
 
     get index() {
         return this._legionIndex;
     }
 
-    async attackRaid(raidBoss, bonusDamage: number, playerCritChance: number) {
+    async attackRaid(raidBoss, bonusDamage: number, playerUnit) {
         const legion: Legion = await this._legions.getLegion(this._userId, this._legionIndex);
         const unitIds: number[] = [];
         for (const slotId in legion.units) {
             unitIds.push(legion.units[slotId]);
         }
+        
         const unitsDict = await this._armyUnits.getUserUnits(this._userId, unitIds);
         const units: ArmyUnit[] = new Array(unitIds.length);
         for (let i = 0; i < unitIds.length; ++i) {
             units[i] = unitsDict[unitIds[i]];
         }
-        const damageEstimation = this._armyResolver.estimateDamageOutput(units, this._unitIndex);
+
+        const resolveResult = this._armyResolver.resolve(units, this._unitIndex);
+        console.log(JSON.stringify(resolveResult, null, 2))
         
-        // iterate over every unit and check for possible triggers
-        for (const unitId in damageEstimation.unitsDamageOutput) {
-            const unitDamage = damageEstimation.unitsDamageOutput[unitId];
-        }
+        playerUnit.restoreStamina(resolveResult.staminaRestored);
+        playerUnit.restoreEnergy(resolveResult.energyRestored);
+        playerUnit.restoreHealth(resolveResult.healthRestored);
+
+        raidBoss._applyDamage(resolveResult.totalDamageOutput);
+
+        return resolveResult;
     }
 
     _isCritical(playerCritChance) {

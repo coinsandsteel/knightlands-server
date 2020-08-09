@@ -15,6 +15,7 @@ import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
 import { EquipmentSlots, getSlot } from "../knightlands-shared/equipment_slot";
 import ItemType from "../knightlands-shared/item_type";
+import Random from "../random";
 
 const TroopEquipmentSlots = [
     EquipmentSlots.MainHand,
@@ -87,7 +88,10 @@ export class ArmyManager {
                 genericMeta.itemPowerSlotFactors,
                 genericMeta.charmItemPower
             ),
-            this._unitTemplates
+            this._unitTemplates,
+            this._troops,
+            this._generals,
+            Random.range
         );
     }
 
