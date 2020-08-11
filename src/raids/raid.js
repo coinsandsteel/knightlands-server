@@ -266,9 +266,9 @@ class Raid extends EventEmitter {
             player: { damage: 0, crit: false },
             armyDamage: {},
             procs: {},
-            health: 0,
-            energy: 0,
-            stamina: 0,
+            health: {},
+            energy: {},
+            stamina: {},
             bossDamage: 0
         };
 
@@ -279,7 +279,7 @@ class Raid extends EventEmitter {
             hitsToPerform--;
 
             // boss attacks first to avoid abusing 1 hp tactics
-            attackLog.bossDamage += this._bossUnit.attack(combatUnit);
+            attackLog.bossDamage += this._bossUnit.attack(combatUnit).damage;
 
             if (combatUnit.isAlive) {
                 damageLog.hits++;
@@ -292,18 +292,32 @@ class Raid extends EventEmitter {
 
                 attackLog.player.damage += playerAttackResult.damage;
                 attackLog.player.crit = attackLog.player.crit || playerAttackResult.crit;
-                attackLog.health += armyAttackResult.healthRestored;
-                attackLog.stamina += armyAttackResult.staminaRestored;
-                attackLog.energy += armyAttackResult.energyRestored;
 
-                for (const unitId in armyAttackResult.unitsDamageOutput) {
-                    const unitDamage = attackLog.armyDamage[unitId];
-                    attackLog.armyDamage[unitId] = (unitDamage||0) + armyAttackResult.unitsDamageOutput[unitId];
-                }
-
-                for (const unitId in armyAttackResult.damageProcs) {
-                    const unitDamage = attackLog.procs[unitId];
-                    attackLog.procs[unitId] = (unitDamage||0) + armyAttackResult.damageProcs[unitId];
+                for (const unitId of army.unitIds) {
+                    attackLog.armyDamage[unitId] = (attackLog.armyDamage[unitId]||0) + armyAttackResult.unitsDamageOutput[unitId];
+                    if (armyAttackResult.damageProcs[unitId]) {
+                        attackLog.procs[unitId] = (attackLog.procs[unitId]||0) + armyAttackResult.damageProcs[unitId];
+                    }
+                    
+                    if (armyAttackResult.health[unitId]) {
+                        attackLog.health[unitId] = (attackLog.health[unitId]||0) + armyAttackResult.health[unitId];
+                        combatUnit.restoreHealth(armyAttackResult.health[unitId]);
+                    }
+                    
+                    if (armyAttackResult.energy[unitId]) {
+                        attackLog.energy[unitId] = (attackLog.energy[unitId]||0) + armyAttackResult.energy[unitId];
+                        combatUnit.restoreEnergy(armyAttackResult.energy[unitId]);
+                    }
+                    
+                    if (armyAttackResult.stamina[unitId]) {
+                        attackLog.stamina[unitId] = (attackLog.stamina[unitId]||0) + armyAttackResult.stamina[unitId];
+                        combatUnit.restoreStamina(armyAttackResult.stamina[unitId]);
+                    }
+                    
+                    attackLog.procs[unitId] = attackLog.armyDamage[unitId];
+                    attackLog.health[unitId] = 54;
+                    attackLog.energy[unitId] = 3;
+                    attackLog.stamina[unitId] = 1;
                 }
 
                 // set loot flag in here to avoid sharp spike after raid is finished

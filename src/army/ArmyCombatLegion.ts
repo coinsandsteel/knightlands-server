@@ -13,6 +13,8 @@ export class ArmyCombatLegion {
     private _legions: ArmyLegions;
     private _unitIndex: {};
 
+    public unitIds: number[];
+
     constructor(
         userId: string,
         legionIndex: number, 
@@ -39,6 +41,8 @@ export class ArmyCombatLegion {
         for (const slotId in legion.units) {
             unitIds.push(legion.units[slotId]);
         }
+
+        this.unitIds = unitIds;
         
         const unitsDict = await this._armyUnits.getUserUnits(this._userId, unitIds);
         const units: ArmyUnit[] = new Array(unitIds.length);
@@ -48,10 +52,6 @@ export class ArmyCombatLegion {
 
         const resolveResult = this._armyResolver.resolve(units, this._unitIndex);
         console.log(JSON.stringify(resolveResult, null, 2))
-        
-        playerUnit.restoreStamina(resolveResult.staminaRestored);
-        playerUnit.restoreEnergy(resolveResult.energyRestored);
-        playerUnit.restoreHealth(resolveResult.healthRestored);
 
         raidBoss._applyDamage(resolveResult.totalDamageOutput);
 
