@@ -24,6 +24,8 @@ export interface UnitAbilityMeta {
     levels: UnitAbilityLevel[];
 }
 
+export type ArmyReserve = { [key: string]: number };
+
 export interface UnitAbilityFiller {
     weight: number;
     id: number;

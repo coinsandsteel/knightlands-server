@@ -2,7 +2,7 @@ import Game from "../game";
 import { Db, Collection } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
-import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
+import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta, ArmyReserve } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
 import ItemStatResolver from "../knightlands-shared/item_stat_resolver";
 import ArmyResolver from "../knightlands-shared/army_resolver";
@@ -434,12 +434,13 @@ export class ArmyManager {
         await this._units.removeUnits(userId, toRemove);
     }
 
-    async banish(userId: string, units: number[]) {
-        if (units.length > 10) {
+    async banish(userId: string, unitIds: number[]) {
+        // TODO move to config
+        if (unitIds.length > 10) {
             throw Errors.IncorrectArguments;
         }
 
-        const unitRecords = await this._units.getUserUnits(userId, units);
+        const unitRecords = await this._units.getUserUnits(userId, unitIds);
         if (!unitRecords) {
             throw Errors.ArmyNoUnit;
         }
@@ -452,7 +453,7 @@ export class ArmyManager {
         };
 
         const duplicates = {};
-        for (const unitId of units) {
+        for (const unitId of unitIds) {
             const unit = unitRecords[unitId];
 
             if (!unit) {
@@ -478,35 +479,70 @@ export class ArmyManager {
             }
         }
 
-        const inventory = await Game.loadInventory(userId);
-
-        for (const unitId of units) {
-            const unit = unitRecords[unitId];
-            // unequip items
-            for (const itemSlot in unit.items) {
-                const equippedItem = unit.items[itemSlot];
-                if (equippedItem) {
-                    delete unit.items[itemSlot];
-                    inventory.addItem(equippedItem).equipped = false;
-                }
-            }
-        }
+        await this._removeEquipmentFromUnits(userId, unitRecords);
 
         resourcesUsed.gold *= this._meta.refund.gold;
         resourcesUsed.troopEssence *= this._meta.refund.troopEssence;
         resourcesUsed.generalEssence *= this._meta.refund.generalEssence;
 
         // remove units
-        await this._units.removeUnits(userId, units);
+        await this._units.removeUnits(userId, unitIds);
         // refund
         const user = await Game.getUser(userId);
         await user.addSoftCurrency(resourcesUsed.gold);
 
+        const inventory = await Game.loadInventory(userId);
         await inventory.addItemTemplates([
             { item: this._troops.essenceItem, quantity: resourcesUsed.troopEssence },
             { item: this._generals.essenceItem, quantity: resourcesUsed.generalEssence },
             { item: this._meta.soulsItem, quantity: resourcesUsed.souls }
         ]);
+    }
+
+    async sendToReserve(userId: string, unitIds: number[]) {
+        const unitRecords = await this._units.getUserUnits(userId, unitIds);
+        if (!unitRecords) {
+            throw Errors.ArmyNoUnit;
+        }
+        
+        // stack units by template and promotions, in case unit was promoted, it must be stacked separately
+        // it's done simply with composite key as template id + promotions
+        const duplicates = {};
+        const incQuery = {};
+        const setQuery = {};
+        for (const unitId of unitIds) {
+            const unit = unitRecords[unitId];
+
+            if (!unit) {
+                throw Errors.ArmyNoUnit;
+            }
+
+            if (duplicates[unit.id]) {
+                throw Errors.IncorrectArguments;
+            }
+
+            duplicates[unit.id] = true;
+
+            const key = `${unit.template}_${unit.promotions}.count`;
+            incQuery[key] = (incQuery[key] || 0) + 1;
+
+            if (!setQuery[key]) {
+                setQuery[key] = {
+                    template: unit.template,
+                    promotions: unit.promotions,
+                    count: 0
+                };
+            }
+            setQuery[key].count++;
+        }
+
+        await this._removeEquipmentFromUnits(userId, unitRecords);
+        await this._units.removeUnits(userId, unitIds);
+        await this._armiesCollection.updateOne(
+            { _id: userId },
+            { $inc: incQuery, $setOnInsert: setQuery },
+            { upsert: true }
+        );
     }
 
     async createCombatLegion(userId: string, legionIndex: number) {
@@ -516,9 +552,31 @@ export class ArmyManager {
             this._armyResolver, 
             await this._units.getAllUnits(userId),
             this._units,
+            await this._loadReserve(userId),
             this._legions
         );
         return combatLegion;
+    }
+
+    private async _loadReserve(userId: string): Promise<ArmyReserve> {
+        const response = await this._armiesCollection.findOne({ _id: userId }, { reserve: 1 });
+        return response.reserve;
+    }
+
+    private async _removeEquipmentFromUnits(userId: string, units: {[key: number]: ArmyUnit}) {
+        const inventory = await Game.loadInventory(userId);
+
+        for (const unitId in units) {
+            const unit = units[unitId];
+            // unequip items
+            for (const itemSlot in unit.items) {
+                const equippedItem = unit.items[itemSlot];
+                if (equippedItem) {
+                    delete unit.items[itemSlot];
+                    inventory.addItem(equippedItem).equipped = false;
+                }
+            }
+        }
     }
 
     private async _loadLegion(userId: string, legionIndex: number) {

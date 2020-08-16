@@ -1,5 +1,5 @@
 import ArmyResolver from "../knightlands-shared/army_resolver";
-import { ArmyUnit, Legion } from "./ArmyTypes";
+import { ArmyUnit, Legion, ArmyReserve } from "./ArmyTypes";
 import { ArmyUnits } from "./ArmyUnits";
 import { ArmyLegions } from "./ArmyLegions";
 import Game from "../game";
@@ -11,6 +11,7 @@ export class ArmyCombatLegion {
     private _userId: string;
     private _armyUnits: ArmyUnits;
     private _legions: ArmyLegions;
+    private _reservedUnits: ArmyReserve;
     private _unitIndex: {};
 
     public unitIds: number[];
@@ -21,6 +22,7 @@ export class ArmyCombatLegion {
         armyResolver: ArmyResolver, 
         allUnits: ArmyUnit[], 
         armyUnits: ArmyUnits,
+        reservedUnits: ArmyReserve,
         legions: ArmyLegions
     ) {
         this._userId = userId;
@@ -28,7 +30,8 @@ export class ArmyCombatLegion {
         this._legionIndex = legionIndex;
         this._legions = legions;
         this._armyUnits = armyUnits;
-        this._unitIndex = this._armyResolver.buildUnitsIndex(allUnits);
+        this._reservedUnits = reservedUnits;
+        this._unitIndex = this._armyResolver.buildUnitsIndex(allUnits, reservedUnits);
     }
 
     get index() {
