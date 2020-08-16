@@ -267,7 +267,6 @@ class RaidManager {
             },
             {
                 $project: {
-                    participants: 0,
                     _id: 0
                 }
             },

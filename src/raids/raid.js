@@ -237,9 +237,6 @@ class Raid extends EventEmitter {
         let bonusDamage = 1 + ExtraDamagePerAdditionalHit * hits;
         let hitsToPerform = hits;
 
-        let exp = 0;
-        let gold = 0;
-
         // apply weakness bonuses
         const attackerWeaponCombatData = await attacker.getWeaponCombatData();
         if (attackerWeaponCombatData) {
@@ -269,17 +266,19 @@ class Raid extends EventEmitter {
             health: {},
             energy: {},
             stamina: {},
-            bossDamage: 0
+            exp: 0,
+            soft: 0,
+            boss: { health: 0, damage: 0 }
         };
 
         while (hitsToPerform > 0 && combatUnit.isAlive && this._bossUnit.isAlive) {
-            exp += this.template.exp;
-            gold += this.template.gold;
+            attackLog.exp += this.template.exp;
+            attackLog.soft += this.template.gold;
 
             hitsToPerform--;
 
             // boss attacks first to avoid abusing 1 hp tactics
-            attackLog.bossDamage += this._bossUnit.attack(combatUnit).damage;
+            attackLog.boss.damage += this._bossUnit.attack(combatUnit).damage;
 
             if (combatUnit.isAlive) {
                 damageLog.hits++;
@@ -350,12 +349,15 @@ class Raid extends EventEmitter {
 
         if (damageLog.damage > 0) {
             this._data.participants[attacker.address] += damageLog.damage;
+            
             this._damageLog.push(damageLog);
 
-            await attacker.addExperience(exp);
-            await attacker.addSoftCurrency(gold);
+            await attacker.addExperience(attackLog.exp);
+            await attacker.addSoftCurrency(attackLog.soft);
 
             this._publishEvent({ event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
+
+            attackLog.boss.health = this._bossUnit.getHealth();
             Game.emitPlayerEvent(attacker.address, Events.RaidDamaged, attackLog);
 
             // finalize challenges to detect final changes inside 
