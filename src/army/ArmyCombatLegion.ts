@@ -11,7 +11,6 @@ export class ArmyCombatLegion {
     private _userId: string;
     private _armyUnits: ArmyUnits;
     private _legions: ArmyLegions;
-    private _reservedUnits: ArmyReserve;
     private _unitIndex: {};
 
     public unitIds: number[];
@@ -30,7 +29,6 @@ export class ArmyCombatLegion {
         this._legionIndex = legionIndex;
         this._legions = legions;
         this._armyUnits = armyUnits;
-        this._reservedUnits = reservedUnits;
         this._unitIndex = this._armyResolver.buildUnitsIndex(allUnits, reservedUnits);
     }
 

@@ -24,8 +24,6 @@ export interface UnitAbilityMeta {
     levels: UnitAbilityLevel[];
 }
 
-export type ArmyReserve = { [key: string]: number };
-
 export interface UnitAbilityFiller {
     weight: number;
     id: number;
@@ -144,6 +142,14 @@ export interface ArmyUnit {
     souls: number;
     legion: number;
 }
+
+export interface ArmyUnitReserve {
+    template: number;
+    promotions: number;
+    count: number;
+}
+
+export type ArmyReserve = { [key: string]: ArmyUnitReserve };
 
 export interface Legion {
     units: { [key: string]: number };

@@ -508,8 +508,7 @@ export class ArmyManager {
         // stack units by template and promotions, in case unit was promoted, it must be stacked separately
         // it's done simply with composite key as template id + promotions
         const duplicates = {};
-        const incQuery = {};
-        const setQuery = {};
+        const units = [];
         for (const unitId of unitIds) {
             const unit = unitRecords[unitId];
 
@@ -523,26 +522,30 @@ export class ArmyManager {
 
             duplicates[unit.id] = true;
 
-            const key = `${unit.template}_${unit.promotions}.count`;
-            incQuery[key] = (incQuery[key] || 0) + 1;
-
-            if (!setQuery[key]) {
-                setQuery[key] = {
-                    template: unit.template,
-                    promotions: unit.promotions,
-                    count: 0
-                };
-            }
-            setQuery[key].count++;
+            units.push(unit);
         }
 
+        const reserve = await this._units.getReservedUnits(userId, units);
+
+        for (const unitId of unitIds) {
+            const unit = unitRecords[unitId];
+            const key = this._units.getReserveKey(unit);
+
+            if (reserve[key]) {
+                reserve[key].count++;
+            } else {
+                reserve[key] = {
+                    template: unit.template,
+                    promotions: unit.promotions,
+                    count: 1
+                };
+            }
+        }
+            
+
+        await this._units.updateReservedUnits(userId, reserve);
         await this._removeEquipmentFromUnits(userId, unitRecords);
         await this._units.removeUnits(userId, unitIds);
-        await this._armiesCollection.updateOne(
-            { _id: userId },
-            { $inc: incQuery, $setOnInsert: setQuery },
-            { upsert: true }
-        );
     }
 
     async createCombatLegion(userId: string, legionIndex: number) {
@@ -550,17 +553,12 @@ export class ArmyManager {
             userId,
             legionIndex,
             this._armyResolver, 
-            await this._units.getAllUnits(userId),
+            await this._units.getInventory(userId),
             this._units,
-            await this._loadReserve(userId),
+            await this._units.getReserve(userId),
             this._legions
         );
         return combatLegion;
-    }
-
-    private async _loadReserve(userId: string): Promise<ArmyReserve> {
-        const response = await this._armiesCollection.findOne({ _id: userId }, { reserve: 1 });
-        return response.reserve;
     }
 
     private async _removeEquipmentFromUnits(userId: string, units: {[key: number]: ArmyUnit}) {
