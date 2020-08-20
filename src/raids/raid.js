@@ -284,7 +284,7 @@ class Raid extends EventEmitter {
                 damageLog.hits++;
 
                 let playerAttackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
-                const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, combatUnit);
+                const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, combatUnit, this._template._id);
 
                 const damageDone = playerAttackResult.damage + armyAttackResult.totalDamageOutput;
                 damageLog.damage += damageDone;
@@ -313,10 +313,10 @@ class Raid extends EventEmitter {
                         combatUnit.restoreStamina(armyAttackResult.stamina[unitId]);
                     }
                     
-                    attackLog.procs[unitId] = attackLog.armyDamage[unitId];
-                    attackLog.health[unitId] = 54;
-                    attackLog.energy[unitId] = 3;
-                    attackLog.stamina[unitId] = 1;
+                    // attackLog.procs[unitId] = attackLog.armyDamage[unitId];
+                    // attackLog.health[unitId] = 54;
+                    // attackLog.energy[unitId] = 3;
+                    // attackLog.stamina[unitId] = 1;
                 }
 
                 // set loot flag in here to avoid sharp spike after raid is finished
