@@ -30,6 +30,8 @@ const GeneralEquipmentSlots = [
     EquipmentSlots.Cape
 ];
 
+const NO_LEGION = -1;
+
 export class ArmyManager {
     private _db: Db;
     private _units: ArmyUnits;
@@ -147,7 +149,7 @@ export class ArmyManager {
                 // empty slot
                 unit = prevUnitRecord[prevUnitId];
                 if (unit) {
-                    unit.legion = -1;
+                    unit.legion = NO_LEGION;
                 }
             }
 
@@ -460,6 +462,10 @@ export class ArmyManager {
                 throw Errors.ArmyNoUnit;
             }
 
+            if (unit.legion != NO_LEGION) {
+                throw Errors.UnitInLegion;
+            }
+
             if (duplicates[unit.id]) {
                 throw Errors.IncorrectArguments;
             }
@@ -514,6 +520,10 @@ export class ArmyManager {
 
             if (!unit) {
                 throw Errors.ArmyNoUnit;
+            }
+
+            if (unit.legion != NO_LEGION) {
+                throw Errors.UnitInLegion;
             }
 
             if (duplicates[unit.id]) {
