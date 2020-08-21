@@ -619,7 +619,7 @@ class Inventory {
         }
     }
 
-    async consumeItemsFromCraftingRecipe(recipe, amount) {
+    async consumeItemsFromCraftingRecipe(recipe, amount = 1) {
         let i = 0;
         const length = recipe.ingridients.length;
         for (; i < length; ++i) {

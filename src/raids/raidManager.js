@@ -17,7 +17,10 @@ const WeaknessRotationCycle = 86400000 * 7;
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
 const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.Bow, EquipmentType.Wand, EquipmentType.Spear];
 
-const DktFactorUpdateInterval = 21600000; // every 6 hours
+const DktFactorUpdateInterval = 1800000; // every 30 minutes
+const DKT_RESTORE_FACTOR = 0.05;
+
+const FINISHED_RAID_CACHE_TTL = 3600000; // 1 hour
 
 class RaidManager {
     constructor(db, paymentProcessor) {
@@ -46,6 +49,7 @@ class RaidManager {
         }).toArray();
 
         this._raids = {};
+        this._finishedRaids = {};
 
         let i = 0;
         const length = raids.length;
@@ -59,8 +63,8 @@ class RaidManager {
         await this._registerRaidIAPs(iapExecutor);
 
         await this._updateWeaknesses(true);
+        await this._restoreDktForAllRaids(true);
         this._scheduleWeaknessUpdate();
-
         this._scheduleDktUpdate();
     }
 
@@ -78,38 +82,6 @@ class RaidManager {
             let raid = this.getRaid(context.raidId);
             await raid.setReserveSlot(true);
         }
-    }
-
-    _scheduleDktUpdate() {
-
-    }
-
-    async _getNextDktFactor(raidTemplateId, peek = false) {
-        // let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
-        //     raid: raidTemplateId
-        // });
-
-        // if (!factor) {
-        //     factor = {
-        //         step: 0
-        //     }
-        // }
-
-        // let factorSettings = this._factorSettings[stage];
-        // let factorValue = 1 / (factorSettings.attemptFactor * factor.step + 1 * (Math.log2((factor.step + 1) / factorSettings.baseFactor) / Math.log2(factorSettings.base)) + 1) * factorSettings.multiplier;
-
-        // if (!peek) {
-        //     factor.step++;
-        //     // save 
-        //     await this._db.collection(Collections.RaidsDktFactors).updateOne({
-        //         raid: raidTemplateId
-        //     }, { $set: factor }, {
-        //         upsert: true
-        //     });
-        // }
-
-
-        return 1;
     }
 
     async joinRaid(userId, raidId) {
@@ -206,12 +178,11 @@ class RaidManager {
         await userInventory.autoCommitChanges(async inventory => {
             // consume crafting materials
             let craftingRecipe = await this._loadSummonRecipe(data.summonRecipe);
-            inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
+            await inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
         });
 
         const raid = new Raid(this._db);
-        let currentFactor = await this._getNextDktFactor(raidTemplateId);
-        await raid.create(summonerId, raidTemplateId, currentFactor, isFree);
+        await raid.create(summonerId, raidTemplateId, isFree);
         this._addRaid(raid);
 
         return {
@@ -313,6 +284,7 @@ class RaidManager {
 
         let info = raid[0];
         info.weakness.untilNextWeakness = Game.now % WeaknessRotationCycle;
+        info.dktFactor = await this._getNextDktFactor(info.raidTemplateId, true);
         return info;
     }
 
@@ -399,6 +371,9 @@ class RaidManager {
     }
 
     _getRaid(raidId) {
+        if (!this._raids[raidId]) {
+
+        }
         return this._raids[raidId];
     }
 
@@ -410,12 +385,13 @@ class RaidManager {
     }
 
     async _handleRaidTimeout(raid) {
-        await raid.finish();
+        // fix dkt rate
+        await raid.finish(0);
         this._removeRaid(raid.id);
     }
 
     async _handleRaidDefeat(raid) {
-        await raid.finish();
+        await raid.finish(await this._getNextDktFactor(raid.templateId));
         this._removeRaid(raid.id);
     }
 
@@ -425,34 +401,143 @@ class RaidManager {
 
     async claimLoot(user, raidId) {
         let userId = user.address;
+        let raid = await this._getFinishedRaid(userId, raidId);
+        return await raid.claimLoot(userId);
+    }
 
-        let matchQuery = {
-            $match: {
-                _id: new ObjectId(raidId),
-                finished: true,
-                defeat: true
+    async getLootPreview(user, raidId) {
+        let userId = user.address;
+        let raid = await this._getFinishedRaid(userId, raidId);
+        return await raid.getRewards(userId);
+    }
+
+    async _getFinishedRaid(userId, raidId) {
+        let raid = this._finishedRaids[raidId];
+
+        if (!raid) {
+            let matchQuery = {
+                $match: {
+                    _id: new ObjectId(raidId),
+                    finished: true,
+                    defeat: true
+                }
+            };
+    
+            let participantId = `participants.${userId}`;
+            let lootId = `loot.${userId}`;
+            matchQuery.$match[participantId] = { $exists: true };
+            matchQuery.$match[lootId] = false;
+    
+            let raidData = await this._db.collection(Collections.Raids).aggregate([
+                matchQuery
+            ]).toArray();
+    
+            if (!raidData || raidData.length == 0) {
+                throw Errors.InvalidRaid;
             }
-        };
+    
+            raidData = raidData[0];
+    
+            raid = new Raid(this._db);
+            await raid.init(raidData);
 
-        let participantId = `participants.${userId}`;
-        let lootId = `loot.${userId}`;
-        matchQuery.$match[participantId] = { $exists: true };
-        matchQuery.$match[lootId] = false;
-
-        let raidData = await this._db.collection(Collections.Raids).aggregate([
-            matchQuery
-        ]).toArray();
-
-        if (!raidData || raidData.length == 0) {
-            throw "no such raid";
+            // TODO implement proper caching
+            this._finishedRaids[raidId] = raid;
         }
 
-        raidData = raidData[0];
+        return raid;
+    }
 
-        let raid = new Raid(this._db);
-        await raid.init(raidData);
+    _scheduleDktUpdate() {
+        setTimeout(async () => {
+            try {
+                await this._restoreDktForAllRaids();
+            } finally {
+                this._scheduleDktUpdate();
+            }
+        }, Game.now % DktFactorUpdateInterval);
+    }
 
-        return await raid.claimLoot(userId);
+    async _getNextDktFactor(raidTemplateId, peek = false) {
+        let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
+            raid: raidTemplateId
+        });
+
+        if (!factor) {
+            factor = {
+                step: 0
+            }
+        }
+
+        // TODO settings per difficulty
+        let factorSettings = this._factorSettings[0]; 
+        const scaledStep = factorSettings.attemptFactor * factor.step;
+        const log = Math.log2(factor.step / factorSettings.baseFactor) / Math.log2(factorSettings.base);
+        let factorValue = 1 / (scaledStep * log + 1) * factorSettings.multiplier;
+
+        if (!peek) {
+            factor.step++;
+            // save 
+            await this._db.collection(Collections.RaidsDktFactors).updateOne({
+                raid: raidTemplateId
+            }, { $set: factor }, {
+                upsert: true
+            });
+        }
+
+
+        return factorValue * Game.dividends.getDivTokenRate();
+    }
+
+    async _restoreDktForAllRaids(onlyMissing = true) {
+        let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
+
+        const templates = [];
+        for (const raidTemplate of allRaids) {
+            templates.push(raidTemplate._id);
+        }
+
+        let factors = await this._db.collection(Collections.RaidsDktFactors).find({
+            raid: { $in: templates }
+        }).toArray();
+
+        const factorsLookup = {};
+
+        for(const factor of factors) {
+            factorsLookup[factor.raid] = factor;
+        }
+
+        const queries = [];
+        // every 30 minutes restore 5%
+        for (const raidId of templates) {  
+            let missing = false;
+            if (!factorsLookup[raidId]) {
+                missing = true;
+                factorsLookup[raidId] = {
+                    step: 0
+                }
+            }
+
+            factorsLookup[raidId].step -= Math.ceil(factorsLookup[raidId].step * DKT_RESTORE_FACTOR);
+
+            if ((onlyMissing && missing) || !onlyMissing) {
+                queries.push({
+                    updateOne: {
+                        filter: {
+                            raid: raidId
+                        },
+                        update: {
+                            $set: factorsLookup[raidId]
+                        },
+                        upsert: true
+                    }
+                });
+            }
+        }
+
+        if (queries.length > 0) {
+            await this._db.collection(Collections.RaidsDktFactors).bulkWrite(queries);
+        }
     }
 
     _scheduleWeaknessUpdate() {

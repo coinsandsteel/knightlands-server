@@ -89,7 +89,7 @@ class Unit {
 
         finalDamage = Math.ceil(finalDamage);
 
-        // this.modifyHealth(-finalDamage);
+        this.modifyHealth(-finalDamage);
 
         return finalDamage;
     }

@@ -3,11 +3,14 @@ import CurrencyType from "../knightlands-shared/currency_type";
 import Errors from "../knightlands-shared/errors";
 const { Collections } = require("../database");
 import TransactionStatus from "./../knightlands-shared/payment_status";
+import { Lock } from "../utils/lock";
 
 class Dividends {
     constructor(db, blockchain) {
         this._db = db;
         this._blockchain = blockchain;
+        this._lock = new Lock();
+        this._supply = 0;
 
         this._blockchain.on(this._blockchain.DividendTokenWithdrawal, this._handleWithdrawal.bind(this));
         this._blockchain.on(this._blockchain.TransactionFailed, this._handleWithdrawalFailed.bind(this));
@@ -29,6 +32,11 @@ class Dividends {
         }
 
         console.log("Track pending withdrawals finished.");
+        // load state
+        const state = await this._db.collection(Collections.DivTokenState).findOne({ _id: "state" });
+        if (state) {
+            this._supply = state.supply;
+        }
     }
 
     async requestTokenWithdrawal(user, amount) {
@@ -104,9 +112,28 @@ class Dividends {
         }
     }
 
+    async modifyTotalSupply(value) {
+        await this._lock.acquire("state-update");
+        this._supply += value;
+
+        try {
+            await this._db.collection(Collections.DivTokenState).updateOne({ _id: "state" }, { $set: { supply: this._supply } }, { upsert: true });
+        } finally {
+            await this._lock.release("state-update");
+        }
+    }
+
+    getDivTokenRate() {
+        if (this._supply == 0) {
+            return 1;
+        }
+
+        return 1 / (0.01 * Math.log2(this._supply) / Math.log2(1.5) + 1);
+    }
+
     async _refundAndNotifyFail(userId, amount) {
         amount = this._blockchain.getNumberDivTokenAmount(amount);
-        
+
         // refund DKT
         const inventory = await Game.loadInventory(userId);
         if (inventory) {

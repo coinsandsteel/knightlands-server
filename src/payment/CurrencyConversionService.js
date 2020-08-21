@@ -32,7 +32,7 @@ class CurrencyConversionService {
         this._conversionRates = {};
 
         // use coinsmarketcap for this purpose
-        this._pullConversionRates();
+        // this._pullConversionRates();
     }
 
     get conversionRate() {

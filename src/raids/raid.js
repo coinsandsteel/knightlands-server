@@ -49,11 +49,19 @@ class Raid extends EventEmitter {
         return this._data.isFree ? this._template.soloData : this._template.data;
     }
 
+    get loot() {
+        return this._data.isFree ? this.template.freeLoot : this.template.paidLoot;
+    }
+
+    get templateId() {
+        return this._data.raidTemplateId;
+    }
+
     get defeat() {
         return !this._bossUnit.isAlive;
     }
 
-    async create(summonerId, raidTemplateId, dktFactor, isFree) {
+    async create(summonerId, raidTemplateId, isFree) {
         raidTemplateId *= 1;
         
         let raidEntry = {
@@ -62,7 +70,6 @@ class Raid extends EventEmitter {
             participants: {},
             challenges: {},
             finished: false,
-            dktFactor,
             loot: {},
             damageLog: [],
             isFree
@@ -169,10 +176,11 @@ class Raid extends EventEmitter {
         }
     }
 
-    async finish() {
+    async finish(dktFactor) {
         clearTimeout(this._checkpointTimeout);
         clearInterval(this._timerInterval);
 
+        this._data.dktFactor = dktFactor;
         await this._checkpoint();
     }
 
@@ -312,17 +320,12 @@ class Raid extends EventEmitter {
                         attackLog.stamina[unitId] = (attackLog.stamina[unitId]||0) + armyAttackResult.stamina[unitId];
                         combatUnit.restoreStamina(armyAttackResult.stamina[unitId]);
                     }
-                    
-                    // attackLog.procs[unitId] = attackLog.armyDamage[unitId];
-                    // attackLog.health[unitId] = 54;
-                    // attackLog.energy[unitId] = 3;
-                    // attackLog.stamina[unitId] = 1;
                 }
 
                 // set loot flag in here to avoid sharp spike after raid is finished
                 if (this._data.loot[attacker.address] === undefined) {
                     // check if at least first loot damage threshold is reached and set loot record
-                    let loot = this.template.loot;
+                    let loot = this.loot;
                     if (loot && loot.length > 0) {
                         if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
                             this._data.loot[attacker.address] = false;
@@ -401,24 +404,26 @@ class Raid extends EventEmitter {
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
                 loot: this._data.loot,
-                challenges: this._data.challenges
+                challenges: this._data.challenges,
+                dktFactor: this._data.dktFactor
             }
         });
 
         this._scheduleCheckpoint();
     }
 
-    async claimLoot(userId) {
+    async getRewards(userId) {
         // determine raid loot record based on user damage
         let chosenLoot;
         let raidStage = this.template;
         let userDamage = this._data.participants[userId];
         {
             let i = 0;
-            const length = raidStage.loot.length;
+            let loot = this.loot;
+            const length = loot.length;
             for (; i < length; ++i) {
-                if (userDamage >= raidStage.health / raidStage.maxSlots * raidStage.loot[i].damageThreshold) {
-                    chosenLoot = raidStage.loot[i];
+                if (userDamage >= raidStage.health / raidStage.maxSlots * loot[i].damageThreshold) {
+                    chosenLoot = loot[i];
                 } else {
                     break;
                 }
@@ -460,9 +465,24 @@ class Raid extends EventEmitter {
             }
         }
 
+        // modify dkt given by fixed dkt factor
+        rewards.dkt *= this._data.dktFactor;
+
+        return rewards;
+    }
+
+    async claimLoot(userId) {
+        if (this._data.loot[userId] !== false) {
+            throw Errors.RaidLootClaimed;
+        }
+
+        const rewards = await this.getRewards(userId);
+
         // set loot claimed
         let updateQuery = { $set: {} };
         updateQuery.$set[`loot.${userId}`] = true;
+
+        this._data.loot[userId] = true;
 
         await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
 

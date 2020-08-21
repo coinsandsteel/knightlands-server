@@ -58,6 +58,7 @@ module.exports = {
         AdventuresList: "adventures_list",
         TowerMeta: "tower_meta",
         DivTokenWithdrawals: "div_token_withdrawals",
+        DivTokenState: "div_token_state",
         Tournaments: "tournaments",
         TournamentTables: "tournaments_tables",
         Races: "races",

@@ -32,6 +32,10 @@ import Game from "./game";
 
 import Rankings from "./rankings/Rankings.ts";
 
+process.on("unhandledRejection", (error) => {
+  console.error(error); // This prints error with stack included (as for normal errors)
+});
+
 class Worker extends SCWorker {
   async run() {
     console.log('   >> Worker PID:', process.pid);

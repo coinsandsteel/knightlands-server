@@ -65,6 +65,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
+        this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
 
         // misc
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
@@ -798,6 +799,10 @@ class PlayerController extends IPaymentListener {
         await raid.attack(user, parseInt(data.hits), parseInt(data.legionIndex));
 
         return null;
+    }
+
+    async _fetchRaidRewards(user, data) {
+        return await this._raidManager.getLootPreview(user, data.raidId);
     }
 
     async _claimLootRaid(user, data) {

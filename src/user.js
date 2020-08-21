@@ -209,6 +209,7 @@ class User {
     async addDkt(value) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
         await this._inventory.modifyCurrency(CurrencyType.Dkt, value);
+        await Game.dividends.modifyTotalSupply(value);
         await Game.rankings.updateRank(this.address, {
             type: RankingType.DktEarned
         }, value);
