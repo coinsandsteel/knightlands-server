@@ -66,6 +66,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
         this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
+        this._socket.on(Operations.FetchTokenRates, this._gameHandler(this._fetchTokenRates.bind(this)));
 
         // misc
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
@@ -803,6 +804,20 @@ class PlayerController extends IPaymentListener {
 
     async _fetchRaidRewards(user, data) {
         return await this._raidManager.getLootPreview(user, data.raidId);
+    }
+
+    async _fetchTokenRates(user, data) {
+        let { from, to, raid } = data;
+
+        from = parseInt(from);
+        to = parseInt(to);
+        raid = parseInt(raid);
+
+        if (isNaN(from) || isNaN(to) || isNaN(raid)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return await this._raidManager.tokenRates.query(raid, from, to);
     }
 
     async _claimLootRaid(user, data) {

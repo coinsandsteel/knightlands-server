@@ -59,6 +59,8 @@ module.exports = {
         TowerMeta: "tower_meta",
         DivTokenWithdrawals: "div_token_withdrawals",
         DivTokenState: "div_token_state",
+        DivTokenState: "div_token_state",
+        DivTokenTimeseries: "div_token_timeseries",
         Tournaments: "tournaments",
         TournamentTables: "tournaments_tables",
         Races: "races",

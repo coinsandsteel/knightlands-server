@@ -67,15 +67,17 @@ class Raid extends EventEmitter {
         let raidEntry = {
             summoner: summonerId,
             raidTemplateId,
-            participants: {},
+            participants: {
+                [summonerId]: 0
+            },
             challenges: {},
             finished: false,
-            loot: {},
+            loot: {
+                [summonerId]: false
+            },
             damageLog: [],
             isFree
         };
-
-        raidEntry.participants[summonerId] = 0;
 
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
         let raidData = isFree ? raidTemplate.soloData : raidTemplate.data;
@@ -206,6 +208,7 @@ class Raid extends EventEmitter {
         }
 
         this._data.participants[userId] = 0;
+        this._data.loot[userId] = false;
 
         await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
             $set: {
@@ -322,17 +325,6 @@ class Raid extends EventEmitter {
                     }
                 }
 
-                // set loot flag in here to avoid sharp spike after raid is finished
-                if (this._data.loot[attacker.address] === undefined) {
-                    // check if at least first loot damage threshold is reached and set loot record
-                    let loot = this.loot;
-                    if (loot && loot.length > 0) {
-                        if (loot[0].damageThreshold <= this._data.participants[attacker.address]) {
-                            this._data.loot[attacker.address] = false;
-                        }
-                    }
-                }
-
                 const crit = playerAttackResult.crit;
 
                 // notify current challenges
@@ -430,17 +422,19 @@ class Raid extends EventEmitter {
             }
         }
 
-        if (!chosenLoot) {
-            return null
-        }
-
+        // all participants get at least 10% of min dkt
         let rewards = {
-            dkt: chosenLoot.dktReward * Random.range(raidStage.minDkt, raidStage.maxDkt),
+            dkt: raidStage.minDkt * 0.1,
             exp: 0,
             gold: 0,
             hardCurrency: 0
         };
 
+        if (!chosenLoot) {
+            return null
+        }
+
+        rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.minDkt, raidStage.maxDkt);
         rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
         // evaluate challenges
