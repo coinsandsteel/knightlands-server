@@ -1,5 +1,3 @@
-'use strict';
-
 const {
     Collections
 } = require("./database");
@@ -8,6 +6,9 @@ import ItemType from "./knightlands-shared/item_type";
 import Game from "./game";
 import CurrencyType from "./knightlands-shared/currency_type";
 import RankingType from "./knightlands-shared/ranking_type";
+import { getSlot } from "./knightlands-shared/equipment_slot";
+
+const UserHolder = -1;
 
 class Inventory {
     constructor(user, db) {
@@ -337,11 +338,11 @@ class Inventory {
     }
 
     _addItemToIndexByTemplate(item) {
-        this._getItemTemplates(item.template).push(item);
+        this._getItemsByTemplate(item.template).push(item);
     }
 
     _deleteItemFromTemplateIndex(item) {
-        let templates = this._getItemTemplates(item.template);
+        let templates = this._getItemsByTemplate(item.template);
         let i = 0;
         const length = templates.length;
         for (; i < length; ++i) {
@@ -354,11 +355,11 @@ class Inventory {
     }
 
     getItemByTemplate(template) {
-        let templates = this._getItemTemplates(template);
+        let templates = this._getItemsByTemplate(template);
         return templates[0];
     }
 
-    _getItemTemplates(template) {
+    _getItemsByTemplate(template) {
         let templates = this._itemsByTemplate[template];
         if (!templates) {
             templates = [];
@@ -369,7 +370,7 @@ class Inventory {
     }
 
     countItemsByTemplate(template) {
-        let templates = this._getItemTemplates(template);
+        let templates = this._getItemsByTemplate(template);
         let count = 0;
         let i = 0;
         const length = templates.length;
@@ -392,7 +393,7 @@ class Inventory {
 
         let stacked = false;
 
-        let templates = this._getItemTemplates(template._id);
+        let templates = this._getItemsByTemplate(template._id);
         if (templates.length > 0) {
             let i = 0;
             const length = templates.length;
@@ -436,7 +437,7 @@ class Inventory {
                     return foundItem;
                 }
             } else {
-                const templates = this._getItemTemplates(item.template);
+                const templates = this._getItemsByTemplate(item.template);
                 let i = 0;
                 const length = templates.length;
                 for (; i < length; ++i) {
@@ -515,7 +516,7 @@ class Inventory {
     }
 
     removeItemByTemplate(templateId, count = 1) {
-        let templates = this._getItemTemplates(templateId);
+        let templates = this._getItemsByTemplate(templateId);
         if (templates.length > 0) {
             const length = templates.length;
             let i = 0;
@@ -536,50 +537,78 @@ class Inventory {
         }
     }
 
-    setItemEquipped(itemId, equipped) {
-        let item = this.getItemById(itemId);
+    async equipItem(item, equippedItems, holderId = -1) {
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        const itemSlot = getSlot(template.equipmentType);
 
-        if (equipped) {
-            if (item.count > 1) {
-                // split stack and create new item
-                const copy = { ...item };
-                copy.id = this.nextId
-                copy.equipped = true;
-                copy.count = 1;
-                
-                this.removeItem(itemId);
-                item = this.addItem(copy, true);
-            } else {
-                item.equipped = true;
-                this.setItemUpdated(item);
-            }
-        } else {
-            if (item.unique) {
-                item.equipped = false;
-            } else {
-                let templates = this._getItemTemplates(item.template);
-                // not unique, stack with existing template stack
-                let stacked = false;
-                const length = templates.length;
-                for (let i = 0; i < length; ++i) {
-                    const existingItem = templates[i];
-                    if (!existingItem.unique) {
-                        stacked = true;
-                        this.removeItem(item.id);
-                        this.modifyStack(existingItem, 1);
-                        break;
-                    }
-                }
-                
-                if (!stacked) {
-                    item.equipped = false;
-                }
-            }
+        await this.unequipItem(item);
+
+        if (item.count > 1) {
+            // split stack and create new item
+            const copy = { ...item };
+            copy.id = this.nextId
+            copy.equipped = true;
+            copy.count = 1;
             
+            this.removeItem(item.id);
+            item = this.addItem(copy, true);
+        } else {
+            item.equipped = true;
             this.setItemUpdated(item);
         }
 
+        equippedItems[itemSlot] = item;
+        item.holder = holderId;
+
         return item;
+    }
+
+    async unequipItem(item) {
+        if (!item || !item.equipped) {
+            return;
+        }
+
+        let equippedItems;
+        let unit;
+        // if holder is character use chracter items
+        if (item.holder == UserHolder) {
+            equippedItems = this._user.equipment;
+        } else {
+            unit = await Game.armyManager.getUnit(this._userId, item.holder);
+            equippedItems = unit.items;
+        }
+
+        if (item.unique) {
+            item.equipped = false;
+        } else {
+            let templates = this._getItemsByTemplate(item.template);
+            // not unique, stack with existing template stack
+            let stacked = false;
+            const length = templates.length;
+            for (let i = 0; i < length; ++i) {
+                const existingItem = templates[i];
+                if (!existingItem.unique && existingItem.id != item.id) {
+                    stacked = true;
+                    this.removeItem(item.id);
+                    this.modifyStack(existingItem, 1);
+                    break;
+                }
+            }
+            
+            if (!stacked) {
+                item.equipped = false;
+            }
+        }
+
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        const itemSlot = getSlot(template.equipmentType);
+
+        delete equippedItems[itemSlot];
+        this.setItemUpdated(item);
+        
+        if (unit) {
+            await Game.armyManager.updateUnit(this._userId, unit)
+        }
     }
 
     getItemById(id) {
@@ -633,7 +662,7 @@ class Inventory {
     }
 
     async _getItemTemplateWithMaxLevel(template, meta) {
-        let templates = this._getItemTemplates(template);
+        let templates = this._getItemsByTemplate(template);
         let k = 0;
         let l = templates.length;
         for (; k < l; ++k) {

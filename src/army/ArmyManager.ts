@@ -97,6 +97,15 @@ export class ArmyManager {
         );
     }
 
+    async getUnit(userId: string, id: number) {
+        let units = await this._units.getUserUnit(userId, id);
+        return units[id];
+    }
+
+    async updateUnit(userId, unit: ArmyUnit) {
+        return this._units.onUnitUpdated(userId, unit);
+    }
+
     async requestSummon(userId: string, iap: number, summonType: number) {
         let summonData = summonType == ArmySummonType.Advanced ? this._summonMeta.advancedSummon : this._summonMeta.normalSummon;
         let summonMeta = summonData.iaps.find(x => x.iap === iap);
@@ -310,11 +319,6 @@ export class ArmyManager {
             throw Errors.NoItem;
         }
 
-        if (item.equipped) {
-            console.log(item.id);
-            throw Errors.ItemEquipped;
-        }
-
         const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
             throw Errors.NoTemplate;
@@ -325,21 +329,7 @@ export class ArmyManager {
         }
 
         const unit = unitRecord[unitId];
-        // check if slot is correct
-        const slots = unit.troop ? TroopEquipmentSlots : GeneralEquipmentSlots;
-        const itemSlot = getSlot(itemTemplate.equipmentType);
-        if (slots.findIndex(x => x == itemSlot) == -1) {
-            throw Errors.IncorrectArguments;
-        }
-
-        const equippedItem = unit.items[itemSlot];
-        if (equippedItem) {
-            delete unit.items[itemSlot];
-            inventory.setItemEquipped(equippedItem.id, false);
-        }
-
-        unit.items[itemSlot] = inventory.setItemEquipped(itemId, true);
-
+        await inventory.equipItem(item, unit.items, unit.id);
         await this._units.onUnitUpdated(userId, unit);
     }
 
@@ -350,11 +340,10 @@ export class ArmyManager {
         }
 
         const unit = unitRecord[unitId];
-        const itemId = unit.items[slotId];
-        if (itemId) {
-            delete unit.items[slotId];
+        const item = unit.items[slotId];
+        if (item) {
             const inventory = await Game.loadInventory(userId);
-            inventory.setItemEquipped(itemId, false);
+            await inventory.unequipItem(slotId, unit.items);
             await this._units.onUnitUpdated(userId, unit);
         }
     }

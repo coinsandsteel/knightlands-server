@@ -168,8 +168,12 @@ class User {
         return this._dailyQuests;
     }
 
+    get equipment() {
+        return this._data.character.equipment;
+    }
+
     async getWeaponCombatData() {
-        let weapon = this._data.character.equipment[EquipmentSlots.MainHand];
+        let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
             return null;
         }
@@ -445,7 +449,7 @@ class User {
 
         this._data = userData;
         this._inventory = new Inventory(this, this._db);
-        this._crafting = new Crafting(this, this._inventory, this._data.character.equipment);
+        this._crafting = new Crafting(this, this._inventory, this.equipment);
         this._itemStatResolver = new ItemStatResolver(
             this._meta.statConversions, 
             this._meta.itemPower, 
@@ -887,11 +891,6 @@ class User {
             throw Errors.NoItem;
         }
 
-        if (itemToEquip.equipped) {
-            console.log(itemToEquip.id);
-            throw Errors.ItemEquipped;
-        }
-
         let template = await await Game.itemTemplates.getTemplate(itemToEquip.template);
         if (!template) {
             throw Errors.NoTemplate;
@@ -901,21 +900,14 @@ class User {
             throw Errors.NotEquipment;
         }
 
-        let slotId = getSlot(template.equipmentType);
-        await this.unequipItem(slotId);
-        this._data.character.equipment[slotId] = this._inventory.setItemEquipped(itemId, true);
+        await this._inventory.equipItem(itemToEquip, this.equipment);
         this._recalculateStats = true;
     }
 
     async unequipItem(itemSlot) {
         await this._inventory.loadAllItems();
-
-        let item = this._data.character.equipment[itemSlot];
-        if (item) {
-            delete this._data.character.equipment[itemSlot];
-            this._inventory.setItemEquipped(item.id, false);
-            this._recalculateStats = true;
-        }
+        await this._inventory.unequipItem(this.equipment[itemSlot]);
+        this._recalculateStats = true;
     }
 
     async levelUpItem(itemId, materials, count) {
