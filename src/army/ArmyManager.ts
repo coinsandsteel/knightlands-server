@@ -311,6 +311,7 @@ export class ArmyManager {
         }
 
         if (item.equipped) {
+            console.log(item.id);
             throw Errors.ItemEquipped;
         }
 
@@ -331,19 +332,13 @@ export class ArmyManager {
             throw Errors.IncorrectArguments;
         }
 
-        const copy = { ...item };
-        copy.count = 1;
-        copy.equipped = true;
-
         const equippedItem = unit.items[itemSlot];
         if (equippedItem) {
             delete unit.items[itemSlot];
-            inventory.addItem(equippedItem).equipped = false;
+            inventory.setItemEquipped(equippedItem.id, false);
         }
 
-        unit.items[itemSlot] = copy;
-
-        inventory.removeItem(item.id);
+        unit.items[itemSlot] = inventory.setItemEquipped(itemId, true);
 
         await this._units.onUnitUpdated(userId, unit);
     }
@@ -355,11 +350,11 @@ export class ArmyManager {
         }
 
         const unit = unitRecord[unitId];
-        const equippedItem = unit.items[slotId];
-        if (equippedItem) {
+        const itemId = unit.items[slotId];
+        if (itemId) {
             delete unit.items[slotId];
             const inventory = await Game.loadInventory(userId);
-            inventory.addItem(equippedItem).equipped = false;
+            inventory.setItemEquipped(itemId, false);
             await this._units.onUnitUpdated(userId, unit);
         }
     }

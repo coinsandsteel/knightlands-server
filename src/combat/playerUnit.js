@@ -1,5 +1,5 @@
 const Unit = require("./unit");
-import CharacterStats from "./../knightlands-shared/character_stat";
+import CharacterStats from "../knightlands-shared/character_stat";
 
 class PlayerUnit extends Unit {
     constructor(user, stats) {

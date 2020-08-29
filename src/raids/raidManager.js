@@ -5,14 +5,14 @@ const {
 } = require("../database");
 
 const Raid = require("./raid");
-const Events = require("./../knightlands-shared/events");
-import Elements from "./../knightlands-shared/elements";
-const EquipmentType = require("./../knightlands-shared/equipment_type");
-import Game from "./../game";
+const Events = require("../knightlands-shared/events");
+import Elements from "../knightlands-shared/elements";
+const EquipmentType = require("../knightlands-shared/equipment_type");
+import Game from "../game";
 import { ObjectId } from "mongodb";
-import Errors from "./../knightlands-shared/errors";
+import Errors from "../knightlands-shared/errors";
 import random from "../random";
-import { TokenRateTimeseries } from "./TokenRateTimeseries";
+import { TokenRateTimeseries } from "./tokenRateTimeseries";
 
 const WeaknessRotationCycle = 86400000 * 7;
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];

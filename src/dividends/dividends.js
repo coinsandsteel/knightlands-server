@@ -1,8 +1,8 @@
-import Game from "./../game";
+import Game from "../game";
 import CurrencyType from "../knightlands-shared/currency_type";
 import Errors from "../knightlands-shared/errors";
 const { Collections } = require("../database");
-import TransactionStatus from "./../knightlands-shared/payment_status";
+import TransactionStatus from "../knightlands-shared/payment_status";
 import { Lock } from "../utils/lock";
 
 class Dividends {

@@ -1,11 +1,11 @@
 'use strict';
 
 const Config = require("./config");
-const SCWorker = require('socketcluster/scworker');
-const express = require('express');
-const serveStatic = require('serve-static');
-const path = require('path');
-const morgan = require('morgan');
+const SCWorker = require("socketcluster/scworker");
+const express = require("express");
+const serveStatic = require("serve-static");
+const path = require("path");
+const morgan = require("morgan");
 const healthChecker = require('sc-framework-health-check');
 const cors = require('cors');
 const Operations = require("./knightlands-shared/operations");
@@ -19,7 +19,7 @@ const RaidManager = require("./raids/raidManager");
 const IAPExecutor = require("./payment/IAPExecutor");
 const PaymentProcessor = require("./payment/paymentProcessor");
 const BlockchainFactory = require("./blockchain/blockchainFactory");
-const CurrencyConversionService = require("./payment/CurrencyConversionService");
+const CurrencyConversionService = require("./payment/currencyConversionService");
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
 const UserPremiumService = require("./userPremiumService");

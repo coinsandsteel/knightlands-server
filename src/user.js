@@ -27,7 +27,7 @@ const {
 
 const ItemType = require("./knightlands-shared/item_type");
 
-const Trials = require("./Trials/Trials");
+const Trials = require("./trials/Trials");
 const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
@@ -638,8 +638,8 @@ class User {
         let offHandType;
 
         // calculate stats from equipment
-        for (let itemId in character.equipment) {
-            let equippedItem = character.equipment[itemId];
+        for (let slotId in character.equipment) {
+            let equippedItem = character.equipment[slotId];
             let template = await Game.itemTemplates.getTemplate(equippedItem.template);
             if (!template) {
                 continue;
@@ -888,6 +888,7 @@ class User {
         }
 
         if (itemToEquip.equipped) {
+            console.log(itemToEquip.id);
             throw Errors.ItemEquipped;
         }
 
@@ -902,26 +903,17 @@ class User {
 
         let slotId = getSlot(template.equipmentType);
         await this.unequipItem(slotId);
-
-        const copy = { ...itemToEquip };
-        copy.equipped = true;
-        copy.count = 1; // make it count as 1, otherwise players will dupe it
-
-        // put into equipment and remove from inventory
-        this._data.character.equipment[slotId] = copy;
-        this._inventory.removeItem(itemToEquip.id);
-
+        this._data.character.equipment[slotId] = this._inventory.setItemEquipped(itemId, true);
         this._recalculateStats = true;
     }
 
     async unequipItem(itemSlot) {
         await this._inventory.loadAllItems();
 
-        let oldItemInSlot = this._data.character.equipment[itemSlot];
-        if (oldItemInSlot) {
+        let item = this._data.character.equipment[itemSlot];
+        if (item) {
             delete this._data.character.equipment[itemSlot];
-            // return to inventory
-            this._inventory.addItem(oldItemInSlot).equipped = false;
+            this._inventory.setItemEquipped(item.id, false);
             this._recalculateStats = true;
         }
     }

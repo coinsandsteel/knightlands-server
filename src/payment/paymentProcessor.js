@@ -1,7 +1,7 @@
 'use strict';
 
-const { Collections } = require("./../database");
-import Game from "./../game";
+const { Collections } = require("../database");
+import Game from "../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
 import { ObjectId } from "mongodb";

@@ -4,18 +4,18 @@ const {
     Collections
 } = require("../database");
 
-const CBuffer = require("./../CBuffer");
-const Unit = require("./../combat/unit");
-import CharacterStats from "./../knightlands-shared/character_stat";
+const CBuffer = require("../CBuffer");
+const Unit = require("../combat/unit");
+import CharacterStats from "../knightlands-shared/character_stat";
 import Game from "../game";
 const EventEmitter = require("events");
-const Events = require("./../knightlands-shared/events");
-const Config = require("./../config");
-import Random from "./../random";
-import Errors from "./../knightlands-shared/errors";
+const Events = require("../knightlands-shared/events");
+const Config = require("../config");
+import Random from "../random";
+import Errors from "../knightlands-shared/errors";
 import RankingType from "../knightlands-shared/ranking_type";
 
-import RaidChallengeType from "./../knightlands-shared/raid_challenge";
+import RaidChallengeType from "../knightlands-shared/raid_challenge";
 const TopDamageDealers = require("./topDamageDealersChallenge");
 
 const ExtraDamagePerAdditionalHit = 0.01;

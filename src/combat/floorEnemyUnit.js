@@ -1,5 +1,5 @@
 const Unit = require("./unit");
-import CharacterStats from "./../knightlands-shared/character_stat";
+import CharacterStats from "../knightlands-shared/character_stat";
 
 class FloorEnemyUnit extends Unit {
     constructor(attack, currentHealth) {

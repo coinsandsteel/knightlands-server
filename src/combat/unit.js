@@ -1,4 +1,4 @@
-import CharacterStat from "./../knightlands-shared/character_stat";
+import CharacterStat from "../knightlands-shared/character_stat";
 import Random from "../random";
 
 class Unit {

@@ -1,7 +1,7 @@
 
 const TrialCards = require("./TrialCards");
 import TrialType from "../knightlands-shared/trial_type";
-import Game from "./../game";
+import Game from "../game";
 import Elements from "../knightlands-shared/elements";
 const { Collections } = require("../database");
 import Errors from "../knightlands-shared/errors";

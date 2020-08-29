@@ -1,6 +1,6 @@
 const RaidChallenge = require("./raidChallenge");
-import RaidChallengeType from "./../knightlands-shared/raid_challenge";
-const Events = require("./../knightlands-shared/events");
+import RaidChallengeType from "../knightlands-shared/raid_challenge";
+const Events = require("../knightlands-shared/events");
 
 class TopDamageDealersChallenge extends RaidChallenge {
     constructor(meta, data, raidEventEmitter) {

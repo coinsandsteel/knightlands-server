@@ -2,7 +2,7 @@ import Game from "../game";
 import Errors from "../knightlands-shared/errors";
 const { Collections } = require("../database");
 import CurrencyType from "../knightlands-shared/currency_type";
-import Random from "./../random";
+import Random from "../random";
 import Rarity from "../knightlands-shared/rarity";
 import RankingType from "../knightlands-shared/ranking_type";
 const {

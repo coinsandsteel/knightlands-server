@@ -1,4 +1,4 @@
-import { Db, Collection } from "mongodb";
+import { Db } from "mongodb";
 import { Collections } from "../database";
 const Events = require("./../knightlands-shared/events");
 import Game from "../game";

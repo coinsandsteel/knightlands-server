@@ -427,22 +427,24 @@ class Inventory {
     }
 
     // add or modify item in collection
-    addItem(item) {
-        if (item.unique) {
-            let foundItem = this.getItemById(item.id);
-            if (foundItem) {
-                this.modifyStack(foundItem, item.count);
-                return foundItem;
-            }
-        } else {
-            const templates = this._getItemTemplates(item.template);
-            let i = 0;
-            const length = templates.length;
-            for (; i < length; ++i) {
-                const foundItem = templates[i];
-                if (!foundItem.unique) {
+    addItem(item, forceNew = false) {
+        if (!forceNew) {
+            if (item.unique) {
+                let foundItem = this.getItemById(item.id);
+                if (foundItem) {
                     this.modifyStack(foundItem, item.count);
                     return foundItem;
+                }
+            } else {
+                const templates = this._getItemTemplates(item.template);
+                let i = 0;
+                const length = templates.length;
+                for (; i < length; ++i) {
+                    const foundItem = templates[i];
+                    if (!foundItem.unique) {
+                        this.modifyStack(foundItem, item.count);
+                        return foundItem;
+                    }
                 }
             }
         }
@@ -532,6 +534,52 @@ class Inventory {
                 }
             }
         }
+    }
+
+    setItemEquipped(itemId, equipped) {
+        let item = this.getItemById(itemId);
+
+        if (equipped) {
+            if (item.count > 1) {
+                // split stack and create new item
+                const copy = { ...item };
+                copy.id = this.nextId
+                copy.equipped = true;
+                copy.count = 1;
+                
+                this.removeItem(itemId);
+                item = this.addItem(copy, true);
+            } else {
+                item.equipped = true;
+                this.setItemUpdated(item);
+            }
+        } else {
+            if (item.unique) {
+                item.equipped = false;
+            } else {
+                let templates = this._getItemTemplates(item.template);
+                // not unique, stack with existing template stack
+                let stacked = false;
+                const length = templates.length;
+                for (let i = 0; i < length; ++i) {
+                    const existingItem = templates[i];
+                    if (!existingItem.unique) {
+                        stacked = true;
+                        this.removeItem(item.id);
+                        this.modifyStack(existingItem, 1);
+                        break;
+                    }
+                }
+                
+                if (!stacked) {
+                    item.equipped = false;
+                }
+            }
+            
+            this.setItemUpdated(item);
+        }
+
+        return item;
     }
 
     getItemById(id) {
@@ -635,11 +683,7 @@ class Inventory {
         }
     }
 
-    setItemUpdated(item, force = false) {
-        if (!force && item.equipped) {
-            return;
-        }
-        
+    setItemUpdated(item) {      
         this._newItems.set(item.id, item);
     }
 
@@ -660,15 +704,9 @@ class Inventory {
 
     makeUnique(item) {
         if (item.equipped) {
-            // if item is equipped make current stack non equipped
-            const itemStack = this.getItemById(item.id);
-            if (itemStack) {
-                itemStack.equipped = false;
-                this.setItemUpdated(itemStack, true);
-            }
-
             item.unique = true;
             item.id = this.nextId;
+            this.setItemUpdated(item);
             return item;
         }
 

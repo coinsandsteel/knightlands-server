@@ -1,5 +1,5 @@
 const rp = require('request-promise-native');
-import Blockchains from "./../knightlands-shared/blockchains";
+import Blockchains from "../knightlands-shared/blockchains";
 
 class CurrencyConversionService {
     constructor(blockchain, config) {
