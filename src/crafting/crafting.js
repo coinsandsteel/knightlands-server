@@ -353,7 +353,7 @@ class Crafting {
                 while (maxLevel > level && itemsToConsume > 0) {
                     exp += expPerMaterial;
                     itemsToConsume--;
-                    if (exp >= expRequired) {
+                    while (exp >= expRequired && maxLevel > level) {
                         level++;
                         exp -= expRequired;
                         expRequired = expTable[level - 1];
