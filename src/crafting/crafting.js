@@ -293,21 +293,21 @@ class Crafting {
         let level = item.level;
         const oldLevel = item.level;
         let exp = item.exp;
+        const materialsConsumed = {};
 
         try {
             for (let i = 0; i < materials.length; ++i) {
                 const material = materials[i];
 
-                // if material type is item itself
-                if (itemId === material) {
-                    console.log(itemId, material);
-                    throw Errors.IncorrectArguments;
-                }
-
                 // check if material item can be used as leveling material 
                 let materialItem = this._inventory.getItemById(material);
                 if (!materialItem) {
                     throw Errors.NoMaterial;
+                }
+
+                // if material type is item itself
+                if (itemId === material && item.unique) {
+                    throw Errors.IncorrectArguments;
                 }
 
                 if (materialItem.equipped) {
@@ -336,7 +336,7 @@ class Crafting {
                         throw Errors.IncompatibleLevelingMaterial;
                     }
                 }
-
+                
                 let itemsToConsume = count;
                 let totalmaterial = materialItem.count;
                 if (materialItem.id == item.id) {
@@ -350,12 +350,17 @@ class Crafting {
 
                 let expTable = upgradeMeta.levelExpTable;
                 let expRequired = expTable[level - 1];
-                exp += expPerMaterial * itemsToConsume;
-                while (expRequired <= exp && maxLevel > level) {
-                    level++;
-                    exp -= expRequired;
-                    expRequired = expTable[level - 1];
+                while (maxLevel > level && itemsToConsume > 0) {
+                    exp += expPerMaterial;
+                    itemsToConsume--;
+                    if (exp >= expRequired) {
+                        level++;
+                        exp -= expRequired;
+                        expRequired = expTable[level - 1];
+                    }
                 }
+
+                materialsConsumed[materialItem.id] = count - itemsToConsume;
 
                 if (level == maxLevel) {
                     exp = 0;
@@ -376,8 +381,11 @@ class Crafting {
         this._inventory.setItemUpdated(item);
 
         for (let i = 0; i < materials.length; ++i) {
-            const material = materials[i];
-            this._inventory.modifyStack(this._inventory.getItemById(material), -count);
+            const materialId = materials[i];
+            const material = this._inventory.getItemById(materialId);
+            if (material) {
+                this._inventory.modifyStack(material, -materialsConsumed[materialId]);
+            }
         }
 
         const levelsGained = level - oldLevel;

@@ -609,6 +609,7 @@ class Inventory {
         const itemSlot = getSlot(template.equipmentType);
 
         delete equippedItems[itemSlot];
+        item.holder = UserHolder;
         this.setItemUpdated(item);
 
         if (unit) {
