@@ -516,19 +516,7 @@ class Crafting {
     }
 
     _getItemById(itemId) {
-        let item = this._inventory.getItemById(itemId);
-        if (!item || item.equipped) {
-            // try to search in equipment
-            for (const slot in this._equipment) {
-                const gear = this._equipment[slot];
-                if (gear.id == itemId) {
-                    item = gear;
-                    break;
-                }
-            }
-        }
-
-        return item;
+        return this._inventory.getItemById(itemId);
     }
 
     async _loadRecipe(recipe) {
