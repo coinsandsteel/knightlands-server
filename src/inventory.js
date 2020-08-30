@@ -369,13 +369,17 @@ class Inventory {
         return templates;
     }
 
-    countItemsByTemplate(template) {
+    countItemsByTemplate(template, skipEquipped) {
         let templates = this._getItemsByTemplate(template);
         let count = 0;
         let i = 0;
         const length = templates.length;
         for (; i < length; ++i) {
-            count += templates[i].count;
+            const item = templates[i];
+            if (skipEquipped && item.equipped) {
+                continue;
+            }
+            count += item.count;
         }
 
         return count;
@@ -541,6 +545,7 @@ class Inventory {
         const template = await Game.itemTemplates.getTemplate(item.template);
         const itemSlot = getSlot(template.equipmentType);
 
+        await this.unequipItem(equippedItems[itemSlot]);
         await this.unequipItem(item);
 
         if (item.count > 1) {
@@ -605,7 +610,7 @@ class Inventory {
 
         delete equippedItems[itemSlot];
         this.setItemUpdated(item);
-        
+
         if (unit) {
             await Game.armyManager.updateUnit(this._userId, unit)
         }
@@ -628,8 +633,8 @@ class Inventory {
         return this._items[this._itemsById.get(id)];
     }
 
-    hasItems(template, count) {
-        return this.countItemsByTemplate(template) >= count;
+    hasItems(template, count, skipEquipped = false) {
+        return this.countItemsByTemplate(template, skipEquipped) >= count;
     }
 
     async hasEnoughIngridients(ingridients) {
@@ -734,7 +739,6 @@ class Inventory {
     makeUnique(item) {
         if (item.equipped) {
             item.unique = true;
-            item.id = this.nextId;
             this.setItemUpdated(item);
             return item;
         }

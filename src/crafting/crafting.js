@@ -220,6 +220,10 @@ class Crafting {
                 throw Errors.NoItem;
             }
 
+            if (materialItem.equipped) {
+                throw Errors.ItemEquipped;
+            }
+
             // if item is not equipped and item is not yet unique
             // if it same item as target - make sure it has enough stack size for material count + unique
             if (!item.equipped && !item.unique && materialItem.count < items[i] + 1) {
@@ -304,6 +308,10 @@ class Crafting {
                 let materialItem = this._inventory.getItemById(material);
                 if (!materialItem) {
                     throw Errors.NoMaterial;
+                }
+
+                if (materialItem.equipped) {
+                    throw Errors.ItemEquipped;
                 }
 
                 let materialTemplate = await Game.itemTemplates.getTemplate(materialItem.template);
@@ -397,6 +405,10 @@ class Crafting {
 
         for (; index < length; ++index) {
             const item = inventoryItems[index];
+            if (item.equipped) {
+                throw Errors.ItemEquipped;
+            }
+
             const template = templates[item.template];
 
             const disRarityMeta = disMeta[template.rarity];
@@ -466,6 +478,10 @@ class Crafting {
 
         for (; index < length; ++index) {
             const item = inventoryItems[index];
+            if (item.equipped) {
+                throw Errors.ItemEquipped;
+            }
+
             if (!items[item.id]) {
                 throw Errors.NoItem;
             }

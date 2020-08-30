@@ -343,7 +343,7 @@ export class ArmyManager {
         const item = unit.items[slotId];
         if (item) {
             const inventory = await Game.loadInventory(userId);
-            await inventory.unequipItem(slotId, unit.items);
+            await inventory.unequipItem(item);
             await this._units.onUnitUpdated(userId, unit);
         }
     }
