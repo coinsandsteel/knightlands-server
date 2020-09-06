@@ -226,7 +226,7 @@ class Crafting {
 
             // if item is not equipped and item is not yet unique
             // if it same item as target - make sure it has enough stack size for material count + unique
-            if (!item.equipped && !item.unique && materialItem.count < items[i] + 1) {
+            if (!item.equipped && !item.unique && materialItem.id == item.id && materialItem.count < items[i] + 1) {
                 throw Errors.NotEnoughMaterial;
             }
 
