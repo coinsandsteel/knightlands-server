@@ -941,7 +941,8 @@ class PlayerController extends IPaymentListener {
     }
 
     async _evolveItem(user, data) {
-
+        const { itemId } = data;
+        return await user.crafting.evolve(itemId);
     }
 
     // Adventures

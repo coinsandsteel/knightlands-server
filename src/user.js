@@ -172,15 +172,15 @@ class User {
         return this._data.character.equipment;
     }
 
-    async getWeaponCombatData() {
+    getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
             return null;
         }
 
-        let template = await Game.itemTemplates.getTemplate(weapon.template);
+        let item = this.inventory.getItemById(weapon.id);
         return {
-            element: template.element,
+            element: item.element,
             type: template.equipmentType
         }
     }

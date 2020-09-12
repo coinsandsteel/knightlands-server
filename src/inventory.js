@@ -669,8 +669,7 @@ class Inventory {
 
     async isMaxLevel(item) {
         const meta = await this.getMeta()
-        const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
-        const maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][2];
+        const maxLevel = meta.itemLimitBreaks[item.rarity][2];
         return item.level == maxLevel;
     }
 

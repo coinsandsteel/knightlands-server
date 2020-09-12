@@ -217,6 +217,10 @@ class Crafting {
             throw Errors.NoItem;
         }
 
+        if (item.breakLimit == 2) {
+            throw Errors.MaxUnbind;
+        }
+
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
             throw Errors.NoTemplate;
@@ -241,6 +245,10 @@ class Crafting {
             }
 
             if (materialItem.template != item.template) {
+                throw Errors.IncorrectArguments;
+            }
+
+            if (materialItem.rarity != item.rarity) {
                 throw Errors.IncorrectArguments;
             }
 
@@ -295,7 +303,7 @@ class Crafting {
         }
 
         let meta = await this._getMeta();
-        let maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][item.breakLimit];
+        let maxLevel = meta.itemLimitBreaks[item.rarity][item.breakLimit];
         if (item.level >= maxLevel) {
             throw Errors.ItemMaxLevel;
         }
@@ -583,6 +591,59 @@ class Crafting {
 
         return {
             item: newItem
+        };
+    }
+
+    async evolve(itemId) {
+        const evolveMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "evolve" });
+        const item = this._inventory.getItemById(itemId);
+        if (!item) {
+            throw Errors.NoItem;
+        }
+
+        const evolveRecipe = evolveMeta.evolveRecipes.find(x=>x.fromRarity == item.rarity);
+        if (!evolveRecipe) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (!this._inventory.isMaxLevel(item)) {
+            throw Errors.NotMaxLevel;
+        }
+
+        if (item.rarity == Rarity.Mythical) {
+            throw Errors.IncorrectArguments;
+        }
+
+        await this._craftRecipe(evolveRecipe.recipe, CurrencyType.Soft, 1);
+
+        let nextRarity = item.rarity;
+        switch (nextRarity) {
+            case Rarity.Common:
+                nextRarity = Rarity.Rare;
+                break;
+
+            case Rarity.Rare:
+                nextRarity = Rarity.Epic;
+                break;
+
+            case Rarity.Epic:
+                nextRarity = Rarity.Legendary;
+                break;
+
+            case Rarity.Legendary:
+                nextRarity = Rarity.Mythical;
+                break;
+        }
+
+        item.rarity = nextRarity;
+        item.breakLimit = 0;
+
+        await this._inventory.autoCommitChanges(async inv => {
+            inv.setItemUpdated(item);
+        });
+
+        return {
+            item: item
         };
     }
 

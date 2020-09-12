@@ -249,7 +249,7 @@ class Raid extends EventEmitter {
         let hitsToPerform = hits;
 
         // apply weakness bonuses
-        const attackerWeaponCombatData = await attacker.getWeaponCombatData();
+        const attackerWeaponCombatData = attacker.getWeaponCombatData();
         if (attackerWeaponCombatData) {
             // if element matches +30%
             // if weapon matches +30%
