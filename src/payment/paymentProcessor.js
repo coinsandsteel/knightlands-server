@@ -152,6 +152,10 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async requestPayment(userId, iap, tag, context, count = 1) {
+        if (!iap) {
+            throw Errors.UnknownIap;
+        }
+
         let fetchPaymentStatus = await this.fetchPaymentStatus(userId, tag, {
             iap,
             context

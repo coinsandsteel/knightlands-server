@@ -5,6 +5,7 @@ import CurrencyType from "../knightlands-shared/currency_type";
 import Random from "../random";
 import Rarity from "../knightlands-shared/rarity";
 import RankingType from "../knightlands-shared/ranking_type";
+import Elements from "../knightlands-shared/elements";
 const {
     EquipmentSlots,
     getSlot
@@ -138,9 +139,12 @@ class Crafting {
         return false;
     }
 
-    // check pre-conditions, ask for payment if necessary
-    async craftRecipe(recipeId, currency, amount) {
-        let recipe = await this._loadRecipe(recipeId);
+    async _craftRecipe(recipeId, currency, amount) {
+        let recipe = recipeId
+        if (typeof recipeId !== "object") {
+            recipe = await this._loadRecipe(recipeId);
+        }
+
         if (!recipe) {
             throw Errors.NoRecipe;
         }
@@ -172,11 +176,17 @@ class Crafting {
         // prevents problems when payment is delayed and ingridients are used somewhere else which leads to increased UX friction
         await this._inventory.consumeItemsFromCraftingRecipe(recipe, amount);
 
+        return recipe;
+    }
+
+    // check pre-conditions, ask for payment if necessary
+    async craftRecipe(recipeId, currency, amount) {
+        const recipe = await this._craftRecipe(recipeId, currency, amount);
         return await this.craftPayedRecipe(recipe, amount);
     }
 
     // just craft as final step
-    async craftPayedRecipe(recipe, amount) {
+    async craftPayedRecipe(recipe, amount, element) {
         if (typeof recipe != "object") {
             recipe = await this._loadRecipe(recipe);
         }
@@ -188,7 +198,7 @@ class Crafting {
         }, amount);
 
         await this._inventory.autoCommitChanges(async inv => {
-            await inv.addItemTemplate(recipe.resultItem, amount);
+            await inv.addItemTemplate(recipe.resultItem, amount, element);
         });
 
         return {
@@ -537,6 +547,43 @@ class Crafting {
         }
 
         return materialItems;
+    }
+
+    async createWeapon(recipeId, currency, itemId, element) {
+        const createMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "elemental_weapons" });
+
+        let elementalCreation = createMeta.new[recipeId];
+        if (!elementalCreation) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const item = this._inventory.getItemById(itemId);
+        if ((item.element && item.element == Elements.Physical) || !this._inventory.isMaxLevel(item)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (!elementalCreation.baseItems.includes(item.template)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        await this._craftRecipe(elementalCreation.recipe, currency, 1);
+        
+        await Game.rankings.updateRank(this._userId, {
+            type: RankingType.CraftedItemsByRarity,
+            rarity: item.rarity
+        }, 1);
+
+        const newItem = this._inventory.copyItem(item, 1);
+        newItem.element = element;
+
+        await this._inventory.autoCommitChanges(async inv => {
+            inv.removeItem(itemId)
+            inv.addItem(newItem);
+        });
+
+        return {
+            item: newItem
+        };
     }
 
     _getItemById(itemId) {

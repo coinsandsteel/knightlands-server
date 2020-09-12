@@ -3,10 +3,12 @@ const {
 } = require("./database");
 
 import ItemType from "./knightlands-shared/item_type";
+import Elements from "./knightlands-shared/elements";
 import Game from "./game";
 import CurrencyType from "./knightlands-shared/currency_type";
 import RankingType from "./knightlands-shared/ranking_type";
-import { getSlot } from "./knightlands-shared/equipment_slot";
+import { getSlot, EquipmentSlots } from "./knightlands-shared/equipment_slot";
+import EquipmentType from "./knightlands-shared/equipment_type";
 
 const UserHolder = -1;
 
@@ -41,6 +43,16 @@ class Inventory {
             items: this._items,
             currencies: this._currencies
         }
+    }
+
+    async getMeta() {
+        if (!this._meta) {
+            this._meta = await Game.db.collection(Collections.Meta).findOne({
+                _id: "meta"
+            });
+        }
+        
+        return this._meta;
     }
 
     getCurrency(currency) {
@@ -317,11 +329,13 @@ class Inventory {
 
         let templateIds = new Array(length);
         let itemQuantities = {};
+        let elements = {};
         {
             let i = 0;
             for (; i < length; ++i) {
                 templateIds[i] = templateRecords[i].item;
                 itemQuantities[templateIds[i]] = templateRecords[i].quantity;
+                elements[templateIds[i]] = templateRecords[i].element;
             }
         }
 
@@ -333,7 +347,8 @@ class Inventory {
         let templates = await Game.itemTemplates.getTemplates(templateIds);
         let i = 0;
         for (; i < length; ++i) {
-            await this._addItemTemplate(templates[i], itemQuantities[templates[i]._id]);
+            const template = templates[i];
+            await this._addItemTemplate(template, itemQuantities[template._id], elements[template._id]);
         }
     }
 
@@ -385,7 +400,7 @@ class Inventory {
         return count;
     }
 
-    async _addItemTemplate(template, count) {
+    async _addItemTemplate(template, count, element) {
         if (count <= 0) {
             return;
         }
@@ -396,14 +411,13 @@ class Inventory {
         }
 
         let stacked = false;
-
         let templates = this._getItemsByTemplate(template._id);
         if (templates.length > 0) {
             let i = 0;
             const length = templates.length;
             for (; i < length; ++i) {
                 let item = templates[i];
-                if (item.unique) {
+                if (item.unique || item.element != element) {
                     continue;
                 }
 
@@ -414,7 +428,11 @@ class Inventory {
         }
 
         if (!stacked) {
-            this.addItem(this.createItem(template._id, count));
+            const item = this.createItemByTemplate(template, count);
+            if (element) {
+                item.element = element;
+            }
+            this.addItem(item);
         }
 
         await Game.rankings.updateRank(this._userId, {
@@ -424,10 +442,11 @@ class Inventory {
         }, count);
     }
 
-    async addItemTemplate(template, quantity = 1) {
+    async addItemTemplate(template, quantity = 1, element) {
         await this.addItemTemplates([{
             item: template,
-            quantity
+            quantity,
+            element
         }]);
     }
 
@@ -446,7 +465,7 @@ class Inventory {
                 const length = templates.length;
                 for (; i < length; ++i) {
                     const foundItem = templates[i];
-                    if (!foundItem.unique) {
+                    if (!foundItem.unique && foundItem.element == item.element) {
                         this.modifyStack(foundItem, item.count);
                         return foundItem;
                     }
@@ -638,25 +657,42 @@ class Inventory {
         return this.countItemsByTemplate(template, skipEquipped) >= count;
     }
 
+    findWeapon(ingridient, items) {
+        let foundItem;
+        for (const ph of ingridient.placeholderItems) {
+            if (items[ph] && (foundItem = this.getItemById(items[ph]))) {
+                break;
+            }
+        }
+        return foundItem;
+    }
+
+    async isMaxLevel(item) {
+        const meta = await this.getMeta()
+        const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
+        const maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][2];
+        return item.level == maxLevel;
+    }
+
     async hasEnoughIngridients(ingridients) {
         let enoughResources = true;
         let i = 0;
         const length = ingridients.length;
-        // TODO cache it
-        let meta = await Game.db.collection(Collections.Meta).findOne({
-            _id: "meta"
-        });
 
         // NOTICE doesn't support max level items >1 quantity!
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
+            if (ingridient.placeholder) {
+                continue;
+            }
+
             if (!this.hasItems(ingridient.itemId, ingridient.quantity)) {
                 enoughResources = false;
                 break;
             }
 
             if (ingridient.maxLevelRequired) {
-                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId, meta);
+                let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
                 if (!item) {
                     enoughResources = false;
                     break;
@@ -667,7 +703,7 @@ class Inventory {
         return enoughResources;
     }
 
-    async _getItemTemplateWithMaxLevel(template, meta) {
+    async _getItemTemplateWithMaxLevel(template) {
         let templates = this._getItemsByTemplate(template);
         let k = 0;
         let l = templates.length;
@@ -677,15 +713,7 @@ class Inventory {
                 continue;
             }
 
-            let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
-            if (!meta) {
-                meta = await Game.db.collection(Collections.Meta).findOne({
-                    _id: "meta"
-                });
-            }
-
-            let maxLevel = meta.itemLimitBreaks[itemTemplate.rarity][2];
-            if (item.level == maxLevel) {
+            if (this.isMaxLevel(item)) {
                 return item;
             }
         }
@@ -693,12 +721,17 @@ class Inventory {
         return null;
     }
 
-    consumeIngridients(ingridients) {
+    consumeIngridients(ingridients, items) {
         let i = 0;
         const length = ingridients.length;
         for (; i < length; ++i) {
             let ingridient = ingridients[i];
-            this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+            if (ingridient.placeholder) {
+                let foundItem = this.findItemPlaceholder(ingridient, items);
+                this._removeItem(foundItem, ingridient.quantity);
+            } else {
+                this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
+            }
         }
     }
 
@@ -708,9 +741,13 @@ class Inventory {
         for (; i < length; ++i) {
             let ingridient = recipe.ingridients[i];
             for (let j = 0; j < amount; ++j) {
+                if (ingridient.placeholder) {
+                    continue;
+                }
+
                 if (ingridient.maxLevelRequired) {
                     let item = await this._getItemTemplateWithMaxLevel(ingridient.itemId);
-                    this.deleteItemById(item.id);
+                    this._removeItem(item, ingridient.quantity);
                 } else {
                     this.removeItemByTemplate(ingridient.itemId, ingridient.quantity);
                 }
@@ -746,23 +783,41 @@ class Inventory {
 
         this.modifyStack(item, -1);
 
-        const newItem = this.createItem(item.template, 1);
+        const newItem = this.copyItem(item, 1);
         newItem.unique = true;
         this.addItem(newItem);
         return newItem;
     }
 
-    createItem(templateId, count = 0) {
-        return {
+    copyItem(original, count) {
+        const copy = { ...original };
+        copy.id = this.nextId;
+        copy.count = count;
+        return copy;
+    }
+
+    createItemByTemplate(template, count = 1) {
+        const item = {
             id: this.nextId,
-            template: templateId * 1,
+            template: template._id * 1,
             count: count,
             level: 1,
             exp: 0,
             equipped: false,
             breakLimit: 0,
             unique: false
-        };
+        }
+
+        if (template.type == ItemType.Equipment) {
+            item.rarity = template.rarity;
+
+            const slot = getSlot(template.equipmentType);
+            if (slot == EquipmentSlots.MainHand || slot == EquipmentSlots.OffHand) {
+                item.element = Elements.Physical;
+            }
+        }
+
+        return item;
     }
 }
 
