@@ -539,11 +539,11 @@ class Inventory {
     }
 
     removeItemByTemplate(templateId, count = 1) {
-        let templates = this._getItemsByTemplate(templateId);
-        if (templates.length > 0) {
-            const length = templates.length;
-            let i = 0;
-            for (; i < length; ++i) {
+        let templates = [...this._getItemsByTemplate(templateId)];
+        const length = templates.length;
+
+        if (length > 0) {
+            for (let i = 0; i < length; ++i) {
                 if (count == 0) {
                     break;
                 }

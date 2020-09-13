@@ -300,7 +300,7 @@ export class ArmyManager {
         unit.essence += levelRecord.essence;
 
         await user.addSoftCurrency(-levelRecord.gold);
-        await user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
+        user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
         unit.level++;
         await this._units.onUnitUpdated(userId, unit);
 
