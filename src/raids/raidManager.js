@@ -121,6 +121,10 @@ class RaidManager {
         }
     }
 
+    async joinFreeRaid(userId, raidId) {
+        return await this.summonRaid(userId, raidId, true)
+    }
+
     async _joinRaid(userId, raidId) {
         let raid = this.getRaid(raidId);
         if (!raid) {

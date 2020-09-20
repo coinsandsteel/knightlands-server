@@ -778,6 +778,12 @@ class PlayerController extends IPaymentListener {
     }
 
     async _joinRaid(data, respond) {
+        const { isFree } = data;
+        if (isFree) {
+            respond(null, await this._raidManager.joinFreeRaid(this.address, data.raidId))
+            return
+        }
+
         try {
             let payment = await this._raidManager.joinRaid(this.address, data.raidId);
             respond(null, payment);
@@ -1067,16 +1073,12 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        if (user.freeTowerAttempts > 0) {
-            user.freeTowerAttempts--;
-        } else {
+        if (user.freeTowerAttempts <= 0) {
             const miscMeta = floorData.find(x => x._id == "misc");
             const ticketItem = user.inventory.getItemByTemplate(miscMeta.ticketItem);
             if (!ticketItem) {
                 throw Errors.TowerNoTicket;
             }
-
-            user.inventory.removeItem(ticketItem.id, 1);
         }
 
         towerFloor.startTime = Game.now;
@@ -1155,6 +1157,18 @@ class PlayerController extends IPaymentListener {
         }
 
         towerFloor.claimed = true;
+        
+        if (user.freeTowerAttempts > 0) {
+            user.freeTowerAttempts--;
+        } else {
+            const miscMeta = floorData.find(x => x._id == "misc");
+            const ticketItem = user.inventory.getItemByTemplate(miscMeta.ticketItem);
+            if (!ticketItem) {
+                throw Errors.TowerNoTicket;
+            }
+
+            user.inventory.removeItem(ticketItem.id, 1);
+        }
 
         return await this._sendRewardsForTowerFloor(towerFloor.id, firstClearance);
     }
