@@ -805,20 +805,27 @@ class User {
             throw Errors.NoItem;
         }
 
-        if (itemToUse.count < count) {
-            throw Errors.NoEnoughItems;
-        }
-
         let template = await Game.itemTemplates.getTemplate(itemToUse.template);
         if (!template.action) {
             throw Errors.NotConsumable;
         }
 
-        // remove used item
-        this._inventory.removeItem(itemToUse.id, count);
+        const actionData = template.action;
+        let itemsRequired = count;
 
-        let actionData = template.action;
+        if (actionData.required > 0) {
+            itemsRequired *= actionData.required;
+        }
+
+        if (itemToUse.count < itemsRequired) {
+            throw Errors.NoEnoughItems;
+        }
+
+        // remove used item
+        this._inventory.removeItem(itemToUse.id, itemsRequired);
+        
         const actionValue = actionData.value * count;
+
         // based on action perform necessary actions
         switch (actionData.action) {
             case ItemActions.RefillTimer:
@@ -842,6 +849,9 @@ class User {
             case ItemActions.Buff:
             case ItemActions.RaidBuff:
                 return await this._applyBuff(template._id, actionData);
+
+            case ItemActions.SummonUnit:
+                return await Game._armyManager.summonRandomUnit(this.address, count, actionData.value);
         }
     }
 

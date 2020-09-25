@@ -5,6 +5,7 @@ import SummonType from "../knightlands-shared/army_summon_type";
 const bounds = require("binary-search-bounds");
 import Random from "../random";
 import WeightedList from "../js-weighted-list";
+import random from "../random";
 
 let comparator = (x, roll) => {
     return x.weight - roll;
@@ -28,15 +29,71 @@ export class ArmySummoner {
 
     async summon(total: number, summonType: number) {
         let count = total;
-        let units = [];
+        let units: ArmyUnit[] = [];
         while (count-- > 0) {
-            units.push(await this._summon(summonType));
+            units.push(this._summon(summonType));
         }
 
         return units;
     }
 
-    private async _summon(summonType: number) {
+    async summonWithStars(total: number, targetStars: number) {
+        let count = total;
+        let units: ArmyUnit[] = [];
+        
+        let totalTroopsWeight = 0;
+        for (const stars in this._meta.troops) {
+            totalTroopsWeight += this._meta.troops[stars].totalWeight;
+        }
+
+        let totalGeneralsWeight = 0;
+        for (const stars in this._meta.generals) {
+            totalGeneralsWeight += this._meta.generals[stars].totalWeight;
+        }
+
+        // if unit requests is beyond max stars, set min stars that can reach target stars
+        let minStars = targetStars > 5 ? 4 : targetStars;
+
+        while (count-- > 0) {
+            const isTroop = random.intRange(1, totalTroopsWeight + totalGeneralsWeight) <= totalTroopsWeight;
+            const stars = random.intRange(minStars, targetStars);
+            const unit = this._generateUnit(stars, isTroop);
+            // if extra stars, promote unit
+            unit.promotions = targetStars - stars;
+            units.push(unit);
+        }
+
+        return units;
+    }
+
+    private _generateUnit(stars: number, isTroop: boolean) {
+        let content = isTroop ? this._meta.troops[stars] : this._meta.generals[stars];
+
+            // roll unit
+        let unitIndex = bounds.gt(content.units, Random.range(1, content.totalWeight, true), comparator);
+        if (unitIndex >= 0) {
+            let unitTemplate = content.units[unitIndex].unit;
+            // generate abilities
+            let abilities = this._generateAbilities(unitTemplate);
+            return {
+                troop: isTroop,
+                template: unitTemplate,
+                promotions: 0,
+                id: 0,
+                level: 1,
+                abilities: abilities,
+                items: {},
+                gold: 0,
+                essence: 0,
+                souls: 0,
+                legion: -1
+            };
+        }
+
+        return null;
+    }
+
+    private _summon(summonType: number) {
         let summonMeta = summonType == SummonType.Normal ? this._meta.normalSummon : this._meta.advancedSummon;
 
         let unit: ArmyUnit;
@@ -47,34 +104,14 @@ export class ArmySummoner {
             let group = summonMeta.summonGroups[rolledRecordIndex];
             let typeRoll = Random.range(1, group.generalsWeight + group.troopsWeight, true);
             let isTroop = typeRoll <= group.troopsWeight;
-            let content = isTroop ? this._meta.troops[group.stars] : this._meta.generals[group.stars];
 
-            // roll unit
-            let unitIndex = bounds.gt(content.units, Random.range(1, content.totalWeight, true), comparator);
-            if (unitIndex >= 0) {
-                let unitTemplate = content.units[unitIndex].unit;
-                // generate abilities
-                let abilities = await this._generateAbilities(unitTemplate);
-                unit = {
-                    troop: isTroop,
-                    template: unitTemplate,
-                    promotions: 0,
-                    id: 0,
-                    level: 1,
-                    abilities: abilities,
-                    items: {},
-                    gold: 0,
-                    essence: 0,
-                    souls: 0,
-                    legion: -1
-                };
-            }
+            unit = this._generateUnit(group.stars, isTroop);
         }
 
         return unit;
     }
 
-    private async _generateAbilities(unitTemplate: number, stars: number = 0) {
+    private _generateAbilities(unitTemplate: number, stars: number = 0) {
         let template = this._units[unitTemplate];
         const abilities = [...template.fixedAbilities];
 

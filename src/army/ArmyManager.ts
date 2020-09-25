@@ -219,6 +219,20 @@ export class ArmyManager {
         return this.loadArmyProfile(userId);
     }
 
+    async summonRandomUnit(userId: string, count: number, stars: number) {
+        let armyProfile = await this.loadArmyProfile(userId);
+        let lastUnitId = armyProfile.lastUnitId;
+        const newUnits = await this._summoner.summonWithStars(count, stars);
+        // assign ids
+        for (const unit of newUnits) {
+            unit.id = ++lastUnitId;
+        }
+
+        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastUnitId } }, { upsert: true });
+
+        return newUnits;
+    }
+    
     async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
         let armyProfile = await this.loadArmyProfile(userId);
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
@@ -359,6 +373,12 @@ export class ArmyManager {
         const meta = unit.troop ? this._troops : this._generals;
         const template = this._unitTemplates[unit.template];
         const stars = template.stars + unit.promotions;
+        const maxStars = template.stars < 3 ? 3 : 10;
+
+        if (stars >= maxStars) {
+            throw Errors.ArmyUnitMaxPromotions;
+        }
+
         const fusionTemplates = meta.fusionMeta.templates;
         const fusionTemplate = fusionTemplates[stars];
         if (!fusionTemplate) {
@@ -379,6 +399,7 @@ export class ArmyManager {
 
             for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
+
                 if (usedUnits[targetUnit.id]) {
                     throw Errors.IncorrectArguments;
                 }
