@@ -45,6 +45,10 @@ class Raid extends EventEmitter {
         return !this._bossUnit.isAlive || this._data.timeLeft < 1;
     }
 
+    get free() {
+        return this._data.isFree;
+    }
+
     get template() {
         return this._data.isFree ? this._template.soloData : this._template.data;
     }
@@ -102,6 +106,10 @@ class Raid extends EventEmitter {
     }
 
     get isFull() {
+        if (this._data.isFree) {
+            return true;
+        }
+
         return this._data.busySlots >= this.template.maxSlots;
     }
 

@@ -131,6 +131,8 @@ class RaidManager {
             throw Errors.InvalidRaid;
         }
 
+        const user = await Game.getUser(userId);
+        await user.dailyQuests.onPaidRaidJoin();
         await raid.join(userId);
     }
 
@@ -192,6 +194,11 @@ class RaidManager {
         const raid = new Raid(this._db);
         await raid.create(summonerId, raidTemplateId, isFree);
         this._addRaid(raid);
+
+        if (!isFree) {
+            const user = await Game.getUser(summonerId);
+            await user.dailyQuests.onPaidRaidJoin();
+        }
 
         return {
             raid: raid.id
@@ -401,6 +408,11 @@ class RaidManager {
     async _handleRaidDefeat(raid) {
         await raid.finish(await this._getNextDktFactor(raid.templateId));
         this._removeRaid(raid.id);
+
+        if (raid.free) {
+            const user = await Game.getUser(summonerId);
+            await user.dailyQuests.onFreeRaidFinished();
+        }
     }
 
     _removeRaid(id) {

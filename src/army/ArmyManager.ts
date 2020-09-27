@@ -237,6 +237,10 @@ export class ArmyManager {
         let armyProfile = await this.loadArmyProfile(userId);
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
+        if (!summonMeta) {
+            throw Errors.IncorrectArguments;
+        }
+
         if (!payed) {
             let resetCycle = 86400 / summonMeta.freeOpens;
             let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
@@ -268,6 +272,9 @@ export class ArmyManager {
         let lastSummon = armyProfile.lastSummon;
         lastSummon[summonType] = Game.nowSec;
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
+
+        const user = await Game.getUser(userId);
+        await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
 
         return newUnits;
     }
@@ -317,6 +324,7 @@ export class ArmyManager {
         user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
         unit.level++;
         await this._units.onUnitUpdated(userId, unit);
+        await user.dailyQuests.onUnitLevelUp(1, unit.troop);
 
         return unit;
     }

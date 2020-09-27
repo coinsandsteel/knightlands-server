@@ -548,6 +548,7 @@ class Crafting {
         this._user.inventory.removeItems(Object.values(itemsToRemove));
 
         for (const material of materialItems) {
+            await this._user.dailyQuests.onItemDisenchant(material.quantity);
             await Game.rankings.updateRank(this._userId, {
                 type: RankingType.DisenchantedItemsByRarity,
                 rarity: material.rarity

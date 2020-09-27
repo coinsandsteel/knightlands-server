@@ -74,6 +74,13 @@ class LootGenerator {
             await inv.addItemTemplates(items);
         });
 
+        // TODO ugly, move to configuration
+        if (chestId == "silver_chest") {
+            await user.dailyQuests.onChestOpened(count, false);
+        } else if (chestId == "velvet_chest") {
+            await user.dailyQuests.onChestOpened(count, true);
+        }
+
         return items;
     }
 

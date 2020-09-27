@@ -141,9 +141,6 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchGoldExchangePremiumBoostStatus, this._gameHandler(this._fetchGoldExchangePremiumStatus.bind(this)));
 
         // Daily quests
-        this._socket.on(Operations.RefreshDailyTasks, this._gameHandler(this._refreshDailyTasks.bind(this)));
-        this._socket.on(Operations.AcceptDailyTask, this._gameHandler(this._acceptDailyTasks.bind(this)));
-        this._socket.on(Operations.CancelDailyTask, this._gameHandler(this._cancelDailyTasks.bind(this)));
         this._socket.on(Operations.ClaimDailyTasksRewards, this._gameHandler(this._claimDailyTasksRewards.bind(this)));
 
         // Dividends
@@ -1282,20 +1279,8 @@ class PlayerController extends IPaymentListener {
     }
 
     // Daily Quests
-    async _refreshDailyTasks(user) {
-        user.dailyQuests.refreshTasks();
-    }
-
-    async _acceptDailyTasks(user, data) {
-        user.dailyQuests.acceptTask(data.index * 1);
-    }
-
-    async _cancelDailyTasks(user) {
-        user.dailyQuests.cancelTask();
-    }
-
-    async _claimDailyTasksRewards(user) {
-        return await user.dailyQuests.claimRewards();
+    async _claimDailyTasksRewards(user, data) {
+        return await user.dailyQuests.claimRewards(data.taskType);
     }
 
     // Dividends
