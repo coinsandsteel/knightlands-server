@@ -1224,6 +1224,8 @@ class User {
 
         await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
 
+        this._dailyQuests.onAdventureStarted();
+
         return adventureToStart;
     }
 

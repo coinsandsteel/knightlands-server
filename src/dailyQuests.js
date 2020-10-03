@@ -1,8 +1,8 @@
 const { Collections } = require("./database");
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
-const Rarity = require("./knightlands-shared/rarity");
 import DailyQuestType from "./knightlands-shared/daily_quest_type";
+import Events from "./knightlands-shared/events";
 
 class DailyQuests {
     constructor(data, user) {
@@ -108,6 +108,10 @@ class DailyQuests {
         this._advanceTask(DailyQuestType.DailySpendPremium, count);
     }
 
+    async onAdventureStarted() {
+        this._advanceTask(DailyQuestType.DailyStartAdventure, 1);
+    }
+
     async claimRewards(taskType) {
         if (this._data.claimedTasks[taskType]) {
             throw Errors.CantClaimReward;
@@ -116,11 +120,7 @@ class DailyQuests {
         let taskRewards;
         const meta = this._getCurrentLevelMeta();
 
-        if (taskType == DailyQuestType.DailyAllTasks) {
-            taskRewards = meta.allQuestsFinished;
-        } else {
-            taskRewards = meta.rewards[taskType];
-        }
+        taskRewards = meta.rewards[taskType];
 
         if (!taskRewards) {
             throw Errors.UnknownTask;
@@ -155,6 +155,8 @@ class DailyQuests {
         if (this._data.cycle != rewardCycle) {
             this._data.cycle = rewardCycle;
             this._data.completedTasks = {};
+            this._data.taskProgress = {};
+            this._data.claimedTasks = {};
         }
     }
 
@@ -170,14 +172,23 @@ class DailyQuests {
         return tasksMeta;
     }
 
-    async _advanceTask(taskType, count) {
+    _countTowardsAllTasks() {
+        this._advanceTask(DailyQuestType.DailyAllTasks, 1, false);
+        this._advanceTask(DailyQuestType.DailyAllTasks2, 1, false);
+        this._advanceTask(DailyQuestType.DailyAllTasks3, 1, false);
+    }
+
+    _advanceTask(taskType, count, countTowardsAll = true) {
         // do not count towards task that wasn't claim yet
         if (this._data.completedTasks[taskType]) {
             return;
         }
 
+        const currentLevelMeta = this._getCurrentLevelMeta();
+        const taskMeta = currentLevelMeta.rewards[taskType];
+
         let currentProgress = this._data.taskProgress[taskType] || 0;
-        const maxProgress = this._meta.questTargets[taskType].value;
+        const maxProgress = taskMeta.targetValue;
 
         currentProgress += count;
 
@@ -188,9 +199,13 @@ class DailyQuests {
             this._data.completedTasks[taskType] = true;
             this._data.taskProgress[DailyQuestType.DailyAllTasks] = (this._data.taskProgress[DailyQuestType.DailyAllTasks] || 0) + 1;
 
-            // Game.emitPlayerEvent(this._user.address, DailyQuests.TaskCompleted, {
-            //     type: task.type
-            // });
+            if (countTowardsAll) {
+                this._countTowardsAllTasks();
+            }
+
+            Game.emitPlayerEvent(this._user.address, Events.DailyTaskComplete, {
+                type: taskType
+            });
         }
 
         this._data.taskProgress[taskType] = currentProgress;
