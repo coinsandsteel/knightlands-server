@@ -18,6 +18,7 @@ class DailyQuests {
         if (!this._data.hasOwnProperty("cycle")) {
             let defaultData = {
                 cycle: 0,
+                playerLevel: 0,
                 taskProgress: {},
                 completedTasks: {},
                 claimedTasks: {}
@@ -154,6 +155,7 @@ class DailyQuests {
 
         if (this._data.cycle != rewardCycle) {
             this._data.cycle = rewardCycle;
+            this._data.playerLevel = this._user.level;
             this._data.completedTasks = {};
             this._data.taskProgress = {};
             this._data.claimedTasks = {};
@@ -164,7 +166,7 @@ class DailyQuests {
         let tasksMeta;
         for (let i = 0; i < this._meta.quests.length; ++i) {
             tasksMeta = this._meta.quests[i];
-            if (tasksMeta.maximumLevel >= this._user.level) {
+            if (tasksMeta.maximumLevel >= this._data.playerLevel) {
                 break;
             }
         }
