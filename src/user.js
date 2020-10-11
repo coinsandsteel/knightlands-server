@@ -19,6 +19,7 @@ import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
+import { GoldMines } from './gold-mines/GoldMines.ts'
 
 const {
     EquipmentSlots,
@@ -171,6 +172,10 @@ class User {
     get equipment() {
         return this._data.character.equipment;
     }
+
+    get goldMines() {
+        return this._goldMines;
+    }        
 
     getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
@@ -459,6 +464,7 @@ class User {
         this._trials = new Trials(this._data.trials, this);
         this._goldExchange = new GoldExchange(this._data.goldExchange, this);
         this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
+        this._goldMines = new GoldMines(this, this._data.goldMines);
 
         this._advanceTimers();
 
@@ -1100,6 +1106,10 @@ class User {
 
         if (!user.dailyQuests) {
             user.dailyQuests = {};
+        }
+
+        if (!user.goldMines) {
+            user.goldMines = {};
         }
 
         return user;
