@@ -844,6 +844,8 @@ class PlayerController extends IPaymentListener {
         await user.addDkt(rewards.dkt);
         await user.addHardCurrency(rewards.hardCurrency);
 
+        await Game.tokenAmounts.insertTokens(rewards.dkt);
+
         return rewards;
     }
 
@@ -1452,16 +1454,16 @@ class PlayerController extends IPaymentListener {
         return user.goldMines.upgradeMine(+data.mineIndex);
     }
 
-    async _upgradeMineStorage(user, data) {
-        return user.goldMines.upgradeStorage(+data.mineIndex);
+    async _upgradeMineStorage(user) {
+        return user.goldMines.upgradeStorage();
     }
 
-    async _expandMine(user, data) {
+    async _expandMine(user) {
         return user.goldMines.expand();
     }
 
-    async _collectMine(user, data) {
-        return user.goldMines.collectGold(+data.mineIndex);
+    async _collectMine(user) {
+        return user.goldMines.collectGold();
     }
 }
 

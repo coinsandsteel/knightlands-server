@@ -76,7 +76,6 @@ class User {
     serializeForClient() {
         // we can use shallow copy here, we delete only first level fields
         let data = Object.assign({}, this._data);
-
         // remove unwanted fields
         delete data._id;
         delete data.nonce;

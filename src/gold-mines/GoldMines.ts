@@ -13,21 +13,25 @@ export class GoldMines {
         this.user = user;
 
         if (!this.data.mines) {
+            this.data.storage = {
+                level: 0,
+                gold: 0
+            };
             this.data.mines = [
                 this.createMine()
             ];
         }
     }
 
-    async collectGold(mineIndex: number) {
-        const mine = this.checkAndGetMine(mineIndex);
+    async collectGold() {
+        for (const mine of this.data.mines) {
+            await this.updateMine(mine);
+        }
 
-        await this.updateMine(mine);
-
-        const collectedGold = Math.floor(mine.gold); // floating point accumulation
+        const collectedGold = Math.floor(this.data.storage.gold); // floating point accumulation
         await this.user.addSoftCurrency(collectedGold);
 
-        mine.gold -= collectedGold;
+        this.data.storage.gold -= collectedGold;
     }
 
     async upgradeMine(mineIndex: number) {
@@ -49,23 +53,25 @@ export class GoldMines {
         mine.level++;
     }
 
-    async upgradeStorage(mineIndex: number) {
-        const mine = this.checkAndGetMine(mineIndex);
+    async upgradeStorage() {
         const meta = await this.getMeta();
 
-        if (meta.storage.length <= mine.storageLevel + 1) {
+        if (meta.storage.length <= this.data.storage.level + 1) {
             throw Errors.GoldMineStorageMaxLevel;
         }
 
-        const price = meta.mines[mine.storageLevel + 1].price;
+        const price = meta.mines[this.data.storage.level + 1].price;
         if (this.user.softCurrency < price) {
             throw Errors.NotEnoughSoft;
         }
 
         await this.user.addSoftCurrency(-price);
-        await this.updateMine(mine);
 
-        mine.storageLevel++;
+        for (const mine of this.data.mines) {
+            await this.updateMine(mine);
+        }
+
+        this.data.storage.level++;
     }
 
     async expand() {
@@ -88,21 +94,20 @@ export class GoldMines {
 
         const timePassed = Game.nowSec - mine.lastUpdate;
         let goldMined = timePassed * meta.mines[mine.level].rate;
-        const storageSize = meta.storage[mine.storageLevel].size;
 
+        this.data.storage.gold += goldMined;
+
+        const storageSize = meta.storage[this.data.storage.level].size;
         if (goldMined > storageSize) {
-            goldMined = storageSize;
+            this.data.storage.gold = storageSize;
         }
 
-        mine.gold += goldMined;
         mine.lastUpdate = Game.nowSec;
     }
 
     private createMine(): GoldMine {
         return {
             level: 0,
-            storageLevel: 0,
-            gold: 0,
             lastUpdate: Game.nowSec
         }
     }

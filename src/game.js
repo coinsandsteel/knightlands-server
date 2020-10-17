@@ -6,6 +6,7 @@ const PlayerController = require("./playerController");
 const ItemTemplates = require("./itemTemplates");
 const { Collections } = require("./database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
+import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
 
 class Game extends EventEmitter {
     constructor() {
@@ -39,6 +40,7 @@ class Game extends EventEmitter {
         this._dividends = dividends;
         this._rankings = rankings;
         this._armyManager = armyManager;
+        this.tokenAmounts = new DivTokenFarmedTimeseries(db);
 
         this._players = {};
     }

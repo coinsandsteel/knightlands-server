@@ -1,12 +1,16 @@
 export interface GoldMine {
     level: number;
-    storageLevel: number;
     lastUpdate: number;
+}
+
+export interface GoldStorage {
+    level: number;
     gold: number;
 }
 
 export interface GoldMinesSaveData {
     mines: GoldMine[];
+    storage: GoldStorage;
 }
 
 export interface MineUpgradeMeta {

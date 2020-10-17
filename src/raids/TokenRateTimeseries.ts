@@ -18,10 +18,10 @@ export class TokenRateTimeseries {
 
     async updateRate(raidTemplateId: number, rate: number) {
         // update latest data point
-        let queryResult = await this._db.collection(Collections.DivTokenTimeseries).find({ raidTemplateId }).sort({ t: -1 }).limit(1).toArray();
+        let queryResult = await this._db.collection(Collections.DivTokenRateTimeseries).find({ raidTemplateId }).sort({ t: -1 }).limit(1).toArray();
         const latestEntry = queryResult[0];
         latestEntry.r = rate;
-        await this._db.collection(Collections.DivTokenTimeseries).updateOne({ _id: latestEntry._id }, { $set: latestEntry });
+        await this._db.collection(Collections.DivTokenRateTimeseries).updateOne({ _id: latestEntry._id }, { $set: latestEntry });
         // let know connected clients that current rate has changed
         Game.publishToChannel(`${Events.TokenChartUpdate}_${raidTemplateId}`, {
             raid: raidTemplateId,
@@ -31,7 +31,7 @@ export class TokenRateTimeseries {
     }
 
     async insertRates(queries: InsertQuery[]) {
-        await this._db.collection(Collections.DivTokenTimeseries).bulkWrite(queries);
+        await this._db.collection(Collections.DivTokenRateTimeseries).bulkWrite(queries);
 
         for (const query of queries) {
             // let know connected clients that current rate has changed
@@ -44,7 +44,7 @@ export class TokenRateTimeseries {
     }
 
     async query(raidTemplateId, from, to) {
-        return await this._db.collection(Collections.DivTokenTimeseries)
+        return await this._db.collection(Collections.DivTokenRateTimeseries)
             .find(
                 {
                     raidTemplateId: raidTemplateId,
