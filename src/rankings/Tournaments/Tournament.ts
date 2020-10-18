@@ -6,7 +6,7 @@ import lt from "../../utils/longTimeout";
 import Game from "../../game";
 import Events from "../../knightlands-shared/events";
 
-import { TournamentRecord, TournamentState, TournamentRewardsMeta } from "./TournamentTypes";
+import { TournamentRecord, TournamentState, TournamentRewardsMeta, TournamentDivTokenRewards } from "./TournamentTypes";
 import { Ranking, RankingOptions } from "../Ranking";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
 
@@ -46,7 +46,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
         await this._ranking.addRank(userId);
     }
 
-    async create(tier: string | number, typeOptions: RankingOptions, duration: number, rewards: TournamentRewardsMeta, ) {
+    async create(tier: string | number, typeOptions: RankingOptions, duration: number, rewards: TournamentRewardsMeta, divTokenRewards: TournamentDivTokenRewards) {
         const state = {
             tier,
             state: TournamentState.Running,
@@ -55,6 +55,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
             rewards,
             _id: null,
             looted: {},
+            divTokenRewards,
             rankingState: {
                 typeOptions
             }

@@ -7,13 +7,16 @@ export interface TournamentConfiguration {
 }
 
 export interface TournamentRewardSchema {
+    dkt: number;
     minRank: number;
     maxRank: number;
     loot: any;
 }
 
 export interface TournamentRewardsMeta {
+    id: number;
     tier: number;
+    dktPoolSize: number;
     rewards: Array<TournamentRewardSchema>;
 }
 
@@ -35,9 +38,14 @@ export interface TournamentRecord {
     duration: number;
     rewards: TournamentRewardsMeta;
     rankingState: RankingState;
+    divTokenRewards: TournamentDivTokenRewards;
     looted: { [key: string]: boolean };
 }
 
 export interface TournamentsState {
     runningTournaments: Array<ObjectID>;
+}
+
+export interface TournamentDivTokenRewards {
+    tokenPool: number;
 }

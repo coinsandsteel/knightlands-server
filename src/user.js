@@ -471,6 +471,7 @@ class User {
         await this._trials.init();
         await this._goldExchange.init();
         await this._dailyQuests.init();
+        await this.collectDailyRefills();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
@@ -1372,7 +1373,7 @@ class User {
 
     async collectDailyRefills() {
         if (this._data.dailyRefillCollect >= this.getDailyRewardCycle()) {
-            throw Errors.DailyRefillCollected;
+            return;
         }
 
         this._data.dailyRefillCollect = this.getDailyRewardCycle();

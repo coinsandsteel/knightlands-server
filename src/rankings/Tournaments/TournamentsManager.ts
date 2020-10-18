@@ -1,6 +1,6 @@
 import { Db, ObjectId } from "mongodb";
 import { Collections } from "../../database";
-import { TournamentsState, TournamentsMeta, TournamentState, TournamentRecord } from "./TournamentTypes";
+import { TournamentsState, TournamentsMeta, TournamentState, TournamentRecord, TournamentDivTokenRewards, TournamentRewardsMeta, TournamentRewardSchema } from "./TournamentTypes";
 import { Tournament } from "./Tournament";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
 import { RankingOptions, RankingRecord } from "../Ranking";
@@ -77,10 +77,11 @@ class TournamentsManager implements IRankingTypeHandler {
 
         return tournaments;
     }
+
     async getRewards(tournamentId: string) {
         let tournamentState = <TournamentRecord>await this._db.collection(Collections.Tournaments).findOne({
             _id: ObjectId(tournamentId)
-        }, { $project: { rewards: 1 } });
+        }, { $project: { rewards: 1, divTokenRewards: 1 } });
 
         if (!tournamentState) {
             throw Errors.NoSuchTournament;
@@ -89,9 +90,12 @@ class TournamentsManager implements IRankingTypeHandler {
         return tournamentState.rewards.rewards.map(x => {
             let copyX = {
                 ...x,
+                dkt: 0
             };
 
             copyX.loot = x.loot.guaranteedRecords;
+            // spread between ranks
+            copyX.dkt = this._getDivTokensReward(tournamentState.divTokenRewards, x);
             return copyX;
         })
     }
@@ -126,6 +130,9 @@ class TournamentsManager implements IRankingTypeHandler {
 
         const loot = await Game.lootGenerator.getLootFromTable(rewards.loot);
 
+        // calcualte divs token reward
+        const tokens = this._getDivTokensReward(tournamentState.divTokenRewards, rewards);
+
         await this._db.collection(Collections.Tournaments)
             .updateOne(
                 { _id: ObjectId(tournamentId) },
@@ -134,7 +141,10 @@ class TournamentsManager implements IRankingTypeHandler {
                 }
             );
 
-        return loot;
+        return {
+            loot,
+            tokens
+        };
     }
 
     async join(userId: string, tournamentId: string) {
@@ -180,6 +190,10 @@ class TournamentsManager implements IRankingTypeHandler {
         }
 
         return info;
+    }
+
+    private _getDivTokensReward(divRewards: TournamentDivTokenRewards, rankRewards: TournamentRewardSchema) {
+        return divRewards.tokenPool * rankRewards.dkt / (rankRewards.maxRank - rankRewards.minRank + 1);
     }
 
     private async _getTournament(tournamentId: string) {
@@ -228,10 +242,12 @@ class TournamentsManager implements IRankingTypeHandler {
 
             let tournament = new Tournament(this._db);
 
-            const rewards = random.pick(this._meta.rewards[tier]);
+            const rewards: TournamentRewardsMeta = random.pick(this._meta.rewards[tier]);
             const typeOptions = random.pick(template.types);
 
-            promises.push(tournament.create(tier, typeOptions, template.duration, rewards));
+            const divTokenRewards = await this._getDivTokenRewards(rewards.dktPoolSize);
+
+            promises.push(tournament.create(tier, typeOptions, template.duration, rewards, divTokenRewards));
             tournaments.push(tournament);
             this._tiersRunning[tournament.tier] = true;
         }
@@ -246,6 +262,13 @@ class TournamentsManager implements IRankingTypeHandler {
         }
 
         await this._save();
+    }
+
+    private async _getDivTokenRewards(dktPoolSize: number): Promise<TournamentDivTokenRewards> {
+        const ma = await Game.tokenAmounts.getMA(14);
+        return {
+            tokenPool: ma * dktPoolSize
+        };
     }
 
     private _findTournamentWithUser(userId: string) {
