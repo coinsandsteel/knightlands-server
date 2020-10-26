@@ -106,7 +106,7 @@ class DailyQuests {
     }
 
     async onPremiumPurchase(count = 1) {
-        this._advanceTask(DailyQuestType.DailySpendPremium, count);
+        // this._advanceTask(DailyQuestType.DailySpendPremium, count);
     }
 
     async onAdventureStarted() {

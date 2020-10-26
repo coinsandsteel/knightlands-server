@@ -773,7 +773,7 @@ class User {
 
                 let stats = this._itemStatResolver.convertStats(item, item.level, 0);
                 for (let stat in stats) {
-                    finalStats[stat] += stats[stat];
+                    finalStats[stat] += stats[stat] * max;
                 }
             }
 
@@ -802,7 +802,7 @@ class User {
     }
 
     async addLoot(itemTemplates) {
-        await this._inventory.addItemTemplates(itemTemplates);
+        return this._inventory.addItemTemplates(itemTemplates);
     }
 
     async useItem(itemId, count = 1) {

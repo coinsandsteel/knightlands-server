@@ -541,7 +541,16 @@ class PlayerController extends IPaymentListener {
             }
         }
 
-        let items = await this._lootGenerator.getQuestLoot(this.address, data.zone, data.questIndex, isBoss, data.stage, itemsToDrop, questComplete);
+        let items = await this._lootGenerator.getQuestLoot(
+            this.address,
+            data.zone,
+            data.questIndex,
+            isBoss,
+            data.stage,
+            itemsToDrop,
+            questComplete,
+            user.getMaxStatValue(CharacterStat.Luck)
+        );
 
         if (items) {
             await user.addLoot(items);
@@ -551,7 +560,7 @@ class PlayerController extends IPaymentListener {
             await user.dailyQuests.onQuestEngaged(engages);
         }
 
-        return damages;
+        return { damages, items };
     }
 
     async _buyStat(user, data) {

@@ -14,6 +14,7 @@ module.exports = {
     },
     game: {
         attackCooldown: 500,
-        dailyRewardCycle: 86400000
+        dailyRewardCycle: 86400000,
+        minTourneyDkt: 5
     }
 };

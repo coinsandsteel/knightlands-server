@@ -96,7 +96,7 @@ class LootGenerator {
         return await this.openChest(user, chestId, count);
     }
 
-    async getQuestLoot(userId, zone, questIndex, isBoss, stage, itemsToRoll = 0, questFinished = false) {
+    async getQuestLoot(userId, zone, questIndex, isBoss, stage, itemsToRoll = 0, questFinished = false, luck = 0) {
         let entries = await this._db
             .collection(Collections.QuestLoot)
             .aggregate([{
@@ -173,7 +173,7 @@ class LootGenerator {
                 zone,
                 stage,
                 isBoss
-            }, table, questFinished, items, itemsHash);
+            }, table, questFinished, items, itemsHash, luck);
         }
 
         return items;
@@ -209,7 +209,7 @@ class LootGenerator {
         }, table, table.weights, items, itemsHash);
     }
 
-    async _rollQuestLoot(lootContext, table, questFinished, items, itemsHash) {
+    async _rollQuestLoot(lootContext, table, questFinished, items, itemsHash, luck) {
         if (questFinished && table.guaranteedRecords) {
             let rollResults = await this._rollGuaranteedLootFromTable(table.guaranteedRecords, table.tag, items, itemsHash);
             items = rollResults.items;
@@ -224,7 +224,7 @@ class LootGenerator {
             lootContext.itemsToRoll = table.itemsToRoll;
         }
 
-        return await this._rollItemsFromLootTable(lootContext, table, table.weights, items, itemsHash);
+        return await this._rollItemsFromLootTable(lootContext, table, table.weights, items, itemsHash, false, luck);
     }
 
     async _rollGuaranteedLootFromTable(guaranteedRecords, tableTag, items, itemsHash, lootCount) {
@@ -251,7 +251,7 @@ class LootGenerator {
         }
     }
 
-    async _rollItemsFromLootTable(lootContext, table, weights, items, itemsHash, skipConsumables) {
+    async _rollItemsFromLootTable(lootContext, table, weights, items, itemsHash, skipConsumables, luck = 0) {
         if (!items) {
             items = [];
         }
@@ -292,9 +292,9 @@ class LootGenerator {
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight, true);
-                // console.log(`No loot roll ${roll} / ${weights.noLoot}`);
+                console.log(`No loot roll ${roll} / ${weights.noLoot}`);
                 if (roll <= weights.noLoot) {
-                    continue;
+                    //continue;
                 }
             }
 
@@ -316,11 +316,15 @@ class LootGenerator {
                     if (skipConsumables) {
                         let itemTemplate = await Game.itemTemplates.getTemplate(lootRecord.itemId);
                         if (itemTemplate.type == ItemType.Consumable) {
-                            // skip and return back item roll
+                            // skip and reroll
                             itemsToRoll++;
                             continue;
                         }
-                    } 
+                    } else if (lootRecord.luckRequired < luck) {
+                        // reroll
+                        itemsToRoll++;
+                        continue;
+                    }
                     
                     lootContext.tableTag = table.tag;
                     await this._addRecordToTable(lootContext, items, itemsHash, lootRecord);

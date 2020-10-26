@@ -2,6 +2,8 @@ import { Db, Collection } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
 
+const Config = require("../config");
+
 const LOCK_KEY = "div_farmed";
 
 export class DivTokenFarmedTimeseries {
@@ -29,11 +31,23 @@ export class DivTokenFarmedTimeseries {
         const endDate = new Date();
 
         const records = await this._collection.find({ date: { $lte: endDate, $gte: startDate } }).toArray();
-        let ma = 0;
-        for (let i = 0; i < records.length; ++i) {
-            ma += records[i].amount;
+
+        if (records.length == 0) {
+            // nothing was farmed
+            return Config.game.minTourneyDkt;
         }
 
-        return ma / records.length;
+        let totalFarmed = 0;
+        for (let i = 0; i < records.length; ++i) {
+            totalFarmed += records[i].amount;
+        }
+
+        let ma = totalFarmed / records.length;
+
+        if (ma < Config.game.minTourneyDkt) {
+            ma = Config.game.minTourneyDkt;
+        }
+
+        return ma;
     }
 }
