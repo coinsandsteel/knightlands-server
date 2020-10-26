@@ -191,6 +191,10 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.UpgradeMineStorage, this._gameHandler(this._upgradeMineStorage.bind(this)));
         this._socket.on(Operations.ExpandMine, this._gameHandler(this._expandMine.bind(this)));
         this._socket.on(Operations.CollectMine, this._gameHandler(this._collectMine.bind(this)));
+
+        // Inventory
+        this._socket.on(Operations.LockItem, this._gameHandler(this._lockItem.bind(this)));
+        this._socket.on(Operations.UnlockItem, this._gameHandler(this._unlockItem.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1474,6 +1478,15 @@ class PlayerController extends IPaymentListener {
 
     async _collectMine(user) {
         return user.goldMines.collectGold();
+    }
+    
+    // Inventory
+    async _lockItem(user, data) {
+        await user.inventory.lockItem(+data.item);
+    }
+
+    async _unlockItem(user, data) {
+        await user.inventory.unlockItem(+data.item);
     }
 }
 

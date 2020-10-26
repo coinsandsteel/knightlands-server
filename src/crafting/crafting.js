@@ -34,6 +34,10 @@ class Crafting {
             throw Errors.NoItem;
         }
 
+        if (item.locked) {
+            throw Errors.ItemLocked;
+        }
+
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
             throw Errors.NoTemplate;
@@ -238,6 +242,10 @@ class Crafting {
                 throw Errors.ItemEquipped;
             }
 
+            if (materialItem.locked) {
+                throw Errors.ItemLocked;
+            }
+
             // if item is not equipped and item is not yet unique
             // if it same item as target - make sure it has enough stack size for material count + unique
             if (!item.equipped && !item.unique && materialItem.id == item.id && materialItem.count < items[i] + 1) {
@@ -330,6 +338,10 @@ class Crafting {
 
                 if (materialItem.equipped) {
                     throw Errors.ItemEquipped;
+                }
+
+                if (materialItem.locked) {
+                    throw Errors.ItemLocked;
                 }
 
                 let materialTemplate = await Game.itemTemplates.getTemplate(materialItem.template);
@@ -435,6 +447,10 @@ class Crafting {
                 throw Errors.ItemEquipped;
             }
 
+            if (item.locked) {
+                throw Errors.ItemLocked;
+            }
+
             const template = templates[item.template];
 
             const disRarityMeta = disMeta[template.rarity];
@@ -508,6 +524,10 @@ class Crafting {
                 throw Errors.ItemEquipped;
             }
 
+            if (item.locked) {
+                throw Errors.ItemLocked;
+            }
+
             if (!items[item.id]) {
                 throw Errors.NoItem;
             }
@@ -567,6 +587,15 @@ class Crafting {
         }
 
         const item = this._inventory.getItemById(itemId);
+
+        if (item.equipped) {
+            throw Errors.ItemEquipped;
+        }
+
+        if (item.locked) {
+            throw Errors.ItemLocked;
+        }
+
         if ((item.element && item.element == Elements.Physical) || !this._inventory.isMaxLevel(item)) {
             throw Errors.IncorrectArguments;
         }
@@ -600,6 +629,10 @@ class Crafting {
         const item = this._inventory.getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
+        }
+
+        if (item.locked) {
+            throw Errors.ItemLocked;
         }
 
         const evolveRecipe = evolveMeta.evolveRecipes.find(x=>x.fromRarity == item.rarity);

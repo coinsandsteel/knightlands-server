@@ -5,6 +5,7 @@ const {
 import ItemType from "./knightlands-shared/item_type";
 import Elements from "./knightlands-shared/elements";
 import Game from "./game";
+import Errors from "./knightlands-shared/errors";
 import CurrencyType from "./knightlands-shared/currency_type";
 import RankingType from "./knightlands-shared/ranking_type";
 import { getSlot, EquipmentSlots } from "./knightlands-shared/equipment_slot";
@@ -817,6 +818,39 @@ class Inventory {
         }
 
         return item;
+    }
+
+    async lockItem(itemId) {
+        return this._setItemLocked(itemId, true);
+    }
+
+    async unlockItem(itemId) {
+        return this._setItemLocked(itemId, false);
+    }
+
+    async _setItemLocked(itemId, isLocked) {
+        const item = this.getItemById(itemId);
+
+        if (!item) {
+            throw Errors.NoItem;
+        }
+
+        let equippedItems;
+        let unit;
+        // if holder is character use chracter items
+        if (item.holder == UserHolder) {
+            equippedItems = this._user.equipment;
+        } else {
+            unit = await Game.armyManager.getUnit(this._userId, item.holder);
+            equippedItems = unit.items;
+        }
+
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        const itemSlot = getSlot(template.equipmentType);
+
+        equippedItems[itemSlot].locked = isLocked;
+        item.locked = isLocked;
+        this.setItemUpdated(item)
     }
 }
 
