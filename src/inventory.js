@@ -838,7 +838,7 @@ class Inventory {
         let equippedItems;
         let unit;
         // if holder is character use chracter items
-        if (item.holder == UserHolder) {
+        if (item.holder == UserHolder || item.holder === undefined) {
             equippedItems = this._user.equipment;
         } else {
             unit = await Game.armyManager.getUnit(this._userId, item.holder);
@@ -848,7 +848,10 @@ class Inventory {
         const template = await Game.itemTemplates.getTemplate(item.template);
         const itemSlot = getSlot(template.equipmentType);
 
-        equippedItems[itemSlot].locked = isLocked;
+        if (equippedItems[itemSlot]) {
+            equippedItems[itemSlot].locked = isLocked;
+        }
+        
         item.locked = isLocked;
         this.setItemUpdated(item)
     }
