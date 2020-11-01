@@ -1,5 +1,6 @@
 import Game from '../game';
 import Errors from '../knightlands-shared/errors';
+import ItemProperties from '../knightlands-shared/item_properties';
 import { GoldMinesMeta, GoldMine, GoldMinesSaveData } from './types';
 import { Collections } from '../database';
 
@@ -42,7 +43,18 @@ export class GoldMines {
             throw Errors.GoldMineMaxLevel;
         }
 
-        const price = meta.mines[mine.level + 1].price;
+        let price = meta.mines[mine.level + 1].price;
+
+        // get price discount
+        const discountItem = await this.user.inventory.getItemByTemplate(meta.priceCharm);
+        if (discountItem) {
+            const template = await Game.itemTemplates.getTemplate(discountItem.template);
+            const prop = template.properties.find(x => x.type == ItemProperties.GoldMineUpgradeDiscount);
+            if (prop) {
+                price *= (discountItem.count * prop.value) / 100;
+            }
+        }
+
         if (this.user.softCurrency < price) {
             throw Errors.NotEnoughSoft;
         }

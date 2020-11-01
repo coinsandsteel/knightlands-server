@@ -97,7 +97,7 @@ class DailyQuests {
         this._advanceTask(DailyQuestType.DailyAccessoryTrial, count);
     }
 
-    async onTowerAttacked(count = 1) {
+    async onTowerComplete(count = 1) {
         this._advanceTask(DailyQuestType.DailyTower, count);
     }
 

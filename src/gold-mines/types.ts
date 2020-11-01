@@ -24,6 +24,7 @@ export interface StorageUpgradeMeta {
 }
 
 export interface GoldMinesMeta {
+    priceCharm: number;
     mines: MineUpgradeMeta[];
     storage: StorageUpgradeMeta[];
     addMines: number[];

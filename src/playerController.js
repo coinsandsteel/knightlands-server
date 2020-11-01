@@ -1129,8 +1129,6 @@ class PlayerController extends IPaymentListener {
         towerFloor.health = floorEnemyUnit.getHealth();
         towerFloor.userHealth = userUnit.getHealth();
 
-        await user.dailyQuests.onTowerAttacked(1);
-
         return {
             ...attackResult,
             enemyHealth: towerFloor.health,
@@ -1200,6 +1198,8 @@ class PlayerController extends IPaymentListener {
         await this._user.addSoftCurrency(floorMeta.softCurrency);
         await this._user.addExperience(floorMeta.exp);
         await this._user.inventory.addItemTemplates(items);
+
+        await user.dailyQuests.onTowerComplete(1);
 
         return {
             items,
