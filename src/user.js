@@ -176,13 +176,14 @@ class User {
         return this._goldMines;
     }        
 
-    getWeaponCombatData() {
+    async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
             return null;
         }
 
         let item = this.inventory.getItemById(weapon.id);
+        let template = await Game.itemTemplates.getTemplate(item.template);
         return {
             element: item.element,
             type: template.equipmentType
