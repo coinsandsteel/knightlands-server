@@ -406,13 +406,17 @@ class RaidManager {
     }
 
     async _handleRaidDefeat(raid) {
-        await raid.finish(await this._getNextDktFactor(raid.templateId));
-        this._removeRaid(raid.id);
+        let dktFactor = 0;
 
         if (raid.free) {
             const user = await Game.getUser(summonerId);
             await user.dailyQuests.onFreeRaidFinished();
+        } else {
+            dktFactor = await this._getNextDktFactor(raid.templateId)
         }
+
+        await raid.finish(dktFactor);
+        this._removeRaid(raid.id);
     }
 
     _removeRaid(id) {

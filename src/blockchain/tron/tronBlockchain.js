@@ -116,6 +116,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 onlyConfirmed: true,
                 size: EventsPageSize,
                 fromTimestamp: lastScanTimestamp,
+                sinceTimestamp: lastScanTimestamp,
                 page: 1
             };
     
@@ -126,6 +127,11 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                 if (length == 0) {
                     break;
                 }
+
+                // sort by timestamp
+                events.sort((x, y) => {
+                    return x.timestamp - y.timestamp;
+                });
     
                 let i = 0;
                 for (; i < length; i++) {
@@ -133,8 +139,10 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
                     lastScanTimestamp = eventData.timestamp;
                     handler.call(this, eventData.transaction, eventData.timestamp, eventData.result);
                 }
-    
+                
                 options.page++;
+                options.fromTimestamp = lastScanTimestamp;
+                options.sinceTimestamp = lastScanTimestamp;
                 options.fingerPrint = events[length - 1]._fingerPrint;
     
                 if (!options.fingerPrint) {
@@ -166,7 +174,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     async _updateLastEventReceived(time, eventName) {
-        await this._db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName }, { $set: { lastScan: time + 1 } }, { upsert: true });
+        await this._db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName }, { $set: { lastScan: time + 1000 } }, { upsert: true });
     }
 
     _emitPresaleChestsTransfer(transaction, timestamp, eventData) {

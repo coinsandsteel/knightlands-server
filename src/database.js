@@ -33,6 +33,7 @@ module.exports = {
         Inventory: "inventory",
         Meta: "meta",
         Raids: "raids",
+        FreeRaidsClearance: "free_raids_clearance",
         RaidsMeta: "raids_meta",
         RaidsWeaknessRotations: "raid_weakness_rotations",
         RaidsDktFactors: "raids_dkt_factors",

@@ -307,10 +307,7 @@ class PaymentProcessor extends EventEmitter {
             if (!request) {
                 await this._logError(paymentRecipe.nonce, PaymentErrorCodes.UknownPaymentId, {
                     paymentId: paymentRecipe.nonce,
-                    userId: request.userId,
-                    iap: request.iap,
-                    timestamp: paymentRecipe.timestamp,
-                    tx: request.transactionId
+                    paymentRecipe: paymentRecipe
                 });
                 return;
             }

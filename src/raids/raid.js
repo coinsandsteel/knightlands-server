@@ -420,9 +420,24 @@ class Raid extends EventEmitter {
         {
             let i = 0;
             let loot = this.loot;
+
+            if (this._data.isFree) {
+                const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate(
+                    { raidId: this.templateId, user: userId },
+                    { $setOnInsert: { raidId: this.templateId, user: userId } },
+                    { returnOriginal: true, upsert: true }
+                );
+
+                if (!firstClearance.value) {
+                    loot = this.loot.firstClearance;
+                } else {
+                    loot = this.loot.repeatedClearance;
+                }
+            }
+
             const length = loot.length;
             for (; i < length; ++i) {
-                if (userDamage >= raidStage.health / raidStage.maxSlots * loot[i].damageThreshold) {
+                if (this._data.isFree || userDamage >= raidStage.health / raidStage.maxSlots * loot[i].damageThreshold) {
                     chosenLoot = loot[i];
                 } else {
                     break;
@@ -434,11 +449,11 @@ class Raid extends EventEmitter {
         let rewards = {
             dkt: raidStage.minDkt * 0.1,
             exp: 0,
-            gold: 0,
+            gold: chosenLoot.gold,
             hardCurrency: 0
         };
 
-        if (!chosenLoot) {
+        if (!chosenLoot) { 
             return null
         }
 
@@ -469,6 +484,10 @@ class Raid extends EventEmitter {
 
         // modify dkt given by fixed dkt factor
         rewards.dkt *= this._data.dktFactor;
+
+        if (this._data.isFree) {
+            rewards.dkt = 0;
+        }
 
         return rewards;
     }
