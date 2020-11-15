@@ -78,14 +78,15 @@ class Crafting {
             const template = templates[i].data;
             const property = {
                 value: Random.range(template.minValue, template.maxValue, true),
-                id: template.id
+                id: template.id,
+                rarity: template
             };
 
             switch (template.type) {
                 case AccessoryOption.DropItemInQuest:
                     case AccessoryOption.DropItemInRaid:
                     case AccessoryOption.DropUnitShard:
-                    property.itemId = template.item;
+                    property.itemId = template.itemId;
                     break;
                 
                 case AccessoryOption.IncreasedStat:
