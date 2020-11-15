@@ -298,6 +298,14 @@ class RaidManager {
         }
 
         let info = raid[0];
+
+        if (info.isFree) {
+            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne(
+                { raidId: raidId, user: userId }
+            );
+            info.isFirst = !!firstClearance;
+        }
+
         info.weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
         info.dktFactor = await this._getNextDktFactor(info.raidTemplateId, true);
         return info;

@@ -1,11 +1,13 @@
 import Game from "../game";
 import Errors from "../knightlands-shared/errors";
+import AccessoryOption from "../knightlands-shared/accessory_option";
 const { Collections } = require("../database");
 import CurrencyType from "../knightlands-shared/currency_type";
 import Random from "../random";
 import Rarity from "../knightlands-shared/rarity";
 import RankingType from "../knightlands-shared/ranking_type";
 import Elements from "../knightlands-shared/elements";
+import WeightedList from "../js-weighted-list";
 const {
     EquipmentSlots,
     getSlot
@@ -24,6 +26,84 @@ class Crafting {
 
     get _userId() {
         return this._user.address;
+    }
+
+    async createAccessory(baseTemplateId, amount) {
+        if (isNaN(amount) || amount < 0 || amount > 50) {
+            throw Errors.IncorrectArguments;
+        }
+        
+        let baseTemplate = await Game.itemTemplates.getTemplate(baseTemplateId);
+        if (!baseTemplate) {
+            throw Errors.NoTemplate;
+        }
+
+        if (baseTemplate.type != ItemType.Equipment || !this.isAccessory(baseTemplate.equipmentType)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const accCraftMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "craft_accessories" });
+        const isRing = getSlot(baseTemplate.equipmentType) == EquipmentSlots.Ring;
+
+        // check if item is part of templates for crafting
+        const rarity = baseTemplate.rarity;
+        const meta = isRing ? accCraftMeta.ring : accCraftMeta.necklace;
+        if (meta.items[rarity].items.findIndex(x => x == baseTemplate._id) === -1) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const recipe = accCraftMeta.recipes[rarity];
+
+        if (!this._inventory.hasItems(recipe.resource, recipe.resourceCount * amount)) {
+            throw Errors.NotEnoughResource;
+        }
+
+        this._inventory.removeItemByTemplate(recipe.resource, recipe.resourceCount * amount);
+
+        let items = new Array(amount);
+        while (amount-- > 0) {
+            const item = this._inventory.createItemByTemplate(baseTemplate);
+            item.properties = await this._generateAccessoryOptions(meta.options[rarity], recipe.optionsCount);
+            items[amount] = this._inventory.addItem(item, true);
+        }
+
+        return items;
+    }
+
+    async _generateAccessoryOptions(optionsMeta, count) {
+        const templates = new WeightedList(optionsMeta).peek(count, false);
+        const length = templates.length;
+        const properties = new Array(count);
+        for (let i = 0; i < length; ++i) {
+            const template = templates[i].data;
+            const property = {
+                value: Random.range(template.minValue, template.maxValue, true),
+                id: template.id
+            };
+
+            switch (template.type) {
+                case AccessoryOption.DropItemInQuest:
+                    case AccessoryOption.DropItemInRaid:
+                    case AccessoryOption.DropUnitShard:
+                    property.itemId = template.item;
+                    break;
+                
+                case AccessoryOption.IncreasedStat:
+                    property.stat = template.stat;
+                    break;
+                
+                case AccessoryOption.RewardsTrial:
+                    property.trialType = template.trialType;
+                    break;
+                
+                case AccessoryOption.ArmyDamageInRaidElement:
+                    property.element = template.element;
+                    break;
+            }
+
+            properties[i] = property;
+        }
+        return properties;
     }
 
     async enchantItem(itemId, currency) {

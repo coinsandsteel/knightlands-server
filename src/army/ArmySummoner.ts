@@ -40,7 +40,7 @@ export class ArmySummoner {
     async summonWithStars(total: number, targetStars: number) {
         let count = total;
         let units: ArmyUnit[] = [];
-        
+
         let totalTroopsWeight = 0;
         for (const stars in this._meta.troops) {
             totalTroopsWeight += this._meta.troops[stars].totalWeight;
@@ -69,7 +69,7 @@ export class ArmySummoner {
     private _generateUnit(stars: number, isTroop: boolean) {
         let content = isTroop ? this._meta.troops[stars] : this._meta.generals[stars];
 
-            // roll unit
+        // roll unit
         let unitIndex = bounds.gt(content.units, Random.range(1, content.totalWeight, true), comparator);
         if (unitIndex >= 0) {
             let unitTemplate = content.units[unitIndex].unit;
@@ -141,8 +141,8 @@ export class ArmySummoner {
             const perUnitList = new WeightedList(template.abilityPool.abilities);
             const fillerList = new WeightedList(fillerPool.abilities);
 
-            while (randomAbilitiesCount-- > 0 ) {
-                // first determine if filler passsive must be rolled
+            while (randomAbilitiesCount-- > 0) {
+                // first determine if filler passive must be rolled
                 if (Random.intRange(1, 100) <= fillerPool.weight || perUnitList.length == 0) {
                     abilities.push(...fillerList.peek(1, false))
                 } else {

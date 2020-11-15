@@ -292,9 +292,8 @@ class LootGenerator {
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight, true);
-                console.log(`No loot roll ${roll} / ${weights.noLoot}`);
                 if (roll <= weights.noLoot) {
-                    //continue;
+                    continue;
                 }
             }
 
@@ -320,7 +319,7 @@ class LootGenerator {
                             itemsToRoll++;
                             continue;
                         }
-                    } else if (lootRecord.luckRequired < luck) {
+                    } else if (lootRecord.luckRequired > luck) {
                         // reroll
                         itemsToRoll++;
                         continue;
