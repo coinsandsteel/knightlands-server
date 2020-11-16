@@ -90,6 +90,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.CreateWeapon, this._gameHandler(this._createWeapon.bind(this)));
         this._socket.on(Operations.Evolve, this._gameHandler(this._evolveItem.bind(this)));
         this._socket.on(Operations.CraftAccessory, this._gameHandler(this._craftAccessory.bind(this)));
+        this._socket.on(Operations.RerollAccessory, this._gameHandler(this._rerollAccessory.bind(this)));
+        this._socket.on(Operations.CancelRerollAccessory, this._gameHandler(this._cancelRerollAccessory.bind(this)));
 
         // Adventures
         this._socket.on(Operations.BuyAdventureSlot, this._gameHandler(this._buyAdventureSlot.bind(this)));
@@ -972,6 +974,14 @@ class PlayerController extends IPaymentListener {
 
     async _craftAccessory(user, data) {
         return await user.crafting.createAccessory(+data.template, +data.count);
+    }
+
+    async _rerollAccessory(user, data) {
+        return await user.crafting.rerollAccessory(+data.itemId);
+    }
+
+    async _cancelRerollAccessory(user, data) {
+        return await user.crafting.rollbackRerollAccessory(+data.itemId);
     }
 
     // Adventures

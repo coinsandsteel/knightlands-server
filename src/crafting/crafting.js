@@ -28,8 +28,79 @@ class Crafting {
         return this._user.address;
     }
 
+    async rollbackRerollAccessory(itemId) {
+        const item = this._inventory.getItemById(itemId);
+        if (!item) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (item.locked) {
+            throw Errors.ItemLocked;
+        }
+
+        let baseTemplate = await Game.itemTemplates.getTemplate(item.template);
+        if (!baseTemplate) {
+            throw Errors.NoTemplate;
+        }
+
+        if (baseTemplate.type != ItemType.Equipment || !this.isAccessory(baseTemplate.equipmentType)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const length = item.properties.length;
+        for (let i = 0; i < length; ++i) {
+            const prop = item.properties[i];
+            if (!prop.prevValue) {
+                break;
+            }
+
+            prop.value = prop.prevValue;
+            prop.prevValue = null;
+        }
+
+        this._inventory.setItemUpdated(item);
+    }
+
+    async rerollAccessory(itemId) {
+        const item = this._inventory.getItemById(itemId);
+        if (!item) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (item.locked) {
+            throw Errors.ItemLocked;
+        }
+
+        let baseTemplate = await Game.itemTemplates.getTemplate(item.template);
+        if (!baseTemplate) {
+            throw Errors.NoTemplate;
+        }
+
+        if (baseTemplate.type != ItemType.Equipment || !this.isAccessory(baseTemplate.equipmentType)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const rarity = item.rarity;
+        const accCraftMeta = await this._getAccessoryMeta();
+        const priceMeta = accCraftMeta.reroll[rarity];
+        const rerolls = item.rerolls || 1;
+        const price = Math.floor(Math.pow(rerolls, priceMeta.base) * priceMeta.scale);
+
+        if (price > this._user.softCurrency) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        const isRing = getSlot(baseTemplate.equipmentType) == EquipmentSlots.Ring;
+        const meta = isRing ? accCraftMeta.ring : accCraftMeta.necklace;
+        await this._rerollAccessoryOptions(meta.reroll, item);
+
+        await this._user.addSoftCurrency(-price);
+        item.rerolls = rerolls + 1;
+        this._inventory.setItemUpdated(item);
+    }
+
     async createAccessory(baseTemplateId, amount) {
-        if (isNaN(amount) || amount < 0 || amount > 50) {
+        if (isNaN(amount) || amount < 0) {
             throw Errors.IncorrectArguments;
         }
         
@@ -42,7 +113,11 @@ class Crafting {
             throw Errors.IncorrectArguments;
         }
 
-        const accCraftMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "craft_accessories" });
+        const accCraftMeta = await this._getAccessoryMeta();
+        if (amount > accCraftMeta.maxCraft) {
+            throw Errors.IncorrectArguments;
+        }
+
         const isRing = getSlot(baseTemplate.equipmentType) == EquipmentSlots.Ring;
 
         // check if item is part of templates for crafting
@@ -63,11 +138,23 @@ class Crafting {
         let items = new Array(amount);
         while (amount-- > 0) {
             const item = this._inventory.createItemByTemplate(baseTemplate);
+            item.rerolls = 1;
             item.properties = await this._generateAccessoryOptions(meta.options[rarity], recipe.optionsCount);
             items[amount] = this._inventory.addItem(item, true);
         }
 
         return items;
+    }
+
+    async _rerollAccessoryOptions(meta, item) {
+        const length = item.properties.length;
+        for (let i = 0; i < length; ++i) {
+            const prop = item.properties[i];
+            const rangeMeta = meta[prop.id];
+            const range = rangeMeta[prop.rarity];
+            prop.prevValue = prop.value;
+            prop.value = Random.range(range.minValue, range.maxValue, true)
+        }
     }
 
     async _generateAccessoryOptions(optionsMeta, count) {
@@ -78,8 +165,9 @@ class Crafting {
             const template = templates[i].data;
             const property = {
                 value: Random.range(template.minValue, template.maxValue, true),
+                prevValue: null,
                 id: template.id,
-                rarity: template
+                rarity: template.rarity
             };
 
             switch (template.type) {
@@ -788,6 +876,10 @@ class Crafting {
         return await Game.db.collection(Collections.Meta).findOne({
             _id: "meta"
         });
+    }
+
+    async _getAccessoryMeta() {
+        return await Game.db.collection(Collections.Meta).findOne({ _id: "craft_accessories" });
     }
 }
 
