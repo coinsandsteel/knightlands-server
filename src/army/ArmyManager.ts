@@ -2,7 +2,7 @@ import Game from "../game";
 import { Db, Collection } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
-import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, Legion, UnitMeta, ArmySummonMeta, ArmyReserve } from "./ArmyTypes";
+import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
 import ItemStatResolver from "../knightlands-shared/item_stat_resolver";
 import ArmyResolver from "../knightlands-shared/army_resolver";
@@ -13,22 +13,8 @@ import { ArmyCombatLegion } from "./ArmyCombatLegion";
 import Events from "../knightlands-shared/events";
 import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
-import { EquipmentSlots, getSlot } from "../knightlands-shared/equipment_slot";
 import ItemType from "../knightlands-shared/item_type";
 import Random from "../random";
-
-const TroopEquipmentSlots = [
-    EquipmentSlots.MainHand,
-    EquipmentSlots.OffHand
-];
-
-const GeneralEquipmentSlots = [
-    EquipmentSlots.Boots,
-    EquipmentSlots.Helmet,
-    EquipmentSlots.Chest,
-    EquipmentSlots.Gloves,
-    EquipmentSlots.Cape
-];
 
 const NO_LEGION = -1;
 
@@ -232,7 +218,7 @@ export class ArmyManager {
 
         return newUnits;
     }
-    
+
     async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
         let armyProfile = await this.loadArmyProfile(userId);
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
@@ -523,7 +509,7 @@ export class ArmyManager {
         if (!unitRecords) {
             throw Errors.ArmyNoUnit;
         }
-        
+
         // stack units by template and promotions, in case unit was promoted, it must be stacked separately
         // it's done simply with composite key as template id + promotions
         const duplicates = {};
@@ -564,7 +550,7 @@ export class ArmyManager {
                 };
             }
         }
-            
+
 
         await this._units.updateReservedUnits(userId, reserve);
         await this._removeEquipmentFromUnits(userId, unitRecords);
@@ -575,7 +561,7 @@ export class ArmyManager {
         const combatLegion = new ArmyCombatLegion(
             userId,
             legionIndex,
-            this._armyResolver, 
+            this._armyResolver,
             await this._units.getInventory(userId),
             this._units,
             await this._units.getReserve(userId),
@@ -584,7 +570,7 @@ export class ArmyManager {
         return combatLegion;
     }
 
-    private async _removeEquipmentFromUnits(userId: string, units: {[key: number]: ArmyUnit}) {
+    private async _removeEquipmentFromUnits(userId: string, units: { [key: number]: ArmyUnit }) {
         const inventory = await Game.loadInventory(userId);
 
         for (const unitId in units) {

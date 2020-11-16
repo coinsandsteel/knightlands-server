@@ -37,7 +37,7 @@ class CurrencyConversionService {
 
     get conversionRate() {
         // return this._conversionRate.price;
-        return 0.011;
+        return 1;
     }
 
     convertToNative(usdPrice) {

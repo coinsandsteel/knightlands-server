@@ -163,6 +163,7 @@ class Crafting {
         const properties = new Array(count);
         for (let i = 0; i < length; ++i) {
             const template = templates[i].data;
+            let relative = true;
             const property = {
                 value: Random.range(template.minValue, template.maxValue, true),
                 prevValue: null,
@@ -171,6 +172,11 @@ class Crafting {
             };
 
             switch (template.type) {
+                case AccessoryOption.GoldOnHitInRaid:
+                case AccessoryOption.ExpOnHitInRaid:
+                    relative = false;
+                    break;
+                
                 case AccessoryOption.DropItemInQuest:
                     case AccessoryOption.DropItemInRaid:
                     case AccessoryOption.DropUnitShard:
@@ -188,6 +194,10 @@ class Crafting {
                 case AccessoryOption.ArmyDamageInRaidElement:
                     property.element = template.element;
                     break;
+            }
+
+            if (!relative) {
+                property.value = Math.floor(property.value);
             }
 
             properties[i] = property;
