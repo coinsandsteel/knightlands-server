@@ -636,7 +636,7 @@ class PlayerController extends IPaymentListener {
                 user.inventory.removeItem(itemKey.id, chestsToOpen);
             }
 
-            return await Game.lootGenerator.openChest(user, chest, chestsToOpen);
+            return await Game.lootGenerator.openChest(user, chest, chestsToOpen, freeOpening);
         }
     }
 

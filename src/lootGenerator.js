@@ -67,18 +67,20 @@ class LootGenerator {
         }
     }
 
-    async openChest(user, chestId, count) {
+    async openChest(user, chestId, count, free = false) {
         let items = await Game.lootGenerator.getLootFromGacha(user.address, chestId, count);
 
         await user.inventory.autoCommitChanges(async inv=>{
             await inv.addItemTemplates(items);
         });
 
-        // TODO ugly, move to configuration
-        if (chestId == "silver_chest") {
-            await user.dailyQuests.onChestOpened(count, false);
-        } else if (chestId == "velvet_chest") {
-            await user.dailyQuests.onChestOpened(count, true);
+        if (!free) {
+            // TODO ugly, move to configuration
+            if (chestId == "silver_chest") {
+                await user.dailyQuests.onChestOpened(count, false);
+            } else if (chestId == "velvet_chest") {
+                await user.dailyQuests.onChestOpened(count, true);
+            }
         }
 
         return items;
