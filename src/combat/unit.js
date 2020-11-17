@@ -1,4 +1,5 @@
 import CharacterStat from "../knightlands-shared/character_stat";
+import random from "../random";
 import Random from "../random";
 
 class Unit {
@@ -14,8 +15,12 @@ class Unit {
             attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);
         }
 
+        // roll damage 2 times, half attack, with 20% variation
+        const dmg1 = random.range(attack * 0.4, attack*0.6);
+        const dmg2 = random.range(attack * 0.4, attack*0.6);
+
         return {
-            attack,
+            attack: Math.floor(dmg1 + dmg2),
             crit
         }
     }
