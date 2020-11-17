@@ -260,8 +260,12 @@ export class ArmyManager {
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
 
         const user = await Game.getUser(userId);
-        await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
 
+        if (payed) {
+            await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
+        }
+
+        this._units.resetCache(userId);
         return newUnits;
     }
 

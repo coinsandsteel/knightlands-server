@@ -136,7 +136,6 @@ class PaymentProcessor extends EventEmitter {
             { ...filter },
             { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }]
         };
-        console.log(query)
         return await this._db.collection(Collections.PaymentRequests).find(query).toArray();
     }
 

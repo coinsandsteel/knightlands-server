@@ -34,7 +34,7 @@ export class ArmyUnits {
             if (reserve[key]) {
                 foundReserves[key] = reserve[key];
             }
-        }   
+        }
         return foundReserves;
     }
 
@@ -53,6 +53,7 @@ export class ArmyUnits {
         );
 
         Game.emitPlayerEvent(userId, Events.UnitUpdated, unit);
+        this.resetCache(userId);
     }
 
     async removeUnits(userId: string, ids: number[]) {
@@ -69,7 +70,7 @@ export class ArmyUnits {
         Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
     }
 
-    async updateReservedUnits(userId: string, reserve: ArmyReserve ) {
+    async updateReservedUnits(userId: string, reserve: ArmyReserve) {
         const setQuery = {};
         for (let key in reserve) {
             setQuery[`reserve.${key}`] = reserve[key];
@@ -89,6 +90,10 @@ export class ArmyUnits {
     async getReserve(userId: string) {
         const { reserve } = await this.getCache(userId);
         return reserve;
+    }
+
+    resetCache(userId: string) {
+        delete this._cache[userId];
     }
 
     private async getCache(userId: string): Promise<CacheRecord> {
