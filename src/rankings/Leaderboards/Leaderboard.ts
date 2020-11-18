@@ -10,7 +10,7 @@ export class Leaderboard implements IRankingTypeHandler {
     private _pageSize: number;
 
     type: number;
-    
+
     constructor(pageSize: number) {
         this._pageSize = pageSize;
     }
@@ -34,7 +34,7 @@ export class Leaderboard implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
-        console.log("update leaderboard rank", ...arguments);
+        // console.log("update leaderboard rank", ...arguments);
 
         if (value == 0) {
             return;
@@ -79,7 +79,7 @@ export class Leaderboard implements IRankingTypeHandler {
         if (score == 0) {
             return null;
         }
-        
+
         let rank = await this._collection.find({ score: { $gt: score } }).count() + 1;
         return {
             id: this.type,
