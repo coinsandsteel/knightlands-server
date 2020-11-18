@@ -102,7 +102,7 @@ class DailyQuests {
     }
 
     async onQuestEngaged(times = 1) {
-        this._advanceTask(DailyQuestType.DailyEngageQuest, times);
+        // this._advanceTask(DailyQuestType.DailyEngageQuest, times);
     }
 
     async onPremiumPurchase(count = 1) {
