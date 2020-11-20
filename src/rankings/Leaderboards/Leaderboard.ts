@@ -48,7 +48,7 @@ export class Leaderboard implements IRankingTypeHandler {
             return;
         }
 
-        console.log("update leaderboard record for", userId);
+        // console.log("update leaderboard record for", userId);
 
         await this._collection.updateOne(
             { _id: userId },

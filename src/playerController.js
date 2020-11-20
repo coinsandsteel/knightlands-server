@@ -868,9 +868,9 @@ class PlayerController extends IPaymentListener {
     // crafting
     // if item never have been modified server will return new item id for created unique version
     async _levelUpItem(user, data) {
-        const { materials, itemId, count } = data;
+        const { materials, itemId } = data;
 
-        let leveledItemId = await user.levelUpItem(itemId, materials, count);
+        let leveledItemId = await user.levelUpItem(+itemId, materials);
 
         return leveledItemId;
     }

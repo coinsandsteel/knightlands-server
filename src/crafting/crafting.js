@@ -464,20 +464,7 @@ class Crafting {
         return item.id;
     }
 
-    async levelUpItem(itemId, materials, count) {
-        itemId *= 1;
-
-        if (!Number.isInteger(count) || count < 1) {
-            console.log(count);
-            throw Errors.IncorrectArguments;
-        }
-
-        if (materials.length > 1) {
-            count = 1;
-        }
-
-        await this._inventory.loadAllItems();
-
+    async levelUpItem(itemId, materials) {
         let item = this._getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
@@ -498,12 +485,9 @@ class Crafting {
         let level = item.level;
         const oldLevel = item.level;
         let exp = item.exp;
-        const materialsConsumed = {};
 
         try {
-            for (let i = 0; i < materials.length; ++i) {
-                const material = materials[i];
-
+            for (const material in materials) {
                 // check if material item can be used as leveling material 
                 let materialItem = this._inventory.getItemById(material);
                 if (!materialItem) {
@@ -546,16 +530,18 @@ class Crafting {
                     }
                 }
                 
-                let itemsToConsume = count;
-                let totalmaterial = materialItem.count;
+                let totalMaterial = materialItem.count;
                 if (materialItem.id == item.id) {
                     // item is not yet unique, reserve 1 for it
-                    totalmaterial--;
+                    totalMaterial--;
+                }
+
+                let itemsToConsume = +materials[material];
+
+                if (totalMaterial < itemsToConsume) {
+                    throw Errors.NotEnoughMaterial;
                 }
                 // add experience to item for each material
-                if (itemsToConsume > totalmaterial) {
-                    itemsToConsume = totalmaterial;
-                }
 
                 let expTable = upgradeMeta.levelExpTable;
                 let expRequired = expTable[level - 1];
@@ -569,7 +555,7 @@ class Crafting {
                     }
                 }
 
-                materialsConsumed[materialItem.id] = count - itemsToConsume;
+                materials[material] = itemsToConsume;
 
                 if (level == maxLevel) {
                     exp = 0;
@@ -589,11 +575,10 @@ class Crafting {
 
         this._inventory.setItemUpdated(item);
 
-        for (let i = 0; i < materials.length; ++i) {
-            const materialId = materials[i];
+        for (let materialId in materials) {
             const material = this._inventory.getItemById(materialId);
             if (material) {
-                this._inventory.modifyStack(material, -materialsConsumed[materialId]);
+                this._inventory.modifyStack(material, -materials[materialId]);
             }
         }
 
