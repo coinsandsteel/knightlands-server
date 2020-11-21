@@ -31,6 +31,7 @@ export class TokenRateTimeseries {
     }
 
     async insertRates(queries: InsertQuery[]) {
+        console.log(Collections.DivTokenRateTimeseries)
         await this._db.collection(Collections.DivTokenRateTimeseries).bulkWrite(queries);
 
         for (const query of queries) {
