@@ -61,13 +61,8 @@ export class ArmyUnits {
             { _id: userId },
             { $pull: { "units": { "id": { $in: ids } } } }
         );
-        const cache = await this.getCache(userId);
-        if (cache) {
-            for (const id of ids) {
-                delete cache[id];
-            }
-        }
         Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
+        this.resetCache(userId);
     }
 
     async updateReservedUnits(userId: string, reserve: ArmyReserve) {
@@ -80,6 +75,7 @@ export class ArmyUnits {
             { $set: setQuery }
         );
         Game.emitPlayerEvent(userId, Events.UnitsReserveUpdate, reserve);
+        this.resetCache(userId);
     }
 
     async getInventory(userId: string) {

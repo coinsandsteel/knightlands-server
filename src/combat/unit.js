@@ -60,10 +60,13 @@ class Unit {
         return Random.range(1, 100, true) <= this.getStat(CharacterStat.CriticalChance);
     }
 
-    attackRaid(raidBoss, bonusDamage) {
+    attackRaid(raidBoss, bonusDamage, flatDamage) {
         let { attack, crit } = this.getAttack();
 
         attack += this.getStat(CharacterStat.RaidDamage);
+        if (Number.isInteger(flatDamage)) {
+            attack += flatDamage;
+        }
         attack *= bonusDamage;
 
         return { damage: raidBoss._applyDamage(attack), crit };

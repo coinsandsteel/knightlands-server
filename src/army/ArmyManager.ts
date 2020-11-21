@@ -498,13 +498,13 @@ export class ArmyManager {
         await this._units.removeUnits(userId, unitIds);
         // refund
         const user = await Game.getUser(userId);
-        await user.addSoftCurrency(resourcesUsed.gold);
+        await user.addSoftCurrency(Math.floor(resourcesUsed.gold));
 
         const inventory = await Game.loadInventory(userId);
         await inventory.addItemTemplates([
-            { item: this._troops.essenceItem, quantity: resourcesUsed.troopEssence },
-            { item: this._generals.essenceItem, quantity: resourcesUsed.generalEssence },
-            { item: this._meta.soulsItem, quantity: resourcesUsed.souls }
+            { item: this._troops.essenceItem, quantity: Math.floor(resourcesUsed.troopEssence) },
+            { item: this._generals.essenceItem, quantity: Math.floor(resourcesUsed.generalEssence) },
+            { item: this._meta.soulsItem, quantity: Math.floor(resourcesUsed.souls) }
         ]);
     }
 

@@ -17,9 +17,9 @@ export class ArmyCombatLegion {
 
     constructor(
         userId: string,
-        legionIndex: number, 
-        armyResolver: ArmyResolver, 
-        allUnits: ArmyUnit[], 
+        legionIndex: number,
+        armyResolver: ArmyResolver,
+        allUnits: ArmyUnit[],
         armyUnits: ArmyUnits,
         reservedUnits: ArmyReserve,
         legions: ArmyLegions
@@ -36,7 +36,7 @@ export class ArmyCombatLegion {
         return this._legionIndex;
     }
 
-    async attackRaid(raidBoss, bonusDamage: number, playerUnit, raid: number) {
+    async attackRaid(raidBoss, bonusDamage: number, playerUnit: any, raid: number) {
         const legion: Legion = await this._legions.getLegion(this._userId, this._legionIndex);
         const unitIds: number[] = [];
         for (const slotId in legion.units) {
@@ -44,7 +44,7 @@ export class ArmyCombatLegion {
         }
 
         this.unitIds = unitIds;
-        
+
         const unitsDict = await this._armyUnits.getUserUnits(this._userId, unitIds);
         const units: ArmyUnit[] = new Array(unitIds.length);
         for (let i = 0; i < unitIds.length; ++i) {
@@ -57,9 +57,5 @@ export class ArmyCombatLegion {
         raidBoss._applyDamage(resolveResult.totalDamageOutput);
 
         return resolveResult;
-    }
-
-    _isCritical(playerCritChance) {
-        return Random.range(1, 100, true) <= playerCritChance;
     }
 }

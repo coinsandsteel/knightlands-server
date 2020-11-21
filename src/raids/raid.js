@@ -302,8 +302,8 @@ class Raid extends EventEmitter {
             if (combatUnit.isAlive) {
                 damageLog.hits++;
 
-                let playerAttackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage);
                 const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, combatUnit, this._template._id);
+                const playerAttackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage, armyAttackResult.playerStats.attack);
 
                 const damageDone = playerAttackResult.damage + armyAttackResult.totalDamageOutput;
                 damageLog.damage += damageDone;
