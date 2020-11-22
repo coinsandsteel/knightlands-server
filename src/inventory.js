@@ -835,22 +835,27 @@ class Inventory {
             throw Errors.NoItem;
         }
 
-        let equippedItems;
-        let unit;
+        
         // if holder is character use chracter items
-        if (item.holder == UserHolder || item.holder === undefined) {
-            equippedItems = this._user.equipment;
-        } else {
-            unit = await Game.armyManager.getUnit(this._userId, item.holder);
-            equippedItems = unit.items;
-        }
+        if (item.equipped) {
+            let equippedItems;
+            let unit;
+            
+            if (item.holder == UserHolder || item.holder === undefined) {
+                equippedItems = this._user.equipment;
+            } else {
+                unit = await Game.armyManager.getUnit(this._userId, item.holder);
+                equippedItems = unit.items;
+            }
 
-        const template = await Game.itemTemplates.getTemplate(item.template);
-        const itemSlot = getSlot(template.equipmentType);
+            const template = await Game.itemTemplates.getTemplate(item.template);
+            const itemSlot = getSlot(template.equipmentType);
 
-        if (equippedItems[itemSlot]) {
-            equippedItems[itemSlot].locked = isLocked;
+            if (equippedItems[itemSlot]) {
+                equippedItems[itemSlot].locked = isLocked;
+            }
         }
+        
         
         item.locked = isLocked;
         this.setItemUpdated(item)

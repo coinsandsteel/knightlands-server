@@ -222,7 +222,6 @@ class PlayerController extends IPaymentListener {
     }
 
     async onPayment(iap, eventToTrigger, context) {
-        console.log("on payment succeed", JSON.stringify({ iap, eventToTrigger, context }, null, 2));
         this._socket.emit(eventToTrigger, {
             iap,
             context
