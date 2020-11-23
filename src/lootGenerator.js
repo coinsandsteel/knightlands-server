@@ -212,15 +212,13 @@ class LootGenerator {
     }
 
     async _rollQuestLoot(lootContext, table, questFinished, items, itemsHash, luck) {
-        if (questFinished && table.guaranteedRecords) {
-            let rollResults = await this._rollGuaranteedLootFromTable(table.guaranteedRecords, table.tag, items, itemsHash);
-            items = rollResults.items;
-            itemsHash = rollResults.itemsHash;
-        }
-
         if (questFinished && table.finishedLoot) {
             table = table.finishedLoot;
         }
+
+        const rollResults = await this._rollGuaranteedLootFromTable(table.guaranteedRecords, table.tag, items, itemsHash);
+        items = rollResults.items;
+        itemsHash = rollResults.itemsHash;
 
         if (lootContext.itemsToRoll == 0) {
             lootContext.itemsToRoll = table.itemsToRoll;
@@ -238,13 +236,15 @@ class LootGenerator {
             itemsHash = {};
         }
 
-        let i = 0;
-        const length = guaranteedRecords.length;
-        for (; i < length; i++) {
-            let record = guaranteedRecords[i];
-            await this._addRecordToTable({
-                tableTag
-            }, items, itemsHash, record, true, lootCount);
+        if (guaranteedRecords && Array.isArray(guaranteedRecords)) {
+            let i = 0;
+            const length = guaranteedRecords.length;
+            for (; i < length; i++) {
+                let record = guaranteedRecords[i];
+                await this._addRecordToTable({
+                    tableTag
+                }, items, itemsHash, record, true, lootCount);
+            }
         }
 
         return {

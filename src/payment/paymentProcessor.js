@@ -174,7 +174,8 @@ class PaymentProcessor extends EventEmitter {
 
         const nonce = Number(await this._blockchain.getPaymentNonce(userId));
 
-        let price = Game.currencyConversionService.convertToNative(iapObject.price) * count;
+        // price is in cents
+        let price = Game.currencyConversionService.convertToNative(iapObject.price / 100) * count;
         let timestamp = Game.nowSec;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,
