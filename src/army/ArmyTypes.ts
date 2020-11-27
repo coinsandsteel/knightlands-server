@@ -122,11 +122,19 @@ interface Refund {
     souls: number;
 }
 
+interface RarityDamageBonus {
+    rarity: string;
+    bonus: number;
+}
+
 export interface ArmyMeta {
     soulsItem: number;
     soulsFromBanishment: number[];
     slots: LegionSlotMeta[];
     refund: Refund;
+    damageBonusPerRarity: RarityDamageBonus[];
+    damageBonusPerEnchantLevel: number[];
+    damageBonusPerLevel: number[];
 }
 
 export interface ArmyUnit {

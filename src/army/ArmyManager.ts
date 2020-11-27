@@ -79,6 +79,11 @@ export class ArmyManager {
             this._unitTemplates,
             this._troops,
             this._generals,
+            {
+                level: this._meta.damageBonusPerLevel,
+                rarity: this._meta.damageBonusPerRarity,
+                enchant: this._meta.damageBonusPerEnchantLevel
+            },
             Random.range
         );
     }
