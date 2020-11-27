@@ -555,7 +555,7 @@ class Crafting {
                     }
                 }
 
-                materials[material] = itemsToConsume;
+                materials[material] -= itemsToConsume;
 
                 if (level == maxLevel) {
                     exp = 0;
