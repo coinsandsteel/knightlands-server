@@ -117,7 +117,7 @@ export class DividendsRegistry {
 
             await Game.db.collection(Collections.DivsPayouts).updateOne(
                 { _id: this.getCurrentPayout() },
-                { $set: { supply: this._supply, payouts: payouts.payouts } },
+                { $set: { supply: this._supply, payouts: payouts ? payouts.payouts : {} } },
                 { upsert: true }
             );
 
