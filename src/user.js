@@ -19,7 +19,8 @@ import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
-import { GoldMines } from './gold-mines/GoldMines.ts'
+import { GoldMines } from './gold-mines/GoldMines.ts';
+import { Dividends } from "./dividends/Dividends.new";
 
 const {
     EquipmentSlots,
@@ -176,6 +177,10 @@ class User {
         return this._goldMines;
     }        
 
+    get dividends() {
+        return this._dividends;
+    }
+
     async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -217,8 +222,12 @@ class User {
 
     async addDkt(value) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
-        await this._inventory.modifyCurrency(CurrencyType.Dkt, value);
-        await Game.dividends.modifyTotalSupply(value);
+
+        value = Math.floor(value * 10e8) / 10e8;
+
+        // if payout day is shifted, commit previous days balance
+        await this.dividends.tryCommitPayout();
+        await this.inventory.modifyCurrency(CurrencyType.Dkt, value);
         await Game.rankings.updateRank(this.address, {
             type: RankingType.DktEarned
         }, value);
@@ -465,6 +474,7 @@ class User {
         this._goldExchange = new GoldExchange(this._data.goldExchange, this);
         this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
         this._goldMines = new GoldMines(this, this._data.goldMines);
+        this._dividends = new Dividends(this._data.dividends, this);
 
         this._advanceTimers();
 
@@ -473,6 +483,7 @@ class User {
         await this._goldExchange.init();
         await this._dailyQuests.init();
         await this.collectDailyRefills();
+        await this._dividends.tryCommitPayout();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
@@ -1111,6 +1122,10 @@ class User {
 
         if (!user.goldMines) {
             user.goldMines = {};
+        }
+
+        if (!user.dividends) {
+            user.dividends = {};
         }
 
         return user;

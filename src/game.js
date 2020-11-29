@@ -7,13 +7,15 @@ const ItemTemplates = require("./itemTemplates");
 const { Collections } = require("./database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
+import { DividendsRegistry } from "./dividends/DividendsRegistry";
+import { Season } from './seasons/Season';
 
 class Game extends EventEmitter {
     constructor() {
         super();
     }
 
-    init(
+    async init(
         server, 
         db, 
         blockchain, 
@@ -23,7 +25,6 @@ class Game extends EventEmitter {
         currencyConversionService, 
         craftingQueue,
         userPremiumService,
-        dividends,
         rankings,
         armyManager
     ) {
@@ -37,12 +38,14 @@ class Game extends EventEmitter {
         this._craftingQueue = craftingQueue;
         this._itemTemplates = new ItemTemplates(db);
         this._userPremiumService = userPremiumService;
-        this._dividends = dividends;
+        this._dividends = new DividendsRegistry(blockchain, new Season());
         this._rankings = rankings;
         this._armyManager = armyManager;
-        this.tokenAmounts = new DivTokenFarmedTimeseries(db);
+        this.tokenAmounts = new DivTokenFarmedTimeseries(db, this._dividends);
 
         this._players = {};
+
+        await this._dividends.init();
     }
 
     get armyManager() {

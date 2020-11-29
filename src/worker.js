@@ -23,7 +23,6 @@ const CurrencyConversionService = require("./payment/currencyConversionService")
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
 const UserPremiumService = require("./userPremiumService");
-const Dividends = require("./dividends/dividends");
 import { ArmyManager } from "./army/ArmyManager";
 
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
@@ -31,6 +30,7 @@ import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import Game from "./game";
 
 import Rankings from "./rankings/Rankings.ts";
+import { Blockchain } from "./blockchain/Blockchain";
 
 process.on("unhandledRejection", (error) => {
   console.error(error); // This prints error with stack included (as for normal errors)
@@ -78,10 +78,9 @@ class Worker extends SCWorker {
     }
 
 
-    this._blockchain = BlockchainFactory(Config.blockchain, this._db);
+    this._blockchain = new Blockchain(this._db);
     this._iapExecutor = new IAPExecutor(this._db);
     this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
-    this._dividends = new Dividends(this._db, this._blockchain);
 
     this._raidManager = new RaidManager(this._db, this._paymentProcessor);
     this._craftingQueue = new CraftingQueue(this._db);
@@ -92,7 +91,7 @@ class Worker extends SCWorker {
     
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
-    Game.init(
+    await Game.init(
       scServer, 
       this._db, 
       this._blockchain, 
@@ -102,7 +101,6 @@ class Worker extends SCWorker {
       this._currencyConversionService, 
       this._craftingQueue,
       this._userPremiumService,
-      this._dividends,
       this._rankings,
       this._armyManager
     );
@@ -118,7 +116,6 @@ class Worker extends SCWorker {
     await this._presale.init();
     await this._blockchain.start();
     await this._paymentProcessor.start();
-    await this._dividends.init();
     await this._armyManager.init(this._iapExecutor);
 
     scServer.on("connection", socket => {

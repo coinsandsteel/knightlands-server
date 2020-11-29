@@ -52,7 +52,7 @@ export class ArmyCombatLegion {
         }
 
         const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid);
-        console.log(JSON.stringify(resolveResult, null, 2))
+        // console.log(JSON.stringify(resolveResult, null, 2))
 
         raidBoss._applyDamage(resolveResult.totalDamageOutput);
 

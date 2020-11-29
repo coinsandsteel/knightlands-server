@@ -1,4 +1,5 @@
 import Game from "../game";
+import blockchains from "../knightlands-shared/blockchains";
 import CurrencyType from "../knightlands-shared/currency_type";
 import Errors from "../knightlands-shared/errors";
 const { Collections } = require("../database");
@@ -57,8 +58,8 @@ class Dividends {
         // generate signature 
         const nonce = Number(await this._blockchain.getDividendTokenNonce(address));
 
-        const bigIntAmount = this._blockchain.getBigIntDivTokenAmount(amount);
-        const signature = await this._blockchain.sign(this._blockchain.addressForSigning(address), bigIntAmount, nonce);
+        const bigIntAmount = this._blockchain.getBlockchain(blockchains.Tron).getBigIntDivTokenAmount(amount);
+        const signature = await this._blockchain.getBlockchain(blockchains.Tron).sign(this._blockchain.addressForSigning(address), bigIntAmount, nonce);
 
         await this._db.collection(Collections.DivTokenWithdrawals).insertOne({
             userId: address,

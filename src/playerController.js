@@ -19,6 +19,7 @@ const {
 } = require("./database");
 
 import Game from "./game";
+import blockchains from "./knightlands-shared/blockchains";
 
 const TowerFloorPageSize = 20;
 
@@ -35,7 +36,7 @@ class PlayerController extends IPaymentListener {
         this._db = Game.db;
         this._raidManager = Game.raidManager;
         this._lootGenerator = Game.lootGenerator;
-        this._signVerifier = Game.blockchain;
+        this._signVerifier = Game.blockchain.getBlockchain(blockchains.Tron);
         this._opThrottles = {};
 
         // admin functions
@@ -150,6 +151,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
         this._socket.on(Operations.FetchPendingDividendTokenWithdrawal, this._gameHandler(this._fetchPendingDividenTokenWithdrawal.bind(this)));
         this._socket.on(Operations.SendDividendTokenWithdrawal, this._gameHandler(this._sendDividendTokenWithdrawal.bind(this)));
+        this._socket.on(Operations.GetDivsStatus, this._gameHandler(this._getDividendsStatus.bind(this)));
+        this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -229,8 +232,8 @@ class PlayerController extends IPaymentListener {
     }
 
     async onDividendTokenWithdrawal(success) {
-        let dkt = this._user.dkt;
-        console.log("on div token withdrawal", JSON.stringify({ success, dkt: dkt }, null, 2));
+        // let dkt = this._user.dkt;
+        // console.log("on div token withdrawal", JSON.stringify({ success, dkt: dkt }, null, 2));
         this._socket.emit(Events.DivTokenWithdrawal, {
             success
         });
@@ -1320,15 +1323,23 @@ class PlayerController extends IPaymentListener {
     // Dividends
 
     async _withdrawDividendToken(user, data) {
-        return await Game.dividends.requestTokenWithdrawal(user, data.amount);
+        // return await Game.dividends.requestTokenWithdrawal(user, data.amount);
     }
 
     async _fetchPendingDividenTokenWithdrawal(user) {
-        return await Game.dividends.getPendingWithdrawal(user.address);
+        // return await Game.dividends.getPendingWithdrawal(user.address);
     }
 
     async _sendDividendTokenWithdrawal(user, data) {
-        return await Game.dividends.acceptTransaction(user.address, data.tx);
+        // return await Game.dividends.acceptTransaction(user.address, data.tx);
+    }
+
+    async _getDividendsStatus(user) {
+        return Game.dividends.getStatus(user.address);
+    }
+
+    async _claimDividends(user, data) {
+        return user.dividends.claimDividends(data.blockchainId);
     }
 
     // Tournaments

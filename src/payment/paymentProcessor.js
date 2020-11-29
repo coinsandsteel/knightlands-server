@@ -5,6 +5,8 @@ import Game from "../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
 import { ObjectId } from "mongodb";
+import blockchains from "../knightlands-shared/blockchains";
+import { Blockchain } from "./../blockchain/Blockchain";
 const EventEmitter = require('events');
 const Config = require("../config");
 
@@ -26,8 +28,8 @@ class PaymentProcessor extends EventEmitter {
         this._iapExecutor = iapExecutor;
         this._listeners = {};
 
-        this._blockchain.on(this._blockchain.Payment, this._handleBlockchainPayment.bind(this));
-        this._blockchain.on(this._blockchain.TransactionFailed, this._handlePaymentFailed.bind(this));
+        this._blockchain.on(Blockchain.Payment, this._handleBlockchainPayment.bind(this));
+        this._blockchain.on(Blockchain.TransactionFailed, this._handlePaymentFailed.bind(this));
     }
 
     registerAsPaymentListener(userId, listener) {
@@ -172,7 +174,7 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown iap";
         }
 
-        const nonce = Number(await this._blockchain.getPaymentNonce(userId));
+        const nonce = Number(await this._blockchain.getBlockchain(blockchains.Tron).getPaymentNonce(userId));
 
         // price is in cents
         let price = Game.currencyConversionService.convertToNative(iapObject.price / 100) * count;
@@ -193,7 +195,7 @@ class PaymentProcessor extends EventEmitter {
         let paymentId = inserted.insertedId.valueOf() + "";
 
         // create signature for the smart contract and return it
-        let signature = await this._blockchain.sign(iap, paymentId, price, nonce, timestamp);
+        let signature = await this._blockchain.getBlockchain(blockchains.Tron).sign(iap, paymentId, price, nonce, timestamp);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
             $set: {
@@ -247,7 +249,7 @@ class PaymentProcessor extends EventEmitter {
         const length = requests.length;
         for (; i < length; ++i) {
             let request = requests[i];
-            await this._blockchain.trackTransactionStatus(this._blockchain.PaymentGatewayAddress, request._id, request.userId, request.transactionId);
+            await this._blockchain.getBlockchain(blockchains.Tron).trackTransactionStatus(this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress, request._id, request.userId, request.transactionId);
         }
 
         console.log("Track pending iaps finished.");
@@ -273,7 +275,7 @@ class PaymentProcessor extends EventEmitter {
 
         try {
             console.log("sending transaction...");
-            let transactionId = await this._blockchain.sendTransaction(this._blockchain.PaymentGatewayAddress, paymentId, userId, signedTransaction);
+            let transactionId = await this._blockchain.getBlockchain(blockchains.Tron).sendTransaction(this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress, paymentId, userId, signedTransaction);
             if (transactionId) {
                 await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {
                     $set: {
@@ -296,7 +298,7 @@ class PaymentProcessor extends EventEmitter {
         }
     }
 
-    async _handleBlockchainPayment(paymentRecipe) {
+    async _handleBlockchainPayment(id, paymentRecipe) {
         // first update status in database
         try {
             let requestNonce = new ObjectId(paymentRecipe.nonce);
@@ -338,10 +340,10 @@ class PaymentProcessor extends EventEmitter {
         }
     }
 
-    async _handlePaymentFailed(args) {
-        const { transactionId, payload, userId, contractAddress } = args;
+    async _handlePaymentFailed(id, args) {
+        const { transactionId, payload, userId, contractAddress, reason } = args;
 
-        if (contractAddress != this._blockchain.PaymentGatewayAddress) {
+        if (contractAddress != this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress) {
             return;
         }
 
@@ -354,7 +356,7 @@ class PaymentProcessor extends EventEmitter {
                 userId,
                 tx: transactionId,
                 status: PaymentStatus.Failed,
-                reason: args.reason
+                reason: reason
             }
         });
 
@@ -366,7 +368,7 @@ class PaymentProcessor extends EventEmitter {
 
         let listener = this._getListeners(userId)[0];
         if (listener) {
-            console.log("notify client payment failed. Reason: ", JSON.stringify(args.reason, null, 2));
+            console.log("notify client payment failed. Reason: ", JSON.stringify(reason, null, 2));
 
             // let listener know that payment failed
             await listener.onPaymentFailed(payment.iap, this._iapExecutor.getEventByIAP(payment.iap), args.reason, payment.context);

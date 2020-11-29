@@ -11,6 +11,7 @@ const Dividends = require("./Dividends.json");
 const PresaleChestGateway = require("./PresaleChestGateway.json");
 const Presale = require("./Presale.json");
 const DKT = require("./DKT.json");
+import { Blockchain } from "../Blockchain";
 
 const NewBlockScanInterval = 10000;
 const TxFailureScanInterval = 5000;
@@ -28,17 +29,15 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     constructor(db) {
         super(db);
 
-        this.Payment = "Purchase";
-        this.PaymentFailed = "PurchaseFailed";
+        this.Payment = Blockchain.Payment;
         this.PresaleChestTransfer = "PresaleChestTransfer";
         this.PresaleChestPurchased = "PresaleChestPurchased";
-        this.TransactionFailed = "TransactionFailed";
-        this.DividendTokenWithdrawal = "DividendTokenWithdrawal";
+        this.TransactionFailed = Blockchain.TransactionFailed;
+        this.DividendTokenWithdrawal = Blockchain.DividendTokenWithdrawal;
+        this.DividendWithdrawal = Blockchain.DividendWithdrawal;
 
         this._eventsReceived = 0;
-
         this._eventWatchers = {};
-
         this._db = db;
 
         const mode = process.env.ENV || "dev";
@@ -74,7 +73,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     getBigIntDivTokenAmount(amount) {
-        return Math.floor(amount * Math.pow(10, 6));
+        return Math.floor(amount * Math.pow(10, 6)).toString();
     }
 
     getNumberDivTokenAmount(bigInt) {
@@ -162,6 +161,7 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         console.log("Scanning missed events...");
 
         this._watchEvent("Purchase", PaymentGateway.address, this._emitPayment);
+        this._watchEvent("Withrawal", PaymentGateway.address, this._emitDivsWithdrawal);
         this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
         this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
         this._watchEvent("Transfer", DKT.address, this._emitWithdrawal);
@@ -202,7 +202,19 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
         this.emit(this.Payment, {
             success: true,
             nonce: eventData.paymentId,
-            timestamp: timestamp / 1000
+            timestamp: timestamp / 1000,
+            divs: eventData.divs
+        });
+    }
+
+    _emitDivsWithdrawal(transaction, timestamp, eventData) {
+        this.emit(this.DividendWithdrawal, {
+            success: true,
+            user: this._tronWeb.address.fromHex(eventData.from),
+            withdrawalId: eventData.withdrawalId,
+            amount: eventData.value,
+            timestamp: timestamp / 1000,
+            tx: transaction
         });
     }
 
@@ -275,6 +287,8 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
                 this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
                 return;
+            } else {
+                this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
             }
         } catch (e) {
             this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
@@ -304,7 +318,9 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
             //     output
             // });
             console.log("TX failed", contractAddress, JSON.stringify(output));
-            this._emitTransactionFailed(contractAddress, txID, payload, userId, output.result);
+            this._emitTransactionFailed(
+                contractAddress, txID, payload, userId, output.result
+            );
         }
 
         if (emitSuccess) {

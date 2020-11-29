@@ -1,6 +1,7 @@
 import { Db, Collection } from "mongodb";
 import { Collections } from "../database";
 import { Lock } from "../utils/lock";
+import { DividendsRegistry } from "./DividendsRegistry";
 
 const Config = require("../config");
 
@@ -10,9 +11,11 @@ export class DivTokenFarmedTimeseries {
     private _db: Db;
     private _collection: Collection;
     private _lock: Lock;
+    private _dividendsRegistry: DividendsRegistry;
 
-    constructor(db: Db) {
+    constructor(db: Db, dividendsRegistry: DividendsRegistry) {
         this._db = db;
+        this._dividendsRegistry = dividendsRegistry;
         this._collection = this._db.collection(Collections.DivTokenFarmed);
         this._lock = new Lock();
     }
@@ -21,6 +24,7 @@ export class DivTokenFarmedTimeseries {
         await this._lock.acquire(LOCK_KEY);
         try {
             await this._collection.updateOne({ "date": new Date() }, { $inc: { amount } }, { upsert: true });
+            await this._dividendsRegistry.increaseSupply(amount);
         } finally {
             this._lock.release(LOCK_KEY);
         }
