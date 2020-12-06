@@ -153,6 +153,10 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SendDividendTokenWithdrawal, this._gameHandler(this._sendDividendTokenWithdrawal.bind(this)));
         this._socket.on(Operations.GetDivsStatus, this._gameHandler(this._getDividendsStatus.bind(this)));
         this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
+        this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
+        this._socket.on(Operations.DivsMineUpgrade, this._gameHandler(this._upgradeDktMine.bind(this)));
+        this._socket.on(Operations.DivsDropUpgrade, this._gameHandler(this._upgradeDktDropRate.bind(this)));
+        this._socket.on(Operations.DivsPurchaseShop, this._gameHandler(this._purchaseDktShopItem.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -859,7 +863,7 @@ class PlayerController extends IPaymentListener {
         await user.addSoftCurrency(rewards.gold);
         await user.addExperience(rewards.exp);
         await user.inventory.addItemTemplates(rewards.items);
-        await user.addDkt(rewards.dkt);
+        await user.addDkt(rewards.dkt, true);
         await user.addHardCurrency(rewards.hardCurrency);
 
         await Game.tokenAmounts.insertTokens(rewards.dkt);
@@ -1339,7 +1343,23 @@ class PlayerController extends IPaymentListener {
     }
 
     async _claimDividends(user, data) {
-        return user.dividends.claimDividends(data.blockchainId);
+        return await user.dividends.claimDividends(data.blockchainId);
+    }
+
+    async _claimMinedDkt(user) {
+        return await user.dividends.claimMinedDkt();
+    }
+
+    async _upgradeDktMine(user) {
+        return await user.dividends.upgradeDktMine();
+    }
+
+    async _upgradeDktDropRate(user) {
+        return await user.dividends.upgradeDktDropRate();
+    }
+
+    async _purchaseDktShopItem(user, data) {
+        return await user.dividends.purchase(+data.itemId);
     }
 
     // Tournaments

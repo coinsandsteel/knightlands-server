@@ -50,7 +50,7 @@ export class DividendsRegistry {
         }, PAYOUT_PERIOD - Game.now % PAYOUT_PERIOD);
     }
 
-    async handleWithdawal(id: string, data: DivsWithdrawalData) {
+    async handleWithdawal(blockchainId: string, data: DivsWithdrawalData) {
         await this._lock.acquire("divs");
         try {
             await Game.db.collection(Collections.DivsWithdrawalRequests)
@@ -94,8 +94,10 @@ export class DividendsRegistry {
 
         const todayPayout = await Game.db.collection(Collections.DivsPayouts).findOne({ _id: this.getCurrentPayout() });
         if (todayPayout) {
-            for (const id in todayPayout.payouts) {
-                payouts[id] = BigInt(todayPayout.payouts[id]) * BigInt(10e8) / BigInt(Math.floor(todayPayout.supply * 10e8)) * BigInt(PAYOUT_LAG) / BigInt(100);
+            if (todayPayout.supply > 0) {
+                for (const id in todayPayout.payouts) {
+                    payouts[id] = BigInt(todayPayout.payouts[id]) * BigInt(10e8) / BigInt(Math.floor(todayPayout.supply * 10e8)) * BigInt(PAYOUT_LAG) / BigInt(100);
+                }
             }
         }
 
@@ -144,12 +146,21 @@ export class DividendsRegistry {
         );
     }
 
+    getPayoutPeriod() {
+        return PAYOUT_PERIOD;
+    }
+
     getCurrentPayout() {
         return Math.floor(Game.nowSec / PAYOUT_PERIOD) * PAYOUT_PERIOD;
     }
 
     getNextPayout() {
         return this.getCurrentPayout() + PAYOUT_PERIOD;
+    }
+
+    async onSeasonFinished() {
+        // every player must unlock their stake
+
     }
 
     async getPendingDivsWithdrawals(userId: string) {
@@ -205,11 +216,18 @@ export class DividendsRegistry {
         }
     }
 
+    getSupply() {
+        return this._supply;
+    }
+
     async getStatus(userId: string) {
+        const pools = await Game.db.collection(Collections.DivsPayouts).findOne({ _id: this.getCurrentPayout() });
         return {
-            supply: this._supply,
+            season: this._season.getStatus(),
+            supply: this.getSupply(),
             nextPayout: this.getNextPayout(),
-            pendingDivs: await this.getPendingDivsWithdrawals(userId)
+            pendingDivs: await this.getPendingDivsWithdrawals(userId),
+            pools: pools ? pools.payouts : {}
         };
     }
 }

@@ -38,13 +38,15 @@ class Game extends EventEmitter {
         this._craftingQueue = craftingQueue;
         this._itemTemplates = new ItemTemplates(db);
         this._userPremiumService = userPremiumService;
-        this._dividends = new DividendsRegistry(blockchain, new Season());
+        this._season = new Season();
+        this._dividends = new DividendsRegistry(blockchain, this._season);
         this._rankings = rankings;
         this._armyManager = armyManager;
         this.tokenAmounts = new DivTokenFarmedTimeseries(db, this._dividends);
 
         this._players = {};
 
+        await this._season.init();
         await this._dividends.init();
     }
 
@@ -58,6 +60,10 @@ class Game extends EventEmitter {
 
     get dividends() {
         return this._dividends;
+    }
+
+    get season() {
+        return this._season;
     }
 
     get db() {

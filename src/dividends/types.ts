@@ -28,9 +28,11 @@ export interface DividendsMeta {
 export type PayoutsPerShare = { [key: string]: bigint };
 
 export interface DividendsData {
+    season: number;
     unlockedTokens: number;
     miningLevel: number;
     dropRateLevel: number;
     lastPayout: number;
+    lastMiningUpdate: number;
     payouts: { [key: string]: string };
 }

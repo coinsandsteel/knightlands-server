@@ -71,7 +71,10 @@ module.exports = {
         RaceTables: "race_tables",
         RaceWinners: "race_winners",
         Leaderboards: "leaderboards",
-        Armies: "armies"
+        Armies: "armies",
+        Seasons: "seasons",
+        SeasonsSchedule: "seasons_schedule",
+        DktMining: "dkt_mining"
     },
 
 

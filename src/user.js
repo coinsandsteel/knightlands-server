@@ -220,8 +220,12 @@ class User {
         await this._inventory.modifyCurrency(CurrencyType.Hard, value);
     }
 
-    async addDkt(value) {
+    async addDkt(value, includeDktPassive = false) {
         value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
+
+        if (includeDktPassive) {
+            value = await this.dividends.applyBonusDkt(value);
+        }
 
         value = Math.floor(value * 10e8) / 10e8;
 
@@ -1611,6 +1615,13 @@ class User {
 
     grantTrialAttempts(trialType, count) {
         this._trials.addAttempts(trialType, count, false);
+    }
+
+    async unlockDkt() {
+        const dkt = this.dkt;
+        // TODO keep presale DKT
+        await this._inventory.modifyCurrency(CurrencyType.Dkt, -dkt);
+        return dkt;
     }
 }
 
