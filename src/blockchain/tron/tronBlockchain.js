@@ -302,36 +302,21 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     // track failure, success will be tracked using events
-    async _trackTransactionFailure(contractAddress, payload, userId, txID, emitSuccess = false) {
+    async _trackTransactionFailure(contractAddress, payload, userId, txID) {
         const output = await this._tronWeb.trx.getTransactionInfo(txID);
 
         if (!Object.keys(output).length) {
             return setTimeout(() => {
-                this._trackTransactionFailure(contractAddress, payload, userId, txID, emitSuccess);
+                this._trackTransactionFailure(contractAddress, payload, userId, txID);
             }, TxFailureScanInterval);
         }
 
         if ((output.result && output.result == "FAILED") || !output.hasOwnProperty("contractResult")) {
-            // return callback({
-            //     error: this.tronWeb.toUtf8(output.resMessage),
-            //     transaction: signedTransaction,
-            //     output
-            // });
             console.log("TX failed", contractAddress, JSON.stringify(output));
             this._emitTransactionFailed(
                 contractAddress, txID, payload, userId, output.result
             );
         }
-
-        if (emitSuccess) {
-            // this._emitPayment(paymentId, txID, );
-        }
-
-        // return callback({
-        //     error: 'Failed to execute: ' + JSON.stringify(output, null, 2),
-        //     transaction: txID,
-        //     output
-        // });
     }
 
     async _ensureConnected() {

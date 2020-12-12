@@ -413,6 +413,10 @@ class Raid extends EventEmitter {
     }
 
     async getRewards(userId) {
+        if (this._data.loot[userId]) {
+            return this._data.loot[userId];
+        }
+
         // determine raid loot record based on user damage
         let chosenLoot;
         let raidStage = this.template;
@@ -487,27 +491,33 @@ class Raid extends EventEmitter {
 
         if (this._data.isFree) {
             rewards.dkt = 0;
+        } else {
+            await this._updateLoot(userId, rewards);
         }
 
         return rewards;
     }
 
     async claimLoot(userId) {
-        if (this._data.loot[userId] !== false) {
+        if (this._data.loot[userId] === true) {
             throw Errors.RaidLootClaimed;
         }
 
         const rewards = await this.getRewards(userId);
 
         // set loot claimed
-        let updateQuery = { $set: {} };
-        updateQuery.$set[`loot.${userId}`] = true;
-
-        this._data.loot[userId] = true;
-
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
+        await this._updateLoot(userId, true);
 
         return rewards;
+    }
+
+    async _updateLoot(userId, loot) {
+        let updateQuery = { $set: {} };
+        updateQuery.$set[`loot.${userId}`] = loot;
+
+        this._data.loot[userId] = loot;
+
+        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
     }
 
     _scheduleCheckpoint() {

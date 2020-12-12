@@ -32,6 +32,7 @@ export class TokenRateTimeseries {
 
     async insertRates(queries: InsertQuery[]) {
         console.log(Collections.DivTokenRateTimeseries)
+        console.log(queries)
         await this._db.collection(Collections.DivTokenRateTimeseries).bulkWrite(queries);
 
         for (const query of queries) {
@@ -53,14 +54,3 @@ export class TokenRateTimeseries {
                 }).sort({ t: 1 }).toArray();
     }
 }
-
-// at checkCollectionName(/srv/knightlands - server / node_modules / mongodb / lib / utils.js: 99: 11)
-// 0 | knightla | at new Collection(/srv/knightlands - server / node_modules / mongodb / lib / collection.js: 104: 3)
-// 0 | knightla | at Db.collection(/srv/knightlands - server / node_modules / mongodb / lib / db.js: 431: 26)
-// 0 | knightla | at TokenRateTimeseries.<anonymous>(/srv/knightlands - server / src / raids / tokenRateTimeseries.ts: 34: 24)
-// 0 | knightla | at Generator.next(<anonymous>)
-// 0 | knightla | at / srv / knightlands - server / src / raids / tokenRateTimeseries.ts: 8: 71
-// 0 | knightla | at new Promise(<anonymous>)
-// 0 | knightla | at __awaiter(/srv/knightlands - server / src / raids / tokenRateTimeseries.ts: 4: 12)
-// 0 | knightla | at TokenRateTimeseries.insertRates(/srv/knightlands - server / src / raids / tokenRateTimeseries.ts: 38: 16)
-// 0 | knightla | at RaidManager.<anonymous>(/srv/knightlands - server / src / raids / raidManager.js: 587: 35) name: 'MongoError', [Symbol(mongoErrorContextSymbol)]: { }

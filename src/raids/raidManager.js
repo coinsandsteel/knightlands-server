@@ -458,7 +458,7 @@ class RaidManager {
             let participantId = `participants.${userId}`;
             let lootId = `loot.${userId}`;
             matchQuery.$match[participantId] = { $exists: true };
-            matchQuery.$match[lootId] = false;
+            matchQuery.$match[lootId] = { $ne: true };
 
             let raidData = await this._db.collection(Collections.Raids).aggregate([
                 matchQuery
