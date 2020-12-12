@@ -449,9 +449,9 @@ class Raid extends EventEmitter {
             }
         }
 
-        // all participants get at least 10% of min dkt
+        // all participants get at least min dkt
         let rewards = {
-            dkt: raidStage.minDkt * 0.1,
+            dkt: raidStage.minDkt,
             exp: 0,
             gold: chosenLoot.gold,
             hardCurrency: 0
@@ -461,7 +461,7 @@ class Raid extends EventEmitter {
             return null
         }
 
-        rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.minDkt, raidStage.maxDkt);
+        rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
         rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
         // evaluate challenges

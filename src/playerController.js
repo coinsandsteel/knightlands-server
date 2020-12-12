@@ -698,6 +698,10 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
+        if (timer.value >= user.getMaxStatValue(stat)) {
+            throw Errors.IncorrectArguments;
+        }
+
         if (refillType == 2) {
             // items. Check if those items can be used as timer refill
             let templateIds = [];
