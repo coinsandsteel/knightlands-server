@@ -65,6 +65,10 @@ class Raid extends EventEmitter {
         return !this._bossUnit.isAlive;
     }
 
+    get summoner() {
+        return this._data.summoner;
+    }
+
     async create(summonerId, raidTemplateId, isFree) {
         raidTemplateId *= 1;
         

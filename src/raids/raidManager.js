@@ -417,7 +417,7 @@ class RaidManager {
         let dktFactor = 0;
 
         if (raid.free) {
-            const user = await Game.getUser(summonerId);
+            const user = await Game.getUser(raid.summoner);
             await user.dailyQuests.onFreeRaidFinished();
         } else {
             dktFactor = await this._getNextDktFactor(raid.templateId)
