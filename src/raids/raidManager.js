@@ -12,7 +12,7 @@ import Game from "../game";
 import { ObjectId } from "mongodb";
 import Errors from "../knightlands-shared/errors";
 import random from "../random";
-import { TokenRateTimeseries } from "./tokenRateTimeseries";
+import { TokenRateTimeseries } from "./TokenRateTimeseries";
 
 const WeaknessRotationCycle = 86400000 * 7;
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
