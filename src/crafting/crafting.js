@@ -135,6 +135,11 @@ class Crafting {
 
         this._inventory.removeItemByTemplate(recipe.resource, recipe.resourceCount * amount);
 
+        await Game.rankings.updateRank(this._userId, {
+            type: RankingType.CraftedItemsByRarity,
+            rarity: rarity
+        }, amount);
+
         let items = new Array(amount);
         while (amount-- > 0) {
             const item = this._inventory.createItemByTemplate(baseTemplate);

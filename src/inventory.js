@@ -67,11 +67,18 @@ class Inventory {
             this._currencies[currency] += value * 1;
         }
 
-        if (currency == CurrencyType.Soft && value < 0) {
-            await this._user.dailyQuests.onGoldSpent(-value);
-            await Game.rankings.updateRank(this._userId, {
-                type: RankingType.GoldSpent
-            }, -value);
+        if (currency == CurrencyType.Soft) {
+            if (value < 0) {
+                await this._user.dailyQuests.onGoldSpent(-value);
+                await Game.rankings.updateRank(this._userId, {
+                    type: RankingType.GoldSpent
+                }, -value);
+            } else {
+                await Game.rankings.updateRank(this._userId, {
+                    type: RankingType.GoldLooted
+                }, value);
+            }
+            
         } else if (currency == CurrencyType.Hard && value < 0) {
             await this._user.dailyQuests.onPremiumPurchase(-value);
         }

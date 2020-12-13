@@ -212,7 +212,7 @@ class RacesManager implements IRankingTypeHandler {
 
         return null;
     }
-    
+
     async getRacesInfo(userId: string) {
         let list = [];
         for (const t of this._races) {
@@ -352,17 +352,25 @@ class RacesManager implements IRankingTypeHandler {
             }
             currentMultiplier *= (1 + scaleIndex);
         } else {
-            // not everything were hit, decrease target and rewards
+            // not every target was hit, decrease target and rewards
             scaleIndex = 1 - targetsHit / raceConfig.rewards.length;
             scaleIndex *= targetScalingMeta.targetDecreaseStep;
             currentMultiplier *= (1 - scaleIndex);
         }
 
-        currentMultiplier = Math.max(targetScalingMeta.minMultiplier, currentMultiplier > targetScalingMeta.maxMultiplier ? targetScalingMeta.maxMultiplier : currentMultiplier);
+        currentMultiplier = Math.max(
+            targetScalingMeta.minMultiplier,
+            currentMultiplier > targetScalingMeta.maxMultiplier ?
+                targetScalingMeta.maxMultiplier : currentMultiplier
+        );
+
         targetMultipliers[multiplierKey] = currentMultiplier;
 
         if (currentMultiplier > 1) {
-            rewardsMultiplier[multiplierKey] = Math.max(targetScalingMeta.minMultiplier, Math.log(Math.pow(currentMultiplier, targetScalingMeta.rewardsPowerScale)) + 1);
+            rewardsMultiplier[multiplierKey] = Math.max(
+                targetScalingMeta.minMultiplier,
+                Math.log(Math.pow(currentMultiplier, targetScalingMeta.rewardsPowerScale)) + 1
+            );
         } else {
             rewardsMultiplier[multiplierKey] = currentMultiplier;
         }
