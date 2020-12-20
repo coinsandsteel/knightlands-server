@@ -87,14 +87,7 @@ class LootGenerator {
     }
 
     async _openChest(userId, chestId, count) {
-        let user;
-        let controller = await Game.getPlayerController(userId);
-        if (controller) {
-            user = await controller.getUser();
-        } else {
-            user = await Game.loadUser(userId);
-        }
-
+        let user = await Game.getUser(userId);
         return await this.openChest(user, chestId, count);
     }
 

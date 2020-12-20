@@ -181,6 +181,10 @@ class User {
         return this._dividends;
     }
 
+    isPurchased(iap) {
+        return !!this._data.purchasedIaps[iap];
+    }
+
     async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -455,6 +459,7 @@ class User {
             },
             {
                 $setOnInsert: userData,
+                $set: { lastLogin: Game.nowSec }
             },
             {
                 returnOriginal: false,
@@ -1130,6 +1135,10 @@ class User {
 
         if (!user.dividends) {
             user.dividends = {};
+        }
+
+        if (!user.purchasedIaps) {
+            user.purchasedIaps = {};
         }
 
         return user;

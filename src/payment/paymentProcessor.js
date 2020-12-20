@@ -152,7 +152,7 @@ class PaymentProcessor extends EventEmitter {
         return !!request;
     }
 
-    async requestPayment(userId, iap, tag, context, count = 1) {
+    async requestPayment(userId, iap, tag, context, address) {
         if (!iap) {
             throw Errors.UnknownIap;
         }
@@ -174,10 +174,10 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown iap";
         }
 
-        const nonce = Number(await this._blockchain.getBlockchain(blockchains.Tron).getPaymentNonce(userId));
+        const nonce = Number(await this._blockchain.getBlockchain(blockchains.Tron).getPaymentNonce(address));
 
         // price is in cents
-        let price = Game.currencyConversionService.convertToNative(iapObject.price / 100) * count;
+        let price = Game.currencyConversionService.convertToNative(iapObject.price / 100);
         let timestamp = Game.nowSec;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,

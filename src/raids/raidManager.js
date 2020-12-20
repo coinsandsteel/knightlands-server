@@ -5,7 +5,6 @@ const {
 } = require("../database");
 
 const Raid = require("./raid");
-const Events = require("../knightlands-shared/events");
 import Elements from "../knightlands-shared/elements";
 const EquipmentType = require("../knightlands-shared/equipment_type");
 import Game from "../game";
@@ -64,7 +63,7 @@ class RaidManager {
             this._addRaid(raid);
         }
 
-        await this._registerRaidIAPs(iapExecutor);
+        // await this._registerRaidIAPs(iapExecutor);
 
         await this._updateWeaknesses(true);
         await this._restoreDktForAllRaids(true);
@@ -366,28 +365,28 @@ class RaidManager {
         });
     }
 
-    async _registerRaidIAPs(iapExecutor) {
-        console.log("Registering Raid IAPs...");
+    // async _registerRaidIAPs(iapExecutor) {
+    //     console.log("Registering Raid IAPs...");
 
-        let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
-        allRaids.forEach(raid => {
-            if (raid.data.iap) {
-                iapExecutor.registerAction(raid.data.iap, async (context) => {
-                    return await this._summonRaid(context.summoner, context.raidTemplateId, false);
-                });
+    //     let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
+    //     allRaids.forEach(raid => {
+    //         if (raid.data.iap) {
+    //             iapExecutor.registerAction(raid.data.iap, async (context) => {
+    //                 return await this._summonRaid(context.summoner, context.raidTemplateId, false);
+    //             });
 
-                iapExecutor.mapIAPtoEvent(raid.data.iap, Events.RaidSummonStatus);
-            }
+    //             iapExecutor.mapIAPtoEvent(raid.data.iap, Events.RaidSummonStatus);
+    //         }
 
-            if (raid.data.joinIap) {
-                iapExecutor.registerAction(raid.data.joinIap, async (context) => {
-                    return await this._joinRaid(context.userId, context.raidId);
-                });
+    //         if (raid.data.joinIap) {
+    //             iapExecutor.registerAction(raid.data.joinIap, async (context) => {
+    //                 return await this._joinRaid(context.userId, context.raidId);
+    //             });
 
-                iapExecutor.mapIAPtoEvent(raid.data.joinIap, Events.RaidJoinStatus);
-            }
-        });
-    }
+    //             iapExecutor.mapIAPtoEvent(raid.data.joinIap, Events.RaidJoinStatus);
+    //         }
+    //     });
+    // }
 
     getRaid(raidId) {
         return this._getRaid(raidId);

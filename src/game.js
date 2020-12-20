@@ -9,6 +9,8 @@ import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
 import { Season } from './seasons/Season';
+import { Lock } from './utils/lock';
+import { Shop } from "./shop/Shop";
 
 class Game extends EventEmitter {
     constructor() {
@@ -26,8 +28,10 @@ class Game extends EventEmitter {
         craftingQueue,
         userPremiumService,
         rankings,
-        armyManager
+        armyManager,
+        shop
     ) {
+        this.shop = shop;
         this._server = server;
         this._db = db;
         this._blockchain = blockchain;
@@ -48,6 +52,8 @@ class Game extends EventEmitter {
 
         await this._season.init();
         await this._dividends.init();
+
+        this._lock = new Lock();
     }
 
     get armyManager() {
@@ -137,12 +143,18 @@ class Game extends EventEmitter {
     }
 
     async getUser(address) {
-        let playerController = this.getPlayerController(address);
+        await this._lock.acquire("get-user");
+
         let user;
-        if (playerController) {
-            user = await playerController.getUser();
-        } else {
-            user = await this.loadUser(address);
+        try {
+            let playerController = this.getPlayerController(address);
+            if (playerController) {
+                user = await playerController.getUser();
+            } else {
+                user = await this.loadUser(address);
+            }
+        } finally {
+            await this._lock.release("get-user");
         }
 
         return user;

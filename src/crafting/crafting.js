@@ -20,8 +20,6 @@ class Crafting {
         this._equipment = equipment;
         this._inventory = inventory;
         this._user = user;
-
-        console.log(`create Crafting ${this._user}`)
     }
 
     get _userId() {

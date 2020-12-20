@@ -18,7 +18,6 @@ const CraftingQueue = require("./crafting/craftingQueue");
 const RaidManager = require("./raids/raidManager");
 const IAPExecutor = require("./payment/IAPExecutor");
 const PaymentProcessor = require("./payment/paymentProcessor");
-const BlockchainFactory = require("./blockchain/blockchainFactory");
 const CurrencyConversionService = require("./payment/CurrencyConversionService");
 const Giveaway = require("./giveaway");
 const Presale = require("./presale");
@@ -31,6 +30,7 @@ import Game from "./game";
 
 import Rankings from "./rankings/Rankings.ts";
 import { Blockchain } from "./blockchain/Blockchain";
+import { Shop } from "./shop/Shop";
 
 process.on("unhandledRejection", (error) => {
   console.error(error); // This prints error with stack included (as for normal errors)
@@ -88,6 +88,7 @@ class Worker extends SCWorker {
     this._lootGenerator = new LootGenerator(this._db);
     this._rankings = new Rankings(this._db);
     this._armyManager = new ArmyManager(this._db);
+    this._shop = new Shop(this._paymentProcessor);
     
     this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
 
@@ -102,12 +103,14 @@ class Worker extends SCWorker {
       this._craftingQueue,
       this._userPremiumService,
       this._rankings,
-      this._armyManager
+      this._armyManager,
+      this._shop
     );
 
     this._giveaway = new Giveaway(app);
     this._presale = new Presale(app);
 
+    await this._shop.init(this._iapExecutor);
     await this._raidManager.init(this._iapExecutor);
     await this._craftingQueue.init(this._iapExecutor);
     await this._userPremiumService.init(this._iapExecutor);

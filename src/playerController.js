@@ -6,6 +6,8 @@ const Events = require("./knightlands-shared/events");
 import Errors from "./knightlands-shared/errors";
 import CurrencyType from "./knightlands-shared/currency_type";
 import CharacterStats from "./knightlands-shared/character_stat";
+import { getUserMetadata, decodeToken } from "./Auth";
+
 const Unit = require("./combat/unit");
 const FloorEnemyUnit = require("./combat/floorEnemyUnit");
 const IPaymentListener = require("./payment/IPaymentListener");
@@ -20,6 +22,7 @@ const {
 
 import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
+import { Lock } from "./utils/lock";
 
 const TowerFloorPageSize = 20;
 
@@ -28,6 +31,7 @@ class PlayerController extends IPaymentListener {
         super();
 
         this._socket = socket;
+        this._lock = new Lock();
 
         if (socket.authToken) {
             this.address = socket.authToken.address;
@@ -205,7 +209,11 @@ class PlayerController extends IPaymentListener {
         // Inventory
         this._socket.on(Operations.LockItem, this._gameHandler(this._lockItem.bind(this)));
         this._socket.on(Operations.UnlockItem, this._gameHandler(this._unlockItem.bind(this)));
-        
+
+        // Shop
+        this._socket.on(Operations.Purchase, this._gameHandler(this._purchase.bind(this)));
+        this._socket.on(Operations.PurchaseStatus, this._gameHandler(this._purchaseStatus.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -264,38 +272,25 @@ class PlayerController extends IPaymentListener {
             return;
         }
 
-        if (!data.address) {
-            respond("address is required");
-            return;
-        }
+        const metadata = await getUserMetadata(data.token);
+        const decodedToken = await decodeToken(data.token);
 
-        let user = await this.getUser(data.address);
+        this.address = metadata.email;
 
-        // if no signed message - generate new nonce and return it back to client
-        if (!data.message) {
-            let nonce = await user.generateNonce();
-            respond(null, nonce);
-        } else {
-            // if signed message is presented - verify message
-            try {
-                let result = await this._signVerifier.verifySign(user.nonce, data.message, user.address);
-                if (result) {
-                    this.address = user.address;
-
-                    this._socket.setAuthToken({
-                        address: user.address,
-                        nonce: user.nonce
-                    });
-
-                    respond(null, "success");
-                } else {
-                    throw "verification failed";
-                }
-            } catch (exc) {
-                console.log(exc);
-                respond("access denied");
+        const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { lastLogin: 1 });
+        if (userLastLogin) {
+            if (userLastLogin.lastLogin >= decodedToken[1].iat) { 
+                throw Errors.MalformedAuth;
             }
         }
+
+        this._socket.setAuthToken({
+            address: metadata.email
+        });
+
+        await this.getUser();
+
+        respond(null, "success");
     }
 
     async _handleEvent(event, args) {
@@ -321,8 +316,14 @@ class PlayerController extends IPaymentListener {
     }
 
     async getUser(address) {
-        if (!this._user) {
-            this._user = await Game.loadUser(address || this.address);
+        await this._lock.acquire("get-user");
+
+        try {
+            if (!this._user) {
+                this._user = await Game.loadUser(address || this.address);
+            }
+        } finally {
+            await this._lock.release("get-user");
         }
 
         return this._user;
@@ -1535,6 +1536,15 @@ class PlayerController extends IPaymentListener {
 
     async _unlockItem(user, data) {
         await user.inventory.unlockItem(+data.item);
+    }
+
+    // Shop
+    async _purchase(user, data) {
+        return Game.shop.purchase(user.address, data.iap, data.address);
+    }
+
+    async _purchaseStatus(user, data) {
+        return Game.shop.paymentStatus(user.address, data.iap);
     }
 }
 
