@@ -185,6 +185,10 @@ class User {
         return !!this._data.purchasedIaps[iap];
     }
 
+    setPurchased(iap) {
+        this._data.purchasedIaps[iap] = 1;
+    }
+
     async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -878,7 +882,7 @@ class User {
                 return await this._applyBuff(template._id, actionData);
 
             case ItemActions.SummonUnit:
-                return await Game._armyManager.summonRandomUnit(this.address, count, actionData.value);
+                return await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
         }
     }
 
@@ -998,7 +1002,7 @@ class User {
     }
 
     async autoCommitChanges(changeCallback) {
-        let response = await changeCallback();
+        let response = await changeCallback(this);
         await this.commitChanges();
         return response;
     }
@@ -1112,17 +1116,6 @@ class User {
 
         if (!user.trials) {
             user.trials = {};
-        }
-
-        if (!user.goldExchange) {
-            user.goldExchange = {
-                cycle: 0,
-                freeObtains: 0,
-                freeBoosts: 0,
-                premiumBoosts: 0,
-                level: 0,
-                exp: 0
-            };
         }
 
         if (!user.dailyQuests) {
@@ -1480,7 +1473,7 @@ class User {
         return item;
     }
 
-    async beastBoost(boostCount, regular) {
+    async beastBoost(boostCount, regular, metaIndex = -1) {
         if (boostCount > BeastMaxBoost) {
             boostCount = BeastMaxBoost;
         }
@@ -1491,7 +1484,10 @@ class User {
 
         const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
 
-        const result = await this._addExperienceToBeast(boostCount, beastMeta, regular);
+        const iapMeta = beastMeta.iaps[metaIndex];
+        if (!iapMeta) {
+            throw Errors.UknownIAP;
+        }
 
         if (regular) {
             const softRequired = boostCount * beastMeta.softPrice;
@@ -1501,7 +1497,7 @@ class User {
             }
 
             await this.addSoftCurrency(-softRequired);
-        } else {
+        } else if (metaIndex == -1 || metaIndex === undefined) {
             const ticketItem = this.inventory.getItemByTemplate(beastMeta.ticketItem);
             if (!ticketItem) {
                 throw Errors.NoItem;
@@ -1512,7 +1508,12 @@ class User {
             }
 
             this.inventory.removeItem(ticketItem.id, boostCount);
+        } else {
+            await this.addHardCurrency(-iapMeta.price);
+            boostCount = iapMeta.tickets;
         }
+
+        const result = await this._addExperienceToBeast(boostCount, beastMeta, regular);
 
         await this.dailyQuests.onBeastBoosted(boostCount);
 

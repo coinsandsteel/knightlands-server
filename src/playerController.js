@@ -603,7 +603,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _openChest(user, data) {
-        const { chest, iap, count } = data;
+        let { chest, iap, count } = data;
 
         // each chest has corresponding item attached to it to open
         let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: chest });
@@ -611,10 +611,18 @@ class PlayerController extends IPaymentListener {
             throw Errors.UnknownChest;
         }
 
-        if (iap && gachaMeta.iaps[iap]) {
-            return await Game.lootGenerator.requestChestOpening(this.address, gachaMeta, iap);
+        let freeOpening = false;
+        let chestsToOpen = count || 1;
+
+        if (+iap >= 0 && gachaMeta.iaps[iap]) {
+            const price = gachaMeta.iaps[iap].price;
+            if (user.hardCurrency < price) {
+                throw Errors.NotEnoughCurrency;
+            }
+            
+            await user.addHardCurrency(-price);
+            chestsToOpen = gachaMeta.iaps[iap].count;
         } else {
-            let freeOpening = false;
             // check if this is free opening
             if (gachaMeta.freeOpens > 0) {
                 let chests = user.getChests();
@@ -625,8 +633,6 @@ class PlayerController extends IPaymentListener {
                     freeOpening = true;
                 }
             }
-
-            let chestsToOpen = count || 1;
 
             // check if key item is required
             if (!freeOpening && gachaMeta.itemKey) {
@@ -642,9 +648,9 @@ class PlayerController extends IPaymentListener {
                 // consume key
                 user.inventory.removeItem(itemKey.id, chestsToOpen);
             }
-
-            return await Game.lootGenerator.openChest(user, chest, chestsToOpen, freeOpening);
         }
+
+        return await Game.lootGenerator.openChest(user, chest, chestsToOpen, freeOpening);
     }
 
     async _resetZone(user, data) {
@@ -1040,15 +1046,11 @@ class PlayerController extends IPaymentListener {
 
     // Beast boosting
     async _beastRegularBoost(user, data) {
-        return await user.beastBoost(data.count * 1, true);
+        return await user.beastBoost(+data.count, true);
     }
 
     async _beastAdvancedBoost(user, data) {
-        if (data.hasOwnProperty("iapIndex")) {
-            return await Game.userPremiumService.requestBeatSoulPurchase(this.address, data.iapIndex * 1);
-        }
-
-        return await user.beastBoost(data.count * 1, false);
+        return await user.beastBoost(+data.count, false, +data.iapIndex);
     }
 
     async _evolveBeast(user) {
@@ -1469,7 +1471,7 @@ class PlayerController extends IPaymentListener {
     async _summonArmyUnit(user, data) {
         const { iap, count, summonType } = data;
 
-        if (iap) {
+        if (+iap >= 0) {
             return await Game.armyManager.requestSummon(user.address, iap, summonType);
         } 
 
@@ -1544,7 +1546,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseStatus(user, data) {
-        return Game.shop.paymentStatus(user.address, data.iap);
+        return Game.shop.paymentStatus(user.address);
     }
 }
 

@@ -1,4 +1,4 @@
-import { Db, Collection, ObjectId } from "mongodb";
+import { Db } from "mongodb";
 import { Collections } from "../database";
 import { ArmySummonMeta, ArmyUnit, UnitMeta, UnitAbilitiesMeta } from "./ArmyTypes";
 import SummonType from "../knightlands-shared/army_summon_type";
@@ -37,7 +37,7 @@ export class ArmySummoner {
         return units;
     }
 
-    async summonWithStars(total: number, targetStars: number) {
+    async summonWithStars(total: number, targetStars: number, summonType: number) {
         let count = total;
         let units: ArmyUnit[] = [];
 
@@ -55,7 +55,14 @@ export class ArmySummoner {
         let minStars = targetStars > 5 ? 4 : targetStars;
 
         while (count-- > 0) {
-            const isTroop = random.intRange(1, totalTroopsWeight + totalGeneralsWeight) <= totalTroopsWeight;
+            let isTroop = random.intRange(1, totalTroopsWeight + totalGeneralsWeight) <= totalTroopsWeight;
+
+            if (summonType == 1) {
+                isTroop = true;
+            } else if (summonType == 2) {
+                isTroop = false;
+            }
+
             const stars = random.intRange(minStars, targetStars);
             const unit = this._generateUnit(stars, isTroop);
             // if extra stars, promote unit

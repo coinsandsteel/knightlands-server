@@ -177,7 +177,7 @@ export interface SummonGroup {
 }
 
 export interface SummonMetaIap {
-    iap: number;
+    price: number;
     count: number;
 }
 

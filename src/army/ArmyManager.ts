@@ -55,12 +55,6 @@ export class ArmyManager {
         this._unitTemplates = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
 
         this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
-        this._summonMeta.advancedSummon.iaps.forEach(iap => {
-            iapExecutor.registerAction(iap.iap, async context => {
-                return await this.summontUnits(context.user, context.count, context.summonType, true);
-            });
-            iapExecutor.mapIAPtoEvent(iap.iap, Events.UnitSummoned);
-        });
 
         await this._summoner.init();
 
@@ -99,33 +93,20 @@ export class ArmyManager {
 
     async requestSummon(userId: string, iap: number, summonType: number) {
         let summonData = summonType == ArmySummonType.Advanced ? this._summonMeta.advancedSummon : this._summonMeta.normalSummon;
-        let summonMeta = summonData.iaps.find(x => x.iap === iap);
+        let summonMeta = summonData.iaps[iap];
         if (!summonMeta) {
             throw Errors.IncorrectArguments;
         }
 
-        let iapContext = {
-            user: userId,
-            summonType: summonType,
-            count: summonMeta.count,
-            iap
-        };
+        const user = await Game.getUser(userId);
 
-        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.PaymentTag);
-        if (hasPendingPayment) {
-            throw Errors.PaymentIsPending;
+        if (user.hardCurrency < summonMeta.price) {
+            throw Errors.NotEnoughCurrency;
         }
 
-        try {
-            return await Game.paymentProcessor.requestPayment(
-                userId,
-                iap,
-                this.PaymentTag,
-                iapContext
-            );
-        } catch (exc) {
-            throw exc;
-        }
+        await user.addHardCurrency(-summonMeta.price);
+
+        return await this.summontUnits(userId, summonMeta.count, summonType, true)
     }
 
     async getSummonStatus(userId) {
@@ -210,10 +191,10 @@ export class ArmyManager {
         return this.loadArmyProfile(userId);
     }
 
-    async summonRandomUnit(userId: string, count: number, stars: number) {
+    async summonRandomUnit(userId: string, count: number, stars: number, summonType: number) {
         let armyProfile = await this.loadArmyProfile(userId);
         let lastUnitId = armyProfile.lastUnitId;
-        const newUnits = await this._summoner.summonWithStars(count, stars);
+        const newUnits = await this._summoner.summonWithStars(count, stars, summonType);
         // assign ids
         for (const unit of newUnits) {
             unit.id = ++lastUnitId;

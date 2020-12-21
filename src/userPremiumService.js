@@ -236,39 +236,6 @@ class UserPremiumService {
         });
     }
 
-    async requestBeatSoulPurchase(userId, purchaseIndex) {
-        const beastMeta = await this._db.collection(Collections.Meta).findOne({_id: "beasts"});
-
-        const iapMeta = beastMeta.iaps[purchaseIndex];
-        if (!iapMeta) {
-            throw Errors.UknownIAP;
-        }
-
-        let iapContext = {
-            user: userId
-        };
-
-        // check if payment request already created
-        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.BeastBoostPurchaseTag);
-        if (hasPendingPayment) {
-            throw Errors.PaymentIsPending;
-        }
-
-        iapContext.item = beastMeta.ticketItem;
-        iapContext.count = iapMeta.tickets;
-
-        try {
-            return await Game.paymentProcessor.requestPayment(
-                userId,
-                iapMeta.iap,
-                this.BeastBoostPurchaseTag,
-                iapContext
-            );
-        } catch (exc) {
-            throw exc;
-        }
-    }
-
     async requestRefillPayment(userId, stat) {
         let iapContext = {
             user: userId,

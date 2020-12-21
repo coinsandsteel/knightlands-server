@@ -18,10 +18,9 @@ export class Shop {
         await this._registerTopUpIaps(iapExecutor);
     }
 
-    async paymentStatus(userId: string, iap: string) {
-        return await this._paymentProcessor.fetchPaymentStatus(userId, this.IapTag, {
-            "context.userId": userId,
-            "context.iap": iap
+    async paymentStatus(userId: string) {
+        return this._paymentProcessor.fetchPaymentStatus(userId, this.IapTag, {
+            "context.userId": userId
         });
     }
 
@@ -66,20 +65,30 @@ export class Shop {
                 return await this._topUpShines(context.iap, context.userId, shiniesRecord.shinies);
             });
 
-            iapExecutor.mapIAPtoEvent(shiniesRecord.iap, Events.ShiniesTopUp);
+            iapExecutor.mapIAPtoEvent(shiniesRecord.iap, Events.PurchaseComplete);
         });
 
         // topUpShop.raidTickets.
     }
 
     private async _topUpShines(iap: string, userId: string, amount: number) {
+        console.log(iap, userId, amount);
+
         const user = await Game.getUser(userId);
 
-        if (user.isPurchased()) {
+        if (!user.isPurchased(iap)) {
             const meta = await this._getTopUpMeta();
             amount *= (1 + meta.firstPurchaseBonus);
+            user.setPurchased(iap);
         }
 
-        await user.addHardCurrency(amount);
+        await user.autoCommitChanges(async () => {
+            await user.addHardCurrency(amount);
+        });
+
+        return {
+            iap,
+            amount
+        };
     }
 }
