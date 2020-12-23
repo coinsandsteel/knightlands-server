@@ -51,7 +51,7 @@ export class GoldMines {
             const template = await Game.itemTemplates.getTemplate(discountItem.template);
             const prop = template.properties.find(x => x.type == ItemProperties.GoldMineUpgradeDiscount);
             if (prop) {
-                price *= (discountItem.count * prop.value) / 100;
+                price *= 1 - (discountItem.count * prop.value) / 100;
                 price = Math.floor(price);
             }
         }

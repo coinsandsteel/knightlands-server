@@ -21,6 +21,7 @@ import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
 import { GoldMines } from './gold-mines/GoldMines.ts';
 import { Dividends } from "./dividends/Dividends.new";
+import { DailyShop } from "./shop/DailyShop";
 
 const {
     EquipmentSlots,
@@ -181,12 +182,8 @@ class User {
         return this._dividends;
     }
 
-    isPurchased(iap) {
-        return !!this._data.purchasedIaps[iap];
-    }
-
-    setPurchased(iap) {
-        this._data.purchasedIaps[iap] = 1;
+    get dailyShop() {
+        return this._dailyShop;
     }
 
     async getWeaponCombatData() {
@@ -488,6 +485,7 @@ class User {
         this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
         this._goldMines = new GoldMines(this, this._data.goldMines);
         this._dividends = new Dividends(this._data.dividends, this);
+        this._dailyShop = new DailyShop(this._data.dailyShop, this);
 
         this._advanceTimers();
 
@@ -497,6 +495,7 @@ class User {
         await this._dailyQuests.init();
         await this.collectDailyRefills();
         await this._dividends.tryCommitPayout();
+        await this._dailyShop.update();
 
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
@@ -993,7 +992,7 @@ class User {
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
-
+        
         // apply new data as original
         return {
             changes,
@@ -1092,6 +1091,10 @@ class User {
             user.dailyRefillCollect = 0;
         }
 
+        if (!user.dailyShop) {
+            user.dailyShop = {};
+        }
+
         if (!user.beast) {
             user.beast = {
                 level: 0,
@@ -1130,8 +1133,8 @@ class User {
             user.dividends = {};
         }
 
-        if (!user.purchasedIaps) {
-            user.purchasedIaps = {};
+        if (!user.premiumShop) {
+            user.premiumShop = {};
         }
 
         return user;
@@ -1439,7 +1442,6 @@ class User {
 
     _processDailyReward(dailyRewardsMeta) {
         const dailyRewardCollect = this._data.dailyRewardCollect;
-        const currentRewardCycle = this.getDailyRewardCycle();
 
         if (dailyRewardCollect.step < 0 || dailyRewardCollect.step >= dailyRewardsMeta.length) {
             dailyRewardCollect.step = 0;

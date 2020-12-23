@@ -23,6 +23,7 @@ const {
 import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
+import { exist } from "./validation";
 
 const TowerFloorPageSize = 20;
 
@@ -213,6 +214,8 @@ class PlayerController extends IPaymentListener {
         // Shop
         this._socket.on(Operations.Purchase, this._gameHandler(this._purchase.bind(this)));
         this._socket.on(Operations.PurchaseStatus, this._gameHandler(this._purchaseStatus.bind(this)));
+        this._socket.on(Operations.PurchaseDailyItem, this._gameHandler(this._purchaseDailyItem.bind(this)));
+        this._socket.on(Operations.RefreshDailyShop, this._gameHandler(this._refreshDailyShop.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -223,7 +226,6 @@ class PlayerController extends IPaymentListener {
 
     onDisconnect() {
         Game.removeListener(this.address, this._handleEventBind);
-        console.log(`player ${this.address} is disconnected`);
         if (this._user) {
             this._user.dispose();
         }
@@ -233,7 +235,6 @@ class PlayerController extends IPaymentListener {
 
     onAuthenticated() {
         Game.on(this.address, this._handleEventBind);
-        console.log(`${this.address} listeners ${Game.listeners(this.address).length}`)
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -1542,11 +1543,27 @@ class PlayerController extends IPaymentListener {
 
     // Shop
     async _purchase(user, data) {
-        return Game.shop.purchase(user.address, data.iap, data.address);
+        if (exist(data.iap)) {
+            return Game.shop.purchase(user.address, data.iap, data.address);
+        } else if (exist(data.goldIndex)) {
+            return Game.shop.purchaseGold(user.address, +data.goldIndex);
+        } else if (exist(data.packId)) {
+            return Game.shop.purchasePack(user.address, data.address, +data.packId);
+        }
+
+        return Game.shop.purchaseSubscription(user.address);
     }
 
     async _purchaseStatus(user, data) {
         return Game.shop.paymentStatus(user.address);
+    }
+
+    async _purchaseDailyItem(user, data) {
+        return user.dailyShop.purchase(+data.itemIndex);
+    }
+
+    async _refreshDailyShop(user, data) {
+        return user.dailyShop.refresh();
     }
 }
 

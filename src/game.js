@@ -202,14 +202,14 @@ class Game extends EventEmitter {
         });
 
         socket.on("deauthenticate", () => {
-            console.log("client deauthenticate", controller.address);
+            // console.log("client deauthenticate", controller.address);
             this._deletePlayerController(controller);
 
             controller.onDisconnect();
         });
 
         socket.on("close", () => {
-            console.log("client close", controller.address);
+            // console.log("client close", controller.address);
 
             this._deletePlayerController(controller);
 
