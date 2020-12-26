@@ -225,7 +225,7 @@ class User {
             value *= (1 + bonuses.soft / 100);
         }
 
-        value = Math.round(value);
+        value = Math.floor(value);
 
         await this._inventory.modifyCurrency(CurrencyType.Soft, value);
 
@@ -272,6 +272,8 @@ class User {
 
             const bonuses = await this.getCardBonuses();
             totalExp *= (1 + bonuses.exp / 100);
+
+            totalExp = Math.floor(totalExp);
         }
 
         const character = this._data.character;
