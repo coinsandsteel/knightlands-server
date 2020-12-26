@@ -38,7 +38,7 @@ class RaidManager {
         this.tokenRates = new TokenRateTimeseries(db);
     }
 
-    async init(iapExecutor) {
+    async init() {
         let settings = await this._db.collection(Collections.RaidsDktMeta).find({}).toArray();
 
         this._factorSettings = {};
@@ -62,8 +62,6 @@ class RaidManager {
             await raid.init(raidData);
             this._addRaid(raid);
         }
-
-        // await this._registerRaidIAPs(iapExecutor);
 
         await this._updateWeaknesses(true);
         await this._restoreDktForAllRaids(true);
@@ -89,7 +87,7 @@ class RaidManager {
 
     async joinRaid(userId, raidId) {
         let raid = this.getRaid(raidId);
-        if (!raid) {
+        if (!raid || raid.free) {
             throw Errors.InvalidRaid;
         }
 
@@ -97,47 +95,23 @@ class RaidManager {
             throw Errors.RaidIsFull;
         }
 
-        let iapContext = {
-            userId,
-            raidId
-        };
-
-        // check if payment request already created
-        let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.JoinPaymentTag);
-        if (hasPendingPayment) {
-            throw "summoning in process already";
-        }
-
-        try {
-            return await this._paymentProcessor.requestPayment(
-                userId,
-                raid.template.joinIap,
-                this.JoinPaymentTag,
-                iapContext
-            );
-        } catch (exc) {
-            throw exc;
-        }
-    }
-
-    async joinFreeRaid(userId, raidId) {
-        return await this.summonRaid(userId, raidId, true)
-    }
-
-    async _joinRaid(userId, raidId) {
-        let raid = this.getRaid(raidId);
-        if (!raid) {
-            throw Errors.InvalidRaid;
-        }
-
         const user = await Game.getUser(userId);
+        let joinRecipe = await this._loadSummonRecipe(raid.template.joinRecipe);
+
+        if (!(await user.inventory.hasEnoughIngridients(joinRecipe.ingridients))) {
+            throw Errors.NoRecipeIngridients;
+        }
+
+        await user.inventory.autoCommitChanges(async inventory => {
+            // consume crafting materials
+            await inventory.consumeItemsFromCraftingRecipe(joinRecipe);
+        });
+
         await user.dailyQuests.onPaidRaidJoin();
-        await raid.join(userId);
+        await raid.join(user.id);
     }
 
     async summonRaid(summoner, raidTemplateId, free) {
-        raidTemplateId *= 1;
-
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         if (!raitTemplate) {
@@ -149,33 +123,10 @@ class RaidManager {
         let summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
 
         if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
-            throw "no essences";
+            throw Errors.NoRecipeIngridients;
         }
 
-        if (!free) {
-            let iapContext = {
-                summoner: summoner.address,
-                raidTemplateId: raidTemplateId
-            };
-
-            // check if payment request already created
-            let hasPendingPayment = await this._paymentProcessor.hasPendingRequestByContext(summoner.address, iapContext, this.SummonPaymentTag);
-            if (hasPendingPayment) {
-                throw "summoning in process already";
-            }
-
-            try {
-                return await this._paymentProcessor.requestPayment(summoner.address,
-                    data.iap,
-                    this.SummonPaymentTag,
-                    iapContext
-                );
-            } catch (exc) {
-                throw exc;
-            }
-        } else {
-            return await this._summonRaid(summoner.address, raidTemplateId, true);
-        }
+       return this._summonRaid(summoner.address, raidTemplateId, free);
     }
 
     async _summonRaid(summonerId, raidTemplateId, isFree) {
@@ -183,52 +134,24 @@ class RaidManager {
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
         const data = isFree ? raidTemplate.soloData : raidTemplate.data;
 
-        let userInventory = await Game.loadInventory(summonerId);
-        await userInventory.autoCommitChanges(async inventory => {
+        let user = await Game.getUser(summonerId);
+        await user.inventory.autoCommitChanges(async inventory => {
             // consume crafting materials
             let craftingRecipe = await this._loadSummonRecipe(data.summonRecipe);
             await inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
         });
 
         const raid = new Raid(this._db);
-        await raid.create(summonerId, raidTemplateId, isFree);
+        await raid.create(user.id, raidTemplateId, isFree);
         this._addRaid(raid);
 
         if (!isFree) {
-            const user = await Game.getUser(summonerId);
             await user.dailyQuests.onPaidRaidJoin();
         }
 
         return {
             raid: raid.id
         };
-    }
-
-    // build an array of raids in process of summoning
-    async getSummonStatus(userId, raidTemplateId) {
-        raidTemplateId *= 1;
-
-        let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.SummonPaymentTag, {
-            "context.raidTemplateId": raidTemplateId
-        });
-
-        if (!status) {
-            status = {};
-        }
-
-        status.dktFactor = await this._getNextDktFactor(raidTemplateId, true);
-        status.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId });
-        status.weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
-
-        return status;
-    }
-
-    async getJoinStatus(userId, raidId) {
-        let status = await this._paymentProcessor.fetchPaymentStatus(userId, this.JoinPaymentTag, {
-            "context.raidId": raidId
-        });
-
-        return status;
     }
 
     async fetchRaidCurrentMeta(raidTemplateId) {
@@ -365,29 +288,6 @@ class RaidManager {
         });
     }
 
-    // async _registerRaidIAPs(iapExecutor) {
-    //     console.log("Registering Raid IAPs...");
-
-    //     let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
-    //     allRaids.forEach(raid => {
-    //         if (raid.data.iap) {
-    //             iapExecutor.registerAction(raid.data.iap, async (context) => {
-    //                 return await this._summonRaid(context.summoner, context.raidTemplateId, false);
-    //             });
-
-    //             iapExecutor.mapIAPtoEvent(raid.data.iap, Events.RaidSummonStatus);
-    //         }
-
-    //         if (raid.data.joinIap) {
-    //             iapExecutor.registerAction(raid.data.joinIap, async (context) => {
-    //                 return await this._joinRaid(context.userId, context.raidId);
-    //             });
-
-    //             iapExecutor.mapIAPtoEvent(raid.data.joinIap, Events.RaidJoinStatus);
-    //         }
-    //     });
-    // }
-
     getRaid(raidId) {
         return this._getRaid(raidId);
     }
@@ -437,9 +337,8 @@ class RaidManager {
     }
 
     async getLootPreview(user, raidId) {
-        let userId = user.address;
-        let raid = await this._getFinishedRaid(userId, raidId);
-        return await raid.getRewards(userId);
+        let raid = await this._getFinishedRaid(user.id, raidId);
+        return await raid.getRewards(user.id);
     }
 
     async _getFinishedRaid(userId, raidId) {

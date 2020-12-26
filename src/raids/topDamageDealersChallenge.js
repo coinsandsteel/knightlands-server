@@ -28,10 +28,10 @@ class TopDamageDealersChallenge extends RaidChallenge {
     }
 
     onHit(player, damageDealt) {
-        let damageDealtEntry = this._damageDealers[player.address];
+        let damageDealtEntry = this._damageDealers[player.id];
 
         if (!damageDealtEntry) {
-            damageDealtEntry = this._addNewEntry(player.address);
+            damageDealtEntry = this._addNewEntry(player.id);
         }
 
         damageDealtEntry.damageDone += damageDealt;

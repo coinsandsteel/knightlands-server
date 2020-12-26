@@ -151,9 +151,9 @@ export class ArmySummoner {
             while (randomAbilitiesCount-- > 0) {
                 // first determine if filler passive must be rolled
                 if (Random.intRange(1, 100) <= fillerPool.weight || perUnitList.length == 0) {
-                    abilities.push(...fillerList.peek(1, false))
+                    abilities.push(...fillerList.peek(1, true))
                 } else {
-                    abilities.push(...perUnitList.peek(1, false))
+                    abilities.push(...perUnitList.peek(1, true))
                 }
             }
         }

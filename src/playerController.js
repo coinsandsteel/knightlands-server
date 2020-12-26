@@ -50,25 +50,20 @@ class PlayerController extends IPaymentListener {
         // service functions
         this._socket.on(Operations.Auth, this._handleAuth.bind(this));
         this._socket.on(Operations.GetUserInfo, this._handleGetUserInfo.bind(this));
-        this._socket.on(Operations.FetchRaidInfo, this._fetchRaid.bind(this));
-        this._socket.on(Operations.FetchRaidSummonStatus, this._fetchRaidSummonStatus.bind(this));
-        this._socket.on(Operations.FetchRaidJoinStatus, this._fetchRaidJoinStatus.bind(this));
-        this._socket.on(Operations.FetchCraftingStatus, this._fetchCraftingStatus.bind(this));
         this._socket.on(Operations.GetCurrencyConversionRate, this._getCurrencyConversionRate.bind(this));
-        this._socket.on(Operations.FetchRaidsList, this._fetchRaidsList.bind(this));
         this._socket.on(Operations.SyncTime, this._syncTime.bind(this));
         this._socket.on(Operations.FetchRefillTimerStatus, this._fetchRefillTimerStatus.bind(this));
         this._socket.on(Operations.GetTimerRefillInfo, this._getTimerRefillInfo.bind(this));
-        this._socket.on(Operations.FetchChestOpenStatus, this._fetchChestOpenStatus.bind(this));
-        this._socket.on(Operations.FetchEnchantingStatus, this._fetchEnchantingStatus.bind(this));
 
         // payed functions 
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
 
         // raids
-        this._socket.on(Operations.SummonRaid, this._summonRaid.bind(this));
-        this._socket.on(Operations.JoinRaid, this._joinRaid.bind(this));
+        this._socket.on(Operations.FetchRaidInfo, this._gameHandler(this._fetchRaid.bind(this)));
+        this._socket.on(Operations.FetchRaidsList, this._gameHandler(this._fetchRaidsList.bind(this)));
+        this._socket.on(Operations.SummonRaid, this._gameHandler(this._summonRaid.bind(this)));
+        this._socket.on(Operations.JoinRaid, this._gameHandler(this._joinRaid.bind(this)));
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
         this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
@@ -140,7 +135,6 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ResetTrialCards, this._gameHandler(this._resetTrialCards.bind(this)));
         this._socket.on(Operations.SummonTrialCards, this._gameHandler(this._summonTrialCards.bind(this)));
         this._socket.on(Operations.PurchaseTrialAttempts, this._gameHandler(this._purchaseTrialAttempts.bind(this)));
-        this._socket.on(Operations.FetchTrialAttemptsStatus, this._gameHandler(this._fetchTrialAttemptsStatus.bind(this)));
 
         // Gold exchange
         this._socket.on(Operations.BoostGoldExchange, this._gameHandler(this._boostGoldExchange.bind(this)));
@@ -192,7 +186,6 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SetLegionSlot, this._gameHandler(this._setLegionSlot.bind(this)));
         this._socket.on(Operations.SummonArmyUnit, this._gameHandler(this._summonArmyUnit.bind(this)));
         this._socket.on(Operations.GetArmySummonInfo, this._gameHandler(this._summonArmyInfo.bind(this)));
-        this._socket.on(Operations.FetchArmySummonStatus, this._gameHandler(this._fetchSummonArmyUnitPaymentStatus.bind(this)));
         this._socket.on(Operations.LevelUpArmyUnit, this._gameHandler(this._levelUpArmyUnit.bind(this)));
         this._socket.on(Operations.UnitEquipItem, this._gameHandler(this._unitEquipItem.bind(this)));
         this._socket.on(Operations.UnitUnequipItem, this._gameHandler(this._unitUnequipItem.bind(this)));
@@ -596,7 +589,7 @@ class PlayerController extends IPaymentListener {
             count = 1;
         }
 
-        return await user.useItem(data.itemId, count);
+        return user.useItem(data.itemId, count);
     }
 
     async _getChestsStatus(user, data) {
@@ -651,7 +644,7 @@ class PlayerController extends IPaymentListener {
             }
         }
 
-        return await Game.lootGenerator.openChest(user, chest, chestsToOpen, freeOpening);
+        return Game.lootGenerator.openChest(user, chest, chestsToOpen, freeOpening);
     }
 
     async _resetZone(user, data) {
@@ -710,7 +703,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        if (refillType == 2) {
+        if (refillType == 1) {
             // items. Check if those items can be used as timer refill
             let templateIds = [];
             for (let i in items) {
@@ -734,10 +727,6 @@ class PlayerController extends IPaymentListener {
 
             user.refillTimerWithItems(stat, items, templates);
         } else {
-            if (refillType == 0 && stat != CharacterStats.Health) {
-                return await Game.userPremiumService.requestRefillPayment(this.address, stat);
-            }
-
             let refillCost = await user.getTimerRefillCost(stat);
             if (refillCost.hard > 0) {
                 if (refillCost.hard > user.hardCurrency) {
@@ -782,52 +771,20 @@ class PlayerController extends IPaymentListener {
     }
 
     // Raids
-    async _fetchRaidJoinStatus(data, respond) {
-        let joinStatus = await this._raidManager.getJoinStatus(this.address, data.raidId);
-        respond(null, joinStatus);
+    async _fetchRaid(user, data) {
+        return this._raidManager.getRaidInfo(user.id, data.raidId);
     }
 
-    async _fetchRaidSummonStatus(data, respond) {
-        let summonStatus = await this._raidManager.getSummonStatus(this.address, data.raid);
-        respond(null, summonStatus);
+    async _fetchRaidsList(user, data) {
+        return this._raidManager.getCurrentRaids(user.id);
     }
 
-    async _fetchRaid(data, respond) {
-        let raidInfo = await this._raidManager.getRaidInfo(this.address, data.raidId);
-        respond(null, raidInfo);
+    async _summonRaid(user, data) {
+        return this._raidManager.summonRaid(user, +data.raid, data.free);
     }
 
-    async _fetchRaidsList(_, respond) {
-        let raids = await this._raidManager.getCurrentRaids(this.address);
-        respond(null, raids);
-    }
-
-    async _summonRaid(data, respond) {
-        let user = await this.getUser(this.address);
-
-        try {
-            let payment = await this._raidManager.summonRaid(user, data.raid, data.free);
-            respond(null, payment);
-        } catch (exc) {
-            console.log(exc);
-            respond(exc);
-        }
-    }
-
-    async _joinRaid(data, respond) {
-        const { isFree } = data;
-        if (isFree) {
-            respond(null, await this._raidManager.joinFreeRaid(this.address, data.raidId))
-            return
-        }
-
-        try {
-            let payment = await this._raidManager.joinRaid(this.address, data.raidId);
-            respond(null, payment);
-        } catch (exc) {
-            console.log(exc);
-            respond(exc);
-        }
+    async _joinRaid(user, data) {
+        return this._raidManager.joinRaid(user.id, +data.raidId);
     }
 
     async _attackRaidBoss(user, data) {
@@ -842,13 +799,11 @@ class PlayerController extends IPaymentListener {
             throw Errors.InvalidRaid;
         }
 
-        await raid.attack(user, parseInt(data.hits), parseInt(data.legionIndex));
-
-        return null;
+        return raid.attack(user, parseInt(data.hits), parseInt(data.legionIndex));
     }
 
     async _fetchRaidRewards(user, data) {
-        return await this._raidManager.getLootPreview(user, data.raidId);
+        return this._raidManager.getLootPreview(user, data.raidId);
     }
 
     async _fetchTokenRates(user, data) {
@@ -862,7 +817,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return await this._raidManager.tokenRates.query(raid, from, to);
+        return this._raidManager.tokenRates.query(raid, from, to);
     }
 
     async _claimLootRaid(user, data) {
@@ -923,7 +878,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return await user.crafting.craftRecipe(recipeId, currency, amount);
+        return user.crafting.craftRecipe(recipeId, currency, amount);
     }
 
     async _enchantItem(user, data) {
@@ -941,65 +896,37 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return await user.enchantItem(itemId, currency);
+        return user.enchantItem(itemId, currency);
     }
 
     async _disenchantItems(user, data) {
-        return await user.crafting.disenchantItems(data.items);
+        return user.crafting.disenchantItems(data.items);
     }
 
     async _disenchantConvert(user, data) {
-        return await user.crafting.disenchantConvert(data.conversions);
-    }
-
-    async _fetchCraftingStatus(data, respond) {
-        let status = await Game.craftingQueue.getCraftingStatus(this.address, data.recipeId);
-        respond(null, status);
-    }
-
-    async _fetchChestOpenStatus(data, respond) {
-        let gachaMeta = await this._db.collection(Collections.GachaMeta).findOne({ name: data.chest });
-        if (!gachaMeta) {
-            throw Errors.UnknownChest;
-        }
-
-        // find first status 
-        for (let i in gachaMeta.iaps) {
-            let status = await Game.lootGenerator.getChestOpenStatus(this.address, gachaMeta, i);
-            if (status) {
-                respond(null, status);
-                return;
-            }
-        }
-
-        respond(null, null);
-    }
-
-    async _fetchEnchantingStatus(data, respond) {
-        let status = await Game.craftingQueue.getEnchantingStatus(this.address, data.itemId);
-        respond(null, status);
+        return user.crafting.disenchantConvert(data.conversions);
     }
 
     async _createWeapon(user, data) {
         const { recipeId, currency, itemId, element } = data;
-        return await user.crafting.createWeapon(recipeId, currency, itemId, element);
+        return user.crafting.createWeapon(recipeId, currency, itemId, element);
     }
 
     async _evolveItem(user, data) {
         const { itemId } = data;
-        return await user.crafting.evolve(itemId);
+        return user.crafting.evolve(itemId);
     }
 
     async _craftAccessory(user, data) {
-        return await user.crafting.createAccessory(+data.template, +data.count);
+        return user.crafting.createAccessory(+data.template, +data.count);
     }
 
     async _rerollAccessory(user, data) {
-        return await user.crafting.rerollAccessory(+data.itemId);
+        return user.crafting.rerollAccessory(+data.itemId);
     }
 
     async _cancelRerollAccessory(user, data) {
-        return await user.crafting.rollbackRerollAccessory(+data.itemId);
+        return user.crafting.rollbackRerollAccessory(+data.itemId);
     }
 
     // Adventures
@@ -1008,62 +935,62 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchAdventuresStatus(user, data) {
-        return await user.getAdventuresStatus();
+        return user.getAdventuresStatus();
     }
 
     async _startAdventure(user, data) {
-        return await user.startAdventure(data.slot * 1, data.adventureIndex * 1);
+        return user.startAdventure(data.slot * 1, data.adventureIndex * 1);
     }
 
     async _claimAdventure(user, data) {
-        return await user.claimAdventure(data.slot * 1);
+        return user.claimAdventure(data.slot * 1);
     }
 
     async _refreshAdventures(user, data) {
-        return await user.refreshAdventure(data.slot * 1);
+        return user.refreshAdventure(data.slot * 1);
     }
 
     // Classes
     async _changeClass(user, data) {
-        return await user.selectClass(data.class);
+        return user.selectClass(data.class);
     }
 
     // Daily rewards
     async _fetchDailyRewardStatus(user) {
-        return await user.getDailyRewardStatus();
+        return user.getDailyRewardStatus();
     }
 
     async _collectDailyReward(user) {
-        return await user.collectDailyReward();
+        return user.collectDailyReward();
     }
 
     async _fetchDailyRefillsStatus(user) {
-        return await user.getDailyRefillsStatus();
+        return user.getDailyRefillsStatus();
     }
 
     async _collectDailyRefills(user) {
-        return await user.collectDailyRefills();
+        return user.collectDailyRefills();
     }
 
     // Beast boosting
     async _beastRegularBoost(user, data) {
-        return await user.beastBoost(+data.count, true);
+        return user.beastBoost(+data.count, true);
     }
 
     async _beastAdvancedBoost(user, data) {
-        return await user.beastBoost(+data.count, false, +data.iapIndex);
+        return user.beastBoost(+data.count, false, +data.iapIndex);
     }
 
     async _evolveBeast(user) {
-        return await user.evolveBeast();
+        return user.evolveBeast();
     }
 
     async _fetchBeastBoostPurchase(user) {
-        return await Game.userPremiumService.getBeastBoostPurchaseStatus(this.address);
+        return Game.userPremiumService.getBeastBoostPurchaseStatus(this.address);
     }
 
     async _cancelPayment(user, data) {
-        return await Game.paymentProcessor.cancelPayment(this.address, data.id);
+        return Game.paymentProcessor.cancelPayment(this.address, data.id);
     }
 
     // Tower
@@ -1181,7 +1108,7 @@ class PlayerController extends IPaymentListener {
 
         user.inventory.removeItem(skipItem.id, 1);
 
-        return await this._sendRewardsForTowerFloor(floor, false);
+        return this._sendRewardsForTowerFloor(floor, false);
     }
 
     async _claimTowerFloorRewards(user) {
@@ -1215,7 +1142,7 @@ class PlayerController extends IPaymentListener {
             user.inventory.removeItem(ticketItem.id, 1);
         }
 
-        return await this._sendRewardsForTowerFloor(towerFloor.id, firstClearance);
+        return this._sendRewardsForTowerFloor(towerFloor.id, firstClearance);
     }
 
     async _sendRewardsForTowerFloor(floor, firstClearance) {
@@ -1252,11 +1179,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseTowerAttempts(user, data) {
-        return await Game.userPremiumService.requestTowerAttemptsPurchase(this.address, data.iapIndex * 1);
+        return Game.userPremiumService.requestTowerAttemptsPurchase(this.address, data.iapIndex * 1);
     }
 
     async _fetchTowerAttemptsStatus(user) {
-        return await Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
+        return Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
     }
 
     // Trials
@@ -1269,7 +1196,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _collectTrialStageReward(user, data) {
-        return await user.collectTrialStageReward(data.trialType, data.trialId, data.stageId);
+        return user.collectTrialStageReward(data.trialType, data.trialId, data.stageId);
     }
 
     async _fetchTrialFightMeta(user, data) {
@@ -1277,33 +1204,27 @@ class PlayerController extends IPaymentListener {
     }
 
     async _attackTrial(user, data) {
-        return await user.attackTrial(data.trialType);
+        return user.attackTrial(data.trialType);
     }
 
     async _chooseTrialCard(user, data) {
-        return await user.chooseTrialCard(data.trialType, data.cardIndex * 1);
+        return user.chooseTrialCard(data.trialType, data.cardIndex * 1);
     }
 
     async _improveTrialCard(user, data) {
-        await user.improveTrialCard(data.cardEffect);
+        return user.improveTrialCard(data.cardEffect);
     }
 
     async _resetTrialCards(user) {
-        await user.resetTrialCards();
+        return user.resetTrialCards();
     }
 
     async _summonTrialCards(user, data) {
-        return await user.summonTrialCards(data.trialType);
-    }
-
-    async _fetchTrialAttemptsStatus(user, data) {
-        const status = await Game.userPremiumService.getTrialAttemptsPurchaseStatus(this.address, data.trialType);
-        return status;
+        return user.summonTrialCards(data.trialType);
     }
 
     async _purchaseTrialAttempts(user, data) {
-        const status = await Game.userPremiumService.requestTrialAttemptsPurchase(this.address, data.trialType, data.iapIndex * 1);
-        return status;
+        return user.purchaseTrialAttempts(data.trialType, +data.iapIndex);
     }
 
     // Gold Exchange
@@ -1312,11 +1233,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _premiumBoostGoldExchange(user, data) {
-        return await Game.userPremiumService.requireGoldExchangeBoost(this.address, data.count * 1);
+        return Game.userPremiumService.requireGoldExchangeBoost(this.address, data.count * 1);
     }
 
     async _obtainGoldFromGoldExchange(user, data) {
-        return await user.goldExchange.obtainGold();
+        return user.goldExchange.obtainGold();
     }
 
     async _getGoldExchangeMeta(user) {
@@ -1324,26 +1245,26 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchGoldExchangePremiumStatus() {
-        return await Game.userPremiumService.getGoldExchangePremiumStatus(this.address);
+        return Game.userPremiumService.getGoldExchangePremiumStatus(this.address);
     }
 
     // Daily Quests
     async _claimDailyTasksRewards(user, data) {
-        return await user.dailyQuests.claimRewards(data.taskType);
+        return user.dailyQuests.claimRewards(data.taskType);
     }
 
     // Dividends
 
     async _withdrawDividendToken(user, data) {
-        // return await Game.dividends.requestTokenWithdrawal(user, data.amount);
+        // return Game.dividends.requestTokenWithdrawal(user, data.amount);
     }
 
     async _fetchPendingDividenTokenWithdrawal(user) {
-        // return await Game.dividends.getPendingWithdrawal(user.address);
+        // return Game.dividends.getPendingWithdrawal(user.address);
     }
 
     async _sendDividendTokenWithdrawal(user, data) {
-        // return await Game.dividends.acceptTransaction(user.address, data.tx);
+        // return Game.dividends.acceptTransaction(user.address, data.tx);
     }
 
     async _getDividendsStatus(user) {
@@ -1351,32 +1272,32 @@ class PlayerController extends IPaymentListener {
     }
 
     async _claimDividends(user, data) {
-        return await user.dividends.claimDividends(data.blockchainId);
+        return user.dividends.claimDividends(data.blockchainId);
     }
 
     async _claimMinedDkt(user) {
-        return await user.dividends.claimMinedDkt();
+        return user.dividends.claimMinedDkt();
     }
 
     async _upgradeDktMine(user) {
-        return await user.dividends.upgradeDktMine();
+        return user.dividends.upgradeDktMine();
     }
 
     async _upgradeDktDropRate(user) {
-        return await user.dividends.upgradeDktDropRate();
+        return user.dividends.upgradeDktDropRate();
     }
 
     async _purchaseDktShopItem(user, data) {
-        return await user.dividends.purchase(+data.itemId);
+        return user.dividends.purchase(+data.itemId);
     }
 
     // Tournaments
     async _fetchTournaments(user, data) {
-        return await Game.rankings.tournaments.getTournamentsInfo(user.address);
+        return Game.rankings.tournaments.getTournamentsInfo(user.address);
     }
 
     async _joinTournament(user, data) {
-        return await Game.rankings.tournaments.join(user.address, data.tournamentId);
+        return Game.rankings.tournaments.join(user.address, data.tournamentId);
     }
 
     async _claimTournamentRewards(user, data) {
@@ -1392,28 +1313,28 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchTournamentRankings(user, data) {
-        return await Game.rankings.tournaments.getRankings(data.tournamentId, parseInt(data.page));
+        return Game.rankings.tournaments.getRankings(data.tournamentId, parseInt(data.page));
     }
 
     async _getTournamentInfo(user, data) {        
-        return await Game.rankings.tournaments.getRank(data.tournamentId, user.address);
+        return Game.rankings.tournaments.getRank(data.tournamentId, user.address);
     }
 
     async _getFinishedTournaments(user, data) {
-        return await Game.rankings.tournaments.getFinishedTournaments(user.address);
+        return Game.rankings.tournaments.getFinishedTournaments(user.address);
     }
 
     async _getTournamentRewards(user, data) {
-        return await Game.rankings.tournaments.getRewards(data.tournamentId);
+        return Game.rankings.tournaments.getRewards(data.tournamentId);
     }
 
     // Races
     async _fetchRaces(user, data) {
-        return await Game.rankings.races.getRacesInfo(user.address);
+        return Game.rankings.races.getRacesInfo(user.address);
     }
 
     async _joinRace(user, data) {
-        return await Game.rankings.races.join(user.address, data.raceId);
+        return Game.rankings.races.join(user.address, data.raceId);
     }
 
     async _claimRaceRewards(user, data) {
@@ -1428,41 +1349,41 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getRaceInfo(user, data) {        
-        return await Game.rankings.races.getRank(data.raceId, user.address);
+        return Game.rankings.races.getRank(data.raceId, user.address);
     }
 
     async _fetchRaceRankings(user, data) {
-        return await Game.rankings.races.getRankings(data.raceId, parseInt(data.page));
+        return Game.rankings.races.getRankings(data.raceId, parseInt(data.page));
     }
 
     async _getFinishedRaces(user, data) {
-        return await Game.rankings.races.getFinishedRaces(user.address);
+        return Game.rankings.races.getFinishedRaces(user.address);
     }
 
     async _getRaceRewards(user, data) {
-        return await Game.rankings.races.getRewards(data.raceId);
+        return Game.rankings.races.getRewards(data.raceId);
     }
 
     async _getRaceShop() {
-        return await Game.rankings.races.getShop();
+        return Game.rankings.races.getShop();
     }
 
     async _purchaseFromRaceShop(user, data) {
-        return await Game.rankings.races.purchaseFromRaceShop(user, data.lotId);
+        return Game.rankings.races.purchaseFromRaceShop(user, data.lotId);
     }
 
     // Leaderboards
     async _getLeaderboardRankings(user, data) {
-        return await Game.rankings.leaderboards.getRankings(parseInt(data.type), parseInt(data.page));
+        return Game.rankings.leaderboards.getRankings(parseInt(data.type), parseInt(data.page));
     }
 
     async _getLeaderboardRank(user, data) {
-        return await Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.address);
+        return Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.address);
     }
 
     // Armies
     async _getArmy(user, data) {
-        return await Game.armyManager.getArmy(user.address);
+        return Game.armyManager.getArmy(user.address);
     }
 
     async _setLegionSlot(user, data) {
@@ -1471,44 +1392,35 @@ class PlayerController extends IPaymentListener {
 
     async _summonArmyUnit(user, data) {
         const { iap, count, summonType } = data;
-
-        if (+iap >= 0) {
-            return await Game.armyManager.requestSummon(user.address, iap, summonType);
-        } 
-
-        return await Game.armyManager.summontUnits(user.address, count, summonType);
-    }
-
-    async _fetchSummonArmyUnitPaymentStatus(user) {
-        return await Game.armyManager.getSummonStatus(user.address);
+        return Game.armyManager.summontUnits(user.address, count, summonType, iap);
     }
 
     async _summonArmyInfo(user, data) {
-        return await Game.armyManager.getSummonOverview(user.address);
+        return Game.armyManager.getSummonOverview(user.address);
     }
 
     async _levelUpArmyUnit(user, data) {
-        return await Game.armyManager.levelUp(user.address, data.unitId);
+        return Game.armyManager.levelUp(user.address, data.unitId);
     }
 
     async _unitEquipItem(user, data)  {
-        return await Game.armyManager.equipItem(user.address, data.unitId, data.itemId);
+        return Game.armyManager.equipItem(user.address, data.unitId, data.itemId);
     }
 
     async _unitUnequipItem(user, data) {
-        return await Game.armyManager.unequipItem(user.address, data.unitId, data.slotId);
+        return Game.armyManager.unequipItem(user.address, data.unitId, data.slotId);
     }
 
     async _unitPromotion(user, data) {
-        return await Game.armyManager.promote(user.address, data.unitId, data.units);
+        return Game.armyManager.promote(user.address, data.unitId, data.units);
     }
 
     async _unitBanish(user, data) {
-        return await Game.armyManager.banish(user.address, data.units);
+        return Game.armyManager.banish(user.address, data.units);
     }
 
     async _unitReserve(user, data) {
-        return await Game.armyManager.sendToReserve(user.address, data.units);
+        return Game.armyManager.sendToReserve(user.address, data.units);
     }
 
     async _unitTransferAbility(user, data) {
@@ -1551,7 +1463,7 @@ class PlayerController extends IPaymentListener {
             return Game.shop.purchasePack(user.address, data.address, +data.packId);
         }
 
-        return Game.shop.purchaseSubscription(user.address);
+        return Game.shop.purchaseSubscription(user.address, data.address, +data.cardId);
     }
 
     async _purchaseStatus(user, data) {

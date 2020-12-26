@@ -116,6 +116,22 @@ class Trials {
         this._cards = new TrialCards(this._user, this._state.cards, this._generalTrialsMeta, cardsRollMeta);
     }
 
+    async purchaseAttempts(trialType, iapIndex) {
+        const meta = this._trialsMeta[trialType];
+        if (meta.iaps.length <= iapIndex) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const iapMeta = meta.iaps[iapIndex];
+        
+        if (this._user.hardCurrency < iapMeta.price) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        await this._user.addHardCurrency(iapMeta.price);
+        this._user.grantTrialAttempts(trialType, iapMeta.attempts);
+    }
+
     async pickCard(trialType, cardIndex) {
         cardIndex *= 1;
 

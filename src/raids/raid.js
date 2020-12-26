@@ -240,7 +240,7 @@ class Raid extends EventEmitter {
     }
 
     async attack(attacker, hits, legionIndex) {
-        if (!this.isParticipant(attacker.address)) {
+        if (!this.isParticipant(attacker.id)) {
             throw Errors.InvalidRaid;
         }
 
@@ -355,7 +355,7 @@ class Raid extends EventEmitter {
         await attacker.modifyTimerValue(CharacterStats.Stamina, -damageLog.hits);
 
         if (damageLog.damage > 0) {
-            this._data.participants[attacker.address] += damageLog.damage;
+            this._data.participants[attacker.id] += damageLog.damage;
             
             this._damageLog.push(damageLog);
 

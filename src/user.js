@@ -22,6 +22,7 @@ import RankingType from "./knightlands-shared/ranking_type";
 import { GoldMines } from './gold-mines/GoldMines.ts';
 import { Dividends } from "./dividends/Dividends.new";
 import { DailyShop } from "./shop/DailyShop";
+import { isNumber } from "./validation";
 
 const {
     EquipmentSlots,
@@ -77,13 +78,12 @@ class User {
 
     serializeForClient() {
         // we can use shallow copy here, we delete only first level fields
-        let data = Object.assign({}, this._data);
-        // remove unwanted fields
-        delete data._id;
-        delete data.nonce;
-        delete data.address;
+        // let data = Object.assign({}, this._data);
+        // // remove unwanted fields
+        // delete data.nonce;
+        // delete data.address;
 
-        return data;
+        return this._data;
     }
 
     get id() {
@@ -176,7 +176,7 @@ class User {
 
     get goldMines() {
         return this._goldMines;
-    }        
+    }
 
     get dividends() {
         return this._dividends;
@@ -184,6 +184,14 @@ class User {
 
     get dailyShop() {
         return this._dailyShop;
+    }
+
+    get subscriptions() {
+        return this._data.subscriptions;
+    }
+
+    get cards() {
+        return this.subscriptions.cards;
     }
 
     async getWeaponCombatData() {
@@ -212,6 +220,9 @@ class User {
     async addSoftCurrency(value, ignorePassiveBonuses = false) {
         if (value > 0 && !ignorePassiveBonuses) {
             value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
+
+            const bonuses = await this.getCardBonuses();
+            value *= (1 + bonuses.soft / 100);
         }
 
         value = Math.round(value);
@@ -230,6 +241,9 @@ class User {
 
         if (includeDktPassive) {
             value = await this.dividends.applyBonusDkt(value);
+
+            const bonuses = await this.getCardBonuses();
+            value *= (1 + bonuses.dkt / 100);
         }
 
         value = Math.floor(value * 10e8) / 10e8;
@@ -250,8 +264,15 @@ class User {
         this._data.chests[chest] = Game.now;
     }
 
-    async addExperience(exp) {
-        const totalExp = exp * (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
+    async addExperience(exp, ignoreBonus = false) {
+        let totalExp = exp;
+
+        if (!ignoreBonus) {
+            totalExp *= (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
+
+            const bonuses = await this.getCardBonuses();
+            totalExp *= (1 + bonuses.exp / 100);
+        }
 
         const character = this._data.character;
         character.exp += totalExp;
@@ -372,8 +393,13 @@ class User {
 
     async getTimerRefillCost(stat) {
         if (stat == CharacterStats.Health) {
+            const price = Math.ceil(
+                Math.log(this._data.character.level) *
+                (this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 10 + 10
+            );
+
             return {
-                soft: Math.ceil((this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 1 * this._data.character.level * 0.1)
+                soft: price
             };
         }
 
@@ -475,9 +501,9 @@ class User {
         this._inventory = new Inventory(this, this._db);
         this._crafting = new Crafting(this, this._inventory, this.equipment);
         this._itemStatResolver = new ItemStatResolver(
-            this._meta.statConversions, 
-            this._meta.itemPower, 
-            this._meta.itemPowerSlotFactors, 
+            this._meta.statConversions,
+            this._meta.itemPower,
+            this._meta.itemPowerSlotFactors,
             this._meta.charmItemPower
         );
         this._trials = new Trials(this._data.trials, this);
@@ -868,7 +894,7 @@ class User {
                 break;
 
             case ItemActions.AddExperience:
-                await this.addExperience(actionValue);
+                await this.addExperience(actionValue, true);
                 break;
 
             case ItemActions.OpenBox:
@@ -1137,6 +1163,13 @@ class User {
             user.premiumShop = {};
         }
 
+        if (!user.subscriptions) {
+            user.subscriptions = {
+                lastClaimCycle: 0,
+                cards: {}
+            };
+        }
+
         return user;
     }
 
@@ -1403,6 +1436,31 @@ class User {
 
         this._data.dailyRefillCollect = this.getDailyRewardCycle();
 
+        const lastCardsClaimed = this.subscriptions.lastClaimCycle;
+        for (const id in this.cards) {
+            const card = this.cards[id];
+            const meta = await Game.shop.getCardMeta(id);
+
+            if (meta.dailyHard == 0 && meta.dailySoft == 0) {
+                continue;
+            }
+
+            let cardCycle = this.getDailyRewardCycle();
+            if (card.end < Game.nowSec) {
+                cardCycle = this.convertToCycle(card.end);
+                if (cardCycle <= lastCardsClaimed) {
+                    continue;
+                }
+            }
+
+            const cyclesPassed = cardCycle - lastCardsClaimed;
+
+            await this.addHardCurrency(meta.dailyHard * cyclesPassed);
+            await this.addSoftCurrency(meta.dailySoft * cyclesPassed);
+        }
+
+        this.subscriptions.lastClaimCycle = this.getDailyRewardCycle();
+
         const dailyRefillsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
         const length = dailyRefillsMeta.length;
         for (let i = 0; i < length; ++i) {
@@ -1434,10 +1492,58 @@ class User {
                     break;
             }
         }
+
+        for (const id in this.cards) {
+            const card = this.cards[id];
+            if (card.end < Game.nowSec) {
+                continue;
+            }
+
+            const meta = await Game.shop.getCardMeta(id);
+
+            this.applyBonusRefills(
+                meta.towerAttempts,
+                meta.armourTrialAttempts,
+                meta.weaponTrialAttempts,
+                meta.accessoryTrialAttempts
+            );
+        }
+    }
+
+    applyBonusRefills(tower, armourTrial, weaponTrial, accTrial) {
+        this.freeTowerAttempts += tower;
+        this._trials.addAttempts(TrialType.Armour, armourTrial, true);
+        this._trials.addAttempts(TrialType.Weapon, weaponTrial, true);
+        this._trials.addAttempts(TrialType.Accessory, accTrial, true);
+    }
+
+    async getCardBonuses() {
+        const bonuses = {
+            soft: 0,
+            dkt: 0,
+            exp: 0
+        };
+        for (const id in this.cards) {
+            const card = this.cards[id];
+            if (card.end < Game.nowSec) {
+                continue;
+            }
+
+            const meta = await Game.shop.getCardMeta(+id);
+
+            bonuses.dkt += meta.addDkt;
+            bonuses.soft += meta.addGold;
+            bonuses.exp += meta.addExp;
+        }
+        return bonuses;
     }
 
     getDailyRewardCycle() {
         return Math.floor(Game.now / Config.game.dailyRewardCycle);
+    }
+
+    convertToCycle(timeSec) {
+        return Math.floor(timeSec / (Config.game.dailyRewardCycle / 1000));
     }
 
     _processDailyReward(dailyRewardsMeta) {
@@ -1486,11 +1592,6 @@ class User {
 
         const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
 
-        const iapMeta = beastMeta.iaps[metaIndex];
-        if (!iapMeta) {
-            throw Errors.UknownIAP;
-        }
-
         if (regular) {
             const softRequired = boostCount * beastMeta.softPrice;
 
@@ -1499,7 +1600,7 @@ class User {
             }
 
             await this.addSoftCurrency(-softRequired);
-        } else if (metaIndex == -1 || metaIndex === undefined) {
+        } else if (metaIndex == -1 || !isNumber(metaIndex)) {
             const ticketItem = this.inventory.getItemByTemplate(beastMeta.ticketItem);
             if (!ticketItem) {
                 throw Errors.NoItem;
@@ -1511,6 +1612,11 @@ class User {
 
             this.inventory.removeItem(ticketItem.id, boostCount);
         } else {
+            const iapMeta = beastMeta.iaps[metaIndex];
+            if (!iapMeta) {
+                throw Errors.UknownIAP;
+            }
+            
             await this.addHardCurrency(-iapMeta.price);
             boostCount = iapMeta.tickets;
         }
@@ -1623,6 +1729,10 @@ class User {
 
     async summonTrialCards(trialType) {
         return this._trials.summonTrialCards(trialType);
+    }
+
+    async purchaseTrialAttempts(trialType, iapIndex) {
+        return this._trials.purchaseAttempts(trialType, iapIndex);
     }
 
     grantTrialAttempts(trialType, count) {

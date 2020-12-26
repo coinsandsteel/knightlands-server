@@ -1,6 +1,6 @@
 import Game from "../game";
 import { Collections } from "../database";
-import { ShiniesTopUp, RaidTicketsTopUp, TopUpShopMeta, PremiumShopMeta, PackMeta } from "./Types";
+import { ShiniesTopUp, RaidTicketsTopUp, TopUpShopMeta, PremiumShopMeta, PackMeta, SubscriptionsShopMeta, SubscriptionMeta } from "./Types";
 import Errors from "../knightlands-shared/errors";
 const Events = require("../knightlands-shared/events");
 
@@ -9,6 +9,7 @@ export class Shop {
 
     private _topUpMeta: TopUpShopMeta;
     private _premiumMeta: PremiumShopMeta;
+    private _subscriptionMeta: SubscriptionsShopMeta;
     private _paymentProcessor: any;
 
     constructor(paymentProcessor: any) {
@@ -16,13 +17,29 @@ export class Shop {
     }
 
     async init(iapExecutor: any) {
-        await this._registerTopUpIaps(iapExecutor);
+        await this._registerIaps(iapExecutor);
+    }
+
+    async getCardMeta(cardId: number): Promise<SubscriptionMeta> {
+        const meta = await this._getSubscriptionsMeta();
+        return meta.cards[cardId];
     }
 
     async paymentStatus(userId: string) {
         return this._paymentProcessor.fetchPaymentStatus(userId, this.IapTag, {
             "context.userId": userId
         });
+    }
+
+    async purchaseSubscription(userId: string, address: string, cardId: number) {
+        const meta = await this._getSubscriptionsMeta();
+        const cardMeta = meta.cards[cardId];
+
+        if (!cardMeta) {
+            throw Errors.UnknownIap;
+        }
+
+        return this.purchase(userId, cardMeta.iap, address)
     }
 
     async purchasePack(userId: string, address: string, packId: number) {
@@ -111,6 +128,14 @@ export class Shop {
         }
     }
 
+    private async _getSubscriptionsMeta() {
+        if (!this._subscriptionMeta) {
+            this._subscriptionMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "subscriptions" });;
+        }
+
+        return this._subscriptionMeta;
+    }
+
     private async _getTopUpMeta() {
         if (!this._topUpMeta) {
             this._topUpMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "top_up_shop" });;
@@ -127,10 +152,52 @@ export class Shop {
         return this._premiumMeta;
     }
 
-    private async _registerTopUpIaps(iapExecutor: any) {
-        const topUpShop = await this._getTopUpMeta();
+    private async _claimSubscription(card: SubscriptionMeta, userId: string) {
+        const user = await Game.getUser(userId);
+        const cards = user.cards;
 
-        topUpShop.shinies.forEach((shiniesRecord: ShiniesTopUp) => {
+        if (!cards[card.id]) {
+            cards[card.id] = {
+                end: 0
+            };
+
+            // when bought first time - add attempts immediately
+            user.applyBonusRefills(
+                card.towerAttempts,
+                card.armourTrialAttempts,
+                card.weaponTrialAttempts,
+                card.accessoryTrialAttempts
+            );
+        }
+
+        if (cards[card.id].end < Game.nowSec) {
+            cards[card.id].end = Game.nowSec;
+            user.subscriptions.lastClaimCycle = user.getDailyRewardCycle();
+        }
+
+        cards[card.id].end += card.duration;
+
+        const result = {
+            hard: 0,
+            soft: 0
+        };
+
+        if (card.initialHard) {
+            result.hard = card.initialHard + card.dailyHard;
+            await user.addHardCurrency(result.hard);
+        }
+
+        if (card.initialSoft) {
+            result.soft = card.initialSoft + card.dailySoft;
+            await user.addSoftCurrency(result.soft);
+        }
+
+        return result;
+    }
+
+    private async _registerIaps(iapExecutor: any) {
+        const topUpShop = await this._getTopUpMeta();
+        topUpShop.shinies.forEach(shiniesRecord => {
             iapExecutor.registerAction(shiniesRecord.iap, async context => {
                 return this._topUpShines(context.iap, context.userId, shiniesRecord.shinies);
             });
@@ -138,7 +205,13 @@ export class Shop {
             iapExecutor.mapIAPtoEvent(shiniesRecord.iap, Events.PurchaseComplete);
         });
 
-        // topUpShop.raidTickets.
+        topUpShop.raidTickets.forEach(raidTicket => {
+            iapExecutor.registerAction(raidTicket.iap, async context => {
+                return this._topUpRaidTickets(context.iap, context.userId, raidTicket.tickets);
+            });
+
+            iapExecutor.mapIAPtoEvent(raidTicket.iap, Events.PurchaseComplete);
+        });
 
         const premiumMeta = await this._getPremiumMeta();
         premiumMeta.packs.forEach(pack => {
@@ -148,6 +221,17 @@ export class Shop {
 
             iapExecutor.mapIAPtoEvent(pack.iap, Events.PurchaseComplete);
         });
+
+        const subscriptionMeta = await this._getSubscriptionsMeta();
+        for (const id in subscriptionMeta.cards) {
+            const card = subscriptionMeta.cards[id];
+
+            iapExecutor.registerAction(card.iap, async context => {
+                return this._claimSubscription(card, context.userId);
+            });
+
+            iapExecutor.mapIAPtoEvent(card.iap, Events.PurchaseComplete);
+        }
     }
 
     private async _claimPack(pack: PackMeta, userId: string) {
@@ -173,6 +257,25 @@ export class Shop {
         return items;
     }
 
+    private async _topUpRaidTickets(iap: string, userId: string, amount: number) {
+        const user = await Game.getUser(userId);
+        const meta = await this._getTopUpMeta();
+
+        if (!user.dailyShop.isPurchasedOnce(iap)) {
+            amount *= (1 + meta.firstPurchaseBonus);
+            user.dailyShop.setPurchased(iap);
+        }
+
+        await user.inventory.autoCommitChanges(async () => {
+            await user.inventory.addItemTemplate(meta.raidTicket, amount);
+        });
+
+        return {
+            item: meta.raidTicket,
+            quantity: amount
+        };
+    }
+
     private async _topUpShines(iap: string, userId: string, amount: number) {
         const user = await Game.getUser(userId);
 
@@ -188,7 +291,7 @@ export class Shop {
 
         return {
             iap,
-            amount
+            hard: amount
         };
     }
 }

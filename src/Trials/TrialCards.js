@@ -176,8 +176,7 @@ class TrialCards {
     }
 
     _rollCardsAndResetIncreasedRollChance(trialType) {
-        // this._setCardsChanceRollIncrease(trialType, 0);
-        return this._cardWeights.peek(this._meta.cardsToRoll);
+        return this._cardWeights.peek(this._meta.cardsToRoll, false);
     }
 
     _getCardsState(trialType) {

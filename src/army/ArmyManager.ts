@@ -15,6 +15,7 @@ import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
 import ItemType from "../knightlands-shared/item_type";
 import Random from "../random";
+import { isNumber } from "../validation";
 
 const NO_LEGION = -1;
 
@@ -45,7 +46,7 @@ export class ArmyManager {
         this._armiesCollection = this._db.collection(Collections.Armies);
     }
 
-    async init(iapExecutor) {
+    async init() {
         console.log("Initializing army manager...");
 
         this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army" });
@@ -91,30 +92,12 @@ export class ArmyManager {
         return this._units.onUnitUpdated(userId, unit);
     }
 
-    async requestSummon(userId: string, iap: number, summonType: number) {
-        let summonData = summonType == ArmySummonType.Advanced ? this._summonMeta.advancedSummon : this._summonMeta.normalSummon;
-        let summonMeta = summonData.iaps[iap];
-        if (!summonMeta) {
-            throw Errors.IncorrectArguments;
-        }
-
-        const user = await Game.getUser(userId);
-
-        if (user.hardCurrency < summonMeta.price) {
-            throw Errors.NotEnoughCurrency;
-        }
-
-        await user.addHardCurrency(-summonMeta.price);
-
-        return await this.summontUnits(userId, summonMeta.count, summonType, true)
-    }
-
     async getSummonStatus(userId) {
-        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.PaymentTag, {});
+        return Game.paymentProcessor.fetchPaymentStatus(userId, this.PaymentTag, {});
     }
 
-    async getArmy(unitId: string) {
-        return await this._armiesCollection.findOne({ _id: unitId });
+    async getArmy(userId: string) {
+        return this._loadArmy(userId);
     }
 
     async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
@@ -188,11 +171,11 @@ export class ArmyManager {
     }
 
     async getSummonOverview(userId: string) {
-        return this.loadArmyProfile(userId);
+        return this._loadArmyProfile(userId);
     }
 
     async summonRandomUnit(userId: string, count: number, stars: number, summonType: number) {
-        let armyProfile = await this.loadArmyProfile(userId);
+        let armyProfile = await this._loadArmyProfile(userId);
         let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summonWithStars(count, stars, summonType);
         // assign ids
@@ -205,15 +188,26 @@ export class ArmyManager {
         return newUnits;
     }
 
-    async summontUnits(userId: string, count: number, summonType: number, payed: boolean = false) {
-        let armyProfile = await this.loadArmyProfile(userId);
+    async summontUnits(userId: string, count: number, summonType: number, iapIndex: number) {
+        let armyProfile = await this._loadArmyProfile(userId);
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
         if (!summonMeta) {
             throw Errors.IncorrectArguments;
         }
 
-        if (!payed) {
+        const user = await Game.getUser(userId);
+
+        if (isNumber(iapIndex)) {
+            let iapMeta = summonMeta.iaps[iapIndex];
+            if (user.hardCurrency < iapMeta.price) {
+                throw Errors.NotEnoughCurrency;
+            }
+
+            count = iapMeta.count;
+            await user.addHardCurrency(-iapMeta.price);
+            await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
+        } else {
             let resetCycle = 86400 / summonMeta.freeOpens;
             let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
             if (timeUntilNextFreeOpening > resetCycle) {
@@ -244,12 +238,6 @@ export class ArmyManager {
         let lastSummon = armyProfile.lastSummon;
         lastSummon[summonType] = Game.nowSec;
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
-
-        const user = await Game.getUser(userId);
-
-        if (payed) {
-            await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
-        }
 
         this._units.resetCache(userId);
         return newUnits;
@@ -577,10 +565,14 @@ export class ArmyManager {
     }
 
     private async _loadLegion(userId: string, legionIndex: number) {
-        return await this._legions.getLegion(userId, legionIndex);
+        return this._legions.getLegion(userId, legionIndex);
     }
 
-    private async loadArmyProfile(userId: string) {
+    private async _loadArmyProfile(userId: string) {
+        return this._loadArmy(userId, { "units": 0 })
+    }
+
+    private async _loadArmy(userId: string, projection: any = {}) {
         return (await this._armiesCollection.findOneAndUpdate(
             { _id: userId },
             {
@@ -590,7 +582,7 @@ export class ArmyManager {
                     legions: this._legions.createLegions()
                 }
             },
-            { projection: { "units": 0 }, upsert: true, returnOriginal: false }
+            { projection: projection, upsert: true, returnOriginal: false }
         )).value;
     }
 }

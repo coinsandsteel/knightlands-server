@@ -67,3 +67,23 @@ export interface PackMeta {
 export interface PremiumShopMeta {
     packs: PackMeta[];
 }
+export interface SubscriptionMeta {
+    id: number;
+    duration: number;
+    initialHard: number;
+    dailySoft: number;
+    initialSoft: number;
+    dailyHard: number;
+    iap: string;
+    towerAttempts: number;
+    armourTrialAttempts: number;
+    weaponTrialAttempts: number;
+    accessoryTrialAttempts: number;
+    addExp: number;
+    addGold: number;
+    addDkt: number;
+}
+
+export interface SubscriptionsShopMeta {
+    cards: { [key: string]: SubscriptionMeta };
+}

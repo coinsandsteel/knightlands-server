@@ -3,5 +3,9 @@ export function exist(value: any) {
 }
 
 export function isNumber(value: any) {
-    return isNumber(value) && !isNaN(value);
+    if (!exist(value)) {
+        return false;
+    }
+    value = +value;
+    return typeof value === 'number' && !isNaN(value);
 }

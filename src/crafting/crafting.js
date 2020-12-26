@@ -257,31 +257,26 @@ class Crafting {
             throw Errors.NoRecipeIngridients;
         }
 
-        if (currency == CurrencyType.Fiat) {
-            if (!stepData.iap) {
-                throw Errors.UknownIAP;
-            }
-
-            return await Game.craftingQueue.requestEnchantingPayment(this._userId, stepData.iap, item);
-        } else {
-            // check the balance
-            let enchantCost = stepData.soft;
-            if (currency == CurrencyType.Hard) {
-                enchantCost = stepData.hard;
-            }
-
-            if (this._inventory.getCurrency(currency) < enchantCost) {
-                throw Errors.NotEnoughCurrency;
-            }
-
-            // deduct fee
-            await this._inventory.modifyCurrency(currency, -enchantCost);
+        let enchantCost = stepData.soft;
+        if (currency == CurrencyType.Hard) {
+            enchantCost = stepData.hard;
         }
+
+        if (this._inventory.getCurrency(currency) < enchantCost) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        // deduct fee
+        await this._inventory.modifyCurrency(currency, -enchantCost);
 
         this._inventory.consumeIngridients(stepData.ingridients);
 
         // roll success 
         if (currency == CurrencyType.Soft && Random.range(0, 100, true) > stepData.successRate) {
+            if (item.enchant > 4) {
+                item.enchant--;
+                this._inventory.setItemUpdated(item);
+            }
             return false;
         }
 

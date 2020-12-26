@@ -111,7 +111,7 @@ class Worker extends SCWorker {
     this._presale = new Presale(app);
 
     await this._shop.init(this._iapExecutor);
-    await this._raidManager.init(this._iapExecutor);
+    await this._raidManager.init();
     await this._craftingQueue.init(this._iapExecutor);
     await this._userPremiumService.init(this._iapExecutor);
     await this._lootGenerator.init(this._iapExecutor);
