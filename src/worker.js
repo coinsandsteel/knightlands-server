@@ -28,7 +28,7 @@ import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 
 import Game from "./game";
 
-import Rankings from "./rankings/Rankings.ts";
+import Rankings from "./rankings/Rankings";
 import { Blockchain } from "./blockchain/Blockchain";
 import { Shop } from "./shop/Shop";
 

@@ -19,7 +19,7 @@ import ItemProperties from "./knightlands-shared/item_properties";
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
-import { GoldMines } from './gold-mines/GoldMines.ts';
+import { GoldMines } from './gold-mines/GoldMines';
 import { Dividends } from "./dividends/Dividends.new";
 import { DailyShop } from "./shop/DailyShop";
 import { isNumber } from "./validation";
