@@ -509,7 +509,6 @@ class User {
             this._meta.charmItemPower
         );
         this._trials = new Trials(this._data.trials, this);
-        this._goldExchange = new GoldExchange(this._data.goldExchange, this);
         this._dailyQuests = new DailyQuests(this._data.dailyQuests, this);
         this._goldMines = new GoldMines(this, this._data.goldMines);
         this._dividends = new Dividends(this._data.dividends, this);
@@ -519,7 +518,6 @@ class User {
 
         await this._inventory.loadAll();
         await this._trials.init();
-        await this._goldExchange.init();
         await this._dailyQuests.init();
         await this.collectDailyRefills();
         await this._dividends.tryCommitPayout();
