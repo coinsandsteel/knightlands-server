@@ -31,7 +31,7 @@ const {
 
 const ItemType = require("./knightlands-shared/item_type");
 
-const Trials = require("./trials/Trials");
+import Trials from "./trials/Trials";
 const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");

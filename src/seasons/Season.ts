@@ -24,6 +24,8 @@ export class Season {
             } else {
                 this._seasonTimeout = lt.setTimeout(this._finishSeason.bind(this), Game.nowSec - state.finishAt);
             }
+        } else {
+            await this._updateSeason(1);
         }
     }
 
@@ -53,13 +55,17 @@ export class Season {
         });
 
         await Game.dividends.onSeasonFinished();
-
         // get season schedule 
-        const schedule = await Game.db.collection(Collections.SeasonsSchedule).findOne({ season: this._season + 1 });
+        await this._updateSeason(this._season + 1);
+    }
+
+    private async _updateSeason(nextSeason: number) {
+        const schedule = await Game.db.collection(Collections.SeasonsSchedule).findOne({ season: nextSeason });
         if (schedule) {
             await Game.db.collection(Collections.Seasons).updateOne(
                 { _id: "state" },
-                { $set: { season: this._season + 1, finishAt: schedule.finishAt } }
+                { $set: { season: nextSeason, finishAt: schedule.finishAt } },
+                { upsert: true }
             );
             await this.init()
         }

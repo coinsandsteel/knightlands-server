@@ -1,5 +1,5 @@
 
-const TrialCards = require("./TrialCards");
+import TrialCards from "./TrialCards";
 import TrialType from "../knightlands-shared/trial_type";
 import Game from "../game";
 import Elements from "../knightlands-shared/elements";
