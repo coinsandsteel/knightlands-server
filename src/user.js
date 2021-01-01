@@ -38,7 +38,6 @@ const PlayerUnit = require("./combat/playerUnit");
 const TowerPlayerUnit = require("./combat/towerPlayerUnit");
 const Inventory = require("./inventory");
 const Crafting = require("./crafting/crafting");
-const GoldExchange = require("./goldExchange");
 const DailyQuests = require("./dailyQuests");
 const ItemActions = require("./knightlands-shared/item_actions");
 const Config = require("./config");

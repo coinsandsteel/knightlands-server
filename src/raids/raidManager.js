@@ -12,6 +12,7 @@ import { ObjectId } from "mongodb";
 import Errors from "../knightlands-shared/errors";
 import random from "../random";
 import { TokenRateTimeseries } from "./TokenRateTimeseries";
+import { isNumber } from "../validation";
 
 const WeaknessRotationCycle = 86400000 * 7;
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
@@ -154,10 +155,28 @@ class RaidManager {
         };
     }
 
-    async fetchRaidCurrentMeta(raidTemplateId) {
-        let weakness = await this._db.collection(Collections.RaidsWeaknessRotations).find({ raid: raidTemplateId });
-        weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
-        return weakness;
+    async fetchRaidCurrentMeta(userId, raidTemplateId, isFree) {
+        if (!isNumber(raidTemplateId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let info = {
+            isFirst: false,
+            weakness: null,
+            dktFactor: null
+        };
+
+        if (isFree) {
+            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne(
+                { raidId: +raidTemplateId, user: userId }
+            );
+            info.isFirst = !!firstClearance;
+        }
+
+        info.dktFactor = await this._getNextDktFactor(raidTemplateId, true);
+        info.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: +raidTemplateId });
+        info.weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
+        return info;
     }
 
     async getRaidInfo(userId, raidId) {
@@ -223,7 +242,7 @@ class RaidManager {
 
         if (info.isFree) {
             const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne(
-                { raidId: raidId, user: userId }
+                { raidId: +info.raidTemplateId, user: userId }
             );
             info.isFirst = !!firstClearance;
         }

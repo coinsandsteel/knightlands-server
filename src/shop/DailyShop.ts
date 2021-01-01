@@ -24,7 +24,7 @@ export class DailyShop {
         if (this._data.cycle != currentCycle) {
             this._data.cycle = currentCycle;
 
-            if (currentCycle % 7 == 0) {
+            if (currentCycle % 7 == 0 || !this._data.weeklyPurchases) {
                 this._data.weeklyPurchases = {};
             }
 

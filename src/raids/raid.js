@@ -58,7 +58,7 @@ class Raid extends EventEmitter {
     }
 
     get templateId() {
-        return this._data.raidTemplateId;
+        return +this._data.raidTemplateId;
     }
 
     get defeat() {

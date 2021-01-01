@@ -159,7 +159,18 @@ class LootGenerator {
                     updateQuery.$set[`firstTimeLoot.${zone}.${questIndex}`] = true;
 
                     await this._db.collection(Collections.Users).updateOne({address: userId}, updateQuery);
-                    await this._rollGuaranteedLootFromTable(table.firstTimeRecords, table.tag, items, itemsHash);
+
+                    const length = table.firstTimeRecords.length;
+                    for (let j = 0; j < length; ++j) {
+                        const record = table.firstTimeRecords[j];
+                        if (record.table) {
+                            await this._rollItemsFromLootTable({}, record.table, null, items, itemsHash, false);
+                        } else {
+                            await this._addRecordToTable({
+                                tableTag: table.tag
+                            }, items, itemsHash, record, true);
+                        }
+                    }
                 }   
             }
 
@@ -257,6 +268,10 @@ class LootGenerator {
 
         if (!table.records || table.records.length == 0) {
             return items;
+        }
+
+        if (!lootContext) {
+            lootContext = {};
         }
 
         if (!weights) {

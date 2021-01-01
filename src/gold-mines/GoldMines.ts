@@ -18,9 +18,7 @@ export class GoldMines {
                 level: 0,
                 gold: 0
             };
-            this.data.mines = [
-                this.createMine()
-            ];
+            this.data.mines = [];
         }
     }
 
