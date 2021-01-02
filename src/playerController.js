@@ -75,7 +75,6 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.EngageQuest, this._gameHandler(this._engageQuest.bind(this), "quest", Config.game.attackCooldown));
         this._socket.on(Operations.UseItem, this._gameHandler(this._useItem.bind(this)));
         this._socket.on(Operations.OpenChest, this._gameHandler(this._openChest.bind(this)));
-        this._socket.on(Operations.GetChestsStatus, this._gameHandler(this._getChestsStatus.bind(this)));
         this._socket.on(Operations.ResetZone, this._gameHandler(this._resetZone.bind(this)));
         this._socket.on(Operations.EquipItem, this._gameHandler(this._equipItem.bind(this)));
         this._socket.on(Operations.UnequipItem, this._gameHandler(this._unequipItem.bind(this)));
@@ -591,10 +590,6 @@ class PlayerController extends IPaymentListener {
         }
 
         return user.useItem(data.itemId, count);
-    }
-
-    async _getChestsStatus(user, data) {
-        return user.getChests();
     }
 
     async _openChest(user, data) {

@@ -538,13 +538,15 @@ class LootGenerator {
 
         let count = Math.round(Random.range(min, max, true));
 
-        let newItem = {
-            item: record.itemId,
-            quantity: count,
-            guaranteed: guaranteed
-        };
+        if (count > 0) {
+            const newItem = {
+                item: record.itemId,
+                quantity: count,
+                guaranteed: guaranteed
+            };
 
-        this._addLootToTable(items, hash, newItem);
+            this._addLootToTable(items, hash, newItem);
+        }
     }
 
     rollLootRecord(record) {
