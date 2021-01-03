@@ -30,6 +30,7 @@ export class DailyShop {
 
             this._data.refreshes = 0;
             this._data.purchasedItems = {};
+            this._data.fixedItems = {};
             this._data.dailyPurchases = {};
 
             await this._refreshItems();
@@ -59,13 +60,15 @@ export class DailyShop {
         }
     }
 
-    async purchase(itemIndex: number) {
+    async purchase(itemIndex: number, fixed: boolean = false) {
         if (itemIndex < 0 || this._data.items.length <= itemIndex) {
             throw Errors.IncorrectArguments;
         }
 
-        const item = this._data.items[itemIndex];
-        if (this._data.purchasedItems[itemIndex] == item.max) {
+        const meta = await this._getMeta();
+        const item = fixed ? meta.fixedItems[itemIndex].data : this._data.items[itemIndex];
+        const purchaseData = fixed ? this._data.fixedItems : this._data.purchasedItems;
+        if (purchaseData[itemIndex] == item.max) {
             throw Errors.IncorrectArguments;
         }
 
@@ -85,7 +88,7 @@ export class DailyShop {
             }
         }
 
-        this._data.purchasedItems[itemIndex] = (this._data.purchasedItems[itemIndex] || 0) + 1;
+        purchaseData[itemIndex] = (purchaseData[itemIndex] || 0) + 1;
         await this._user.inventory.addItemTemplate(item.item, item.count);
 
         return {

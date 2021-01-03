@@ -71,7 +71,7 @@ export class GoldMines {
             throw Errors.GoldMineStorageMaxLevel;
         }
 
-        const price = meta.mines[this.data.storage.level + 1].price;
+        const price = meta.storage[this.data.storage.level + 1].price;
         if (this.user.softCurrency < price) {
             throw Errors.NotEnoughSoft;
         }

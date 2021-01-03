@@ -22,12 +22,16 @@ export interface TopUpShopMeta {
 }
 
 export interface DailyShopEntryMeta {
-    item: number;
-    count: number;
-    max: number;
-    soft: number;
-    hard: number;
+    key: number;
     weight: number;
+    data: {
+        item: number;
+        count: number;
+        max: number;
+        soft: number;
+        hard: number;
+        iap: string;
+    };
 }
 
 export interface DailyShopEntry {
@@ -41,6 +45,7 @@ export interface DailyShopEntry {
 export interface DailyShopSaveData {
     cycle: number;
     refreshes: number;
+    fixedItems: { [key: string]: number };
     purchasedItems: { [key: string]: number };
     dailyPurchases: { [key: string]: number };
     weeklyPurchases: { [key: string]: number };
@@ -50,6 +55,7 @@ export interface DailyShopSaveData {
 
 export interface DailyShopMeta {
     items: DailyShopEntryMeta[];
+    fixedItems: DailyShopEntryMeta[];
     maxItems: number;
     refreshPrice: number[];
 }

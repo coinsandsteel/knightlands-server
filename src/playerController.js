@@ -1471,7 +1471,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseDailyItem(user, data) {
-        return user.dailyShop.purchase(+data.itemIndex);
+        return user.dailyShop.purchase(+data.itemIndex, data.fixed);
     }
 
     async _refreshDailyShop(user, data) {

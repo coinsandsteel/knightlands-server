@@ -610,12 +610,14 @@ class Inventory {
             equippedItems = unit.items;
         }
 
-        if (item.unique) {
-            item.equipped = false;
-        } else {
+        item.holder = UserHolder;
+        item.equipped = false;
+
+        let stacked = false;
+
+        if (!item.unique) {
             let templates = this._getItemsByTemplate(item.template);
             // not unique, stack with existing template stack
-            let stacked = false;
             const length = templates.length;
             for (let i = 0; i < length; ++i) {
                 const existingItem = templates[i];
@@ -626,18 +628,19 @@ class Inventory {
                     break;
                 }
             }
-            
-            if (!stacked) {
-                item.equipped = false;
-            }
+        }
+
+        if (!stacked) {
+            item = this.getItemById(item.id);
+            item.equipped = false;
+            this.setItemUpdated(item);
         }
 
         const template = await Game.itemTemplates.getTemplate(item.template);
         const itemSlot = getSlot(template.equipmentType);
 
         delete equippedItems[itemSlot];
-        item.holder = UserHolder;
-        this.setItemUpdated(item);
+    
 
         if (unit) {
             await Game.armyManager.updateUnit(this._userId, unit)
@@ -762,7 +765,7 @@ class Inventory {
         }
     }
 
-    setItemUpdated(item) {      
+    setItemUpdated(item) {   
         this._newItems.set(item.id, item);
     }
 
