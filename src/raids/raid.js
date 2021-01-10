@@ -172,8 +172,8 @@ class Raid extends EventEmitter {
         }
 
         let maxStats = {};
-        maxStats[CharacterStats.Health] = parseInt(this._template.health);
-        maxStats[CharacterStats.Attack] = parseInt(this._template.attack);
+        maxStats[CharacterStats.Health] = parseInt(this.template.health);
+        maxStats[CharacterStats.Attack] = parseInt(this.template.attack);
 
         this._bossUnit = new Unit(this._data.bossState, maxStats);
 
@@ -376,11 +376,11 @@ class Raid extends EventEmitter {
                 }
             }
 
-            await Game.rankings.updateRank(attacker.address, {
+            await Game.rankings.updateRank(attacker.id, {
                 type: RankingType.DamageInRaids
             }, damageLog.damage);
 
-            await Game.rankings.updateRank(attacker.address, {
+            await Game.rankings.updateRank(attacker.id, {
                 type: RankingType.DamageInParticularRaid,
                 raid: this._template._id
             }, damageLog.damage);

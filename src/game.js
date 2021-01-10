@@ -10,7 +10,8 @@ import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
 import { Season } from './seasons/Season';
 import { Lock } from './utils/lock';
-import { Shop } from "./shop/Shop";
+import { ObjectId } from "mongodb";
+import { Inventory } from "./inventory";
 
 class Game extends EventEmitter {
     constructor() {
@@ -49,6 +50,7 @@ class Game extends EventEmitter {
         this.tokenAmounts = new DivTokenFarmedTimeseries(db, this._dividends);
 
         this._players = {};
+        this._playersById = {};
 
         await this._season.init();
         await this._dividends.init();
@@ -133,11 +135,59 @@ class Game extends EventEmitter {
         });
     }
 
+    async loadUserPreview(id) {
+        let items;
+        const user = await this._db.collection(Collections.Users).findOne({ _id: new ObjectId(id) }, { projection: { address: 1, character: 1 } });
+        if (user) {
+            const equipmentIds = [];
+            for (const slotId in user.character.equipment) {
+                const item = user.character.equipment[slotId];
+                equipmentIds.push(item.id);
+            }
+
+            items = await Inventory.loadItems(user.address, equipmentIds);
+        }
+
+        delete user.address;
+
+        return {
+            user,
+            items
+        };
+    }
+
     async loadUser(address) {
         let expTable = await this._getExpTable();
         let meta = await this._getMeta();
         let user = new User(address, this._db, expTable, meta);
         await user.load();
+
+        return user;
+    }
+
+    async loadUserById(id) {
+        let expTable = await this._getExpTable();
+        let meta = await this._getMeta();
+        let user = new User(null, this._db, expTable, meta);
+        await user.load(id);
+
+        return user;
+    }
+
+    async getUserById(id) {
+        await this._lock.acquire("get-user");
+
+        let user;
+        try {
+            let playerController = this.getPlayerControllerById(id);
+            if (playerController) {
+                user = await playerController.getUser();
+            } else {
+                user = await this.loadUserById(id);
+            }
+        } finally {
+            await this._lock.release("get-user");
+        }
 
         return user;
     }
@@ -169,6 +219,10 @@ class Game extends EventEmitter {
         return this._players[userId];
     }
 
+    getPlayerControllerById(userId) {
+        return this._playersById[userId];
+    }
+
     emitPlayerEvent(userId, event, args) {
         this.emit(userId, event, args);
     }
@@ -185,7 +239,6 @@ class Game extends EventEmitter {
             // }
 
             if (!controller.address) {
-                // socket was disconnected before whitelisting query finished
                 return;
             }
 
@@ -197,6 +250,7 @@ class Game extends EventEmitter {
 
             this._paymentProcessor.registerAsPaymentListener(controller.address, controller);
             this._players[controller.address] = controller;
+            this._playersById[controller.id] = controller;
 
             controller.onAuthenticated();
         });
@@ -221,6 +275,7 @@ class Game extends EventEmitter {
         if (controller.address) {
             this._paymentProcessor.unregister(controller.address, controller);
             delete this._players[controller.address];
+            delete this._playersById[controller.id];
         }
     }
 }

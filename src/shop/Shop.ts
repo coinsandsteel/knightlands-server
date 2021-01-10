@@ -31,7 +31,7 @@ export class Shop {
         });
     }
 
-    async purchaseSubscription(userId: string, address: string, cardId: number) {
+    async purchaseSubscription(userId: string, address: string, chain: string, cardId: number) {
         const meta = await this._getSubscriptionsMeta();
         const cardMeta = meta.cards[cardId];
 
@@ -39,10 +39,10 @@ export class Shop {
             throw Errors.UnknownIap;
         }
 
-        return this.purchase(userId, cardMeta.iap, address)
+        return this.purchase(userId, cardMeta.iap, address, chain)
     }
 
-    async purchasePack(userId: string, address: string, packId: number) {
+    async purchasePack(userId: string, address: string, chain: string, packId: number) {
         const meta = await this._getPremiumMeta();
 
         const pack = meta.packs.find(p => p.id == packId);
@@ -79,7 +79,7 @@ export class Shop {
             return this._claimPack(pack, userId);
         }
 
-        return this.purchase(userId, pack.iap, address);
+        return this.purchase(userId, pack.iap, address, chain);
     }
 
     async purchaseGold(userId: string, goldIndex: number) {
@@ -103,7 +103,7 @@ export class Shop {
         return goldLot.amount;
     }
 
-    async purchase(userId: string, iap: string, address: string) {
+    async purchase(userId: string, iap: string, address: string, chain: string) {
         let iapContext = {
             userId,
             iap
@@ -121,7 +121,8 @@ export class Shop {
                 iap,
                 this.IapTag,
                 iapContext,
-                address
+                address,
+                chain
             );
         } catch (exc) {
             throw exc;

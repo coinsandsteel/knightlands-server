@@ -9,7 +9,7 @@ import Errors from "./knightlands-shared/errors";
 import CurrencyType from "./knightlands-shared/currency_type";
 import RankingType from "./knightlands-shared/ranking_type";
 import { getSlot, EquipmentSlots } from "./knightlands-shared/equipment_slot";
-import EquipmentType from "./knightlands-shared/equipment_type";
+import { ObjectId } from "mongodb";
 
 const UserHolder = -1;
 
@@ -70,11 +70,11 @@ class Inventory {
         if (currency == CurrencyType.Soft) {
             if (value < 0) {
                 await this._user.dailyQuests.onGoldSpent(-value);
-                await Game.rankings.updateRank(this._userId, {
+                await Game.rankings.updateRank(this._user.id, {
                     type: RankingType.GoldSpent
                 }, -value);
             } else {
-                await Game.rankings.updateRank(this._userId, {
+                await Game.rankings.updateRank(this._user.id, {
                     type: RankingType.GoldLooted
                 }, value);
             }
@@ -82,6 +82,32 @@ class Inventory {
         } else if (currency == CurrencyType.Hard && value < 0) {
             await this._user.dailyQuests.onPremiumPurchase(-value);
         }
+    }
+
+    static async loadItems(userId, ids) {
+        return Game.db.collection(Collections.Inventory).aggregate([
+            {
+                $match: {
+                    "_id": userId
+                }
+            },
+            {
+                $project: {
+                    items: {
+                        $filter: {
+                            input: "$items",
+                            as: "item",
+                            cond: {
+                                $in: ["$$item.id", ids]
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+            {
+                "allowDiskUse": false
+            }).toArray();
     }
 
     async getPassiveItems() {
@@ -443,7 +469,7 @@ class Inventory {
             this.addItem(item);
         }
 
-        await Game.rankings.updateRank(this._userId, {
+        await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CollectedItemsByRarity,
             rarity: template.rarity,
             itemType: template.type

@@ -23,6 +23,7 @@ import { GoldMines } from './gold-mines/GoldMines';
 import { Dividends } from "./dividends/Dividends.new";
 import { DailyShop } from "./shop/DailyShop";
 import { isNumber } from "./validation";
+import { ObjectId } from "mongodb";
 
 const {
     EquipmentSlots,
@@ -77,12 +78,12 @@ class User {
 
     serializeForClient() {
         // we can use shallow copy here, we delete only first level fields
-        // let data = Object.assign({}, this._data);
-        // // remove unwanted fields
-        // delete data.nonce;
+        let data = Object.assign({}, this._data);
+        // remove unwanted fields
+        delete data.nonce;
         // delete data.address;
 
-        return this._data;
+        return data;
     }
 
     get id() {
@@ -193,6 +194,14 @@ class User {
         return this.subscriptions.cards;
     }
 
+    get nickname() {
+        return this._data.character.nickname;
+    }
+
+    set nickname(value) {
+        this._data.character.nickname = value;
+    }
+
     async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -250,7 +259,7 @@ class User {
         // if payout day is shifted, commit previous days balance
         await this.dividends.tryCommitPayout();
         await this.inventory.modifyCurrency(CurrencyType.Dkt, value);
-        await Game.rankings.updateRank(this.address, {
+        await Game.rankings.updateRank(this.id, {
             type: RankingType.DktEarned
         }, value);
     }
@@ -306,7 +315,7 @@ class User {
             this._restoreTimers();
         }
 
-        await Game.rankings.updateRank(this.address, {
+        await Game.rankings.updateRank(this.id, {
             type: RankingType.ExpGained
         }, totalExp);
 
@@ -357,11 +366,11 @@ class User {
             }
 
             if (stat == CharacterStat.Energy && value < 0) {
-                await Game.rankings.updateRank(this.address, {
+                await Game.rankings.updateRank(this.id, {
                     type: RankingType.EnergySpent
                 }, -value);
             } else if (stat == CharacterStat.Stamina && value < 0) {
-                await Game.rankings.updateRank(this.address, {
+                await Game.rankings.updateRank(this.id, {
                     type: RankingType.StaminaSpent
                 }, -value);
             }
@@ -474,17 +483,25 @@ class User {
         return await this._inventory.loadAllItems();
     }
 
-    async load() {
+    async load(id) {
         const users = this._db.collection(Collections.Users);
 
         let userData = this._validateUser({
             address: this._address
         });
 
+        let searchQuery = {
+            address: this._address
+        };
+
+        if (id) {
+            searchQuery = {
+                _id: new ObjectId(id)
+            };
+        }
+
         userData = (await users.findOneAndUpdate(
-            {
-                address: this._address
-            },
+            searchQuery,
             {
                 $setOnInsert: userData,
                 $set: { lastLogin: Game.nowSec }
@@ -496,6 +513,8 @@ class User {
         )).value;
 
         this._originalData = cloneDeep(userData);
+        this._address = this._originalData.address;
+
         userData = this._validateUser(userData);
 
         this._data = userData;
@@ -629,9 +648,7 @@ class User {
             resourcesInStock[i] = this.inventory.countItemsByTemplate(trainingMeta.stats[i].resource);
 
             let value = this._data.character.attributes[i];
-            this._data.character.attributes[i] += stats[i];
-
-            const finalValue = this._data.character.attributes[i];
+            const finalValue = this._data.character.attributes[i] + stats[i];
 
             if (finalValue > TrainingCamp.getMaxStat(this._data.character.level)) {
                 throw "stat is over max level";
@@ -649,6 +666,8 @@ class User {
             if (resourcesInStock[i] < resourceRequired[i]) {
                 throw Errors.NotEnoughResource;
             }
+
+            this._data.character.attributes[i] = finalValue;
         }
 
         if (totalGoldRequired == 0) {
@@ -999,12 +1018,12 @@ class User {
         } = buildUpdateQuery(this._originalData, this._data);
 
         if (updateQuery || removeQuery) {
-            // console.log(JSON.stringify(updateQuery, null, 2))
             let finalQuery = {};
+
             if (updateQuery) {
                 finalQuery.$set = updateQuery;
             }
-            // console.log(JSON.stringify(removeQuery, null, 2))
+            
             if (removeQuery) {
                 finalQuery.$unset = removeQuery;
             }
@@ -1017,7 +1036,7 @@ class User {
         }
 
         await this._inventory.commitChanges(inventoryChangesMode);
-        
+
         // apply new data as original
         return {
             changes,

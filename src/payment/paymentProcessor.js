@@ -98,7 +98,8 @@ class PaymentProcessor extends EventEmitter {
                 "timestamp": payment.timestamp,
                 "context": payment.context,
                 "signature": payment.signature,
-                "id": payment._id
+                "id": payment._id,
+                "chain": payment.chain
             };
         }
 
@@ -152,7 +153,7 @@ class PaymentProcessor extends EventEmitter {
         return !!request;
     }
 
-    async requestPayment(userId, iap, tag, context, address) {
+    async requestPayment(userId, iap, tag, context, address, chain) {
         if (!iap) {
             throw Errors.UnknownIap;
         }
@@ -174,7 +175,7 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown iap";
         }
 
-        const nonce = Number(await this._blockchain.getBlockchain(blockchains.Tron).getPaymentNonce(address));
+        const nonce = Number(await this._blockchain.getBlockchain(chain).getPaymentNonce(address));
 
         // price is in cents
         let price = Game.currencyConversionService.convertToNative(iapObject.price / 100);
@@ -189,13 +190,14 @@ class PaymentProcessor extends EventEmitter {
             context,
             price,
             nonce,
-            timestamp
+            timestamp,
+            chain
         });
 
         let paymentId = inserted.insertedId.valueOf() + "";
 
         // create signature for the smart contract and return it
-        let signature = await this._blockchain.getBlockchain(blockchains.Tron).sign(iap, paymentId, price, nonce, timestamp);
+        let signature = await this._blockchain.getBlockchain(chain).sign(iap, paymentId, price, nonce, timestamp);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
             $set: {

@@ -133,7 +133,7 @@ class Crafting {
 
         this._inventory.removeItemByTemplate(recipe.resource, recipe.resourceCount * amount);
 
-        await Game.rankings.updateRank(this._userId, {
+        await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CraftedItemsByRarity,
             rarity: rarity
         }, amount);
@@ -373,7 +373,7 @@ class Crafting {
         }
 
         const template = await Game.itemTemplates.getTemplate(recipe.resultItem);
-        await Game.rankings.updateRank(this._userId, {
+        await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CraftedItemsByRarity,
             rarity: template.rarity
         }, amount);
@@ -582,7 +582,7 @@ class Crafting {
 
         const levelsGained = level - oldLevel;
         await this._user.dailyQuests.onItemLeveled(levelsGained);
-        await Game.rankings.updateRank(this._userId, {
+        await Game.rankings.updateRank(this._user.id, {
             type: RankingType.LevelItemsByRarity,
             rarity: itemTemplate.rarity
         }, levelsGained);
@@ -731,7 +731,7 @@ class Crafting {
 
         for (const material of materialItems) {
             await this._user.dailyQuests.onItemDisenchant(material.quantity);
-            await Game.rankings.updateRank(this._userId, {
+            await Game.rankings.updateRank(this._user.id, {
                 type: RankingType.DisenchantedItemsByRarity,
                 rarity: material.rarity
             }, material.quantity);
@@ -768,7 +768,7 @@ class Crafting {
 
         await this._craftRecipe(elementalCreation.recipe, currency, 1);
         
-        await Game.rankings.updateRank(this._userId, {
+        await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CraftedItemsByRarity,
             rarity: item.rarity
         }, 1);

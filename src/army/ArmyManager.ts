@@ -206,7 +206,6 @@ export class ArmyManager {
 
             count = iapMeta.count;
             await user.addHardCurrency(-iapMeta.price);
-            await user.dailyQuests.onUnitSummoned(summonType == SummonType.Advanced);
         } else {
             let resetCycle = 86400 / summonMeta.freeOpens;
             let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
@@ -226,6 +225,8 @@ export class ArmyManager {
                 })
             }
         }
+
+        await user.dailyQuests.onUnitSummoned(count, summonType == SummonType.Advanced);
 
         let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summon(count, summonType);

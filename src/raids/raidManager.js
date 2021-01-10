@@ -335,8 +335,10 @@ class RaidManager {
         let dktFactor = 0;
 
         if (raid.free) {
-            const user = await Game.getUser(raid.summoner);
-            await user.dailyQuests.onFreeRaidFinished();
+            const user = await Game.getUserById(raid.summoner);
+            await user.autoCommitChanges(() => {
+                user.dailyQuests.onFreeRaidFinished();
+            });
         } else {
             dktFactor = await this._getNextDktFactor(raid.templateId)
         }
@@ -350,9 +352,8 @@ class RaidManager {
     }
 
     async claimLoot(user, raidId) {
-        let userId = user.address;
-        let raid = await this._getFinishedRaid(userId, raidId);
-        return await raid.claimLoot(userId);
+        let raid = await this._getFinishedRaid(user.id, raidId);
+        return await raid.claimLoot(user.id);
     }
 
     async getLootPreview(user, raidId) {

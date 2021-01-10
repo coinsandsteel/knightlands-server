@@ -62,11 +62,30 @@ export class Leaderboard implements IRankingTypeHandler {
 
     async getRankings(page: number) {
         const total = await this._collection.find({}).count();
-        const records = await this._collection.find({})
-            .sort({ score: -1 })
-            .skip(page * this._pageSize)
-            .limit(this._pageSize)
-            .toArray();
+
+        const records = await this._collection.aggregate([
+            { $sort: { score: -1 } },
+            { $skip: page * this._pageSize },
+            { $limit: this._pageSize },
+            { $lookup: { from: "users", localField: "id", foreignField: "_id", as: "user" } },
+            {
+                $project: {
+                    score: 1,
+                    name: {
+                        $ifNull: [{ $arrayElemAt: ["$user.character.nickname", 0] }, ""]
+                    }
+                }
+            },
+            {
+                $project: { _id: 0 }
+            }
+        ]).toArray();
+
+        // const records = await this._collection.find({})
+        //     .sort({ score: -1 })
+        //     .skip(page * this._pageSize)
+        //     .limit(this._pageSize)
+        //     .toArray();
         return {
             records,
             finished: total <= page * this._pageSize + this._pageSize

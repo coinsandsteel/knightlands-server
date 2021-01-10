@@ -54,8 +54,10 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SyncTime, this._syncTime.bind(this));
         this._socket.on(Operations.FetchRefillTimerStatus, this._fetchRefillTimerStatus.bind(this));
         this._socket.on(Operations.GetTimerRefillInfo, this._getTimerRefillInfo.bind(this));
+        this._socket.on(Operations.FetchCharacter, this._fetchCharacter.bind(this));
 
         // payed functions 
+        this._socket.on(Operations.ChangeNickname, this._gameHandler(this._changeNickname.bind(this)));
         this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
 
@@ -271,7 +273,7 @@ class PlayerController extends IPaymentListener {
 
         this.address = metadata.email;
 
-        const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { lastLogin: 1 });
+        const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { projection: { lastLogin: 1 } });
         if (userLastLogin) {
             if (userLastLogin.lastLogin >= decodedToken[1].iat) { 
                 throw Errors.MalformedAuth;
@@ -315,6 +317,7 @@ class PlayerController extends IPaymentListener {
         try {
             if (!this._user) {
                 this._user = await Game.loadUser(address || this.address);
+                this.id = this._user.id.valueOf();
             }
         } finally {
             await this._lock.release("get-user");
@@ -752,6 +755,11 @@ class PlayerController extends IPaymentListener {
         respond(null, timeRefillCost);
     }
 
+    async _fetchCharacter(data, respond) {
+        const userPreview = await Game.loadUserPreview(data.id);
+        respond(null, userPreview);
+    }
+
     async _fetchRefillTimerStatus(data, respond) {
         let timeRefillInfo = await Game.userPremiumService.getTimerRefillStatus(this.address, data.stat);
         respond(null, timeRefillInfo);
@@ -764,6 +772,31 @@ class PlayerController extends IPaymentListener {
         } catch (exc) {
             respond(exc);
         }
+    }
+
+    async _changeNickname(user, data) {
+        if (!data.nickname || !data.nickname.match(/^[a-zA-Z0-9_-]{3,16}$/g)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const meta = await this._db.collection(Collections.Meta).findOne({ _id: "meta" }, { projection: { nicknamePrice: 1 } })
+        let price = 0;
+
+        if (user.nickname) {
+            price = meta.nicknamePrice;
+        }
+
+        if (user.hardCurrency < price) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        const isExist = await this._db.collection(Collections.Users).findOne({ "character.nickname": data.nickname }, { projection: { _id: 1 } });
+        if (isExist) {
+            throw Errors.NameUsed;
+        }
+
+        await user.addHardCurrency(-price);
+        user.nickname = data.nickname;
     }
 
     // Raids
@@ -1378,7 +1411,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getLeaderboardRank(user, data) {
-        return Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.address);
+        return Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.id);
     }
 
     // Armies
@@ -1456,14 +1489,14 @@ class PlayerController extends IPaymentListener {
     // Shop
     async _purchase(user, data) {
         if (exist(data.iap)) {
-            return Game.shop.purchase(user.address, data.iap, data.address);
+            return Game.shop.purchase(user.address, data.iap, data.address, data.chain);
         } else if (exist(data.goldIndex)) {
             return Game.shop.purchaseGold(user.address, +data.goldIndex);
         } else if (exist(data.packId)) {
-            return Game.shop.purchasePack(user.address, data.address, +data.packId);
+            return Game.shop.purchasePack(user.address, data.address, data.chain, +data.packId);
         }
 
-        return Game.shop.purchaseSubscription(user.address, data.address, +data.cardId);
+        return Game.shop.purchaseSubscription(user.address, data.address, data.chain, +data.cardId);
     }
 
     async _purchaseStatus(user, data) {
