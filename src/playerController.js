@@ -36,6 +36,7 @@ class PlayerController extends IPaymentListener {
 
         if (socket.authToken) {
             this.address = socket.authToken.address;
+            this.id = socket.authToken.id;
         }
 
         this._db = Game.db;
@@ -221,6 +222,8 @@ class PlayerController extends IPaymentListener {
 
     onDisconnect() {
         Game.removeListener(this.address, this._handleEventBind);
+        Game.removeListener(this.id, this._handleEventBind);
+
         if (this._user) {
             this._user.dispose();
         }
@@ -230,6 +233,7 @@ class PlayerController extends IPaymentListener {
 
     onAuthenticated() {
         Game.on(this.address, this._handleEventBind);
+        Game.on(this.id, this._handleEventBind);
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -280,11 +284,12 @@ class PlayerController extends IPaymentListener {
             }
         }
 
-        this._socket.setAuthToken({
-            address: metadata.email
-        });
-
         await this.getUser();
+
+        this._socket.setAuthToken({
+            address: metadata.email,
+            id: this.id
+        });
 
         respond(null, "success");
     }
@@ -317,7 +322,7 @@ class PlayerController extends IPaymentListener {
         try {
             if (!this._user) {
                 this._user = await Game.loadUser(address || this.address);
-                this.id = this._user.id.valueOf();
+                this.id = this._user.id.toString();
             }
         } finally {
             await this._lock.release("get-user");
@@ -1363,15 +1368,15 @@ class PlayerController extends IPaymentListener {
 
     // Races
     async _fetchRaces(user, data) {
-        return Game.rankings.races.getRacesInfo(user.address);
+        return Game.rankings.races.getRacesInfo(user.id);
     }
 
     async _joinRace(user, data) {
-        return Game.rankings.races.join(user.address, data.raceId);
+        return Game.rankings.races.join(user.id, data.raceId);
     }
 
     async _claimRaceRewards(user, data) {
-        let rewards = await Game.rankings.races.claimRewards(user.address, data.raceId);
+        let rewards = await Game.rankings.races.claimRewards(user.id, data.raceId);
         if (!rewards) {
             throw Errors.NoRewards;
         }
@@ -1382,7 +1387,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getRaceInfo(user, data) {        
-        return Game.rankings.races.getRank(data.raceId, user.address);
+        return Game.rankings.races.getRank(data.raceId, user.id);
     }
 
     async _fetchRaceRankings(user, data) {

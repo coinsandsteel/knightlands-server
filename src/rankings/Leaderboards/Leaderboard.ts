@@ -81,11 +81,6 @@ export class Leaderboard implements IRankingTypeHandler {
             }
         ]).toArray();
 
-        // const records = await this._collection.find({})
-        //     .sort({ score: -1 })
-        //     .skip(page * this._pageSize)
-        //     .limit(this._pageSize)
-        //     .toArray();
         return {
             records,
             finished: total <= page * this._pageSize + this._pageSize

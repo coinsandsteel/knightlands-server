@@ -54,7 +54,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     get rewards() {
-        return this.config.rewards.map(x=>Math.ceil(x * this._state.rewardsMultiplier))
+        return this.config.rewards.map(x => Math.ceil(x * this._state.rewardsMultiplier))
     }
 
     get winners() {
@@ -81,14 +81,22 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             // already reached the target
             return;
         }
-        
-        await this._ranking.updateRank(userId, options, value);
+
+        const userScore = this._ranking.getParticipantScore(userId);
+        const scoreLeft = this._state.config.baseTarget - userScore;
+
+        await this._ranking.updateRank(
+            userId,
+            options,
+            scoreLeft < value ? scoreLeft : value
+        );
 
         userRank = <RankingRecord>await this.getUserRank(userId);
         if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
             this._state.looted[userId] = false;
             // can claim reward, track player
             await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
+            Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
         }
 
         await this._handleRankUpdate();
@@ -116,7 +124,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
         return insertionResult.insertedId;
     }
-    
+
     hasUser(userId: string) {
         return this._ranking.hasParticipant(userId);
     }
@@ -176,14 +184,14 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             let i = 0;
             totalRewards = totalRewards > players.length ? players.length : totalRewards;
             for (; i < totalRewards; ++i) {
-                if (players[totalRewards-1].score >= target) {
+                if (players[totalRewards - 1].score >= target) {
                     this.targetsHit++;
                 } else {
                     break;
                 }
             }
 
-            if (i ==  this.config.rewards.length) {
+            if (i == this.config.rewards.length) {
                 await this._finish();
             }
         }
@@ -200,7 +208,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         const users = await this._ranking.getParticipants();
         for (const user of users) {
             // let user know that tournament is finished
-            Game.emitPlayerEvent(user.id, Events.RaceFinished, this.id);
+            Game.emitPlayerEvent(user.id, Events.RaceFinished, { race: this.id });
         }
 
         const finalDuration = this.finalDuration;

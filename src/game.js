@@ -220,10 +220,11 @@ class Game extends EventEmitter {
     }
 
     getPlayerControllerById(userId) {
-        return this._playersById[userId];
+        return this._playersById[userId.toString()];
     }
 
     emitPlayerEvent(userId, event, args) {
+        userId = userId.toString();
         this.emit(userId, event, args);
     }
 

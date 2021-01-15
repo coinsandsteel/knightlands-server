@@ -1,4 +1,4 @@
-import { Collection } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 import { Lock } from "../utils/lock";
 import { IRankingTypeHandler } from "./IRankingTypeHandler";
 
@@ -27,10 +27,9 @@ export class Ranking implements IRankingTypeHandler {
     private _typeOptions: RankingOptions;
     private _pageSize: number;
     private _collection: Collection;
-    private _rankingTable: RankingTable;
     private _lock: Lock;
     private _id: string;
-    private _participantsCache: { [key: string]: boolean };
+    private _participantScores: { [key: string]: number };
 
     constructor(collection: Collection, tableId: string, state: RankingState) {
         this._lock = new Lock();
@@ -39,14 +38,16 @@ export class Ranking implements IRankingTypeHandler {
         this._typeOptions = state.typeOptions;
         this._pageSize = 20;
         this._collection = collection;
-        this._participantsCache = {};
+        this._participantScores = {};
     }
 
     async init() {
-        let table = await this._getRankingTable();
-        for (const record of table.records) {
-            this._participantsCache[record.id] = true;
+        let records = await this._getRanking(0, Number.MAX_SAFE_INTEGER, true);
+        for (const record of records) {
+            this._participantScores[record.id] = record.score;
         }
+
+        console.log(records)
     }
 
     async updateRank(id: string, options: RankingOptions, value: number) {
@@ -74,8 +75,7 @@ export class Ranking implements IRankingTypeHandler {
                     $inc: { "records.$.score": value }
                 }
             );
-
-            this._rankingTable = null;
+            this._participantScores[id] += value;
         } finally {
             this._lock.release(this._id);
         }
@@ -89,8 +89,7 @@ export class Ranking implements IRankingTypeHandler {
             }
         );
 
-        this._rankingTable = null;
-        delete this._participantsCache[id];
+        delete this._participantScores[id];
     }
 
     async addRank(id: string) {
@@ -106,67 +105,83 @@ export class Ranking implements IRankingTypeHandler {
             },
             { upsert: true });
 
-        this._rankingTable = null;
-        this._participantsCache[id] = true;
+        this._participantScores[id] = 0;
     }
 
     hasParticipant(id: string) {
-        return this._participantsCache[id];
+        const score = this._participantScores[id];
+        return score !== undefined && score !== null;
     }
 
     totalParticipants() {
-        return Object.keys(this._participantsCache).length;
+        return Object.keys(this._participantScores).length;
     }
 
     async getRankings(page: number) {
-        const table = await this._getRankingTable();
-        const rangeEnd = page * this._pageSize + this._pageSize;
+        const records = await this._getRanking(page, this._pageSize);
         return {
-            records: table.records.slice(page * this._pageSize, rangeEnd),
-            finished: table.records.length <= rangeEnd
+            records,
+            finished: records.length <= this._pageSize
         };
     }
 
+    getParticipantScore(id: string) {
+        return this._participantScores[id];
+    }
+
     async getParticipant(id: string) {
-        return await this._collection.findOne({ tableId: this._id, "records.id": id });
+        return;
     }
 
     async getParticipantRank(id: string) {
-        let participants = await this._getSearchTable();
-        let rank = participants.findIndex(x => x.id == id);
-        if (rank != -1) {
-            return { ...participants[rank], rank: rank + 1 };
+        const participant = await this._collection.findOne({ tableId: this._id }, { $projection: { records: { $elemMatch: { id } } } });
+        const match = await this._collection.aggregate([
+            { $match: { tableId: this._id } },
+            { $unwind: "$records" },
+            { $match: { "records.score": { $gte: this.getParticipantScore(id) } } },
+            { $count: "total" }
+        ]).toArray();
+
+        if (match.length == 0) {
+            return null;
         }
 
-        return null;
+        return { ...participant.records[0], rank: match[0].total };
     }
 
     async getParticipants() {
-        let table = await this._getRankingTable();
-        return table.records;
+        let table = await this._collection.findOne({ _id: this._id });
+        return table ? table.records : [];
     }
 
-    async _getSearchTable() {
-        await this._getRankingTable();
-        return this._rankingTable.records;
-    }
-
-    private async _getRankingTable() {
-        if (!this._rankingTable) {
-            await this._lock.acquire(this._id);
-
-            try {
-                if (!this._rankingTable) {
-                    const table = await this._collection.findOne({ "tableId": this._id });
-                    this._rankingTable = table || { records: [] };
-                    this._rankingTable.records.sort((x, y) => {
-                        return y.score - x.score;
-                    });
+    private async _getRanking(page: number, limit: number, keepId = false) {
+        const pipeline: any[] = [
+            { $match: { tableId: this._id } },
+            { $unwind: "$records" },
+            { $skip: page * this._pageSize },
+            { $limit: limit },
+            { $lookup: { from: "users", localField: "records.id", foreignField: "_id", as: "user" } },
+            // { $sort: { "$records.score": -1 } },
+            {
+                $project: {
+                    score: "$records.score",
+                    id: "$records.id",
+                    name: {
+                        $ifNull: [{ $arrayElemAt: ["$user.character.nickname", 0] }, ""]
+                    }
                 }
-            } finally {
-                this._lock.release(this._id);
+            },
+            {
+                $project: { _id: 0 }
             }
+        ];
+
+        if (!keepId) {
+            pipeline.push({
+                $project: { id: 0 }
+            });
         }
-        return this._rankingTable;
+
+        return this._collection.aggregate(pipeline).toArray();
     }
 }
