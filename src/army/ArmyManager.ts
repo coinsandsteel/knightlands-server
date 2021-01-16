@@ -197,6 +197,7 @@ export class ArmyManager {
         }
 
         const user = await Game.getUser(userId);
+        let lastSummon = armyProfile.lastSummon;
 
         if (isNumber(iapIndex)) {
             let iapMeta = summonMeta.iaps[iapIndex];
@@ -212,6 +213,7 @@ export class ArmyManager {
             if (timeUntilNextFreeOpening > resetCycle) {
                 // free summon
                 count = 1;
+                lastSummon[summonType] = Game.nowSec;
             } else {
                 // check if user has enough tickets
                 const inventory = await Game.loadInventory(userId);
@@ -236,8 +238,6 @@ export class ArmyManager {
         }
 
         // add to user's army
-        let lastSummon = armyProfile.lastSummon;
-        lastSummon[summonType] = Game.nowSec;
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
 
         this._units.resetCache(userId);
