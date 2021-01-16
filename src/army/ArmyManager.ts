@@ -294,29 +294,35 @@ export class ArmyManager {
         return unit;
     }
 
-    async equipItem(userId: string, unitId: number, itemId: number) {
+    async equipItem(userId: string, unitId: number, itemIds: number[]) {
         const unitRecord = await this._units.getUserUnit(userId, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
 
         const inventory = await Game.loadInventory(userId);
-        const item = inventory.getItemById(itemId);
-        if (!item) {
-            throw Errors.NoItem;
-        }
-
-        const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
-        if (!itemTemplate) {
-            throw Errors.NoTemplate;
-        }
-
-        if (itemTemplate.type != ItemType.Equipment) {
-            throw Errors.NotEquipment;
-        }
-
+        const length = itemIds.length;
         const unit = unitRecord[unitId];
-        await inventory.equipItem(item, unit.items, unit.id);
+
+        for (let i = 0; i < length; ++i) {
+            const itemId = itemIds[i];
+            const item = inventory.getItemById(itemId);
+            if (!item) {
+                throw Errors.NoItem;
+            }
+
+            const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
+            if (!itemTemplate) {
+                throw Errors.NoTemplate;
+            }
+
+            if (itemTemplate.type != ItemType.Equipment) {
+                throw Errors.NotEquipment;
+            }
+
+            await inventory.equipItem(item, unit.items, unit.id);
+        }
+
         await this._units.onUnitUpdated(userId, unit);
     }
 

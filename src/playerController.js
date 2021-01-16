@@ -1442,7 +1442,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _unitEquipItem(user, data)  {
-        return Game.armyManager.equipItem(user.address, data.unitId, data.itemId);
+        return Game.armyManager.equipItem(user.address, data.unitId, data.itemIds);
     }
 
     async _unitUnequipItem(user, data) {

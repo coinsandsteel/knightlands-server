@@ -1422,7 +1422,18 @@ class User {
             throw Errors.UnknownClass;
         }
 
+        if (this._data.classInited) {
+            const meta = await this._db.collection(Collections.Meta).findOne({_id: "meta"});
+            // pay the price
+            if (this.hardCurrency < meta.classPrice) {
+                throw Errors.NotEnoughCurrency;
+            }
+            
+            await this.addHardCurrency(-meta.classPrice);
+        }
+
         this._data.classInited = true;
+        this._data.character.class = className;
 
         // modify regen timers
         this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen;
