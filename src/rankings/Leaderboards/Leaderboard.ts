@@ -71,6 +71,7 @@ export class Leaderboard implements IRankingTypeHandler {
             {
                 $project: {
                     score: 1,
+                    id: 1,
                     name: {
                         $ifNull: [{ $arrayElemAt: ["$user.character.nickname", 0] }, ""]
                     }

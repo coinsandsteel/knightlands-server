@@ -11,7 +11,7 @@ import { DividendsRegistry } from "./dividends/DividendsRegistry";
 import { Season } from './seasons/Season';
 import { Lock } from './utils/lock';
 import { ObjectId } from "mongodb";
-import { Inventory } from "./inventory";
+import Inventory from "./inventory";
 
 class Game extends EventEmitter {
     constructor() {
@@ -152,7 +152,7 @@ class Game extends EventEmitter {
 
         return {
             user,
-            items
+            items: items[0]
         };
     }
 

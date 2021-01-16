@@ -103,6 +103,11 @@ class Inventory {
                         }
                     }
                 }
+            },
+            {
+                $project: {
+                    _id: 0
+                }
             }
         ],
             {
