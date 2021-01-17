@@ -128,7 +128,7 @@ class Trials {
             throw Errors.NotEnoughCurrency;
         }
 
-        await this._user.addHardCurrency(iapMeta.price);
+        await this._user.addHardCurrency(-iapMeta.price);
         this._user.grantTrialAttempts(trialType, iapMeta.attempts);
     }
 
