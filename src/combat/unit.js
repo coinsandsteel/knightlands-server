@@ -53,7 +53,7 @@ class Unit {
     }
 
     setStat(stat, value) {
-        this._stats[stat] = value;
+        this._stats[stat] = Math.min(value, this._maxStats[stat]);
     }
 
     isCritical() {

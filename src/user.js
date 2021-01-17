@@ -217,12 +217,19 @@ class User {
     }
 
     getCombatUnit(config) {
-        let stats = this.maxStats;
+        let stats = { ...this.maxStats };
         if (config && config.raid) {
             this._buffsResolver.calculate(Game.now, this.rawStats, this._data.character.buffs, config.raid);
             stats = this._buffsResolver.finalStats;
         }
-        return new PlayerUnit(this, stats);
+
+        const maxStats = { ...stats };
+
+        stats[CharacterStat.Energy] = this.getTimerValue(CharacterStats.Energy);
+        stats[CharacterStat.Stamina] = this.getTimerValue(CharacterStats.Stamina);
+        stats[CharacterStat.Health] = this.getTimerValue(CharacterStats.Health);
+
+        return new PlayerUnit(this, stats, maxStats);
     }
 
     async addSoftCurrency(value, ignorePassiveBonuses = false) {
@@ -1428,7 +1435,7 @@ class User {
             if (this.hardCurrency < meta.classPrice) {
                 throw Errors.NotEnoughCurrency;
             }
-            
+
             await this.addHardCurrency(-meta.classPrice);
         }
 

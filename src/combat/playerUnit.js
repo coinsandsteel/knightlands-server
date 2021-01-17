@@ -2,13 +2,13 @@ const Unit = require("./unit");
 import CharacterStats from "../knightlands-shared/character_stat";
 
 class PlayerUnit extends Unit {
-    constructor(user, stats) {
+    constructor(user, stats, maxStats) {
         let currentStats = {
             ...stats
         };
         currentStats.health = user.getTimerValue(CharacterStats.Health);
 
-        super(currentStats, stats);
+        super(currentStats, maxStats);
 
         this._user = user;
     }
