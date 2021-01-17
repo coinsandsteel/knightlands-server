@@ -67,11 +67,11 @@ export class GoldMines {
     async upgradeStorage() {
         const meta = await this.getMeta();
 
-        if (meta.storage.length <= this.data.storage.level + 1) {
+        if (meta.storage.length <= this.data.storage.level) {
             throw Errors.GoldMineStorageMaxLevel;
         }
 
-        const price = meta.storage[this.data.storage.level + 1].price;
+        const price = meta.storage[this.data.storage.level].price;
         if (this.user.softCurrency < price) {
             throw Errors.NotEnoughSoft;
         }
