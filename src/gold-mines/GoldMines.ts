@@ -37,11 +37,11 @@ export class GoldMines {
         const mine = this.checkAndGetMine(mineIndex);
         const meta = await this.getMeta();
 
-        if (meta.mines.length <= mine.level + 1) {
+        if (meta.mines.length <= mine.level) {
             throw Errors.GoldMineMaxLevel;
         }
 
-        let price = meta.mines[mine.level + 1].price;
+        let price = meta.mines[mine.level].price;
 
         // get price discount
         const discountItem = await this.user.inventory.getItemByTemplate(meta.priceCharm);
