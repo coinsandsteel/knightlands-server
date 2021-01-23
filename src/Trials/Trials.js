@@ -281,7 +281,6 @@ class Trials {
 
                 // if first time clear - grant card leveling points
                 if (!stageState.firstTimeCleared) {
-                    stageState.firstTimeCleared = true;
                     // TODO move to database?
                     this._cards.addPoints(1);
                 }
