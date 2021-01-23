@@ -488,7 +488,7 @@ class Trials {
         for (const stageId in trialMeta.stages) {
             const stageState = trialState.stages[stageId];
             
-            if (!stageState || !stageState.firstTimeCleared || !stageState.cleared) {
+            if (!stageState || (!stageState.firstTimeCleared && !stageState.cleared)) {
                 stagesCompleted = false;
                 break;
             }
