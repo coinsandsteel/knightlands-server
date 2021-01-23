@@ -58,47 +58,47 @@ class DailyQuests {
     }
 
     async onFreeRaidFinished() {
-        this._advanceTask(DailyQuestType.DailyFreeRaid, 1);
+        await this._advanceTask(DailyQuestType.DailyFreeRaid, 1);
     }
 
     async onPaidRaidJoin() {
-        this._advanceTask(DailyQuestType.DailyPaidRaid, 1);
+        await this._advanceTask(DailyQuestType.DailyPaidRaid, 1);
     }
 
     async onItemDisenchant(count = 1) {
-        this._advanceTask(DailyQuestType.DailyDisenchant, count);
+        await this._advanceTask(DailyQuestType.DailyDisenchant, count);
     }
 
     async onItemEnchanted(count = 1) {
-        this._advanceTask(DailyQuestType.DailyEnchantItem, count);
+        await this._advanceTask(DailyQuestType.DailyEnchantItem, count);
     }
 
     async onItemLeveled(count = 1) {
-        this._advanceTask(DailyQuestType.DailyLevelUpItem, count);
+        await this._advanceTask(DailyQuestType.DailyLevelUpItem, count);
     }
 
     async onBeastBoosted(count = 1) {
-        this._advanceTask(DailyQuestType.DailyBoostBeast, count);
+        await this._advanceTask(DailyQuestType.DailyBoostBeast, count);
     }
 
     async onGoldSpent(amount = 1) {
-        this._advanceTask(DailyQuestType.DailySpendGold, amount);
+        await this._advanceTask(DailyQuestType.DailySpendGold, amount);
     }
 
     async onArmourTrialsEngaged(count = 1) {
-        this._advanceTask(DailyQuestType.DailyArmourTrial, count);
+        await this._advanceTask(DailyQuestType.DailyArmourTrial, count);
     }
 
     async onWeaponTrialsEngaged(count = 1) {
-        this._advanceTask(DailyQuestType.DailyWeaponTrial, count);
+        await this._advanceTask(DailyQuestType.DailyWeaponTrial, count);
     }
 
     async onAccessoryTrialsEngaged(count = 1) {
-        this._advanceTask(DailyQuestType.DailyAccessoryTrial, count);
+        await this._advanceTask(DailyQuestType.DailyAccessoryTrial, count);
     }
 
     async onTowerComplete(count = 1) {
-        this._advanceTask(DailyQuestType.DailyTower, count);
+        await this._advanceTask(DailyQuestType.DailyTower, count);
     }
 
     async onQuestEngaged(times = 1) {
@@ -110,7 +110,7 @@ class DailyQuests {
     }
 
     async onAdventureStarted() {
-        this._advanceTask(DailyQuestType.DailyStartAdventure, 1);
+        await this._advanceTask(DailyQuestType.DailyStartAdventure, 1);
     }
 
     async claimRewards(taskType) {
@@ -180,7 +180,7 @@ class DailyQuests {
         this._advanceTask(DailyQuestType.DailyAllTasks3, 1, false);
     }
 
-    _advanceTask(taskType, count, countTowardsAll = true) {
+    async _advanceTask(taskType, count, countTowardsAll = true) {
         // do not count towards task that wasn't claim yet
         if (this._data.completedTasks[taskType]) {
             return;
@@ -194,6 +194,8 @@ class DailyQuests {
 
         currentProgress += count;
 
+        this._data.taskProgress[taskType] = currentProgress;
+
         if (currentProgress >= maxProgress) {
             currentProgress = maxProgress;
 
@@ -203,14 +205,17 @@ class DailyQuests {
 
             if (countTowardsAll) {
                 this._countTowardsAllTasks();
-            }
 
-            Game.emitPlayerEvent(this._user.address, Events.DailyTaskComplete, {
-                type: taskType
-            });
+                Game.emitPlayerEvent(this._user.address, Events.DailyTaskComplete, {
+                    type: taskType
+                });
+            }
         }
 
-        this._data.taskProgress[taskType] = currentProgress;
+        if (countTowardsAll) {
+            // force commit and send changes
+            await this._user.autoCommitChanges(() => { }, { dailyQuests: 1 });
+        }
     }
 }
 

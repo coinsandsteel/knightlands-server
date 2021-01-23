@@ -336,9 +336,7 @@ class RaidManager {
 
         if (raid.free) {
             const user = await Game.getUserById(raid.summoner);
-            await user.autoCommitChanges(() => {
-                user.dailyQuests.onFreeRaidFinished();
-            });
+            await user.dailyQuests.onFreeRaidFinished();
         } else {
             dktFactor = await this._getNextDktFactor(raid.templateId)
         }

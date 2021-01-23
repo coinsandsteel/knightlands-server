@@ -1051,9 +1051,27 @@ class User {
         };
     }
 
-    async autoCommitChanges(changeCallback) {
+    async autoCommitChanges(changeCallback, filterResponse) {
         let response = await changeCallback(this);
-        await this.commitChanges();
+        let commitResponse = await this.commitChanges();
+
+        if (filterResponse) {
+            const newResponse = {
+                changes: {},
+                removals: {}
+            };
+
+            for (const field in filterResponse) {
+                if (filterResponse[field]) {
+                    newResponse.changes[field] = commitResponse.changes[field];
+                }
+            }
+
+            commitResponse = newResponse;
+        }
+
+        Game.emitPlayerEvent(this.id, Events.CommitChanges, commitResponse);
+
         return response;
     }
 

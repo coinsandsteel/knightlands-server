@@ -114,6 +114,10 @@ class Trials {
         }
 
         this._cards = new TrialCards(this._user, this._state.cards, this._generalTrialsMeta, cardsRollMeta);
+
+        await this._tryAdvanceToNextTrial(TrialType.Armour);
+        await this._tryAdvanceToNextTrial(TrialType.Weapon);
+        await this._tryAdvanceToNextTrial(TrialType.Accessory);
     }
 
     async purchaseAttempts(trialType, iapIndex) {
@@ -259,7 +263,9 @@ class Trials {
             await this._user.addSoftCurrency(fightMeta.soft);
             await this._user.addExperience(fightMeta.exp);
 
-            // check if all fights are finished
+            this._cards.mana += this._generalTrialsMeta.manaPerFight;
+
+            // check if all fights are finished within current stage
             let allFinished = true;
             for (let index = 0; index < stageMeta.fights.length; index++) {
                 const fight = stageMeta.fights[index];
@@ -269,18 +275,19 @@ class Trials {
                 }
             }
 
-            this._cards.mana += this._generalTrialsMeta.manaPerFight;
-
             if (allFinished) {
                 stageState.cleared = true;
                 stageState.finishedFights = {};
 
                 // if first time clear - grant card leveling points
                 if (!stageState.firstTimeCleared) {
+                    stageState.firstTimeCleared = true;
                     // TODO move to database?
                     this._cards.addPoints(1);
                 }
             }
+
+            await this._tryAdvanceToNextTrial(trialType);
         }
 
         delete this._getTrialTypeState(trialType).currentFight;
@@ -446,6 +453,50 @@ class Trials {
             trialState.freeAttempts = count;
         } else {
             trialState.attempts += count;
+        }
+    }
+
+    _tryAdvanceToNextTrial(trialType) {
+        const state = this._getTrialTypeState(trialType);
+
+        // find last trial id cleared
+        const unlockOrder = this._trialsMeta[trialType].trialUnlockOrder;
+        let trialId = -1;
+        let nextTrialId = -1;
+        {
+            let i = 0;
+            for (; i < unlockOrder.length; ++i) {
+                const trialOrderId = unlockOrder[i];
+                if (!state.unlockedTrials[trialOrderId]) {
+                    nextTrialId = trialOrderId;
+                    break;
+                }
+
+                trialId = trialOrderId;
+            }
+        }
+
+        if (nextTrialId == -1) {
+            // every trial is unlocked
+            return;
+        }
+
+        const trialsMeta = this._getTrialsMeta(trialType);
+        const trialMeta = trialsMeta.trials[trialId];
+        const trialState = this._getTrialState(trialType, trialId);
+
+        let stagesCompleted = true;
+        for (const stageId in trialMeta.stages) {
+            const stageState = trialState.stages[stageId];
+            
+            if (!stageState || !stageState.firstTimeCleared || !stageState.cleared) {
+                stagesCompleted = false;
+                break;
+            }
+        }
+
+        if (stagesCompleted) {
+            state.unlockedTrials[nextTrialId] = true;
         }
     }
 

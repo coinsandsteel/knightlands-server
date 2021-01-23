@@ -1395,7 +1395,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getFinishedRaces(user, data) {
-        return Game.rankings.races.getFinishedRaces(user.address);
+        return Game.rankings.races.getFinishedRaces(user.id);
     }
 
     async _getRaceRewards(user, data) {
