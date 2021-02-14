@@ -202,6 +202,12 @@ class User {
         this._data.character.nickname = value;
     }
 
+    async getMeta() {
+        if (!this._meta) {
+
+        }
+    }
+
     async getWeaponCombatData() {
         let weapon = this.equipment[EquipmentSlots.MainHand];
         if (!weapon) {
@@ -318,6 +324,8 @@ class User {
                 }
             }
 
+            await this.airDropItemsIfAny();
+
             this._recalculateStats = true;
             this._restoreTimers();
         }
@@ -411,7 +419,7 @@ class User {
     async getTimerRefillCost(stat) {
         if (stat == CharacterStats.Health) {
             const price = Math.ceil(
-                Math.log(this._data.character.level) *
+                Math.log(this.level) *
                 (this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 10 + 10
             );
 
@@ -551,6 +559,8 @@ class User {
         let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
 
+        await this.airDropItemsIfAny();
+
         // calculate stats from items and stats from buffs
         await this._calculateFinalStats(true);
         await this.commitChanges();
@@ -657,7 +667,7 @@ class User {
             let value = this._data.character.attributes[i];
             const finalValue = this._data.character.attributes[i] + stats[i];
 
-            if (finalValue > TrainingCamp.getMaxStat(this._data.character.level)) {
+            if (finalValue > TrainingCamp.getMaxStat(this.level)) {
                 throw "stat is over max level";
             }
 
@@ -892,6 +902,10 @@ class User {
         }
 
         const actionData = template.action;
+        if (actionData.minLevel > this.level) {
+            throw Errors.NotEnoughLevel;
+        }
+
         let itemsRequired = count;
 
         if (actionData.required > 0) {
@@ -1213,6 +1227,10 @@ class User {
             };
         }
 
+        if (!user.airdrops) {
+            user.airdrops = {};
+        }
+
         return user;
     }
 
@@ -1433,7 +1451,7 @@ class User {
         // find suitable class
         let selection;
         for (let i = 0; i < selections.length; ++i) {
-            if (selections[i].minLevel <= this._data.character.level) {
+            if (selections[i].minLevel <= this.level) {
                 selection = selections[i];
             }
         }
@@ -1448,13 +1466,12 @@ class User {
         }
 
         if (this._data.classInited) {
-            const meta = await this._db.collection(Collections.Meta).findOne({_id: "meta"});
             // pay the price
-            if (this.hardCurrency < meta.classPrice) {
+            if (this.hardCurrency < this._meta.classPrice) {
                 throw Errors.NotEnoughCurrency;
             }
 
-            await this.addHardCurrency(-meta.classPrice);
+            await this.addHardCurrency(-this._meta.classPrice);
         }
 
         this._data.classInited = true;
@@ -1798,6 +1815,24 @@ class User {
         // TODO keep presale DKT
         await this._inventory.modifyCurrency(CurrencyType.Dkt, -dkt);
         return dkt;
+    }
+
+    async airDropItemsIfAny() {
+        let i = 0;
+        const length = this._meta.airDrops.length;
+        for (; i < length; ++i) {
+            const airdrop = this._meta.airDrops[i];
+            if (this._data.airdrops[airdrop.id]) {
+                continue;
+            }
+
+            if (airdrop.level > this.level) {
+                continue;
+            }
+
+            await this._inventory.addItemTemplate(airdrop.item, airdrop.count);
+            this._data.airdrops[airdrop.id] = 1;
+        }
     }
 }
 

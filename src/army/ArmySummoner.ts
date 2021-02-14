@@ -27,11 +27,11 @@ export class ArmySummoner {
         this._units = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
     }
 
-    async summon(total: number, summonType: number) {
+    async summon(total: number, summonType: number, firstTime: boolean = false) {
         let count = total;
         let units: ArmyUnit[] = [];
         while (count-- > 0) {
-            units.push(this._summon(summonType));
+            units.push(this._summon(summonType, firstTime));
         }
 
         return units;
@@ -100,7 +100,7 @@ export class ArmySummoner {
         return null;
     }
 
-    private _summon(summonType: number) {
+    private _summon(summonType: number, firstTime: boolean = false) {
         let summonMeta = summonType == SummonType.Normal ? this._meta.normalSummon : this._meta.advancedSummon;
 
         let unit: ArmyUnit;
@@ -110,7 +110,9 @@ export class ArmySummoner {
         if (rolledRecordIndex >= 0) {
             let group = summonMeta.summonGroups[rolledRecordIndex];
             let typeRoll = Random.range(1, group.generalsWeight + group.troopsWeight, true);
-            let isTroop = typeRoll <= group.troopsWeight;
+
+            // first time roll force troop for tutorial to progress
+            let isTroop = firstTime || typeRoll <= group.troopsWeight;
 
             unit = this._generateUnit(group.stars, isTroop);
         }

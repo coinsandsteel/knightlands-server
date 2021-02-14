@@ -198,6 +198,11 @@ export class ArmyManager {
 
         const user = await Game.getUser(userId);
         let lastSummon = armyProfile.lastSummon;
+        let isFirstSummon = false;
+
+        if (!lastSummon[summonType]) {
+            isFirstSummon = true;
+        }
 
         if (isNumber(iapIndex)) {
             let iapMeta = summonMeta.iaps[iapIndex];
@@ -228,10 +233,8 @@ export class ArmyManager {
             }
         }
 
-        await user.dailyQuests.onUnitSummoned(count, summonType == SummonType.Advanced);
-
         let lastUnitId = armyProfile.lastUnitId;
-        const newUnits = await this._summoner.summon(count, summonType);
+        const newUnits = await this._summoner.summon(count, summonType, isFirstSummon);
         // assign ids
         for (const unit of newUnits) {
             unit.id = ++lastUnitId;
@@ -239,6 +242,7 @@ export class ArmyManager {
 
         // add to user's army
         await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
+        await user.dailyQuests.onUnitSummoned(count, summonType == SummonType.Advanced);
 
         this._units.resetCache(userId);
         return newUnits;
