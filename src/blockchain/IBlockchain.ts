@@ -9,6 +9,6 @@ export interface IBlockchain extends EventEmitter {
     scanEvents(): Promise<void>;
     start(): Promise<void>;
     isAddress(addr: string): boolean;
-    getBigIntDivTokenAmount(amount: number): string;
+    getBigIntDivTokenAmount(amount: number): bigint;
     getPaymentNonce(wallet: string): Promise<number>;
 }

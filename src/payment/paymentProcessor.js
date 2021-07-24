@@ -301,16 +301,17 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async _handleBlockchainPayment(id, paymentRecipe) {
+        console.log('handle payment', id, paymentRecipe)
         // first update status in database
         try {
-            let requestNonce = new ObjectId(paymentRecipe.nonce);
+            let requestNonce = new ObjectId(paymentRecipe.paymentId);
             let request = await this._db.collection(Collections.PaymentRequests).findOne({
                 _id: requestNonce
             });
 
             if (!request) {
-                await this._logError(paymentRecipe.nonce, PaymentErrorCodes.UknownPaymentId, {
-                    paymentId: paymentRecipe.nonce,
+                await this._logError(paymentRecipe.paymentId, PaymentErrorCodes.UknownPaymentId, {
+                    paymentId: paymentRecipe.paymentId,
                     paymentRecipe: paymentRecipe
                 });
                 return;
@@ -324,8 +325,8 @@ class PaymentProcessor extends EventEmitter {
                 _id: requestNonce
             }, {
                 $set: {
-                    tx: request.transactionId,
-                    timestamp: paymentRecipe.timestamp,
+                    transactionHash: paymentRecipe.transactionHash,
+                    block: paymentRecipe.blockNumber,
                     status: PaymentStatus.Success
                 }
             });

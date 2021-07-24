@@ -23,7 +23,7 @@ const {
 import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
-import { exist } from "./validation";
+import { exist, isNumber } from "./validation";
 
 const TowerFloorPageSize = 20;
 
@@ -59,7 +59,7 @@ class PlayerController extends IPaymentListener {
 
         // payed functions 
         this._socket.on(Operations.ChangeNickname, this._gameHandler(this._changeNickname.bind(this)));
-        this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
+        // this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
 
         // raids
@@ -125,7 +125,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.CancelTowerFloor, this._gameHandler(this._cancelTowerFloor.bind(this)));
         this._socket.on(Operations.FetchChallengedTowerFloor, this._gameHandler(this._fetchChallengedTowerFloor.bind(this)));
         this._socket.on(Operations.PurchaseTowerAttempts, this._gameHandler(this._purchaseTowerAttempts.bind(this)));
-        this._socket.on(Operations.FetchTowerAttemptsStatus, this._gameHandler(this._fetchTowerAttemptsStatus.bind(this)));
+        // this._socket.on(Operations.FetchTowerAttemptsStatus, this._gameHandler(this._fetchTowerAttemptsStatus.bind(this)));
 
         // Trials
         this._socket.on(Operations.FetchTrialState, this._gameHandler(this._fetchTrialState.bind(this)));
@@ -158,7 +158,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
         this._socket.on(Operations.DivsMineUpgrade, this._gameHandler(this._upgradeDktMine.bind(this)));
         this._socket.on(Operations.DivsDropUpgrade, this._gameHandler(this._upgradeDktDropRate.bind(this)));
-        this._socket.on(Operations.DivsPurchaseShop, this._gameHandler(this._purchaseDktShopItem.bind(this)));
+        this._socket.on(Operations.WithdrawTokens, this._gameHandler(this._withdrawTokens.bind(this)));
+        this._socket.on(Operations.GetWithdrawTokensStatus, this._gameHandler(this._getWithdrawTokensStatus.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -196,6 +197,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.UnitAbilityTransfer, this._gameHandler(this._unitTransferAbility.bind(this)));
         this._socket.on(Operations.UnitBanishment, this._gameHandler(this._unitBanish.bind(this)));
         this._socket.on(Operations.UnitReserve, this._gameHandler(this._unitReserve.bind(this)));
+        this._socket.on(Operations.ExpandArmyInventory, this._gameHandler(this._expandArmyInventory.bind(this)));
 
         // Gold mines
         this._socket.on(Operations.UpgradeMine, this._gameHandler(this._upgradeMine.bind(this)));
@@ -1217,12 +1219,28 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseTowerAttempts(user, data) {
-        return Game.userPremiumService.requestTowerAttemptsPurchase(this.address, data.iapIndex * 1);
+        if (!isNumber(data.index)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const towerMiscMeta = await this._db.collection(Collections.TowerMeta).findOne({ _id: "misc" });
+        if (towerMiscMeta.iaps.length <= data.index) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const iap = towerMiscMeta.iaps[data.index];
+        if (user.hardCurrency < iap.price) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        // add tickets
+        await user.inventory.addItemTemplate(towerMiscMeta.ticketItem, iap.attempts);
+        await user.addHardCurrency(-iap.price);
     }
 
-    async _fetchTowerAttemptsStatus(user) {
-        return Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
-    }
+    // async _fetchTowerAttemptsStatus(user) {
+    //     return Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
+    // }
 
     // Trials
     async _fetchTrialState(user, data) {
@@ -1310,7 +1328,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _claimDividends(user, data) {
-        return user.dividends.claimDividends(data.blockchainId);
+        return user.dividends.claimDividends(data.to, data.blockchainId);
     }
 
     async _claimMinedDkt(user) {
@@ -1327,6 +1345,14 @@ class PlayerController extends IPaymentListener {
 
     async _purchaseDktShopItem(user, data) {
         return user.dividends.purchase(+data.itemId);
+    }
+
+    async _withdrawTokens(user, data) {
+        return user.dividends.withdrawTokens(data.to, data.type, data.amount);
+    }
+
+    async _getWithdrawTokensStatus(user, data) {
+        return Game.dividends.getPendingTokenWithdrawals(user.address);
     }
 
     // Tournaments
@@ -1430,6 +1456,10 @@ class PlayerController extends IPaymentListener {
 
     async _summonArmyUnit(user, data) {
         const { iap, count, summonType } = data;
+        if (!isNumber(count)) {
+            throw Errors.IncorrectArguments;
+        }
+        
         return Game.armyManager.summontUnits(user.address, count, summonType, iap);
     }
 
@@ -1459,6 +1489,14 @@ class PlayerController extends IPaymentListener {
 
     async _unitReserve(user, data) {
         return Game.armyManager.sendToReserve(user.address, data.units);
+    }
+
+    async _expandArmyInventory(user, data) {
+        if (data.byItem) {
+            return Game.armyManager.expandSlots(user.address)
+        } else {
+            return Game.armyManager.buySlotsExpansion(user.address)
+        }
     }
 
     async _unitTransferAbility(user, data) {

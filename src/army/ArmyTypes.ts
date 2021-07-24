@@ -127,6 +127,14 @@ interface RarityDamageBonus {
     bonus: number;
 }
 
+export interface ArmyExpansion {
+    defaultSlots: number;
+    maxSlots: number;
+    expansionPrice: number;
+    expansionSize: number;
+    expansionItem: number;
+}
+
 export interface ArmyMeta {
     soulsItem: number;
     soulsFromBanishment: number[];
@@ -135,6 +143,7 @@ export interface ArmyMeta {
     damageBonusPerRarity: RarityDamageBonus[];
     damageBonusPerEnchantLevel: number[];
     damageBonusPerLevel: number[];
+    armyExpansion: ArmyExpansion;
 }
 
 export interface ArmyUnit {

@@ -74,7 +74,9 @@ module.exports = {
         Armies: "armies",
         Seasons: "seasons",
         SeasonsSchedule: "seasons_schedule",
-        DktMining: "dkt_mining"
+        DktMining: "dkt_mining",
+        TokenWithdrawals: "token_withdrawals",
+        TokenWithdrawalRequests: "token_withdrawal_requests",
     },
 
 

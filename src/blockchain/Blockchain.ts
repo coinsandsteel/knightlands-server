@@ -32,9 +32,13 @@ export class Blockchain {
         return "__divs_withdrawal__";
     }
 
+    public static get TokenWithdrawal() {
+        return "__token_withdrawal__";
+    }
+
     constructor(db: Db) {
         this._blockchains = {};
-        this._blockchains[Blockchains.Tron] = createBlockchain(Blockchains.Tron, db);
+        this._blockchains[Blockchains.Ethereum] = createBlockchain(Blockchains.Ethereum, db);
     }
 
     async start() {

@@ -73,7 +73,8 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
     }
 
     getBigIntDivTokenAmount(amount) {
-        return Math.floor(amount * Math.pow(10, 6)).toString();
+        // with 6 decimals and known inflation rate, this is safe conversion
+        return BigInt(Math.floor(amount * Math.pow(10, 6)).toString());
     }
 
     getNumberDivTokenAmount(bigInt) {

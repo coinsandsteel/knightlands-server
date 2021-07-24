@@ -95,11 +95,15 @@ export class Dividends {
         return 0;
     }
 
-    async claimDividends(blockchainId: string) {
+    async withdrawTokens(to: string, currencyType: string, blockchainId: string, amount: number) {
+        return Game.dividends.initiateTokenWithdrawal(this._user.address, to, currencyType, blockchainId, amount);
+    }
+
+    async claimDividends(to: string, blockchainId: string) {
         let args = null
 
         if (this._data.payouts[blockchainId]) {
-            args = await Game.dividends.initiateWithdrawal(this._user.address, blockchainId, this._data.payouts[blockchainId]);
+            args = await Game.dividends.initiateDividendsWithdrawal(this._user.address, to, blockchainId, this._data.payouts[blockchainId]);
             this._data.payouts[blockchainId] = "0";
         }
 

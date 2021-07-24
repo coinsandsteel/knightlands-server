@@ -11,7 +11,6 @@ import { ArmyLegions } from "./ArmyLegions";
 import { ArmyUnits } from "./ArmyUnits";
 import { ArmyCombatLegion } from "./ArmyCombatLegion";
 import Events from "../knightlands-shared/events";
-import ArmySummonType from "../knightlands-shared/army_summon_type";
 import SummonType from "../knightlands-shared/army_summon_type";
 import ItemType from "../knightlands-shared/item_type";
 import Random from "../random";
@@ -175,7 +174,10 @@ export class ArmyManager {
     }
 
     async summonRandomUnit(userId: string, count: number, stars: number, summonType: number) {
-        let armyProfile = await this._loadArmyProfile(userId);
+        const armyProfile = await this._loadArmyProfile(userId);
+
+        await this._checkFreeSlots(armyProfile, 1);
+
         let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summonWithStars(count, stars, summonType);
         // assign ids
@@ -183,13 +185,15 @@ export class ArmyManager {
             unit.id = ++lastUnitId;
         }
 
-        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastUnitId } }, { upsert: true });
+        await this._units.addUnits(userId, newUnits, lastUnitId);
 
         return newUnits;
     }
 
     async summontUnits(userId: string, count: number, summonType: number, iapIndex: number) {
         let armyProfile = await this._loadArmyProfile(userId);
+        await this._checkFreeSlots(armyProfile, count);
+
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
         if (!summonMeta) {
@@ -241,7 +245,7 @@ export class ArmyManager {
         }
 
         // add to user's army
-        await this._armiesCollection.updateOne({ _id: userId }, { $push: { units: { $each: newUnits } }, $set: { lastSummon, lastUnitId } }, { upsert: true });
+        await this._units.addUnits(userId, newUnits, lastUnitId, lastSummon);
         await user.dailyQuests.onUnitSummoned(count, summonType == SummonType.Advanced);
 
         this._units.resetCache(userId);
@@ -559,6 +563,51 @@ export class ArmyManager {
         return combatLegion;
     }
 
+    async expandSlots(userId: string) {
+        const inventory = await Game.loadInventory(userId);
+
+        if (!inventory.hasItems(this._meta.armyExpansion.expansionItem, 1, true)) {
+            throw Errors.NoItem;
+        }
+
+        await this._expandSlots(userId, this._meta.armyExpansion.expansionSize);
+        await inventory.autoCommitChanges(inventory => {
+            inventory.removeItem(this._meta.armyExpansion.expansionItem, 1)
+        })
+    }
+
+    async buySlotsExpansion(userId: string) {
+        const user = await Game.getUser(userId);
+
+        if (user.hardCurrency < this._meta.armyExpansion.expansionPrice) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        await this._expandSlots(userId, this._meta.armyExpansion.expansionSize);
+        await user.addHardCurrency(-this._meta.armyExpansion.expansionPrice);
+    }
+
+    private async _checkFreeSlots(armyProfile: any, requiredSlots: number) {
+        if (armyProfile.maxSlots - armyProfile.occupiedSlots < requiredSlots) {
+            throw Errors.NotEnoughArmySlots;
+        }
+    }
+
+    private async _expandSlots(userId: string, count: number) {
+        const armyProfile = await this._loadArmy(userId, { "maxSlots": 1 })
+
+        if (armyProfile.maxSlots >= this._meta.armyExpansion.maxSlots) {
+            throw Errors.ArmyMaxSlots;
+        }
+
+        await this._armiesCollection.updateOne(
+            { _id: userId },
+            { $inc: { maxSlots: count } }
+        )
+
+        Game.emitPlayerEvent(userId, Events.ArmySlots, { maxSlots: armyProfile.maxSlots + count })
+    }
+
     private async _removeEquipmentFromUnits(userId: string, units: { [key: number]: ArmyUnit }) {
         const inventory = await Game.loadInventory(userId);
 
@@ -590,7 +639,9 @@ export class ArmyManager {
                 $setOnInsert: {
                     lastUnitId: 0,
                     lastSummon: {},
-                    legions: this._legions.createLegions()
+                    legions: this._legions.createLegions(),
+                    occupiedSlots: 0,
+                    maxSlots: this._meta.armyExpansion.defaultSlots
                 }
             },
             { projection: projection, upsert: true, returnOriginal: false }

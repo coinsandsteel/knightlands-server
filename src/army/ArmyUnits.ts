@@ -1,5 +1,5 @@
 import { Collections } from "../database";
-import { Db } from "mongodb";
+import { Db, Collection } from "mongodb";
 import { ArmyUnit, ArmyReserve } from "./ArmyTypes";
 import Game from "../game";
 import Events from "../knightlands-shared/events";
@@ -15,10 +15,12 @@ type CacheRecord = {
 export class ArmyUnits {
     private _db: Db;
     private _cache: { [key: string]: CacheRecord };
+    private _collection: Collection;
 
     constructor(db: Db) {
         this._db = db;
         this._cache = {};
+        this._collection = this._db.collection(Collections.Armies);
     }
 
     getReserveKey(unit: { template: number, promotions: number }) {
@@ -47,7 +49,7 @@ export class ArmyUnits {
     }
 
     async onUnitUpdated(userId: string, unit: ArmyUnit) {
-        await this._db.collection(Collections.Armies).updateOne(
+        await this._collection.updateOne(
             { _id: userId, "units.id": unit.id },
             { $set: { "units.$": unit } }
         );
@@ -56,10 +58,18 @@ export class ArmyUnits {
         this.resetCache(userId);
     }
 
+    async addUnits(userId: string, units: ArmyUnit[], lastUnitId: number, lastSummon: number|undefined = undefined) {
+        let $set:any = { lastUnitId }
+        if (lastSummon) {
+            $set.lastSummon = lastSummon;
+        }
+        await this._collection.updateOne({ "_id": userId }, { $push: { "units": { $each: units } }, $set, $inc: { "occupiedSlots": units.length } }, { upsert: true });
+    }
+
     async removeUnits(userId: string, ids: number[]) {
-        await this._db.collection(Collections.Armies).updateOne(
-            { _id: userId },
-            { $pull: { "units": { "id": { $in: ids } } } }
+        await this._collection.updateOne(
+            { "_id": userId },
+            { $pull: { "units": { "id": { $in: ids } } }, $inc: { "occupiedSlots": -ids.length } }
         );
         Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
         this.resetCache(userId);
@@ -70,7 +80,7 @@ export class ArmyUnits {
         for (let key in reserve) {
             setQuery[`reserve.${key}`] = reserve[key];
         }
-        await this._db.collection(Collections.Armies).updateOne(
+        await this._collection.updateOne(
             { _id: userId },
             { $set: setQuery }
         );
@@ -95,7 +105,7 @@ export class ArmyUnits {
     private async getCache(userId: string): Promise<CacheRecord> {
         if (!this._cache[userId]) {
             // build an index
-            let userRecord = await this._db.collection(Collections.Armies).findOne(
+            let userRecord = await this._collection.findOne(
                 { _id: userId }
             );
 
