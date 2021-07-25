@@ -54,6 +54,7 @@ class Game extends EventEmitter {
 
         await this._season.init();
         await this._dividends.init();
+        await this._season.checkSeason();
 
         this._lock = new Lock();
     }

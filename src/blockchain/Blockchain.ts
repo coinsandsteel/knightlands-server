@@ -8,9 +8,18 @@ export interface PurchaseData {
 }
 
 export interface DivsWithdrawalData {
-    user: string;
+    to: string;
     amount: string;
     withdrawalId: string;
+    transactionHash: string;
+}
+
+export interface TokenWithdrawalData {
+    to: string;
+    amount: string;
+    withdrawalId: string;
+    transactionHash: string;
+    token: string;
 }
 
 export class Blockchain {

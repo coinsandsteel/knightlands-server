@@ -1,8 +1,10 @@
 import Game from "../game";
 import CurrencyType from "../knightlands-shared/currency_type";
 import { DividendsData, DividendsMeta, PayoutsPerShare } from "./types";
+import { DividendsRegistry } from "./DividendsRegistry"
 import { Collections } from "../database";
 import errors from "../knightlands-shared/errors";
+import { isNumber } from "../validation";
 
 export class Dividends {
     private _data: DividendsData;
@@ -23,13 +25,26 @@ export class Dividends {
         }
     }
 
+    get currentStake() {
+        return this._data.stake;
+    }
+
     async tryCommitPayout() {
         if (this._data.lastPayout != Game.dividends.getCurrentPayout()) {
             // accumulate all payouts
             const payoutsPerShare = await Game.dividends.getPerShareRewards();
 
             for (const id in payoutsPerShare) {
-                this._data.payouts[id] = (payoutsPerShare[id] * BigInt(Math.floor(this._user.dkt * 10e8)) / BigInt(10e8)).toString();
+                if (payoutsPerShare[id] == BigInt(0)) {
+                    continue;
+                }
+
+                this._data.payouts[id] = (
+                    payoutsPerShare[id] *
+                    BigInt(Math.floor(this._user.stakedDkt * DividendsRegistry.DktDecimals)) /
+                    BigInt(DividendsRegistry.DktDecimals) /
+                    BigInt(DividendsRegistry.DivsPrecision)
+                ).toString();
             }
 
             this._data.lastPayout = Game.dividends.getCurrentPayout();
@@ -37,9 +52,24 @@ export class Dividends {
 
         if (this._data.season != Game.season.getSeason()) {
             this._data.season = Game.season.getSeason();
-            // unlock tokens
-            this._data.unlockedTokens += await this._user.unlockDkt();
+            await this._user.addDkt2(this._user.stakedDkt);
+            await this._user.addStakedDkt(-this._user.stakedDkt);
         }
+    }
+
+    async stake(amount: number) {
+        if (!isNumber(amount)) {
+            throw errors.IncorrectArguments;
+        }
+        amount = +amount;
+
+        if (this._user.hardCurrency < amount) {
+            throw errors.NotEnoughCurrency;
+        }
+
+        await this._user.addDkt(-amount);
+        await this._user.addStakedDkt(amount);
+        await Game.dividends.increaseTotalStake(amount);
     }
 
     async applyBonusDkt(value: number) {

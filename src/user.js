@@ -24,6 +24,7 @@ import { Dividends } from "./dividends/Dividends.new";
 import { DailyShop } from "./shop/DailyShop";
 import { isNumber } from "./validation";
 import { ObjectId } from "mongodb";
+import { DividendsRegistry } from "./dividends/DividendsRegistry";
 
 const {
     EquipmentSlots,
@@ -112,6 +113,14 @@ class User {
 
     get dkt() {
         return this._inventory.getCurrency(CurrencyType.Dkt);
+    }
+
+    get dkt2() {
+        return this._inventory.getCurrency(CurrencyType.Dkt2);
+    }
+
+    get stakedDkt() {
+        return this._inventory.getCurrency(CurrencyType.StakedDkt);
     }
 
     get address() {
@@ -254,7 +263,10 @@ class User {
     }
 
     async addHardCurrency(value) {
+        const order = Math.pow(10, 6);
+        value = Math.floor(value * order) / order;
         await this._inventory.modifyCurrency(CurrencyType.Hard, value);
+        return value;
     }
 
     async addDkt(value, includeDktPassive = false) {
@@ -267,7 +279,7 @@ class User {
             value *= (1 + bonuses.dkt / 100);
         }
 
-        value = Math.floor(value * 10e8) / 10e8;
+        value = Math.floor(value * DividendsRegistry.DktDecimals) / DividendsRegistry.DktDecimals;
 
         // if payout day is shifted, commit previous days balance
         await this.dividends.tryCommitPayout();
@@ -275,6 +287,22 @@ class User {
         await Game.rankings.updateRank(this.id, {
             type: RankingType.DktEarned
         }, value);
+    }
+
+    async addStakedDkt(value) {
+        await this.inventory.modifyCurrency(CurrencyType.StakedDkt, value);
+    }
+
+    async addDkt2(value, includeDktPassive = false) {
+        // if (includeDktPassive) {
+        //     value = await this.dividends.applyBonusDkt(value);
+
+        //     const bonuses = await this.getCardBonuses();
+        //     value *= (1 + bonuses.dkt / 100);
+        // }
+
+        // if payout day is shifted, commit previous days balance
+        await this.inventory.modifyCurrency(CurrencyType.Dkt2, value);
     }
 
     getChests() {
@@ -499,6 +527,10 @@ class User {
     }
 
     async load(id) {
+        if (this._address == undefined || this._address == null) {
+            return;
+        }
+
         const users = this._db.collection(Collections.Users);
 
         let userData = this._validateUser({
@@ -1808,13 +1840,6 @@ class User {
 
     grantTrialAttempts(trialType, count) {
         this._trials.addAttempts(trialType, count, false);
-    }
-
-    async unlockDkt() {
-        const dkt = this.dkt;
-        // TODO keep presale DKT
-        await this._inventory.modifyCurrency(CurrencyType.Dkt, -dkt);
-        return dkt;
     }
 
     async airDropItemsIfAny() {

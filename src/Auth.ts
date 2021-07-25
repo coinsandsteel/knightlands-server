@@ -1,5 +1,5 @@
 import { Magic } from "@magic-sdk/admin";
-const magic = new Magic("sk_test_2A5BB59B351FF7C4");
+const magic = new Magic("sk_live_EDED532890E6D1F4");
 
 export async function getUserMetadata(token: string) {
     return magic.users.getMetadataByToken(token);

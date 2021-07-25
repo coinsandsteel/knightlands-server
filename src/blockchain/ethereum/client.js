@@ -136,7 +136,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         console.log("Scanning missed events..."); 
 
         this._watchEvent("Purchase", this._paymentContract.filters.Purchase(), this._paymentContract, this._emitPayment);
-        this._watchEvent("Withrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
+        this._watchEvent("Withdrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
         // this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
         // this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
         // this._watchEvent("Transfer", this._stakingToken, this._emitWithdrawal);
@@ -182,18 +182,18 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         });
     }
 
-    _emitDivsWithdrawal(transaction, timestamp, eventData) {
+    _emitDivsWithdrawal(event) {
         this.emit(this.DividendWithdrawal, {
             success: true,
-            user: this._provider.address.fromHex(eventData.from),
-            withdrawalId: eventData.withdrawalId,
-            amount: eventData.value,
-            timestamp: timestamp / 1000,
-            tx: transaction
+            to: event.args.from,
+            withdrawalId: event.args.withdrawalId,
+            amount: event.args.amount,
+            blockNumber: event.blockNumber,
+            tx: event.transactionHash
         });
     }
 
-    _emitWithdrawal(transaction, timestamp, eventData) {
+    _emitWithdrawal(event) {
         if (eventData.from == "0x0000000000000000000000000000000000000000") {
             this.emit(this.DividendTokenWithdrawal, {
                 success: true,

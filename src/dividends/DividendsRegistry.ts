@@ -17,6 +17,7 @@ export class DividendsRegistry {
     private _blockchain: Blockchain;
     private _season: Season;
     private _lastPayout: number;
+    private _totalStake: number;
 
     constructor(blockchain: Blockchain, season: Season) {
         this._season = season;
@@ -29,13 +30,24 @@ export class DividendsRegistry {
         this._lock = new Lock();
     }
 
+    static get DktDecimals() {
+        return 1000000;
+    }
+
+    static get DivsPrecision() {
+        return BigInt(1000000);
+    }
+
     async init() {
         this._supply = 0;
         this._lastPayout = 0;
+        this._totalStake = 0;
 
         const state = await Game.db.collection(Collections.DivTokenState).findOne({ _id: this._season.getSeason() });
         if (state) {
+            this._totalStake = state.stake;
             this._supply = state.supply;
+            this._totalStake = state.stake || 0;
             this._lastPayout = state.lastPayout;
         }
 
@@ -56,7 +68,7 @@ export class DividendsRegistry {
     async handleTokenWithdawal(blockchainId: string, data: DivsWithdrawalData) {
         await this._lock.acquire("divs");
         try {
-            await Game.db.collection(Collections.DivsWithdrawalRequests)
+            await Game.db.collection(Collections.TokenWithdrawalRequests)
                 .updateOne({
                     _id: new ObjectID(data.withdrawalId)
                 }, { $set: { pending: false } });
@@ -68,16 +80,16 @@ export class DividendsRegistry {
     async handleDivsWithdawal(blockchainId: string, data: DivsWithdrawalData) {
         await this._lock.acquire("withdrawal");
         try {
-            await Game.db.collection(Collections.TokenWithdrawalRequests)
+            await Game.db.collection(Collections.DivsWithdrawalRequests)
                 .updateOne({
                     _id: new ObjectID(data.withdrawalId)
-                }, { $set: { pending: false } });
+                }, { $set: { pending: false, transactionHash: data.transactionHash, to: data.to } });
         } finally {
             await this._lock.release("withdrawal");
         }
     }
 
-    async handleRewards(id: string, data: PurchaseData) {
+    async handleRewards(chainId: string, data: PurchaseData) {
         await this._lock.acquire("divs");
         try {
             const state = await Game.db.collection(Collections.DivTokenState)
@@ -85,8 +97,8 @@ export class DividendsRegistry {
 
             let amount = BigInt(0);
 
-            if (state && state.payouts[id]) {
-                amount = BigInt(state.payouts[id]);
+            if (state && state.payouts[chainId]) {
+                amount = BigInt(state.payouts[chainId]);
             }
 
             amount += BigInt(data.divs);
@@ -94,7 +106,7 @@ export class DividendsRegistry {
             await Game.db.collection(Collections.DivTokenState)
                 .updateOne(
                     { _id: "payouts" },
-                    { $set: { [`payouts.${id}`]: amount.toString() } },
+                    { $set: { [`payouts.${chainId}`]: amount.toString() } },
                     { upsert: true }
                 );
 
@@ -109,9 +121,14 @@ export class DividendsRegistry {
 
         const todayPayout = await Game.db.collection(Collections.DivsPayouts).findOne({ _id: this.getCurrentPayout() });
         if (todayPayout) {
-            if (todayPayout.supply > 0) {
+            if (todayPayout.stake > 0) {
                 for (const id in todayPayout.payouts) {
-                    payouts[id] = BigInt(todayPayout.payouts[id]) * BigInt(10e8) / BigInt(Math.floor(todayPayout.supply * 10e8)) * BigInt(PAYOUT_LAG) / BigInt(100);
+                    payouts[id] =
+                        BigInt(todayPayout.payouts[id]) *
+                        BigInt(DividendsRegistry.DktDecimals) *
+                        DividendsRegistry.DivsPrecision /
+                        BigInt(Math.floor(todayPayout.stake * DividendsRegistry.DktDecimals)) *
+                        BigInt(PAYOUT_LAG) / BigInt(100);
                 }
             }
         }
@@ -134,7 +151,7 @@ export class DividendsRegistry {
 
             await Game.db.collection(Collections.DivsPayouts).updateOne(
                 { _id: this.getCurrentPayout() },
-                { $set: { supply: this._supply, payouts: payouts ? payouts.payouts : {} } },
+                { $set: { supply: this._supply, payouts: payouts ? payouts.payouts : {}, stake: this._totalStake } },
                 { upsert: true }
             );
 
@@ -146,6 +163,10 @@ export class DividendsRegistry {
                 { upsert: true }
             );
         }
+    }
+
+    async increaseTotalStake(amount: number) {
+        await this._commitTotalStake(this._totalStake + amount);
     }
 
     async increaseSupply(amount: number) {
@@ -174,8 +195,7 @@ export class DividendsRegistry {
     }
 
     async onSeasonFinished() {
-        // every player must unlock their stake
-
+        await this._commitTotalStake(0);
     }
 
     async getPendingTokenWithdrawals(userId: string) {
@@ -233,7 +253,7 @@ export class DividendsRegistry {
     async initiateDividendsWithdrawal(userId: string, to: string, blockchainId: string, amount: string) {
         await this._lock.acquire("divs");
         try {
-            const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(userId));
+            const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(to));
 
             let inserted = await Game.db.collection(Collections.DivsWithdrawalRequests).insertOne({
                 userId,
@@ -245,7 +265,7 @@ export class DividendsRegistry {
             });
 
             let withdrawalId = inserted.insertedId.valueOf() + "";
-            let signature = await this._blockchain.getBlockchain(blockchainId).sign(to, withdrawalId, amount, nonce);
+            let signature = await this._blockchain.getBlockchain(blockchainId).sign(to, withdrawalId, +amount, nonce);
 
             await Game.db.collection(Collections.DivsWithdrawalRequests)
                 .updateOne({ _id: new ObjectID(withdrawalId) }, { $set: { signature } });
@@ -262,10 +282,10 @@ export class DividendsRegistry {
                         .updateOne({ _id: "payouts" }, { $set: { [`payouts.${blockchainId}`]: (current - reward).toString() } });
 
                     await Game.db.collection(Collections.DivsWithdrawals)
-                        .insertOne({ blockchain: blockchainId, amount, availableAmount: current.toString() });
+                        .insertOne({ to, userId, blockchain: blockchainId, amount, availableAmount: current.toString() });
                 } else {
                     await Game.db.collection(Collections.DivsWithdrawals)
-                        .insertOne({ blockchain: blockchainId, amount, error: "not enough funds", availableAmount: current.toString() });
+                        .insertOne({ to, userId, blockchain: blockchainId, amount, error: "NOT_ENOUGH_FUNDS", availableAmount: current.toString() });
                 }
             }
 
@@ -288,6 +308,7 @@ export class DividendsRegistry {
         return {
             season: this._season.getStatus(),
             supply: this.getSupply(),
+            totalStake: this._totalStake,
             nextPayout: this.getNextPayout(),
             pendingDivs: await this.getPendingDivsWithdrawals(userId),
             pools: pools ? pools.payouts : {}
@@ -300,5 +321,22 @@ export class DividendsRegistry {
             throw Errors.IncorrectArguments;
         }
         return bigValue;
+    }
+
+    private async _commitTotalStake(newStake: number) {
+        await this._lock.acquire("inc_stake");
+        try {
+            await this.commitPayoutDay();
+
+            this._totalStake = newStake;
+
+            await Game.db.collection(Collections.DivTokenState).updateOne(
+                { _id: this._season.getSeason() },
+                { $set: { stake: this._totalStake } },
+                { upsert: true }
+            );
+        } finally {
+            await this._lock.release("inc_stake");
+        }
     }
 }

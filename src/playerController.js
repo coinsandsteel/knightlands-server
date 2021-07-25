@@ -160,6 +160,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.DivsDropUpgrade, this._gameHandler(this._upgradeDktDropRate.bind(this)));
         this._socket.on(Operations.WithdrawTokens, this._gameHandler(this._withdrawTokens.bind(this)));
         this._socket.on(Operations.GetWithdrawTokensStatus, this._gameHandler(this._getWithdrawTokensStatus.bind(this)));
+        this._socket.on(Operations.StakeDivs, this._gameHandler(this._stakeDivs.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -269,31 +270,36 @@ class PlayerController extends IPaymentListener {
     }
 
     async _handleAuth(data, respond) {
-        if (this._socket.authToken) {
-            respond("authenticated");
-            return;
-        }
-
-        const metadata = await getUserMetadata(data.token);
-        const decodedToken = await decodeToken(data.token);
-
-        this.address = metadata.email;
-
-        const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { projection: { lastLogin: 1 } });
-        if (userLastLogin) {
-            if (userLastLogin.lastLogin >= decodedToken[1].iat) { 
-                throw Errors.MalformedAuth;
+        try {
+            if (this._socket.authToken) {
+                respond("authenticated");
+                return;
             }
+
+            const metadata = await getUserMetadata(data.token);
+            const decodedToken = await decodeToken(data.token);
+
+            this.address = metadata.email;
+
+            const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { projection: { lastLogin: 1 } });
+            if (userLastLogin) {
+                if (userLastLogin.lastLogin >= decodedToken[1].iat) { 
+                    throw Errors.MalformedAuth;
+                }
+            }
+
+            await this.getUser();
+
+            this._socket.setAuthToken({
+                address: metadata.email,
+                id: this.id
+            });
+
+            respond(null, "success");
+        } catch (e) {
+            console.error(e);
+            respond(e);
         }
-
-        await this.getUser();
-
-        this._socket.setAuthToken({
-            address: metadata.email,
-            id: this.id
-        });
-
-        respond(null, "success");
     }
 
     async _handleEvent(event, args) {
@@ -346,6 +352,10 @@ class PlayerController extends IPaymentListener {
 
     _gameHandler(handler, throttleId = "default", throttle = 0) {
         return async (data, respond) => {
+            if (this.address == null || this.address == undefined) {
+                return;
+            }
+
             if (throttle > 0) {
                 if (this._opThrottles[throttleId] >= Game.now) {
                     respond("throttle");
@@ -1355,6 +1365,10 @@ class PlayerController extends IPaymentListener {
         return Game.dividends.getPendingTokenWithdrawals(user.address);
     }
 
+    async _stakeDivs(user, data) {
+        return user.dividends.stake(data.amount);
+    }
+
     // Tournaments
     async _fetchTournaments(user, data) {
         return Game.rankings.tournaments.getTournamentsInfo(user.address);
@@ -1459,7 +1473,7 @@ class PlayerController extends IPaymentListener {
         if (!isNumber(count)) {
             throw Errors.IncorrectArguments;
         }
-        
+
         return Game.armyManager.summontUnits(user.address, count, summonType, iap);
     }
 
