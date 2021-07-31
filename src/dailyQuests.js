@@ -101,8 +101,8 @@ class DailyQuests {
         await this._advanceTask(DailyQuestType.DailyTower, count);
     }
 
-    async onQuestEngaged(times = 1) {
-        // this._advanceTask(DailyQuestType.DailyEngageQuest, times);
+    async onEnergySpent(amount) {
+        await this._advanceTask(DailyQuestType.DailySpendEnergy, amount);
     }
 
     async onPremiumPurchase(count = 1) {

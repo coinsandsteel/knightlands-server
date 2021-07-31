@@ -9,7 +9,11 @@ const PaymentGateway = require("./PaymentGateway.json");
 // const PresaleChestGateway = require("./PresaleChestGateway.json");
 // const Presale = require("./Presale.json");
 const Flesh = require("./Flesh.json");
+const Ash = require("./Ash.json");
+const TokensDepositGateway = require("./TokensDepositGateway.json");
 import blockchains from "../../knightlands-shared/blockchains";
+import currency_type from "../../knightlands-shared/currency_type";
+import CurrencyType from "../../knightlands-shared/currency_type";
 import { Blockchain } from "../Blockchain";
 
 const NewBlockScanInterval = 15000;
@@ -35,8 +39,8 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this.PresaleChestPurchased = "PresaleChestPurchased";
         this.TransactionFailed = Blockchain.TransactionFailed;
         this.DividendTokenWithdrawal = Blockchain.DividendTokenWithdrawal;
+        this.BurntTokenWithdrawal = Blockchain.BurntTokenWithdrawal;
         this.DividendWithdrawal = Blockchain.DividendWithdrawal;
-        this.TokenWithdrawal = Blockchain.TokenWithdrawal;
 
         this._eventsReceived = 0;
         this._eventWatchers = {};
@@ -50,6 +54,8 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         // this._presaleChestsGateway = this._provider.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
         // this._dividends = this._provider.contract(Dividends.abi, Dividends.address);
         this._stakingToken = new ethers.Contract(Flesh.address, Flesh.abi, this._provider);
+        this._burntToken = new ethers.Contract(Ash.address, Ash.abi, this._provider);
+        this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
     }
 
     get PaymentGatewayAddress() {
@@ -58,6 +64,31 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
     get DividendTokenAddress() {
         return Flesh.address;
+    }
+
+    getTokenAddress(currency) {
+        if (currency == CurrencyType.Dkt) {
+            return Flesh.address;
+        } else {
+            return Ash.address;
+        }
+    }
+
+    convertTokenAmount(str, decimals = 6) {
+        let decimal = "";
+        if (str != "0") {
+            if (str.length < decimals) {
+            str = str.padStart(decimals - str.length, "0");
+            decimal = "0." + str.slice(0, str.length);
+            } else {
+            decimal =
+                str.slice(0, str.length - decimals) +
+                "." +
+                str.slice(str.length - decimals);
+            }
+        }
+
+        return Number(decimal);
     }
 
     getBigIntDivTokenAmount(amount) {
@@ -139,7 +170,9 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this._watchEvent("Withdrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
         // this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
         // this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
-        // this._watchEvent("Transfer", this._stakingToken, this._emitWithdrawal);
+        this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
+        this._watchEvent("Withdrawal", this._burntToken.filters.Withdrawal(), this._burntToken, this._emitWithdrawal(this.BurntTokenWithdrawal));
+        this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
 
         console.log("Scan finished.");
     }
@@ -187,20 +220,32 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             success: true,
             to: event.args.from,
             withdrawalId: event.args.withdrawalId,
-            amount: event.args.amount,
+            amount: event.args.amount.toString(),
             blockNumber: event.blockNumber,
             tx: event.transactionHash
         });
     }
 
-    _emitWithdrawal(event) {
-        if (eventData.from == "0x0000000000000000000000000000000000000000") {
-            this.emit(this.DividendTokenWithdrawal, {
-                success: true,
-                to: this._provider.address.fromHex(eventData.to),
-                amount: eventData.value,
-                timestamp: timestamp / 1000,
-                tx: transaction
+    _emitDeposit(event) {
+        this.emit(Blockchain.TokenDeposit, {
+            depositorId: event.args.depositor,
+            token: event.args.token,
+            from: event.args.from,
+            amount: event.args.amount.toString(),
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash
+        })
+    }
+
+    _emitWithdrawal(evtName) {
+        return function(event) {
+            this.emit(evtName, {
+                withdrawalId: event.args.requestId,
+                to: event.args.to,
+                amount: event.args.value.toString(),
+                blockNumber: event.blockNumber,
+                transactionHash: event.transactionHash,
+                token: event.emitter
             });
         }
     }
@@ -242,7 +287,13 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                 // assume that hex is address until other hex values will be used
                 arg = ethers.utils.getAddress(arg);
                 types.push("address");
-            } else if (typeof arg === "string") {
+            } 
+            else if (typeof arg == 'bigint') {
+                values.push(ethers.BigNumber.from(arg.toString()));
+                types.push('uint256');
+                return;
+            }
+            else if (typeof arg === "string") {
                 if (arg.substr(0, 2) == "0x") {
                     types.push("bytes");
                 } else {
@@ -310,6 +361,18 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
     async getPaymentNonce(walletAddress) {
         const result =  await this._paymentContract.nonces(walletAddress);
+        return result.valueOf();
+    }
+
+    async getTokenNonce(walletAddress, type) {
+        let result;
+
+        if (type == currency_type.Dkt) {
+            result =  await this._stakingToken.nonces(walletAddress);
+        } else {
+            result =  await this._burntToken.nonces(walletAddress);
+        }
+        
         return result.valueOf();
     }
 

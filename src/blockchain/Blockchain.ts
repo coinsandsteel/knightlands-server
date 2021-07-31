@@ -20,6 +20,30 @@ export interface TokenWithdrawalData {
     withdrawalId: string;
     transactionHash: string;
     token: string;
+    currency?: string;
+}
+
+export interface Withdrawal {
+    to: string;
+    amount: string;
+    transactionHash?: string;
+    token: string;
+    chain: string;
+    user: string;
+    date: number;
+    nonce: number;
+    pending: boolean;
+    currency: string;
+}
+
+export interface TokenDepositData {
+    currency?: string;
+    depositorId: string;
+    token: string;
+    from: string;
+    amount: string;
+    blockNumber: number;
+    transactionHash: string;
 }
 
 export class Blockchain {
@@ -37,12 +61,20 @@ export class Blockchain {
         return "__div_token_withdrawal__";
     }
 
+    public static get BurntTokenWithdrawal() {
+        return "__div2_token_withdrawal__";
+    }
+
     public static get DividendWithdrawal() {
         return "__divs_withdrawal__";
     }
 
     public static get TokenWithdrawal() {
         return "__token_withdrawal__";
+    }
+
+    public static get TokenDeposit() {
+        return "__token_deposit__";
     }
 
     constructor(db: Db) {

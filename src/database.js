@@ -75,8 +75,9 @@ module.exports = {
         Seasons: "seasons",
         SeasonsSchedule: "seasons_schedule",
         DktMining: "dkt_mining",
-        TokenWithdrawals: "token_withdrawals",
-        TokenWithdrawalRequests: "token_withdrawal_requests",
+        Depositors: "depositors",
+        ActivityHistory: "activity_history",
+        TokenDepositErrors: "token_deposit_errors"
     },
 
 

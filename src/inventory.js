@@ -81,6 +81,14 @@ class Inventory {
             
         } else if (currency == CurrencyType.Hard && value < 0) {
             await this._user.dailyQuests.onPremiumPurchase(-value);
+        } else if (currency == CurrencyType.Dkt && value > 0) {
+            await Game.rankings.updateRank(this._user.id, {
+                type: RankingType.DktEarned
+            }, value);
+        }  else if (currency == CurrencyType.Dkt2 && value > 0) {
+            await Game.rankings.updateRank(this._user.id, {
+                type: RankingType.Dkt2Earned
+            }, value);
         }
     }
 

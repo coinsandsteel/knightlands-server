@@ -584,10 +584,6 @@ class PlayerController extends IPaymentListener {
             await user.addLoot(items);
         }
 
-        if (engages > 0) {
-            await user.dailyQuests.onQuestEngaged(engages);
-        }
-
         return { damages, items };
     }
 
@@ -1358,11 +1354,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _withdrawTokens(user, data) {
-        return user.dividends.withdrawTokens(data.to, data.type, data.amount);
+        return user.dividends.withdrawTokens(data.to, data.type, data.chain, data.amount);
     }
 
     async _getWithdrawTokensStatus(user, data) {
-        return Game.dividends.getPendingTokenWithdrawals(user.address);
+        return Game.activityHistory.getHistory(user.address);
     }
 
     async _stakeDivs(user, data) {

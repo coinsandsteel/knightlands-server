@@ -11,4 +11,7 @@ export interface IBlockchain extends EventEmitter {
     isAddress(addr: string): boolean;
     getBigIntDivTokenAmount(amount: number): bigint;
     getPaymentNonce(wallet: string): Promise<number>;
+    getTokenNonce(wallet: string, type: string): Promise<number>;
+    getTokenAddress(currency): string;
+    convertTokenAmount(amount: string): number;
 }

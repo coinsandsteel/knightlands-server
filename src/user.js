@@ -82,7 +82,9 @@ class User {
         let data = Object.assign({}, this._data);
         // remove unwanted fields
         delete data.nonce;
-        // delete data.address;
+        delete data.address;
+
+        data.depositorId = this.depositorId;
 
         return data;
     }
@@ -284,24 +286,10 @@ class User {
         // if payout day is shifted, commit previous days balance
         await this.dividends.tryCommitPayout();
         await this.inventory.modifyCurrency(CurrencyType.Dkt, value);
-        await Game.rankings.updateRank(this.id, {
-            type: RankingType.DktEarned
-        }, value);
     }
 
     async addStakedDkt(value) {
         await this.inventory.modifyCurrency(CurrencyType.StakedDkt, value);
-    }
-
-    async addDkt2(value, includeDktPassive = false) {
-        // if (includeDktPassive) {
-        //     value = await this.dividends.applyBonusDkt(value);
-
-        //     const bonuses = await this.getCardBonuses();
-        //     value *= (1 + bonuses.dkt / 100);
-        // }
-
-        // if payout day is shifted, commit previous days balance
         await this.inventory.modifyCurrency(CurrencyType.Dkt2, value);
     }
 
@@ -412,6 +400,7 @@ class User {
                 await Game.rankings.updateRank(this.id, {
                     type: RankingType.EnergySpent
                 }, -value);
+                await this.dailyQuests.onEnergySpent(-value);
             } else if (stat == CharacterStat.Stamina && value < 0) {
                 await Game.rankings.updateRank(this.id, {
                     type: RankingType.StaminaSpent
@@ -580,6 +569,8 @@ class User {
         this._dailyShop = new DailyShop(this._data.dailyShop, this);
 
         this._advanceTimers();
+
+        this.depositorId = await Game.depositGateway.createDepositor(this.id);
 
         await this._inventory.loadAll();
         await this._trials.init();

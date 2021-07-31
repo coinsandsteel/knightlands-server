@@ -52,7 +52,6 @@ export class Dividends {
 
         if (this._data.season != Game.season.getSeason()) {
             this._data.season = Game.season.getSeason();
-            await this._user.addDkt2(this._user.stakedDkt);
             await this._user.addStakedDkt(-this._user.stakedDkt);
         }
     }

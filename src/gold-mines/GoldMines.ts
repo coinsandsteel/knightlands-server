@@ -87,11 +87,11 @@ export class GoldMines {
 
     async expand() {
         const meta = await this.getMeta();
-        if (this.data.mines.length - 1 >= meta.addMines.length) {
+        if (this.data.mines.length >= meta.addMines.length) {
             throw Errors.MaxMines;
         }
 
-        const price = meta.addMines[this.data.mines.length - 1];
+        const price = meta.addMines[this.data.mines.length];
         if (this.user.softCurrency < price) {
             throw Errors.NotEnoughSoft;
         }

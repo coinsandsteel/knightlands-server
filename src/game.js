@@ -8,10 +8,12 @@ const { Collections } = require("./database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
+import { DepositGateway } from "./assets/DepositGateway";
 import { Season } from './seasons/Season';
 import { Lock } from './utils/lock';
 import { ObjectId } from "mongodb";
 import Inventory from "./inventory";
+import { ActivityHistory } from './blockchain/ActivityHistory';
 
 class Game extends EventEmitter {
     constructor() {
@@ -48,6 +50,8 @@ class Game extends EventEmitter {
         this._rankings = rankings;
         this._armyManager = armyManager;
         this.tokenAmounts = new DivTokenFarmedTimeseries(db, this._dividends);
+        this.depositGateway = new DepositGateway(blockchain);
+        this.activityHistory = new ActivityHistory();
 
         this._players = {};
         this._playersById = {};
@@ -213,6 +217,11 @@ class Game extends EventEmitter {
 
     async loadInventory(address) {
         const user = await this.getUser(address);
+        return user.inventory;
+    }
+
+    async loadInventoryById(userId) {
+        const user = await this.getUserById(userId);
         return user.inventory;
     }
 
