@@ -33,7 +33,7 @@ const {
 
 const ItemType = require("./knightlands-shared/item_type");
 
-const Trials = require("./trials/Trials");
+const Trials = require("./Trials/Trials");
 const uuidv4 = require('uuid/v4');
 const cloneDeep = require('lodash.clonedeep');
 const PlayerUnit = require("./combat/playerUnit");
