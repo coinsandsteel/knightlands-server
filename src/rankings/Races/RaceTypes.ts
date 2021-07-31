@@ -1,5 +1,5 @@
 import { RankingOptions } from "./../Ranking";
-import { ObjectID } from "mongodb";
+import { ObjectId } from "mongodb";
 import { RaceShop } from "./RaceShop";
 
 export enum RaceState {
@@ -8,7 +8,7 @@ export enum RaceState {
 }
 
 export interface RaceConfiguration {
-    tier: number|string;
+    tier: number | string;
     duration: number;
     durationStd: number;
     type: RankingOptions;
@@ -44,7 +44,7 @@ export interface RacesMeta {
 }
 
 export interface RaceRecord {
-    _id: ObjectID;
+    _id: ObjectId;
     state: RaceState;
     startTime: number;
     finalDuration: number;
@@ -55,7 +55,7 @@ export interface RaceRecord {
 }
 
 export interface RacesState {
-    runningRaces: Array<ObjectID>;
+    runningRaces: Array<ObjectId>;
     targetMultipliers: { [key: string]: number }; // {RankingType_subType}: multiplier
     rewardsMultiplier: { [key: string]: number }; // {RankingType_subType}: multiplier
 }

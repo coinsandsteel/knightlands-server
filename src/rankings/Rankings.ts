@@ -1,5 +1,5 @@
 import { Db } from "mongodb";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import TournamentManager from "./Tournaments/TournamentsManager";
 import LeaderboardsManager from "./Leaderboards/LeaderboardsManager";
 import RacesManager from "./Races/RacesManager";
@@ -35,7 +35,7 @@ class Rankings implements IRankingTypeHandler {
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
         let promises = [];
-        
+
         promises.push(this.tournaments.updateRank(userId, options, value));
         promises.push(this.races.updateRank(userId, options, value));
         promises.push(this.leaderboards.updateRank(userId, options, value));

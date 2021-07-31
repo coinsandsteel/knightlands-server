@@ -1,6 +1,6 @@
 'use strict';
 
-const { Collections } = require("./database");
+const { Collections } = require("./database/database");
 import CurrencyType from "./knightlands-shared/currency_type";
 import Game from "./game";
 const uuidv4 = require('uuid/v4');

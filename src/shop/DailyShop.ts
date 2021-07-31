@@ -1,5 +1,5 @@
 import Game from "../game";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { DailyShopSaveData, DailyShopMeta, DailyShopEntry } from "./Types";
 import WeightedList from "../js-weighted-list";
 import Errors from "../knightlands-shared/errors";

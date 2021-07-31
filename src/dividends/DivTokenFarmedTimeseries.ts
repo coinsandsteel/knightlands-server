@@ -1,5 +1,5 @@
 import { Db, Collection } from "mongodb";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { Lock } from "../utils/lock";
 import { DividendsRegistry } from "./DividendsRegistry";
 

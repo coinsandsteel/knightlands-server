@@ -11,7 +11,7 @@ const cors = require('cors');
 const Operations = require("./knightlands-shared/operations");
 import { MongoClient } from "mongodb";
 
-const Database = require("./database");
+const { ConnectionString } = require("./database/database");
 
 const LootGenerator = require("./lootGenerator");
 const CraftingQueue = require("./crafting/craftingQueue");
@@ -31,6 +31,7 @@ import Game from "./game";
 import Rankings from "./rankings/Rankings";
 import { Blockchain } from "./blockchain/Blockchain";
 import { Shop } from "./shop/Shop";
+import { DatabaseClient } from "./database/database";
 
 process.on("unhandledRejection", (error) => {
   console.error(error); // This prints error with stack included (as for normal errors)
@@ -64,11 +65,13 @@ class Worker extends SCWorker {
     this.setupMiddleware()
 
     // Database Name
-    const client = new MongoClient(Database.ConnectionString, {
-      useNewUrlParser: true
-    });
+    
 
     try {
+      const client = new MongoClient(ConnectionString, {
+            useNewUrlParser: true
+        });
+
       await client.connect();
       this._db = client.db();
       console.log("Connected to db", this._db.databaseName)

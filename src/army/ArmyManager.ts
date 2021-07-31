@@ -1,6 +1,6 @@
 import Game from "../game";
-import { Db, Collection } from "mongodb";
-import { Collections } from "../database";
+import { Db, Collection, ReturnDocument } from "mongodb";
+import { Collections } from "../database/database";
 import { Lock } from "../utils/lock";
 import { ArmyMeta, UnitsMeta, UnitAbilitiesMeta, ArmyUnit, UnitMeta, ArmySummonMeta } from "./ArmyTypes";
 import Errors from "../knightlands-shared/errors";
@@ -48,13 +48,13 @@ export class ArmyManager {
     async init() {
         console.log("Initializing army manager...");
 
-        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army" });
-        this._generals = await this._db.collection(Collections.Meta).findOne({ _id: "generals" });
-        this._troops = await this._db.collection(Collections.Meta).findOne({ _id: "troops" });
-        this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" });
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army" }) as ArmyMeta;
+        this._generals = await this._db.collection(Collections.Meta).findOne({ _id: "generals" }) as UnitsMeta;
+        this._troops = await this._db.collection(Collections.Meta).findOne({ _id: "troops" }) as UnitsMeta;
+        this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" }) as UnitAbilitiesMeta;
         this._unitTemplates = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
 
-        this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
+        this._summonMeta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" }) as ArmySummonMeta
 
         await this._summoner.init();
 
@@ -644,7 +644,7 @@ export class ArmyManager {
                     maxSlots: this._meta.armyExpansion.defaultSlots
                 }
             },
-            { projection: projection, upsert: true, returnOriginal: false }
+            { projection: projection, upsert: true, returnDocument: ReturnDocument.AFTER }
         )).value;
     }
 }

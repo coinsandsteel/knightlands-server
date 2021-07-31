@@ -1,4 +1,4 @@
-const { Collections } = require("../database");
+const { Collections } = require("../database/database");
 
 class IAPExecutor {
     constructor(db) {

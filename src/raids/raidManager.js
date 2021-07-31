@@ -2,7 +2,7 @@
 
 const {
     Collections
-} = require("../database");
+} = require("../database/database");
 
 const Raid = require("./raid");
 import Elements from "../knightlands-shared/elements";

@@ -3,7 +3,7 @@ const IBlockchainSigner = require("../IBlockchainSigner");
 const ClassAggregation = require("../../classAggregation");
 const { ethers } = require("ethers");
 
-const { Collections } = require("../../database");
+const { Collections } = require("../../database/database");
 
 const PaymentGateway = require("./PaymentGateway.json");
 // const PresaleChestGateway = require("./PresaleChestGateway.json");
@@ -18,13 +18,6 @@ import { Blockchain } from "../Blockchain";
 
 const NewBlockScanInterval = 15000;
 const TxFailureScanInterval = 5000;
-
-function hexToBytes(hex) {
-    for (var bytes = [], c = 0; c < hex.length; c += 2)
-        bytes.push(`0x${hex.substr(c, 2)}`);
-    return bytes;
-}
-
 const FirstBlockToScan = 5197870
 const Confirmations = 1;
 const BlocksRange = 500;

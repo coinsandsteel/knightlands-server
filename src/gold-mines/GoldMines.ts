@@ -2,7 +2,7 @@ import Game from '../game';
 import Errors from '../knightlands-shared/errors';
 import ItemProperties from '../knightlands-shared/item_properties';
 import { GoldMinesMeta, GoldMine, GoldMinesSaveData } from './types';
-import { Collections } from '../database';
+import { Collections } from '../database/database';
 
 export class GoldMines {
     private data: GoldMinesSaveData;

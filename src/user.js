@@ -52,7 +52,7 @@ const BeastMaxBoost = 50;
 const {
     Collections,
     buildUpdateQuery
-} = require("./database");
+} = require("./database/database");
 
 function extraStatIfItemOwned(property, count, finalStats) {
     count = property.maxItemCount < count ? property.maxItemCount : count;
@@ -543,7 +543,7 @@ class User {
                 $set: { lastLogin: Game.nowSec }
             },
             {
-                returnOriginal: false,
+                returnDocument: 'after',
                 upsert: true
             }
         )).value;

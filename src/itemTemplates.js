@@ -1,4 +1,4 @@
-const { Collections } = require("./database");
+const { Collections } = require("./database/database");
 
 // TODO reset cache by request
 class ItemTemplates {

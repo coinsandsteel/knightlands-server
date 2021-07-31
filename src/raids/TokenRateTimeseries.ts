@@ -1,13 +1,7 @@
-import { Db } from "mongodb";
-import { Collections } from "../database";
+import { AnyBulkWriteOperation, Db, Document } from "mongodb";
+import { Collections } from "../database/database";
 const Events = require("./../knightlands-shared/events");
 import Game from "../game";
-
-type InsertQuery = {
-    insertOne: {
-        raidTemplateId: number, r: number, t: number
-    }
-}
 
 export class TokenRateTimeseries {
     private _db: Db;
@@ -30,7 +24,7 @@ export class TokenRateTimeseries {
         });
     }
 
-    async insertRates(queries: InsertQuery[]) {
+    async insertRates(queries: any[]) {
         await this._db.collection(Collections.DivTokenRateTimeseries).bulkWrite(queries);
 
         for (const query of queries) {

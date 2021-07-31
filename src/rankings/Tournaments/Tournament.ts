@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { Db, ObjectId } from "mongodb";
-import { Collections } from "../../database";
+import { Collections } from "../../database/database";
 
 import lt from "../../utils/longTimeout";
 import Game from "../../game";
@@ -84,7 +84,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
 
     async loadFromState(state: TournamentRecord) {
         this._state = state;
-        this._ranking = new Ranking(this._db.collection(Collections.TournamentTables), this._state._id, this._state.rankingState);
+        this._ranking = new Ranking(this._db.collection(Collections.TournamentTables), this._state._id.toHexString(), this._state.rankingState);
         await this._ranking.init();
     }
 
@@ -92,7 +92,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
         return this._ranking.hasParticipant(userId);
     }
 
-    async load(id: string | number) {
+    async load(id: ObjectId) {
         const state = <TournamentRecord>await this._db.collection(Collections.Tournaments).findOne({ _id: id })
         await this.loadFromState(state);
         await this._launch();

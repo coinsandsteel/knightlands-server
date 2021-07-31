@@ -1,5 +1,5 @@
 import { Db } from "mongodb";
-import { Collections } from "../../database";
+import { Collections } from "../../database/database";
 import { LeaderboardsMeta } from "./LeaderboardTypes";
 import { Leaderboard } from "./Leaderboard";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
@@ -45,7 +45,7 @@ class LeaderboardsManager implements IRankingTypeHandler {
     async init() {
         console.log("Initializing leaderboards...");
 
-        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "leaderboards" });
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "leaderboards" }) as LeaderboardsMeta;
 
         const promises = [];
         for (const definition of this._meta.definitions) {

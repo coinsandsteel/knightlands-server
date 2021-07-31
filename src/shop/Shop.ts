@@ -1,5 +1,5 @@
 import Game from "../game";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { ShiniesTopUp, RaidTicketsTopUp, TopUpShopMeta, PremiumShopMeta, PackMeta, SubscriptionsShopMeta, SubscriptionMeta } from "./Types";
 import Errors from "../knightlands-shared/errors";
 const Events = require("../knightlands-shared/events");

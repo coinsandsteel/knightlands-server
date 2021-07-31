@@ -1,4 +1,4 @@
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import Game from "../game";
 
 const HistoryLength = 86400000 * 30; // 1 month

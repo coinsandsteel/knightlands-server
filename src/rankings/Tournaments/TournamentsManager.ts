@@ -1,5 +1,5 @@
 import { Db, ObjectId } from "mongodb";
-import { Collections } from "../../database";
+import { Collections } from "../../database/database";
 import { TournamentsState, TournamentsMeta, TournamentState, TournamentRecord, TournamentDivTokenRewards, TournamentRewardsMeta, TournamentRewardSchema } from "./TournamentTypes";
 import { Tournament } from "./Tournament";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
@@ -22,8 +22,8 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     async init() {
-        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "tournaments" });
-        this._state = await this._db.collection(Collections.Tournaments).findOne({ _id: "state" });
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "tournaments" }) as TournamentsMeta;
+        this._state = await this._db.collection(Collections.Tournaments).findOne({ _id: "state" }) as TournamentsState;
 
         if (this._state) {
             await this._loadTournaments();
@@ -59,7 +59,7 @@ class TournamentsManager implements IRankingTypeHandler {
 
         for (const tournamentState of tournaments) {
             let tournamentInstance = new Tournament(this._db);
-            await tournamentInstance.loadFromState(tournamentState);
+            await tournamentInstance.loadFromState(tournamentState as TournamentRecord);
 
             let userRank = <RankingRecord>await tournamentInstance.getUserRank(userId);
             if (!userRank) {
@@ -80,8 +80,8 @@ class TournamentsManager implements IRankingTypeHandler {
 
     async getRewards(tournamentId: string) {
         let tournamentState = <TournamentRecord>await this._db.collection(Collections.Tournaments).findOne({
-            _id: ObjectId(tournamentId)
-        }, { $project: { rewards: 1, divTokenRewards: 1 } });
+            _id: new ObjectId(tournamentId)
+        }, { projection: { rewards: 1, divTokenRewards: 1 } });
 
         if (!tournamentState) {
             throw Errors.NoSuchTournament;
@@ -102,7 +102,7 @@ class TournamentsManager implements IRankingTypeHandler {
 
     async claimRewards(userId: string, tournamentId: string) {
         let tournamentState = <TournamentRecord>await this._db.collection(Collections.Tournaments).findOne({
-            _id: ObjectId(tournamentId),
+            _id: new ObjectId(tournamentId),
             state: TournamentState.Finished,
             [`looted.${userId}`]: false
         });
@@ -135,7 +135,7 @@ class TournamentsManager implements IRankingTypeHandler {
 
         await this._db.collection(Collections.Tournaments)
             .updateOne(
-                { _id: ObjectId(tournamentId) },
+                { _id: new ObjectId(tournamentId) },
                 {
                     $set: { [`looted.${userId}`]: true }
                 }
@@ -186,7 +186,7 @@ class TournamentsManager implements IRankingTypeHandler {
 
         let currentTournament = this._findTournamentWithUser(userId);
         if (currentTournament) {
-            info.currentTournament = await this.getRank(currentTournament.id, userId);
+            info.currentTournament = await this.getRank(currentTournament.id.toHexString(), userId);
         }
 
         return info;
@@ -197,7 +197,7 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     private async _getTournament(tournamentId: string) {
-        let obj = ObjectId(tournamentId);
+        let obj = new ObjectId(tournamentId);
         const tournament = this._tournamets.find(x => x.id.equals(obj));
         if (!tournament) {
             throw Errors.NoSuchTournament;

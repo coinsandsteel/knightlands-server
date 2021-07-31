@@ -1,4 +1,4 @@
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { Db, Collection } from "mongodb";
 import { ArmyUnit, ArmyReserve } from "./ArmyTypes";
 import Game from "../game";
@@ -58,8 +58,8 @@ export class ArmyUnits {
         this.resetCache(userId);
     }
 
-    async addUnits(userId: string, units: ArmyUnit[], lastUnitId: number, lastSummon: number|undefined = undefined) {
-        let $set:any = { lastUnitId }
+    async addUnits(userId: string, units: ArmyUnit[], lastUnitId: number, lastSummon: number | undefined = undefined) {
+        let $set: any = { lastUnitId }
         if (lastSummon) {
             $set.lastSummon = lastSummon;
         }

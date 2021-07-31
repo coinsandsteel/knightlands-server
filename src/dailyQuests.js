@@ -1,4 +1,4 @@
-const { Collections } = require("./database");
+const { Collections } = require("./database/database");
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
 import DailyQuestType from "./knightlands-shared/daily_quest_type";

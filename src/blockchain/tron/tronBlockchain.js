@@ -4,7 +4,7 @@ const ClassAggregation = require("../../classAggregation");
 const TronWeb = require("tronweb");
 const web3utls = require('web3-utils');
 
-const { Collections } = require("../../database");
+const { Collections } = require("../../database/database");
 
 const PaymentGateway = require("./PaymentGateway.json");
 const Dividends = require("./Dividends.json");
@@ -326,12 +326,12 @@ class TronBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSi
 
     async getPaymentNonce(walletAddress) {
         const result =  await this._paymentContract.methods.nonces(walletAddress).call();
-        return result.valueOf();
+        return result.toHexString();
     }
 
     async getDividendTokenNonce(walletAddress) {
         const result =  await this._stakingToken.methods.nonces(walletAddress).call();
-        return result.valueOf();
+        return result.toHexString();
     }
 }
 

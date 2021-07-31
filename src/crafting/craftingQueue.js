@@ -1,5 +1,5 @@
 import Game from "../game";
-const { Collections } = require("../database");
+const { Collections } = require("../database/database");
 const Events = require("../knightlands-shared/events");
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";

@@ -1,6 +1,6 @@
 'use strict';
 
-const { Collections } = require("./database");
+const { Collections } = require("./database/database");
 const BotGiveawayWhitelist = require("./botGiveawayWhitelist");
 const Config = require("./config");
 import Game from "./game";
@@ -159,7 +159,7 @@ class Giveaway {
 
         // also check that this wallet is not linked yet
         let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: address });
-        if (walletLinked && walletLinked._id.valueOf() != linkedAccount._id.valueOf()) {
+        if (walletLinked && walletLinked._id.toHexString() != linkedAccount._id.toHexString()) {
             res.status(500).end("linked");
             return;
         }
@@ -197,7 +197,7 @@ class Giveaway {
 
         // also check that this wallet is not linked yet
         let walletLinked = await this._db.collection(Collections.LinkedAccounts).findOne({ wallet: walletAddress });
-        if (walletLinked && walletLinked._id.valueOf() != linkedAccount._id.valueOf()) {
+        if (walletLinked && walletLinked._id.toHexString() != linkedAccount._id.toHexString()) {
             res.status(500).end("linked");
             return;
         }

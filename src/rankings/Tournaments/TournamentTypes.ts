@@ -1,5 +1,5 @@
 import { RankingOptions, RankingState } from "./../Ranking";
-import { ObjectID } from "mongodb";
+import { ObjectId } from "mongodb";
 
 export interface TournamentConfiguration {
     duration: number;
@@ -31,9 +31,9 @@ export enum TournamentState {
 }
 
 export interface TournamentRecord {
-    _id: ObjectID;
+    _id: ObjectId;
     state: TournamentState;
-    tier: number|string;
+    tier: number | string;
     startTime: number;
     duration: number;
     rewards: TournamentRewardsMeta;
@@ -43,7 +43,7 @@ export interface TournamentRecord {
 }
 
 export interface TournamentsState {
-    runningTournaments: Array<ObjectID>;
+    runningTournaments: Array<ObjectId>;
 }
 
 export interface TournamentDivTokenRewards {

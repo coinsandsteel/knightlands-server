@@ -1,6 +1,6 @@
 'use strict';
 
-const { Collections } = require("../database");
+const { Collections } = require("../database/database");
 import Game from "../game";
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
@@ -92,7 +92,7 @@ class PaymentProcessor extends EventEmitter {
             return {
                 "iap": payment.iap,
                 "status": payment.status,
-                "paymentId": payment._id.valueOf(),
+                "paymentId": payment._id.toHexString(),
                 "price": payment.price,
                 "nonce": payment.nonce,
                 "timestamp": payment.timestamp,
@@ -107,7 +107,7 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async cancelPayment(userId, id) {
-        const idObject = ObjectId(id);
+        const idObject = new ObjectId(id);
 
         const payment = await this._db.collection(Collections.PaymentRequests).findOne({
             $and: [{
@@ -194,7 +194,7 @@ class PaymentProcessor extends EventEmitter {
             chain
         });
 
-        let paymentId = inserted.insertedId.valueOf() + "";
+        let paymentId = inserted.insertedId.toHexString();
 
         // create signature for the smart contract and return it
         let signature = await this._blockchain.getBlockchain(chain).sign(iap, paymentId, price, nonce, timestamp);

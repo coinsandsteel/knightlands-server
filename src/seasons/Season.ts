@@ -1,5 +1,5 @@
 import Game from "../game";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import lt from 'long-timeout';
 
 export class Season {

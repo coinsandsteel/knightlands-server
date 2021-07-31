@@ -4,7 +4,7 @@ const User = require("./user");
 import EventEmitter from 'events';
 const PlayerController = require("./playerController");
 const ItemTemplates = require("./itemTemplates");
-const { Collections } = require("./database");
+const { Collections } = require("./database/database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";

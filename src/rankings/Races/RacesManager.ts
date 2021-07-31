@@ -1,5 +1,5 @@
 import { Db, ObjectId } from "mongodb";
-import { Collections } from "../../database";
+import { Collections } from "../../database/database";
 import { RacesState, RacesMeta, RaceState, RaceRecord, RaceConfiguration } from "./RaceTypes";
 import { Race } from "./Race";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
@@ -28,8 +28,8 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     async init() {
-        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "races" });
-        this._state = await this._db.collection(Collections.Races).findOne({ _id: "state" });
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "races" }) as RacesMeta;
+        this._state = await this._db.collection(Collections.Races).findOne({ _id: "state" }) as RacesState;
 
         this._shop = new RaceShop(this._meta.shop);
 
@@ -47,7 +47,7 @@ class RacesManager implements IRankingTypeHandler {
     async updateRank(userId: string, options: RankingOptions, value: number) {
         const race = this._findRaceWithUser(userId);
         if (race) {
-            let id = race.id.valueOf();
+            let id = race.id.toHexString();
             await this._lock.acquire(id);
             await race.updateRank(userId, options, value);
             this._lock.release(id);
@@ -75,7 +75,7 @@ class RacesManager implements IRankingTypeHandler {
 
     async claimRewards(userId: string, raceId: string) {
         let raceState = <RaceRecord>await this._db.collection(Collections.Races).findOne({
-            _id: ObjectId(raceId),
+            _id: new ObjectId(raceId),
             state: RaceState.Finished,
             [`looted.${userId}`]: false
         });
@@ -109,7 +109,7 @@ class RacesManager implements IRankingTypeHandler {
 
         await this._db.collection(Collections.Races)
             .updateOne(
-                { _id: ObjectId(raceId) },
+                { _id: new ObjectId(raceId) },
                 {
                     $set: { [`looted.${userId}`]: true }
                 }
@@ -124,8 +124,8 @@ class RacesManager implements IRankingTypeHandler {
 
     async getRewards(raceId: string) {
         let raceState = <RaceRecord>await this._db.collection(Collections.Races).findOne({
-            _id: ObjectId(raceId)
-        }, { $project: { "config.rewards": 1 } });
+            _id: new ObjectId(raceId)
+        }, { projection: { "config.rewards": 1 } });
 
         if (!raceState) {
             throw Errors.NoSuchTournament;
@@ -164,7 +164,7 @@ class RacesManager implements IRankingTypeHandler {
 
         for (const raceState of races) {
             let raceInstance = new Race(this._db);
-            await raceInstance.loadFromState(raceState);
+            await raceInstance.loadFromState(raceState as RaceRecord);
 
             let userRank = <RankingRecord>await raceInstance.getUserRank(userId);
             if (!userRank) {
@@ -232,7 +232,7 @@ class RacesManager implements IRankingTypeHandler {
 
         let currentRace = this._findRaceWithUser(userId);
         if (currentRace) {
-            info.currentRace = await this.getRank(currentRace.id, userId);
+            info.currentRace = await this.getRank(currentRace.id.toHexString(), userId);
         }
 
         let cooldown = await this._db.collection(Collections.RaceWinners).findOne({ _id: userId });
@@ -437,7 +437,7 @@ class RacesManager implements IRankingTypeHandler {
     }
 
     private async _getRace(raceId: string) {
-        let obj = ObjectId(raceId);
+        let obj = new ObjectId(raceId);
         const race = this._races.find(x => x.id.equals(obj));
         if (!race) {
             throw Errors.NoSuchRace;

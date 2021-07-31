@@ -18,7 +18,7 @@ const Config = require("./config");
 
 const {
     Collections
-} = require("./database");
+} = require("./database/database");
 
 import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
@@ -438,7 +438,6 @@ class PlayerController extends IPaymentListener {
         let itemsToDrop = 0;
         let questComplete = false;
         let damages = [];
-        let engages = 0;
 
         if (isBoss) {
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
@@ -466,7 +465,6 @@ class PlayerController extends IPaymentListener {
             let playerUnit = user.getCombatUnit();
 
             while (user.enoughHp && bossUnit.isAlive) {
-                engages++;
                 // exp and gold are calculated based on damage inflicted
                 let attackResult = playerUnit.attack(bossUnit);
                 damages.push(attackResult);
@@ -538,7 +536,6 @@ class PlayerController extends IPaymentListener {
             let softCurrencyGained = 0;
 
             while (hits-- > 0) {
-                engages++;
                 await user.addExperience(quest.exp);
                 softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }

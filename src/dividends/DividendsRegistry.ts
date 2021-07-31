@@ -1,6 +1,6 @@
 import Game from "../game";
-import { ObjectID } from "mongodb";
-import { Collections } from "../database";
+import { ObjectId } from "mongodb";
+import { Collections } from "../database/database";
 import { Blockchain, PurchaseData, DivsWithdrawalData, TokenWithdrawalData, Withdrawal } from "../blockchain/Blockchain";
 import { Lock } from "../utils/lock";
 import { Season } from "../seasons/Season";
@@ -70,7 +70,7 @@ export class DividendsRegistry {
         await this._lock.acquire("token_withdrawal");
         try {
             await Game.activityHistory.update({
-                _id: new ObjectID(data.withdrawalId)
+                _id: new ObjectId(data.withdrawalId)
             }, { pending: false, token: data.token, transactionHash: data.transactionHash, to: data.to });
         } finally {
             await this._lock.release("token_withdrawal");
@@ -82,7 +82,7 @@ export class DividendsRegistry {
         try {
             await Game.activityHistory
                 .update({
-                    _id: new ObjectID(data.withdrawalId)
+                    _id: new ObjectId(data.withdrawalId)
                 }, { pending: false, transactionHash: data.transactionHash, to: data.to });
         } finally {
             await this._lock.release("withdrawal");
@@ -228,7 +228,7 @@ export class DividendsRegistry {
 
             let signature = await chain.sign(chain.getTokenAddress(type), to, withdrawalId, bigAmount, nonce);
 
-            await Game.activityHistory.update({ _id: new ObjectID(withdrawalId) }, { signature });
+            await Game.activityHistory.update({ _id: new ObjectId(withdrawalId) }, { signature });
 
             await user.inventory.modifyCurrency(type, -amount);
 
@@ -265,7 +265,7 @@ export class DividendsRegistry {
             });
             let signature = await this._blockchain.getBlockchain(blockchainId).sign(to, withdrawalId, BigInt(amount), nonce);
 
-            await Game.activityHistory.update({ _id: new ObjectID(withdrawalId) }, { signature });
+            await Game.activityHistory.update({ _id: new ObjectId(withdrawalId) }, { signature });
 
             const state = await Game.db.collection(Collections.DivTokenState)
                 .findOne({ _id: "payouts" });
@@ -315,7 +315,7 @@ export class DividendsRegistry {
 
     private async _createWithdrawal(userId: string, type: string, chain: string, data: Withdrawal): Promise<string> {
         const inserted = await Game.activityHistory.save(userId, type, chain, data);
-        return inserted.insertedId.valueOf() + "";
+        return inserted.insertedId.toHexString();
     }
 
     private _toBigIntAmount(value: string): bigint {

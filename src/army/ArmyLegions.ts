@@ -1,6 +1,6 @@
 import { Legion } from "./ArmyTypes";
 import { Db } from "mongodb";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { string } from "random-js";
 
 export class ArmyLegions {
@@ -20,9 +20,9 @@ export class ArmyLegions {
         if (!this._cacheExists(userId)) {
             const userRecord = await this._db.collection(Collections.Armies).findOne(
                 { _id: userId },
-                { $project: { "units": 0, "legions": 1 } }
+                { projection: { "units": 0, "legions": 1 } }
             );
-    
+
             if (userRecord) {
                 this._cache[userId] = userRecord.legions;
             } else {

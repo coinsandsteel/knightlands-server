@@ -134,7 +134,7 @@ export class Ranking implements IRankingTypeHandler {
     }
 
     async getParticipantRank(id: string) {
-        const participant = await this._collection.findOne({ tableId: this._id }, { $projection: { records: { $elemMatch: { id } } } });
+        const participant = await this._collection.findOne({ tableId: this._id }, { projection: { records: { $elemMatch: { id } } } });
         const match = await this._collection.aggregate([
             { $match: { tableId: this._id } },
             { $unwind: "$records" },
@@ -178,7 +178,7 @@ export class Ranking implements IRankingTypeHandler {
 
         if (!keepId) {
             pipeline.push({
-                $project: { id: 0 }
+                projection: { id: 0 }
             });
         }
 

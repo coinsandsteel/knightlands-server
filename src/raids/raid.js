@@ -2,7 +2,7 @@
 
 const {
     Collections
-} = require("../database");
+} = require("../database/database");
 
 const CBuffer = require("../CBuffer");
 const Unit = require("../combat/unit");
@@ -38,7 +38,7 @@ class Raid extends EventEmitter {
     }
 
     get id() {
-        return this._data._id.valueOf();
+        return this._data._id.toHexString();
     }
 
     get finished() {
@@ -434,7 +434,7 @@ class Raid extends EventEmitter {
                 const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate(
                     { raidId: this.templateId, user: userId },
                     { $setOnInsert: { raidId: this.templateId, user: userId } },
-                    { returnOriginal: true, upsert: true }
+                    { returnDocument: 'false', upsert: true }
                 );
 
                 if (!firstClearance.value) {

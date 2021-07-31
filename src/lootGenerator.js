@@ -2,7 +2,7 @@
 
 const {
     Collections
-} = require("./database");
+} = require("./database/database");
 import Random from "./random";
 const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";

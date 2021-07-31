@@ -1,6 +1,6 @@
 const {
     Collections
-} = require("./database");
+} = require("./database/database");
 
 import ItemType from "./knightlands-shared/item_type";
 import Elements from "./knightlands-shared/elements";

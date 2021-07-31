@@ -2,7 +2,7 @@ import Game from "../game";
 import blockchains from "../knightlands-shared/blockchains";
 import CurrencyType from "../knightlands-shared/currency_type";
 import Errors from "../knightlands-shared/errors";
-const { Collections } = require("../database");
+const { Collections } = require("../database/database");
 import TransactionStatus from "../knightlands-shared/payment_status";
 import { Lock } from "../utils/lock";
 

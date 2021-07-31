@@ -1,5 +1,5 @@
 import { Db } from "mongodb";
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import { ArmySummonMeta, ArmyUnit, UnitMeta, UnitAbilitiesMeta } from "./ArmyTypes";
 import SummonType from "../knightlands-shared/army_summon_type";
 const bounds = require("binary-search-bounds");
@@ -22,8 +22,8 @@ export class ArmySummoner {
     }
 
     async init() {
-        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" })
-        this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" });
+        this._meta = await this._db.collection(Collections.Meta).findOne({ _id: "army_summon_meta" }) as ArmySummonMeta
+        this._abilities = await this._db.collection(Collections.Meta).findOne({ _id: "army_abilities" }) as UnitAbilitiesMeta;
         this._units = (await this._db.collection(Collections.Meta).findOne({ _id: "army_units" })).units;
     }
 

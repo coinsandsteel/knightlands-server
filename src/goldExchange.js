@@ -1,7 +1,7 @@
 
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
-const { Collections } = require("./database.js");
+const { Collections } = require("./database/database.js");
 
 class GoldExchange {
     constructor(data, user) {

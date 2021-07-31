@@ -1,7 +1,7 @@
 import { Db, Collection } from "mongodb";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
 import { RankingOptions } from "../Ranking";
-import { Collections } from "../../database";
+import { Collections } from "../../database/database";
 import RankingType from "../../knightlands-shared/ranking_type";
 
 export class Leaderboard implements IRankingTypeHandler {

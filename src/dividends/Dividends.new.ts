@@ -2,7 +2,7 @@ import Game from "../game";
 import CurrencyType from "../knightlands-shared/currency_type";
 import { DividendsData, DividendsMeta, PayoutsPerShare } from "./types";
 import { DividendsRegistry } from "./DividendsRegistry"
-import { Collections } from "../database";
+import { Collections } from "../database/database";
 import errors from "../knightlands-shared/errors";
 import { isNumber } from "../validation";
 

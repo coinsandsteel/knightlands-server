@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
-import { Db, ObjectID } from "mongodb";
-import { Collections } from "../../database";
+import { Db, ObjectId } from "mongodb";
+import { Collections } from "../../database/database";
 
 import lt from "../../utils/longTimeout";
 import Game from "../../game";
@@ -29,7 +29,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         this.targetsHit = 0;
     }
 
-    get id(): ObjectID {
+    get id(): ObjectId {
         return this._state._id;
     }
 
@@ -153,13 +153,13 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     async loadFromState(state: RaceRecord) {
         this._state = state;
-        this._ranking = new Ranking(this._db.collection(Collections.RaceTables), this._state._id, {
+        this._ranking = new Ranking(this._db.collection(Collections.RaceTables), this._state._id.toHexString(), {
             typeOptions: this._state.config.type
         });
         await this._ranking.init();
     }
 
-    async load(id: ObjectID) {
+    async load(id: ObjectId) {
         const state = <RaceRecord>await this._db.collection(Collections.Races).findOne({ _id: id })
         await this.loadFromState(state);
         await this._launch();

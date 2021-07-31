@@ -1,7 +1,7 @@
 import Game from "../game";
 import Errors from "../knightlands-shared/errors";
 import AccessoryOption from "../knightlands-shared/accessory_option";
-const { Collections } = require("../database");
+const { Collections } = require("../database/database");
 import CurrencyType from "../knightlands-shared/currency_type";
 import Random from "../random";
 import Rarity from "../knightlands-shared/rarity";
