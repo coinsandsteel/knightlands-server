@@ -1738,6 +1738,7 @@ class User {
                 this._recalculateStats = true;
 
                 if (this._data.beast.level >= currentBeast.levels.length) {
+                    this.evolveBeast();
                     break;
                 }
             }
@@ -1764,7 +1765,6 @@ class User {
         if (this._data.beast.index < beastMeta.levels.length + 1) {
             this._data.beast.index++;
             this._data.beast.level = 0;
-            this._data.beast.exp = 0;
         }
     }
 
