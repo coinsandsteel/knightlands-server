@@ -369,9 +369,9 @@ class PlayerController extends IPaymentListener {
 
             try {
                 let response = await handler(user, data);
-                let changes = await user.commitChanges();
+                await user.commitChanges();
 
-                respond(null, { changes, response });
+                respond(null, { response });
             } catch (error) {
                 console.log(error);
                 respond(error);

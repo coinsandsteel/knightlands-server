@@ -1081,33 +1081,15 @@ class User {
 
         await this._inventory.commitChanges(inventoryChangesMode);
 
-        // apply new data as original
-        return {
+        Game.emitPlayerEvent(this.id, Events.CommitChanges, {
             changes,
             removals
-        };
+        });
     }
 
     async autoCommitChanges(changeCallback, filterResponse) {
         let response = await changeCallback(this);
-        let commitResponse = await this.commitChanges();
-
-        if (filterResponse) {
-            const newResponse = {
-                changes: {},
-                removals: {}
-            };
-
-            for (const field in filterResponse) {
-                if (filterResponse[field]) {
-                    newResponse.changes[field] = commitResponse.changes[field];
-                }
-            }
-
-            commitResponse = newResponse;
-        }
-
-        Game.emitPlayerEvent(this.id, Events.CommitChanges, commitResponse);
+        await this.commitChanges();
 
         return response;
     }
