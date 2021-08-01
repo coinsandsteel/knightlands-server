@@ -213,6 +213,10 @@ class User {
         this._data.character.nickname = value;
     }
 
+    set avatar(value) {
+        this._data.character.avatar = value;
+    }
+
     async getMeta() {
         if (!this._meta) {
 

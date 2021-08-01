@@ -71,13 +71,13 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         let decimal = "";
         if (str != "0") {
             if (str.length < decimals) {
-            str = str.padStart(decimals - str.length, "0");
-            decimal = "0." + str.slice(0, str.length);
+                str = str.padStart(decimals - str.length, "0");
+                decimal = "0." + str.slice(0, str.length);
             } else {
-            decimal =
-                str.slice(0, str.length - decimals) +
-                "." +
-                str.slice(str.length - decimals);
+                decimal =
+                    str.slice(0, str.length - decimals) +
+                    "." +
+                    str.slice(str.length - decimals);
             }
         }
 

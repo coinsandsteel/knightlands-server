@@ -47,7 +47,7 @@ export class DividendsRegistry {
         const state = await Game.db.collection(Collections.DivTokenState).findOne({ _id: this._season.getSeason() });
         if (state) {
             this._totalStake = state.stake;
-            this._supply = state.supply;
+            this._supply = state.supply || 0;
             this._totalStake = state.stake || 0;
             this._lastPayout = state.lastPayout;
         }

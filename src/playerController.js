@@ -59,6 +59,7 @@ class PlayerController extends IPaymentListener {
 
         // payed functions 
         this._socket.on(Operations.ChangeNickname, this._gameHandler(this._changeNickname.bind(this)));
+        this._socket.on(Operations.ChangeAvatar, this._gameHandler(this._changeAvatar.bind(this)));
         // this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
         this._socket.on(Operations.CancelPayment, this._gameHandler(this._cancelPayment.bind(this)));
 
@@ -782,6 +783,20 @@ class PlayerController extends IPaymentListener {
         } catch (exc) {
             respond(exc);
         }
+    }
+
+    async _changeAvatar(user, data) {
+        if (!isNumber(data.id)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        // check if avatar feets the requirements
+        const avatars = await this._db.collection(Collections.Meta).findOne({ _id: "avatars" });
+        if (avatars.unlockables[data.id] > user.level) {
+            throw Errors.NotEnoughLevel;
+        }
+
+        user.avatar = data.id;
     }
 
     async _changeNickname(user, data) {
