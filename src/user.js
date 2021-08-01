@@ -935,6 +935,10 @@ class User {
 
         let itemsRequired = count;
 
+        if (count > 10)  {
+            throw Errors.IncorrectArguments;
+        }
+
         if (actionData.required > 0) {
             itemsRequired *= actionData.required;
         }

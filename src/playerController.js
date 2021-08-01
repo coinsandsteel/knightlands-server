@@ -599,7 +599,7 @@ class PlayerController extends IPaymentListener {
 
     async _useItem(user, data) {
         let count = data.count * 1;
-        if (!Number.isInteger(count)) {
+        if (!Number.isInteger(count) || count <= 0) {
             count = 1;
         }
 
