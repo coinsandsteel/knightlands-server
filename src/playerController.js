@@ -767,8 +767,12 @@ class PlayerController extends IPaymentListener {
     }
 
     async _fetchCharacter(data, respond) {
-        const userPreview = await Game.loadUserPreview(data.id);
-        respond(null, userPreview);
+        try {
+            const userPreview = await Game.loadUserPreview(data.id);
+            respond(null, userPreview);
+        } catch (exc) {
+            respond(Errors.UnknownPlayer);
+        }
     }
 
     async _fetchRefillTimerStatus(data, respond) {
