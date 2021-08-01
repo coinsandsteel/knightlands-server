@@ -292,6 +292,8 @@ export class DividendsRegistry {
                 nonce,
                 amount
             };
+        } catch (exc) {
+            console.error(exc)
         } finally {
             await this._lock.release("divs");
         }

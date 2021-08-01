@@ -21,6 +21,11 @@ export class ActivityHistory {
     }
 
     async update(filter: any, data: any) {
-        return Game.db.collection(Collections.ActivityHistory).updateOne(filter, { $set: data });
+        let dataQuery = {};
+        for (let k in data) {
+            dataQuery[`data.${k}`] = data[k];
+        }
+
+        return Game.db.collection(Collections.ActivityHistory).updateOne(filter, { $set: dataQuery });
     }
 }

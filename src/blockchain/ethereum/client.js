@@ -215,7 +215,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             withdrawalId: event.args.withdrawalId,
             amount: event.args.amount.toString(),
             blockNumber: event.blockNumber,
-            tx: event.transactionHash
+            transactionHash: event.transactionHash
         });
     }
 
