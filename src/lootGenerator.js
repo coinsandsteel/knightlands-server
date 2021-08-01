@@ -9,6 +9,7 @@ import GachaType from "./knightlands-shared/gacha_type";
 const ItemType = require("./knightlands-shared/item_type");
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
+import CharacterStat from "./knightlands-shared/character_stat";
 const Events = require("./knightlands-shared/events");
 
 class LootGenerator {
@@ -182,6 +183,9 @@ class LootGenerator {
             }, table, questFinished, items, itemsHash, luck);
         }
 
+        // check luck rolls
+        await this._rollLuckDrops({ items, userId, stage, itemsHash });
+
         return items;
     }
 
@@ -213,6 +217,22 @@ class LootGenerator {
             itemsToRoll,
             lootCount
         }, table, table.weights, items, itemsHash);
+    }
+
+    async _rollLuckDrops({ items, itemsHash, userId, stage }) {
+        let user = await Game.getUser(userId);
+        const luckDrops = await this._db.collection(Collections.QuestLoot).findOne({ _id: "luck_loot" }, { projection: { [stage]: 1 } });
+        // if user has minimum required luck
+        const stageLoot = luckDrops[stage];
+        const userLuck = user.getMaxStatValue(CharacterStat.Luck);
+        for (let i = stageLoot.length - 1; i >= 0; --i) {
+            // we assume that luck requirements are in ascending order
+            let table = stageLoot[i];
+            if (userLuck >= table.minLuck) {
+                await this._rollItemsFromLootTable({}, table, table.weights, items, itemsHash);
+                break;
+            }
+        }
     }
 
     async _rollQuestLoot(lootContext, table, questFinished, items, itemsHash, luck) {
