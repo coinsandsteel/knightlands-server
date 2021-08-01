@@ -2,7 +2,7 @@ import { Blockchain, TokenDepositData } from "../blockchain/Blockchain";
 import { Lock } from "../utils/lock";
 import Game from "../game";
 import { Collections } from "../database/database";
-import { ObjectId } from "mongodb";
+import { ObjectId, ReturnDocument } from "mongodb";
 import currency_type from "../knightlands-shared/currency_type";
 
 export class DepositGateway {
@@ -22,7 +22,7 @@ export class DepositGateway {
                 }
             },
             {
-                returnOriginal: false,
+                returnDocument: ReturnDocument.AFTER,
                 upsert: true
             }
         );
