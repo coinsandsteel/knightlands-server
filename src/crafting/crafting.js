@@ -758,7 +758,7 @@ class Crafting {
             throw Errors.ItemLocked;
         }
 
-        if ((item.element && item.element == Elements.Physical) || !this._inventory.isMaxLevel(item)) {
+        if (!item.element || item.element != Elements.Physical || !this._inventory.isMaxLevel(item)) {
             throw Errors.IncorrectArguments;
         }
 

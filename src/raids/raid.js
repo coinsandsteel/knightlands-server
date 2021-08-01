@@ -16,6 +16,7 @@ import Errors from "../knightlands-shared/errors";
 import RankingType from "../knightlands-shared/ranking_type";
 
 import RaidChallengeType from "../knightlands-shared/raid_challenge";
+import { ObjectId } from "bson";
 const TopDamageDealers = require("./topDamageDealersChallenge");
 
 const ExtraDamagePerAdditionalHit = 0.01;
@@ -400,7 +401,7 @@ class Raid extends EventEmitter {
             }
         }
 
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
             $set: {
                 timeLeft: this._data.timeLeft,
                 bossState: this._data.bossState,
