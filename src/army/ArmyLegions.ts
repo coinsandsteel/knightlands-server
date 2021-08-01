@@ -20,7 +20,7 @@ export class ArmyLegions {
         if (!this._cacheExists(userId)) {
             const userRecord = await this._db.collection(Collections.Armies).findOne(
                 { _id: userId },
-                { projection: { "units": 0, "legions": 1 } }
+                { projection: { "legions": 1 } }
             );
 
             if (userRecord) {
