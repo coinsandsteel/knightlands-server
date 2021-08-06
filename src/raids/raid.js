@@ -208,7 +208,7 @@ class Raid extends EventEmitter {
     async setReserveSlot(reserve) {
         this._data.busySlots += (reserve ? 1 : -1);
 
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
             $set: {
                 busySlots: this._data.busySlots
             }
@@ -223,7 +223,7 @@ class Raid extends EventEmitter {
         this._data.participants[userId] = 0;
         this._data.loot[userId] = false;
 
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, {
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
             $set: {
                 participants: this._data.participants
             }
@@ -523,7 +523,7 @@ class Raid extends EventEmitter {
 
         this._data.loot[userId] = loot;
 
-        await this._db.collection(Collections.Raids).updateOne({ _id: this.id }, updateQuery);
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, updateQuery);
     }
 
     _scheduleCheckpoint() {
