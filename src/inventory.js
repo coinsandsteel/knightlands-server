@@ -9,7 +9,6 @@ import Errors from "./knightlands-shared/errors";
 import CurrencyType from "./knightlands-shared/currency_type";
 import RankingType from "./knightlands-shared/ranking_type";
 import { getSlot, EquipmentSlots } from "./knightlands-shared/equipment_slot";
-import { ObjectId } from "mongodb";
 
 const UserHolder = -1;
 
@@ -877,6 +876,23 @@ class Inventory {
         return this._setItemLocked(itemId, false);
     }
 
+    async _getEquipped(item) {
+        let equippedItems;
+        let unit;
+        
+        if (item.holder == UserHolder || item.holder === undefined) {
+            equippedItems = this._user.equipment;
+        } else {
+            unit = await Game.armyManager.getUnit(this._userId, item.holder);
+            equippedItems = unit.items;
+        }
+
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        const itemSlot = getSlot(template.equipmentType);
+
+        return equippedItems[itemSlot];
+    }
+
     async _setItemLocked(itemId, isLocked) {
         const item = this.getItemById(itemId);
 
@@ -887,21 +903,9 @@ class Inventory {
         
         // if holder is character use chracter items
         if (item.equipped) {
-            let equippedItems;
-            let unit;
-            
-            if (item.holder == UserHolder || item.holder === undefined) {
-                equippedItems = this._user.equipment;
-            } else {
-                unit = await Game.armyManager.getUnit(this._userId, item.holder);
-                equippedItems = unit.items;
-            }
-
-            const template = await Game.itemTemplates.getTemplate(item.template);
-            const itemSlot = getSlot(template.equipmentType);
-
-            if (equippedItems[itemSlot]) {
-                equippedItems[itemSlot].locked = isLocked;
+            const equipped = await this._getEquipped(item);
+            if (equipped) {
+                equipped.locked = isLocked;
             }
         }
         

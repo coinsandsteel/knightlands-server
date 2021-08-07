@@ -1195,6 +1195,13 @@ class PlayerController extends IPaymentListener {
         if (user.freeTowerAttempts > 0) {
             user.freeTowerAttempts--;
         } else {
+            const floorData = await this._db.collection(Collections.TowerMeta).find({
+                _id: {
+                    $in: [
+                        towerFloor.id, "misc"
+                    ]
+                }
+            }).toArray();
             const miscMeta = floorData.find(x => x._id == "misc");
             const ticketItem = user.inventory.getItemByTemplate(miscMeta.ticketItem);
             if (!ticketItem) {
