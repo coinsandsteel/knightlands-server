@@ -125,7 +125,7 @@ class RacesManager implements IRankingTypeHandler {
     async getRewards(raceId: string) {
         let raceState = <RaceRecord>await this._db.collection(Collections.Races).findOne({
             _id: new ObjectId(raceId)
-        }, { projection: { "config.rewards": 1 } });
+        });
 
         if (!raceState) {
             throw Errors.NoSuchTournament;

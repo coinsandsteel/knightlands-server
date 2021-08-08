@@ -178,7 +178,7 @@ export class Ranking implements IRankingTypeHandler {
 
         if (!keepId) {
             pipeline.push({
-                projection: { id: 0 }
+                $project: { id: 0 }
             });
         }
 
