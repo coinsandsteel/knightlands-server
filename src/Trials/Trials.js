@@ -304,15 +304,15 @@ class Trials {
             throw Errors.TrialStageCleared;
         }
 
-        const stagesMeta = trialsMeta.trials[trialId].stages;
+        const stagesOrder = trialsMeta.trials[trialId].stagesOrder;
         // previous stages were cleared?
-        for (let index = 0; index < stagesMeta.length; index++) {
-            const stage = stagesMeta[index];
-            if (stage.id == stageMeta.id) {
+        for (let index = 0; index < stagesOrder.length; index++) {
+            const stageOrderId = stagesOrder[index];
+            if (stageOrderId == stageMeta.id) {
                 break;
             }
 
-            if (!this._isStageCleared(trialType, trialId, stage.id)) {
+            if (!this._isStageCleared(trialType, trialId, stageOrderId)) {
                 throw Errors.TrialClearPreviousStages;
             }
         }
