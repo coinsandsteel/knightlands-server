@@ -68,7 +68,7 @@ export class DailyShop {
         const meta = await this._getMeta();
         const item = fixed ? meta.fixedItems[itemIndex].data : this._data.items[itemIndex];
         const purchaseData = fixed ? this._data.fixedItems : this._data.purchasedItems;
-        if (purchaseData[itemIndex] == item.max) {
+        if (purchaseData[item.item] == item.max) {
             throw Errors.IncorrectArguments;
         }
 
@@ -88,7 +88,7 @@ export class DailyShop {
             }
         }
 
-        purchaseData[itemIndex] = (purchaseData[itemIndex] || 0) + 1;
+        purchaseData[item.item] = (purchaseData[item.item] || 0) + 1;
         await this._user.inventory.addItemTemplate(item.item, item.count);
 
         return {

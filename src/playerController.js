@@ -1586,6 +1586,10 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseDailyItem(user, data) {
+        if (!isNumber(data.itemIndex)) {
+            throw Errors.IncorrectArguments;
+        }
+
         return user.dailyShop.purchase(+data.itemIndex, data.fixed);
     }
 
