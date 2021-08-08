@@ -380,7 +380,7 @@ class Inventory {
             let i = 0;
             for (; i < length; ++i) {
                 templateIds[i] = templateRecords[i].item;
-                itemQuantities[templateIds[i]] = templateRecords[i].quantity;
+                itemQuantities[templateIds[i]] = (itemQuantities[templateIds[i]] || 0) + templateRecords[i].quantity;
                 elements[templateIds[i]] = templateRecords[i].element;
             }
         }
@@ -392,7 +392,7 @@ class Inventory {
 
         let templates = await Game.itemTemplates.getTemplates(templateIds);
         let i = 0;
-        for (; i < length; ++i) {
+        for (; i < templates.length; ++i) {
             const template = templates[i];
             await this._addItemTemplate(template, itemQuantities[template._id], elements[template._id]);
         }
