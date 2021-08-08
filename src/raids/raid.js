@@ -459,36 +459,37 @@ class Raid extends EventEmitter {
         let rewards = {
             dkt: raidStage.minDkt,
             exp: 0,
-            gold: chosenLoot.gold,
-            hardCurrency: 0
+            gold: 0,
+            hardCurrency: 0,
+            items: []
         };
 
-        if (!chosenLoot) { 
-            return null
-        }
+        if (chosenLoot) { 
+            rewards.gold = chosenLoot.gold;
 
-        rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
-        rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
+            rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
+            rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
-        // evaluate challenges
-        {
-            let i = 0;
-            const length = this._challenges.length;
+            // evaluate challenges
+            {
+                let i = 0;
+                const length = this._challenges.length;
 
-            for (; i < length; ++i) {
-                let challenge = this._challenges[i];
-                let challengeRewards = challenge.getRewards(userId);
+                for (; i < length; ++i) {
+                    let challenge = this._challenges[i];
+                    let challengeRewards = challenge.getRewards(userId);
 
-                if (challengeRewards.loot) {
-                    let challengeItems = await Game.lootGenerator.getLootFromTable(challengeRewards.loot, challengeRewards.rolls);
-                    if (challengeItems) {
-                        rewards.items = rewards.items.concat(challengeItems);
+                    if (challengeRewards.loot) {
+                        let challengeItems = await Game.lootGenerator.getLootFromTable(challengeRewards.loot, challengeRewards.rolls);
+                        if (challengeItems) {
+                            rewards.items = rewards.items.concat(challengeItems);
+                        }
                     }
-                }
 
-                rewards.dkt += challengeRewards.dkt;
-                rewards.gold += challengeRewards.softCurrency;
-                rewards.hardCurrency += challengeRewards.hardCurrency;
+                    rewards.dkt += challengeRewards.dkt;
+                    rewards.gold += challengeRewards.softCurrency;
+                    rewards.hardCurrency += challengeRewards.hardCurrency;
+                }
             }
         }
 

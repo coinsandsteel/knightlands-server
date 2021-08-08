@@ -641,7 +641,8 @@ export class ArmyManager {
                     lastSummon: {},
                     legions: this._legions.createLegions(),
                     occupiedSlots: 0,
-                    maxSlots: this._meta.armyExpansion.defaultSlots
+                    maxSlots: this._meta.armyExpansion.defaultSlots,
+                    units: []
                 }
             },
             { projection: projection, upsert: true, returnDocument: ReturnDocument.AFTER }

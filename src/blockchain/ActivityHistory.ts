@@ -13,8 +13,8 @@ export class ActivityHistory {
         return (await db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).count()) > 0;
     }
 
-    async getHistory(db: Db, user: string) {
-        return db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
+    async getHistory(user: string) {
+        return Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
     }
 
     async save(db: Db, user: string, type: string, chain: string, data: any) {

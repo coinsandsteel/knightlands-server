@@ -254,7 +254,7 @@ class RaidManager {
 
     async getCurrentRaids(userId) {
         let lootQuery = {};
-        lootQuery[`loot.${userId}`] = false;
+        lootQuery[`loot.${userId}`] = { $ne: true };
 
         let matchQuery = {
             $match: {
