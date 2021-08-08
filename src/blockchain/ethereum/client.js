@@ -2,6 +2,7 @@ const IBlockchainListener = require("../IBlockchainListener");
 const IBlockchainSigner = require("../IBlockchainSigner");
 const ClassAggregation = require("../../classAggregation");
 const { ethers } = require("ethers");
+import Game from "../../game";
 
 const { Collections } = require("../../database/database");
 
@@ -24,8 +25,8 @@ const BlocksRange = 500;
 const EventsScanned = "eventsScanned";
 
 class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
-    constructor(db) {
-        super(db);
+    constructor() {
+        super();
 
         this.Payment = Blockchain.Payment;
         this.PresaleChestTransfer = "PresaleChestTransfer";
@@ -37,7 +38,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         this._eventsReceived = 0;
         this._eventWatchers = {};
-        this._db = db;
 
         this._provider = new ethers.providers.JsonRpcProvider(process.env.ETHEREUM_URL || "http://127.0.0.1:8545");
         this._signer = new ethers.Wallet(process.env.PK, this._provider);
@@ -115,7 +115,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
         try {
-            let eventsScanned = await this._db.collection(Collections.Services).findOne({
+            let eventsScanned = await Game.dbClient.db.collection(Collections.Services).findOne({
                 chain: blockchains.Ethereum,
                 type: EventsScanned,
                 event: eventName
@@ -175,7 +175,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async _updateLastEventReceived(blockNumber, eventName) {
-        await this._db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: blockchains.Ethereum }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
+        await Game.dbClient.db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: blockchains.Ethereum }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
     }
 
     _emitPresaleChestsTransfer(transaction, timestamp, eventData) {

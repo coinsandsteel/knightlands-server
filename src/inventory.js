@@ -248,14 +248,14 @@ class Inventory {
         return this._items;
     }
 
-    async autoCommitChanges(changeCallback) {
+    async autoCommitChanges(changeCallback, db) {
         await this.loadAllItems();
         let reponse = await changeCallback(this);
-        await this.commitChanges();
+        await this.commitChanges(db || Game.dbClient.db);
         return reponse;
     }
 
-    async commitChanges() {
+    async commitChanges(db) {
         if (!this._loaded) {
             return;
         }
@@ -351,7 +351,7 @@ class Inventory {
         };
         queries.push(updateQuery);
 
-        await this._db.collection(Collections.Inventory).bulkWrite(queries);
+        await db.collection(Collections.Inventory).bulkWrite(queries);
 
         // reset 
         this._newItems.clear();

@@ -1,3 +1,4 @@
+import { Db } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 
@@ -8,24 +9,24 @@ export class ActivityHistory {
 
     }
 
-    async hasHistory(user: string) {
-        return (await Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).count()) > 0;
+    async hasHistory(db: Db, user: string) {
+        return (await db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).count()) > 0;
     }
 
-    async getHistory(user: string) {
-        return Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
+    async getHistory(db: Db, user: string) {
+        return db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
     }
 
-    async save(user: string, type: string, chain: string, data: any) {
-        return Game.db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain });
+    async save(db: Db, user: string, type: string, chain: string, data: any) {
+        return db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain });
     }
 
-    async update(filter: any, data: any) {
+    async update(db: Db, filter: any, data: any) {
         let dataQuery = {};
         for (let k in data) {
             dataQuery[`data.${k}`] = data[k];
         }
 
-        return Game.db.collection(Collections.ActivityHistory).updateOne(filter, { $set: dataQuery });
+        return db.collection(Collections.ActivityHistory).updateOne(filter, { $set: dataQuery });
     }
 }

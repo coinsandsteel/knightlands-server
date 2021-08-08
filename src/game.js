@@ -21,6 +21,7 @@ class Game extends EventEmitter {
     }
 
     async init(
+        dbClient,
         server, 
         db, 
         blockchain, 
@@ -34,6 +35,7 @@ class Game extends EventEmitter {
         armyManager,
         shop
     ) {
+        this.dbClient = dbClient;
         this.shop = shop;
         this._server = server;
         this._db = db;
@@ -80,7 +82,7 @@ class Game extends EventEmitter {
     }
 
     get db() {
-        return this._db;
+        return this.dbClient.db;
     }
 
     get userPremiumService() {

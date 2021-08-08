@@ -852,7 +852,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _joinRaid(user, data) {
-        return this._raidManager.joinRaid(user.id, +data.raidId);
+        return this._raidManager.joinRaid(user.id, data.raidId);
     }
 
     async _attackRaidBoss(user, data) {

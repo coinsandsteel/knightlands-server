@@ -96,7 +96,7 @@ class RaidManager {
             throw Errors.RaidIsFull;
         }
 
-        const user = await Game.getUser(userId);
+        const user = await Game.getUserById(userId);
         let joinRecipe = await this._loadSummonRecipe(raid.template.joinRecipe);
 
         if (!(await user.inventory.hasEnoughIngridients(joinRecipe.ingridients))) {
@@ -109,7 +109,7 @@ class RaidManager {
         });
 
         await user.dailyQuests.onPaidRaidJoin();
-        await raid.join(user.id);
+        await raid.join(user.id.toHexString());
     }
 
     async summonRaid(summoner, raidTemplateId, free) {

@@ -42,14 +42,16 @@ export class DepositGateway {
         const blockhain = this._blockchain.getBlockchain(chain);
         const amount = blockhain.convertTokenAmount(data.amount);
 
-        if (blockhain.getTokenAddress(currency_type.Dkt) == data.token) {
-            data.currency = currency_type.Dkt;
-            await inventory.autoCommitChanges(() => inventory.modifyCurrency(currency_type.Dkt, amount));
-        } else if (blockhain.getTokenAddress(currency_type.Dkt2) == data.token) {
-            data.currency = currency_type.Dkt2;
-            await inventory.autoCommitChanges(() => inventory.modifyCurrency(currency_type.Dkt2, amount));
-        }
+        await Game.dbClient.withTransaction(async db => {
+            if (blockhain.getTokenAddress(currency_type.Dkt) == data.token) {
+                data.currency = currency_type.Dkt;
+                await inventory.autoCommitChanges(() => inventory.modifyCurrency(currency_type.Dkt, amount), db);
+            } else if (blockhain.getTokenAddress(currency_type.Dkt2) == data.token) {
+                data.currency = currency_type.Dkt2;
+                await inventory.autoCommitChanges(() => inventory.modifyCurrency(currency_type.Dkt2, amount), db);
+            }
 
-        await Game.activityHistory.save(user.address, 'token-d', chain, data);
+            await Game.activityHistory.save(db, user.address, 'token-d', chain, data);
+        })
     }
 }

@@ -65,7 +65,6 @@ class User {
         this.DeltaInventoryChanges = 2;
 
         this._address = address;
-        this._db = db;
         this._expTable = expTable;
         this._meta = meta;
         this._recalculateStats = false;
@@ -333,7 +332,7 @@ class User {
         }
 
         if (previousLevel < character.level) {
-            let levelUpMeta = await this._db.collection(Collections.Meta).findOne({ _id: "levelUp" });
+            let levelUpMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "levelUp" });
 
             for (let i = previousLevel; i < character.level; ++i) {
                 // assign currencies
@@ -503,7 +502,7 @@ class User {
 
     async generateNonce() {
         this._data.nonce = uuidv4();
-        const users = this._db.collection(Collections.Users);
+        const users = Game.dbClient.db.collection(Collections.Users);
         await users.updateOne({
             address: this._address
         }, {
@@ -524,7 +523,7 @@ class User {
             return;
         }
 
-        const users = this._db.collection(Collections.Users);
+        const users = Game.dbClient.db.collection(Collections.Users);
 
         let userData = this._validateUser({
             address: this._address
@@ -558,7 +557,7 @@ class User {
         userData = this._validateUser(userData);
 
         this._data = userData;
-        this._inventory = new Inventory(this, this._db);
+        this._inventory = new Inventory(this, Game.dbClient.db);
         this._crafting = new Crafting(this, this._inventory, this.equipment);
         this._itemStatResolver = new ItemStatResolver(
             this._meta.statConversions,
@@ -583,7 +582,7 @@ class User {
         await this._dividends.tryCommitPayout();
         await this._dailyShop.update();
 
-        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
+        let adventuresMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
 
         await this.airDropItemsIfAny();
@@ -674,7 +673,7 @@ class User {
     }
 
     async trainStats(stats) {
-        const trainingMeta = await this._db.collection(Collections.Meta).findOne({ _id: "training_camp" });
+        const trainingMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "training_camp" });
         let totalGoldRequired = 0;
 
         let resourceRequired = {};
@@ -745,7 +744,7 @@ class User {
             finalStats[i] += StatConversions[i] * character.attributes[i];
         }
 
-        let levelUpMeta = await this._db.collection(Collections.Meta).findOne({ _id: "levelUp" });
+        let levelUpMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "levelUp" });
 
         let levelMetaData = levelUpMeta.records[character.level - 1].stats;
 
@@ -754,7 +753,7 @@ class User {
         // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
         finalStats[CharacterStats.Health] += levelMetaData[CharacterStats.Health]
 
-        let combatMeta = await this._db.collection(Collections.Meta).findOne({ _id: "combat_meta" });
+        let combatMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "combat_meta" });
 
         let mainHandType;
         let offHandType;
@@ -793,7 +792,7 @@ class User {
 
         // add stats from beast. If it is non upgraded beast, skip it
         if (this._data.beast.index != 0 || this._data.beast.level != 0) {
-            const beastsMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+            const beastsMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "beasts" });
             let level = this._data.beast.level;
             let index = this._data.beast.index;
             if (level == 0) {
@@ -1010,7 +1009,7 @@ class User {
     }
 
     async _saveBuffs() {
-        await this._db.collection(Collections.Users).updateOne({
+        await Game.dbClient.db.collection(Collections.Users).updateOne({
             address: this._address
         }, {
             $set: {
@@ -1058,41 +1057,43 @@ class User {
         return await this._crafting.unbindItem(itemId, items);
     }
 
-    async commitChanges(inventoryChangesMode) {
+    async commitChanges() {
         await this._calculateFinalStats();
 
-        let users = this._db.collection(Collections.Users);
-        let {
-            updateQuery,
-            removeQuery,
-            changes,
-            removals
-        } = buildUpdateQuery(this._originalData, this._data);
+        Game.dbClient.withTransaction(async db => {
+            let users = db.collection(Collections.Users);
+            let {
+                updateQuery,
+                removeQuery,
+                changes,
+                removals
+            } = buildUpdateQuery(this._originalData, this._data);
 
-        if (updateQuery || removeQuery) {
-            let finalQuery = {};
+            if (updateQuery || removeQuery) {
+                let finalQuery = {};
 
-            if (updateQuery) {
-                finalQuery.$set = updateQuery;
+                if (updateQuery) {
+                    finalQuery.$set = updateQuery;
+                }
+                
+                if (removeQuery) {
+                    finalQuery.$unset = removeQuery;
+                }
+
+                await users.updateOne({
+                    address: this.address
+                }, finalQuery, { upsert: true });
+
+                this._originalData = cloneDeep(this._data);
             }
-            
-            if (removeQuery) {
-                finalQuery.$unset = removeQuery;
-            }
 
-            await users.updateOne({
-                address: this.address
-            }, finalQuery, { upsert: true });
+            await this._inventory.commitChanges(db);
 
-            this._originalData = cloneDeep(this._data);
-        }
-
-        await this._inventory.commitChanges(inventoryChangesMode);
-
-        Game.emitPlayerEvent(this.id, Events.CommitChanges, {
-            changes,
-            removals
-        });
+            Game.emitPlayerEvent(this.id, Events.CommitChanges, {
+                changes,
+                removals
+            });
+        })
     }
 
     async autoCommitChanges(changeCallback, filterResponse) {
@@ -1249,7 +1250,7 @@ class User {
 
     // Adventures
     async getAdventuresStatus() {
-        let adventures = await this._db.collection(Collections.Adventures).findOne({ _id: this.id });
+        let adventures = await Game.dbClient.db.collection(Collections.Adventures).findOne({ _id: this.id });
 
         let changed = false;
 
@@ -1279,7 +1280,7 @@ class User {
         }
 
         if (changed) {
-            await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+            await Game.dbClient.db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
         }
 
         return adventures;
@@ -1287,7 +1288,7 @@ class User {
 
     async buyAdventureSlot() {
         let adventures = await this.getAdventuresStatus();
-        let adventuresMeta = await this._db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
+        let adventuresMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
 
         let slotIndex = adventures.adventures.length - 1;
 
@@ -1307,7 +1308,7 @@ class User {
         let slot = await this._createNewAdventureSlot();
         adventures.adventures.push(slot);
 
-        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+        await Game.dbClient.db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
 
         return slot;
     }
@@ -1339,7 +1340,7 @@ class User {
             }
         }
 
-        const adventuresData = await this._db.collection(Collections.AdventuresList).find({ _id: { $in: ids } }).toArray();
+        const adventuresData = await Game.dbClient.db.collection(Collections.AdventuresList).find({ _id: { $in: ids } }).toArray();
         for (let i = 0; i < 3; ++i) {
             ids[i] = adventuresData.find(x => x._id == ids[i]);
         }
@@ -1368,7 +1369,7 @@ class User {
         adventureToStart.startTime = Game.now;
         list[slot] = adventureToStart;
 
-        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+        await Game.dbClient.db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
 
         this._dailyQuests.onAdventureStarted();
 
@@ -1397,7 +1398,7 @@ class User {
         await this._inventory.addItemTemplates(items);
 
         list[slot] = await this._createNewAdventureSlot();
-        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+        await Game.dbClient.db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
 
         return {
             items,
@@ -1426,7 +1427,7 @@ class User {
             throw Errors.AdventureWasRefreshed;
         }
 
-        await this._db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
+        await Game.dbClient.db.collection(Collections.Adventures).replaceOne({ _id: this.id }, adventures, { upsert: true });
 
         return adventure;
     }
@@ -1464,7 +1465,7 @@ class User {
     }
 
     async selectClass(className) {
-        const selections = (await this._db.collection(Collections.Meta).findOne({ _id: "classes" })).selections;
+        const selections = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "classes" })).selections;
         // find suitable class
         let selection;
         for (let i = 0; i < selections.length; ++i) {
@@ -1500,7 +1501,7 @@ class User {
     }
 
     async getDailyRewardStatus() {
-        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
+        const dailyRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewards = this._processDailyReward(dailyRewardsMeta);
 
         return {
@@ -1549,7 +1550,7 @@ class User {
 
         this.subscriptions.lastClaimCycle = this.getDailyRewardCycle();
 
-        const dailyRefillsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
+        const dailyRefillsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
         const length = dailyRefillsMeta.length;
         for (let i = 0; i < length; ++i) {
             const refill = dailyRefillsMeta[i];
@@ -1645,7 +1646,7 @@ class User {
     }
 
     async collectDailyReward() {
-        const dailyRewardsMeta = (await this._db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
+        const dailyRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);
 
         if (dailyRewardCollect.cycle >= this.getDailyRewardCycle()) {
@@ -1678,7 +1679,7 @@ class User {
             boostCount = 1;
         }
 
-        const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+        const beastMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "beasts" });
 
         if (regular) {
             const softRequired = boostCount * beastMeta.softPrice;
@@ -1761,7 +1762,7 @@ class User {
     }
 
     async evolveBeast() {
-        const beastMeta = await this._db.collection(Collections.Meta).findOne({ _id: "beasts" });
+        const beastMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "beasts" });
         const currentBeast = beastMeta.levels[this._data.beast.index];
 
         // not enough level to evolve, should be last
