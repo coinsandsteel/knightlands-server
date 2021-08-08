@@ -353,29 +353,35 @@ class PlayerController extends IPaymentListener {
 
     _gameHandler(handler, throttleId = "default", throttle = 0) {
         return async (data, respond) => {
-            if (this.address == null || this.address == undefined) {
-                return;
-            }
-
-            if (throttle > 0) {
-                if (this._opThrottles[throttleId] >= Game.now) {
-                    respond("throttle");
-                    return;
-                } else {
-                    this._opThrottles[throttleId] = Game.now + throttle;
-                }
-            }
-
-            let user = await this.getUser(this.address);
+            await this._lock.acquire("game_handler");
 
             try {
-                let response = await handler(user, data);
-                await user.commitChanges();
+                if (this.address == null || this.address == undefined) {
+                    return;
+                }
 
-                respond(null, { response });
-            } catch (error) {
-                console.log(error);
-                respond(error);
+                if (throttle > 0) {
+                    if (this._opThrottles[throttleId] >= Game.now) {
+                        respond("throttle");
+                        return;
+                    } else {
+                        this._opThrottles[throttleId] = Game.now + throttle;
+                    }
+                }
+
+                let user = await this.getUser(this.address);
+
+                try {
+                    let response = await handler(user, data);
+                    await user.commitChanges();
+
+                    respond(null, { response });
+                } catch (error) {
+                    console.log(error);
+                    respond(error);
+                }
+            } finally {
+                await this._lock.release("game_handler");
             }
         }
     }
