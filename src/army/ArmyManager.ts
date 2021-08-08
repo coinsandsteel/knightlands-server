@@ -186,7 +186,7 @@ export class ArmyManager {
         }
 
         await this._units.addUnits(userId, newUnits, lastUnitId);
-
+        this._units.resetCache(userId);
         return newUnits;
     }
 
