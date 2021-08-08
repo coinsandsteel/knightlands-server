@@ -945,11 +945,9 @@ class User {
         if (itemToUse.count < itemsRequired) {
             throw Errors.NoEnoughItems;
         }
-
-        // remove used item
-        this._inventory.removeItem(itemToUse.id, itemsRequired);
         
         const actionValue = actionData.value * count;
+        let actionResult;
 
         // based on action perform necessary actions
         switch (actionData.action) {
@@ -969,15 +967,22 @@ class User {
             case ItemActions.OpenBox:
                 let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable, null, count);
                 await this.addLoot(items);
-                return items;
+                actionResult = items;
+                break;
 
             case ItemActions.Buff:
             case ItemActions.RaidBuff:
-                return await this._applyBuff(template._id, actionData);
+                actionResult = await this._applyBuff(template._id, actionData);
+                break;
 
             case ItemActions.SummonUnit:
-                return await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
+                actionResult = await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
+                break;
         }
+
+        // remove used item
+        this._inventory.removeItem(itemToUse.id, itemsRequired);
+        return actionResult;
     }
 
     async _applyBuff(templateId, actionData) {
