@@ -1297,6 +1297,10 @@ class User {
 
         let price = adventuresMeta.prices[slotIndex];
 
+        if (price.hard > this.hardCurrency || price.soft > this.softCurrency) {
+            throw Errors.NotEnoughCurrency;
+        }
+
         await this.addHardCurrency(-price.hard);
         await this.addSoftCurrency(-price.soft);
 
