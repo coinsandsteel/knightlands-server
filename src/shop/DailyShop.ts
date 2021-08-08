@@ -68,7 +68,7 @@ export class DailyShop {
         const meta = await this._getMeta();
         const item = fixed ? meta.fixedItems[itemIndex].data : this._data.items[itemIndex];
         const purchaseData = fixed ? this._data.fixedItems : this._data.purchasedItems;
-        if (purchaseData[item.item] == item.max) {
+        if (purchaseData[item.item] >= item.max) {
             throw Errors.IncorrectArguments;
         }
 
