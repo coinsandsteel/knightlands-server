@@ -42,17 +42,13 @@ export class Ranking implements IRankingTypeHandler {
     }
 
     async init() {
-        let records = await this._getRanking(0, Number.MAX_SAFE_INTEGER, true);
+        let records = await this._getRanking(0, Number.MAX_SAFE_INTEGER);
         for (const record of records) {
             this._participantScores[record.id] = record.score;
         }
-
-        console.log(records)
     }
 
     async updateRank(id: string, options: RankingOptions, value: number) {
-        console.log("update rank", ...arguments);
-
         if (value == 0) {
             return;
         }
@@ -64,8 +60,6 @@ export class Ranking implements IRankingTypeHandler {
         ) {
             return;
         }
-
-        console.log("update rank records for", this._id);
 
         await this._lock.acquire(this._id);
         try {
@@ -154,14 +148,14 @@ export class Ranking implements IRankingTypeHandler {
         return table ? table.records : [];
     }
 
-    private async _getRanking(page: number, limit: number, keepId = false) {
+    private async _getRanking(page: number, limit: number) {
         const pipeline: any[] = [
             { $match: { tableId: this._id } },
             { $unwind: "$records" },
+            { $sort: { "score": -1 } },
             { $skip: page * this._pageSize },
             { $limit: limit },
             { $lookup: { from: "users", localField: "records.id", foreignField: "_id", as: "user" } },
-            // { $sort: { "$records.score": -1 } },
             {
                 $project: {
                     score: "$records.score",
@@ -173,14 +167,9 @@ export class Ranking implements IRankingTypeHandler {
             },
             {
                 $project: { _id: 0 }
-            }
+            },
+            { $sort: { "score": -1 } }
         ];
-
-        if (!keepId) {
-            pipeline.push({
-                $project: { id: 0 }
-            });
-        }
 
         return this._collection.aggregate(pipeline).toArray();
     }

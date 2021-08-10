@@ -17,14 +17,6 @@ export class Leaderboard implements IRankingTypeHandler {
 
     async init(db: Db, options: RankingOptions) {
         let key = `${options.type}`;
-        // switch (options.type) {
-        //     case RankingType.CollectedItemsByRarity:
-        //     case RankingType.CraftedItemsByRarity:
-        //     case RankingType.DisenchantedItemsByRarity:
-        //     case RankingType.LevelItemsByRarity:
-        //         key += `_${options.rarity}`;
-        //         break;
-        // }
 
         this.type = options.type;
         this._typeOptions = options;
@@ -34,8 +26,6 @@ export class Leaderboard implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
-        // console.log("update leaderboard rank", ...arguments);
-
         if (value == 0) {
             return;
         }
@@ -47,8 +37,6 @@ export class Leaderboard implements IRankingTypeHandler {
         ) {
             return;
         }
-
-        // console.log("update leaderboard record for", userId);
 
         await this._collection.updateOne(
             { _id: userId },

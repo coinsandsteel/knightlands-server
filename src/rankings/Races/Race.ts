@@ -205,16 +205,16 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         this.finished = true;
         lt.clearTimeout(this._timeout);
 
+        const finalDuration = this.finalDuration;
+
+        this._state.state = RaceState.Finished;
+        await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "state": RaceState.Finished, finalDuration } });
+
         const users = await this._ranking.getParticipants();
         for (const user of users) {
             // let user know that tournament is finished
             Game.emitPlayerEvent(user.id, Events.RaceFinished, { race: this.id });
         }
-
-        const finalDuration = this.finalDuration;
-
-        this._state.state = RaceState.Finished;
-        await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "state": RaceState.Finished, finalDuration } });
 
         // let other interested services know
         this.emit(Race.Finished, this.id);

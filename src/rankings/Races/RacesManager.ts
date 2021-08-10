@@ -201,6 +201,7 @@ class RacesManager implements IRankingTypeHandler {
             return {
                 id: race.id,
                 rank: (await race.getUserRank(userId)),
+                maxParticipants: race.config.rewards.length,
                 tier: race.tier,
                 target: race.target,
                 type: race.type,
@@ -223,8 +224,6 @@ class RacesManager implements IRankingTypeHandler {
                 predictedMultipliers: this._predictMultipliers(t)
             });
         }
-
-
 
         let info: any = {
             list

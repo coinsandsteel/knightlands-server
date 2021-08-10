@@ -62,7 +62,7 @@ export class Dividends {
         }
         amount = +amount;
 
-        if (this._user.hardCurrency < amount) {
+        if (this._user.dkt < amount) {
             throw errors.NotEnoughCurrency;
         }
 
