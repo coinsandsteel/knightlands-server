@@ -1397,15 +1397,15 @@ class PlayerController extends IPaymentListener {
 
     // Tournaments
     async _fetchTournaments(user, data) {
-        return Game.rankings.tournaments.getTournamentsInfo(user.address);
+        return Game.rankings.tournaments.getTournamentsInfo(user.id);
     }
 
     async _joinTournament(user, data) {
-        return Game.rankings.tournaments.join(user.address, data.tournamentId);
+        return Game.rankings.tournaments.join(user.id, data.tournamentId);
     }
 
     async _claimTournamentRewards(user, data) {
-        let rewards = await Game.rankings.tournaments.claimRewards(user.address, data.tournamentId);
+        let rewards = await Game.rankings.tournaments.claimRewards(user.id, data.tournamentId);
         if (!rewards) {
             throw Errors.NoRewards;
         }
@@ -1421,11 +1421,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getTournamentInfo(user, data) {        
-        return Game.rankings.tournaments.getRank(data.tournamentId, user.address);
+        return Game.rankings.tournaments.getRank(data.tournamentId, user.id);
     }
 
     async _getFinishedTournaments(user, data) {
-        return Game.rankings.tournaments.getFinishedTournaments(user.address);
+        return Game.rankings.tournaments.getFinishedTournaments(user.id);
     }
 
     async _getTournamentRewards(user, data) {
