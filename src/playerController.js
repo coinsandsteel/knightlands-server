@@ -1258,6 +1258,10 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
+        if (user.towerPurchased) {
+            throw Errors.AlreadyPurchased;
+        }
+
         const towerMiscMeta = await this._db.collection(Collections.TowerMeta).findOne({ _id: "misc" });
         if (towerMiscMeta.iaps.length <= data.index) {
             throw Errors.IncorrectArguments;
@@ -1271,11 +1275,8 @@ class PlayerController extends IPaymentListener {
         // add tickets
         await user.inventory.addItemTemplate(towerMiscMeta.ticketItem, iap.attempts);
         await user.addHardCurrency(-iap.price);
+        user.towerPurchased = true;
     }
-
-    // async _fetchTowerAttemptsStatus(user) {
-    //     return Game.userPremiumService.getTowerAttemptsPurchaseStatus(this.address);
-    // }
 
     // Trials
     async _fetchTrialState(user, data) {

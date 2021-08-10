@@ -156,6 +156,14 @@ class User {
         this._data.tower.towerFloorsCleared = value;
     }
 
+    get towerPurchased() {
+        return this._data.tower.purchased;
+    }
+
+    set towerPurchased(value) {
+        return this._data.tower.purchased = value;
+    }
+
     get freeTowerAttempts() {
         return this._data.tower.freeAttemps;
     }
@@ -1554,6 +1562,8 @@ class User {
         }
 
         this.subscriptions.lastClaimCycle = this.getDailyRewardCycle();
+        this.towerPurchased = false;
+        this._trials.resetPurchases();
 
         const dailyRefillsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).refills;
         const length = dailyRefillsMeta.length;

@@ -121,6 +121,10 @@ class Trials {
     }
 
     async purchaseAttempts(trialType, iapIndex) {
+        if (this._state[trialType].purchased) {
+            throw Errors.AlreadyPurchased;
+        }
+
         const meta = this._trialsMeta[trialType];
         if (meta.iaps.length <= iapIndex) {
             throw Errors.IncorrectArguments;
@@ -134,6 +138,7 @@ class Trials {
 
         await this._user.addHardCurrency(-iapMeta.price);
         this._user.grantTrialAttempts(trialType, iapMeta.attempts);
+        this._state[trialType].purchased = true;
     }
 
     async pickCard(trialType, cardIndex) {
@@ -453,6 +458,12 @@ class Trials {
         } else {
             trialState.attempts += count;
         }
+    }
+
+    resetPurchases() {
+        this._state[TrialType.Accessory].purchased = false;
+        this._state[TrialType.Armour].purchased = false;
+        this._state[TrialType.Weapon].purchased = false;
     }
 
     _tryAdvanceToNextTrial(trialType) {
