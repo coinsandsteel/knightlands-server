@@ -635,7 +635,7 @@ class Inventory {
 
     async unequipItem(item) {
         if (!item || !item.equipped) {
-            return;
+            return item;
         }
 
         let equippedItems;
