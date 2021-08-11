@@ -125,7 +125,7 @@ class Crafting {
             throw Errors.IncorrectArguments;
         }
 
-        const recipe = accCraftMeta.recipes[rarity];
+        const recipe = accCraftMeta.recipes[rarity]; 
 
         if (!this._inventory.hasItems(recipe.resource, recipe.resourceCount * amount)) {
             throw Errors.NotEnoughResource;

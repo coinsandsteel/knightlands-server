@@ -769,6 +769,8 @@ class User {
         // calculate stats from equipment
         for (let slotId in character.equipment) {
             let equippedItem = character.equipment[slotId];
+            equippedItem = this.inventory.getItemById(equippedItem.id);
+
             let template = await Game.itemTemplates.getTemplate(equippedItem.template);
             if (!template) {
                 continue;

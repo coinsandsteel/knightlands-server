@@ -162,6 +162,8 @@ class RacesManager implements IRankingTypeHandler {
             }
         ]).toArray();
 
+        let finishedRaces = []
+
         for (const raceState of races) {
             let raceInstance = new Race(this._db);
             await raceInstance.loadFromState(raceState as RaceRecord);
@@ -185,9 +187,10 @@ class RacesManager implements IRankingTypeHandler {
             });
 
             raceState.config.rewards = rewards;
+            finishedRaces.push(raceState);
         }
 
-        return races;
+        return finishedRaces;
     }
 
     async getRankings(raceId: string, page: number) {

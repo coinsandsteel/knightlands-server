@@ -463,7 +463,7 @@ class Inventory {
             const length = templates.length;
             for (; i < length; ++i) {
                 let item = templates[i];
-                if (item.unique || item.element != element) {
+                if (item.equipped || item.unique || item.element != element) {
                     continue;
                 }
 
@@ -611,7 +611,7 @@ class Inventory {
         const itemSlot = getSlot(template.equipmentType);
 
         await this.unequipItem(equippedItems[itemSlot]);
-        await this.unequipItem(item);
+        item = await this.unequipItem(item);
 
         if (item.count > 1) {
             // split stack and create new item
@@ -654,15 +654,16 @@ class Inventory {
         let stacked = false;
 
         if (!item.unique) {
-            let templates = this._getItemsByTemplate(item.template);
+            let items = this._getItemsByTemplate(item.template);
             // not unique, stack with existing template stack
-            const length = templates.length;
+            const length = items.length;
             for (let i = 0; i < length; ++i) {
-                const existingItem = templates[i];
+                const existingItem = items[i];
                 if (!existingItem.unique && existingItem.id != item.id) {
                     stacked = true;
                     this.removeItem(item.id);
                     this.modifyStack(existingItem, 1);
+                    item = existingItem;
                     break;
                 }
             }
@@ -683,6 +684,8 @@ class Inventory {
         if (unit) {
             await Game.armyManager.updateUnit(this._userId, unit)
         }
+
+        return item;
     }
 
     getItemById(id) {
