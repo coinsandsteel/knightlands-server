@@ -143,9 +143,25 @@ export class Ranking implements IRankingTypeHandler {
         return { ...participant.records[0], rank: match[0].total };
     }
 
-    async getParticipants() {
-        let table = await this._collection.findOne({ _id: this._id });
-        return table ? table.records : [];
+    async getParticipants(count: number) {
+        const pipeline: any[] = [
+            { $match: { tableId: this._id } },
+            { $unwind: "$records" },
+            { $sort: { "score": -1 } },
+            { $limit: count },
+            {
+                $project: {
+                    score: "$records.score",
+                    id: "$records.id"
+                }
+            },
+            {
+                $project: { _id: 0 }
+            },
+            { $sort: { "score": -1 } }
+        ];
+
+        return this._collection.aggregate(pipeline).toArray();
     }
 
     private async _getRanking(page: number, limit: number) {

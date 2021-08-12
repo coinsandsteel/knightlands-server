@@ -115,7 +115,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
     }
 
     private async _finish() {
-        const users = await this._ranking.getParticipants();
+        const users = await this._ranking.getParticipants(this._ranking.totalParticipants());
         for (const user of users) {
             // let user know that tournament is finished
             Game.emitPlayerEvent(user.id, Events.TournamentFinished, this.id);

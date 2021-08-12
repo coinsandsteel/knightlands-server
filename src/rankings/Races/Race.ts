@@ -9,6 +9,7 @@ import Events from "../../knightlands-shared/events";
 import { RaceConfiguration, RaceRecord, RaceState } from "./RaceTypes";
 import { Ranking, RankingOptions, RankingRecord } from "../Ranking";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
+import { Lock } from "../../utils/lock";
 
 
 export class Race extends EventEmitter implements IRankingTypeHandler {
@@ -18,6 +19,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     private _state: RaceRecord;
     private _ranking: Ranking;
     private _timeout: any;
+    private _lock: Lock;
 
     finished: boolean;
     targetsHit: number;
@@ -27,6 +29,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
         this._db = db;
         this.targetsHit = 0;
+        this._lock = new Lock();
     }
 
     get id(): ObjectId {
@@ -76,30 +79,36 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             return;
         }
 
-        let userRank = <RankingRecord>await this.getUserRank(userId);
-        if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
-            // already reached the target
-            return;
+        await this._lock.acquire(userId);
+
+        try {
+            let userRank = <RankingRecord>await this.getUserRank(userId);
+            if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
+                // already reached the target
+                return;
+            }
+
+            const userScore = this._ranking.getParticipantScore(userId);
+            const scoreLeft = this.target - userScore;
+
+            await this._ranking.updateRank(
+                userId,
+                options,
+                scoreLeft < value ? scoreLeft : value
+            );
+
+            userRank = <RankingRecord>await this.getUserRank(userId);
+            if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
+                this._state.looted[userId] = false;
+                // can claim reward, track player
+                await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
+                Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
+            }
+
+            await this._handleRankUpdate();
+        } finally {
+            await this._lock.release(userId);
         }
-
-        const userScore = this._ranking.getParticipantScore(userId);
-        const scoreLeft = this._state.config.baseTarget - userScore;
-
-        await this._ranking.updateRank(
-            userId,
-            options,
-            scoreLeft < value ? scoreLeft : value
-        );
-
-        userRank = <RankingRecord>await this.getUserRank(userId);
-        if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
-            this._state.looted[userId] = false;
-            // can claim reward, track player
-            await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
-            Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
-        }
-
-        await this._handleRankUpdate();
     }
 
     async create(config: RaceConfiguration, targetMultiplier: number, rewardsMultiplier: number) {
@@ -178,20 +187,21 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     private async _handleRankUpdate() {
         let totalRewards = this.config.rewards.length;
         const target = this.target;
-        const players = await this._ranking.getParticipants();
+        const players = await this._ranking.getParticipants(totalRewards);
+        this.targetsHit = 0;
+
         if (players.length > 0) {
             // results are ordered in desc order by score
-            let i = 0;
             totalRewards = totalRewards > players.length ? players.length : totalRewards;
-            for (; i < totalRewards; ++i) {
-                if (players[totalRewards - 1].score >= target) {
+            for (let i = 0; i < totalRewards; ++i) {
+                if (players[i].score >= target) {
                     this.targetsHit++;
                 } else {
                     break;
                 }
             }
 
-            if (i == this.config.rewards.length) {
+            if (this.targetsHit == 2) {
                 await this._finish();
             }
         }
@@ -210,7 +220,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         this._state.state = RaceState.Finished;
         await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "state": RaceState.Finished, finalDuration } });
 
-        const users = await this._ranking.getParticipants();
+        const users = await this._ranking.getParticipants(this._ranking.totalParticipants());
         for (const user of users) {
             // let user know that tournament is finished
             Game.emitPlayerEvent(user.id, Events.RaceFinished, { race: this.id });
