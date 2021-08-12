@@ -515,7 +515,7 @@ class Trials {
         let purchasedAttempts = trialState.attempts;
 
         if (trialState.freeAttempts <= 0) {
-            const ticketItem = user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
+            const ticketItem = this._user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
             if (ticketItem) {
                 purchasedAttempts += ticketItem.count;
             }
@@ -532,9 +532,9 @@ class Trials {
         } else if (trialState.attempts > 0) {
             trialState.attempts--;
         } else {
-            const ticketItem = user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
+            const ticketItem = this._user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
             if (ticketItem) {
-                user.inventory.removeItem(ticketItem.id, 1);
+                this._user.inventory.removeItem(ticketItem.id, 1);
             }
         }
     }
