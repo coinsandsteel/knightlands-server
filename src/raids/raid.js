@@ -382,10 +382,10 @@ class Raid extends EventEmitter {
                 type: RankingType.DamageInRaids
             }, damageLog.damage);
 
-            // await Game.rankings.updateRank(attacker.id, {
-            //     type: RankingType.DamageInParticularRaid,
-            //     raid: this._template._id
-            // }, damageLog.damage);
+            await Game.rankings.updateRank(attacker.id, {
+                type: RankingType.DamageInParticularRaid,
+                raid: this._template._id
+            }, damageLog.damage);
         }
     }
 
