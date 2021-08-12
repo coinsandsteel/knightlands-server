@@ -445,6 +445,10 @@ class PlayerController extends IPaymentListener {
         let itemsToDrop = 0;
         let questComplete = false;
         let damages = [];
+        let resourcesGained = {
+            soft: 0,
+            exp: 0
+        };
 
         if (isBoss) {
             let allQuestsFinished = true;
@@ -495,12 +499,12 @@ class PlayerController extends IPaymentListener {
                 bossProgress.exp += bossData.exp * (attackResult.damage / bossUnit.getMaxHealth());
                 let expGained = Math.floor(bossProgress.exp);
                 bossProgress.exp -= expGained;
-                await user.addExperience(expGained);
+                resourcesGained.exp += expGained;
 
                 bossProgress.gold += Random.range(bossData.goldMin, bossData.goldMax) * (attackResult.damage / bossUnit.getMaxHealth());
                 let softCurrencyGained = Math.floor(bossProgress.gold);
                 bossProgress.gold -= softCurrencyGained;
-                await user.addSoftCurrency(softCurrencyGained);
+                resourcesGained.soft += softCurrencyGained;
 
                 // if just 1 hit 
                 if (data.max !== true) {
@@ -557,15 +561,18 @@ class PlayerController extends IPaymentListener {
             let softCurrencyGained = 0;
 
             while (hits-- > 0) {
-                await user.addExperience(quest.exp);
+                resourcesGained.exp += quest.exp;
                 softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }
 
-            await user.addSoftCurrency(softCurrencyGained);
+            resourcesGained.exp = quest.exp;
 
             // will reset if current quest is not complete 
             questComplete = questProgress.hits < zone.quests[data.questIndex].stages[data.stage].hits;
         }
+
+        await user.addSoftCurrency(resourcesGained.soft);
+        await user.addExperience(resourcesGained.exp);
 
         let items = await this._lootGenerator.getQuestLoot(
             this.address,
