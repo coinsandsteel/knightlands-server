@@ -558,14 +558,10 @@ class PlayerController extends IPaymentListener {
 
             await user.modifyTimerValue(CharacterStats.Energy, -energyRequired);
 
-            let softCurrencyGained = 0;
-
             while (hits-- > 0) {
                 resourcesGained.exp += quest.exp;
-                softCurrencyGained += Math.floor(Random.range(quest.goldMin, quest.goldMax));
+                resourcesGained.soft += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }
-
-            resourcesGained.exp = quest.exp;
 
             // will reset if current quest is not complete 
             questComplete = questProgress.hits < zone.quests[data.questIndex].stages[data.stage].hits;

@@ -36,7 +36,7 @@ export class ArmyCombatLegion {
         return this._legionIndex;
     }
 
-    async attackRaid(raidBoss, bonusDamage: number, playerUnit: any, raid: number) {
+    async attackRaid(raidBoss, bonusDamage: number, playerStats: any, raid: number) {
         const legion: Legion = await this._legions.getLegion(this._userId, this._legionIndex);
         const unitIds: number[] = [];
         for (const slotId in legion.units) {
@@ -51,10 +51,10 @@ export class ArmyCombatLegion {
             units[i] = unitsDict[unitIds[i]];
         }
 
-        const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid);
+        const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid, playerStats);
         // console.log(JSON.stringify(resolveResult, null, 2))
 
-        raidBoss._applyDamage(resolveResult.totalDamageOutput);
+        raidBoss._applyDamage(resolveResult.totalDamageOutput * bonusDamage);
 
         return resolveResult;
     }
