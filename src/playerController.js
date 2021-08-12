@@ -447,7 +447,21 @@ class PlayerController extends IPaymentListener {
         let damages = [];
 
         if (isBoss) {
+            let allQuestsFinished = true;
+            for (let index = 0; index < zone.quests.length; index++) {
+                const quest = zone.quests[index];
+                let otherQuestProgress = user.getQuestProgress(data.zone, index, data.stage);
+                if (!otherQuestProgress || otherQuestProgress.hits < quest.stages[data.stage].hits) {
+                    allQuestsFinished = false;
+                    break;
+                }
+            }
+
             let bossProgress = user.getQuestBossProgress(zone._id, data.stage);
+            if (allQuestsFinished) {
+                // unlock final boss
+                bossProgress.unlocked = true;
+            }
 
             if (!bossProgress.unlocked) {
                 throw Errors.BossIsLocked;
@@ -550,27 +564,7 @@ class PlayerController extends IPaymentListener {
             await user.addSoftCurrency(softCurrencyGained);
 
             // will reset if current quest is not complete 
-            questComplete = true;
-
-            // check if all previous quests are finished
-            let allQuestsFinished = true;
-            for (let index = 0; index < zone.quests.length; index++) {
-                const quest = zone.quests[index];
-                let otherQuestProgress = user.getQuestProgress(data.zone, index, data.stage);
-                if (!otherQuestProgress || otherQuestProgress.hits < quest.stages[data.stage].hits) {
-                    allQuestsFinished = false;
-                    if (index == data.questIndex) {
-                        questComplete = false;
-                    }
-                    break;
-                }
-            }
-
-            if (allQuestsFinished) {
-                // unlock final boss
-                let bossProgress = user.getQuestBossProgress(data.zone, data.stage);
-                bossProgress.unlocked = true;
-            }
+            questComplete = questProgress.hits < zone.quests[data.questIndex].stages[data.stage].hits;
         }
 
         let items = await this._lootGenerator.getQuestLoot(
