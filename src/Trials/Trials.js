@@ -512,7 +512,16 @@ class Trials {
 
     _hasAttempts(trialType) {
         const trialState = this._getTrialTypeState(trialType);
-        return trialState.freeAttempts > 0 || trialState.attempts > 0;
+        let purchasedAttempts = trialState.attempts;
+
+        if (trialState.freeAttempts <= 0) {
+            const ticketItem = user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
+            if (ticketItem) {
+                purchasedAttempts += ticketItem.count;
+            }
+        }
+
+        return trialState.freeAttempts > 0 || purchasedAttempts > 0;
     }
 
     _consumeAttempt(trialType) {
@@ -522,6 +531,11 @@ class Trials {
             trialState.freeAttempts--;
         } else if (trialState.attempts > 0) {
             trialState.attempts--;
+        } else {
+            const ticketItem = user.inventory.getItemByTemplate(this._getTrialsMeta(trialType).ticketItem);
+            if (ticketItem) {
+                user.inventory.removeItem(ticketItem.id, 1);
+            }
         }
     }
 
