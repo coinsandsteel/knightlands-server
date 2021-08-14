@@ -201,7 +201,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                 }
             }
 
-            if (this.targetsHit == this.config.rewards.length) { // short circuit race
+            if (this.targetsHit == 0) { // short circuit race
                 await this._finish();
             }
         }
@@ -220,11 +220,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         this._state.state = RaceState.Finished;
         await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "state": RaceState.Finished, finalDuration } });
 
-        const users = await this._ranking.getParticipants(this._ranking.totalParticipants());
-        for (const user of users) {
-            // let user know that tournament is finished
-            Game.emitPlayerEvent(user.id, Events.RaceFinished, { race: this.id });
-        }
+        Game.publishToChannel(Events.RaceFinished, { race: this.id });
 
         // let other interested services know
         this.emit(Race.Finished, this.id);

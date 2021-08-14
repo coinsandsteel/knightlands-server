@@ -328,7 +328,7 @@ class PlayerController extends IPaymentListener {
 
         try {
             if (!this._user) {
-                this._user = await Game.getUser(address || this.address);
+                this._user = await Game.loadUser(address || this.address);
                 this.id = this._user.id.toString();
             }
         } finally {
