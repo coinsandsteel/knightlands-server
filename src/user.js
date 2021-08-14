@@ -1156,6 +1156,10 @@ class User {
             user.character = character;
         }
 
+        if (!user.tutorial) {
+            user.tutorial = {};
+        }
+
         if (!user.questsProgress) {
             user.questsProgress = {
                 completedRecords: {}, // keep track of completed quests to unlock next stages
@@ -1861,6 +1865,10 @@ class User {
             await this._inventory.addItemTemplate(airdrop.item, airdrop.count);
             this._data.airdrops[airdrop.id] = 1;
         }
+    }
+
+    finishTutorial(stepId) {
+        this._data.tutorial[stepId] = 1;
     }
 }
 
