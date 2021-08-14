@@ -8,7 +8,7 @@ class PlayerUnit extends Unit {
         };
         currentStats.health = user.getTimerValue(CharacterStats.Health);
 
-        super(currentStats, maxStats);
+        super(currentStats, maxStats, user.level);
 
         this._user = user;
     }

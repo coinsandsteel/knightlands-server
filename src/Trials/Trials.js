@@ -528,7 +528,7 @@ class Trials {
         const trialState = this._getTrialTypeState(trialType);
         // consume free attemp first
         if (trialState.freeAttempts > 0) {
-            trialState.freeAttempts--;
+            trialState.freeAttempts--; 
         } else if (trialState.attempts > 0) {
             trialState.attempts--;
         } else {

@@ -225,8 +225,8 @@ class PlayerController extends IPaymentListener {
     }
 
     onDisconnect() {
-        Game.removeListener(this.address, this._handleEventBind);
-        Game.removeListener(this.id, this._handleEventBind);
+        Game.off(this.address, this._handleEventBind);
+        Game.off(this.id, this._handleEventBind);
 
         if (this._user) {
             this._user.dispose();
@@ -248,8 +248,6 @@ class PlayerController extends IPaymentListener {
     }
 
     async onDividendTokenWithdrawal(success) {
-        // let dkt = this._user.dkt;
-        // console.log("on div token withdrawal", JSON.stringify({ success, dkt: dkt }, null, 2));
         this._socket.emit(Events.DivTokenWithdrawal, {
             success
         });
@@ -330,7 +328,7 @@ class PlayerController extends IPaymentListener {
 
         try {
             if (!this._user) {
-                this._user = await Game.loadUser(address || this.address);
+                this._user = await Game.getUser(address || this.address);
                 this.id = this._user.id.toString();
             }
         } finally {
@@ -1125,6 +1123,7 @@ class PlayerController extends IPaymentListener {
         towerFloor.maxHealth = floorMeta.health;
         towerFloor.attack = floorMeta.attack;
         towerFloor.id = floorIndex;
+        towerFloor.userLevel = user.level;
         towerFloor.userHealth = user.getMaxStatValue(CharacterStat.Health);
         towerFloor.userMaxHealth = user.getMaxStatValue(CharacterStat.Health);
         towerFloor.claimed = false;

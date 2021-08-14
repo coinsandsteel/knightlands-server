@@ -3,7 +3,8 @@ import random from "../random";
 import Random from "../random";
 
 class Unit {
-    constructor(stats, maxStats) {
+    constructor(stats, maxStats, level = 1) {
+        this._level = level;
         this._stats = stats;
         this._maxStats = maxStats;
     }
@@ -15,7 +16,7 @@ class Unit {
             attack *= (1 + this.getStat(CharacterStat.CriticalDamage) / 100);
         }
 
-        // roll damage 2 times, half attack, with 20% variation
+        // roll damage 2 times, half attack, with 20% variation, for normal distribution
         const dmg1 = random.range(attack * 0.4, attack*0.6);
         const dmg2 = random.range(attack * 0.4, attack*0.6);
 
@@ -87,7 +88,8 @@ class Unit {
             defense = 0;
         }
 
-        let damageReduction = defense / (defense + 150);
+        const baseDefense = 200 + 10 * this._level;
+        let damageReduction = defense / (defense + baseDefense);
         let finalDamage = Math.floor(damage * (1 - damageReduction));
 
         let damageCap = this._maxStats.damageCap;

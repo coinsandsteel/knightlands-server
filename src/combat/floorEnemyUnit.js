@@ -8,7 +8,7 @@ class FloorEnemyUnit extends Unit {
         currentStats[CharacterStats.Attack] = attack;
         currentStats[CharacterStats.Health] = currentHealth;
 
-        super(currentStats, {...currentStats});
+        super(currentStats, {...currentStats}, 1);
     }
 }
 

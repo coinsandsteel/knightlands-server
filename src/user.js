@@ -1796,7 +1796,7 @@ class User {
 
     getTowerFloorCombatUnit() {
         const towerFloor = this._data.tower.challengedFloor;
-        return new TowerPlayerUnit(this.maxStats, towerFloor.userHealth, towerFloor.userMaxHealth);
+        return new TowerPlayerUnit(this.maxStats, towerFloor.userHealth, towerFloor.userMaxHealth, towerFloor.userLevel);
     }
 
     // Trials

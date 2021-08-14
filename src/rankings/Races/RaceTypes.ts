@@ -55,6 +55,7 @@ export interface RaceRecord {
 }
 
 export interface RacesState {
+    tiersRunning: { [key: number]: boolean };
     runningRaces: Array<ObjectId>;
     targetMultipliers: { [key: string]: number }; // {RankingType_subType}: multiplier
     rewardsMultiplier: { [key: string]: number }; // {RankingType_subType}: multiplier

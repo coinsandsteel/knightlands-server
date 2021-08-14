@@ -244,13 +244,6 @@ class Game extends EventEmitter {
         let controller = new PlayerController(socket);
 
         socket.on("authenticate", async () => {
-            // check if player is whitelisted
-            // let whitelisted = await this.db.collection(Collections.Whitelist).findOne({wallet: controller.address});
-            // if (!whitelisted) {
-            //     controller.socket.disconnect(DisconnectCodes.NotAllowed, "not whitelisted");
-            //     return;
-            // }
-
             if (!controller.address) {
                 return;
             }
@@ -268,16 +261,13 @@ class Game extends EventEmitter {
             controller.onAuthenticated();
         });
 
-        socket.on("deauthenticate", () => {
-            // console.log("client deauthenticate", controller.address);
-            this._deletePlayerController(controller);
+        // socket.on("deauthenticate", () => {
+        //     this._deletePlayerController(controller);
 
-            controller.onDisconnect();
-        });
+        //     controller.onDisconnect();
+        // });
 
         socket.on("close", () => {
-            // console.log("client close", controller.address);
-
             this._deletePlayerController(controller);
 
             controller.onDisconnect();

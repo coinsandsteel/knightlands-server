@@ -17,14 +17,12 @@ class RacesManager implements IRankingTypeHandler {
     private _state: RacesState;
     private _races: Race[];
     private _lock: Lock;
-    private _tiersRunning: { [key: number]: boolean };
     private _shop: RaceShop;
 
     constructor(db: Db) {
         this._db = db;
         this._races = [];
         this._lock = new Lock();
-        this._tiersRunning = {};
     }
 
     async init() {
@@ -271,6 +269,7 @@ class RacesManager implements IRankingTypeHandler {
 
         if (!this._state) {
             this._state = {
+                tiersRunning: {},
                 runningRaces: [],
                 targetMultipliers: {},
                 rewardsMultiplier: {}
@@ -282,7 +281,7 @@ class RacesManager implements IRankingTypeHandler {
 
         for (let [tier, templates] of Object.entries(this._meta.templates)) {
             // if tier exist - skip 
-            if (this._tiersRunning[tier]) {
+            if (this._state.tiersRunning[tier]) {
                 continue;
             }
 
@@ -297,7 +296,7 @@ class RacesManager implements IRankingTypeHandler {
             );
             races.push(race);
             race.on(Race.Finished, this._handleRaceFinished.bind(this));
-            this._tiersRunning[race.tier] = true;
+            this._state.tiersRunning[race.tier] = true;
         }
 
         const raceIds = await Promise.all(promises);
@@ -435,7 +434,6 @@ class RacesManager implements IRankingTypeHandler {
         }
 
         this._races.push(race);
-        this._tiersRunning[race.tier] = true;
     }
 
     private async _getRace(raceId: string) {
@@ -492,7 +490,7 @@ class RacesManager implements IRankingTypeHandler {
                 await this._db.collection(Collections.RaceWinners).bulkWrite(updates);
             }
 
-            delete this._tiersRunning[race.tier];
+            delete this._state.tiersRunning[race.tier];
         }
 
         await this._launchNewRaces();

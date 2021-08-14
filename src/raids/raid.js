@@ -176,7 +176,7 @@ class Raid extends EventEmitter {
         maxStats[CharacterStats.Health] = parseInt(this.template.health);
         maxStats[CharacterStats.Attack] = parseInt(this.template.attack);
 
-        this._bossUnit = new Unit(this._data.bossState, maxStats);
+        this._bossUnit = new Unit(this._data.bossState, maxStats, 1);
 
         this._timerInterval = setInterval(this._updateTimeLeft.bind(this), 1000);
         this._scheduleCheckpoint();
