@@ -195,7 +195,7 @@ class Trials {
             this._consumeAttempt(trialType);
         }
 
-        const playerCombatUnit = new TrialPlayerUnit(this._user.maxStats, currentFight.playerHealth, currentFight.maxPlayerHealth);
+        const playerCombatUnit = new TrialPlayerUnit(this._user.maxStats, currentFight.playerHealth, currentFight.maxPlayerHealth, currentFight.level);
         const enemyCombatUnit = new FloorEnemyUnit(currentFight.attack, currentFight.health);
 
         const trialsMeta = this._getTrialsMeta(trialType);
@@ -369,6 +369,7 @@ class Trials {
             attack: fightMeta.attack,
             stageId: stageMeta.id,
             id: fightMeta.id,
+            level: this._user.level,
             index: fightIndex,
             stageId,
             trialId,

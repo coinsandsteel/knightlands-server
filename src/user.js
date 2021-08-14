@@ -262,7 +262,7 @@ class User {
 
     async addSoftCurrency(value, ignorePassiveBonuses = false) {
         if (value > 0 && !ignorePassiveBonuses) {
-            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 100);
+            value += this.getMaxStatValue(CharacterStat.ExtraGold);
 
             const bonuses = await this.getCardBonuses();
             value *= (1 + bonuses.soft / 100);
@@ -313,10 +313,17 @@ class User {
     }
 
     async addExperience(exp, ignoreBonus = false) {
+        const maxLevels = this._expTable.length;
+        const character = this._data.character;
+
+        if (character.level == maxLevels) {
+            return;
+        }
+
         let totalExp = exp;
 
         if (!ignoreBonus) {
-            totalExp *= (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 100);
+            totalExp += this.getMaxStatValue(CharacterStat.ExtraExp);
 
             const bonuses = await this.getCardBonuses();
             totalExp *= (1 + bonuses.exp / 100);
@@ -324,10 +331,8 @@ class User {
             totalExp = Math.floor(totalExp);
         }
 
-        const character = this._data.character;
         character.exp += totalExp;
-
-        const maxLevels = this._expTable.length;
+        
         const previousLevel = character.level;
         while (character.level < maxLevels) {
             let toNextLevel = this._expTable[character.level - 1];
@@ -355,6 +360,7 @@ class User {
 
             this._recalculateStats = true;
             this._restoreTimers();
+            await this._updateTimersRegen();
         }
 
         await Game.rankings.updateRank(this.id, {
@@ -362,6 +368,13 @@ class User {
         }, totalExp);
 
         return totalExp;
+    }
+
+    async _updateTimersRegen() {
+        const classSelected = await this._loadAndCacheClassData(this._data.character.class);
+        
+        this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen - this.level * 0.4;
+        this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen - this.level * 0.4;
     }
 
     _restoreTimers() {
@@ -593,6 +606,7 @@ class User {
         let adventuresMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "adventures_meta" });
         this.adventuresList = adventuresMeta.weightedList;
 
+        await this._updateTimersRegen();
         await this.airDropItemsIfAny();
 
         // calculate stats from items and stats from buffs
@@ -1488,7 +1502,7 @@ class User {
         // find suitable class
         let selection;
         for (let i = 0; i < selections.length; ++i) {
-            if (selections[i].minLevel <= this.level) {
+            if (selections[i].minLevel <= 5) {
                 selection = selections[i];
             }
         }
@@ -1497,10 +1511,7 @@ class User {
             throw Errors.CantChooseClass;
         }
 
-        const classSelected = selection.classes.find(x => x.name == className);
-        if (!classSelected) {
-            throw Errors.UnknownClass;
-        }
+        await this._loadAndCacheClassData(className);
 
         if (this._data.classInited) {
             // pay the price
@@ -1515,8 +1526,35 @@ class User {
         this._data.character.class = className;
 
         // modify regen timers
-        this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen;
-        this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen;
+        await this._updateTimersRegen();
+    }
+
+    async _loadAndCacheClassData(className) {
+        if (this._classSelected) {
+            return this._classSelected;
+        }
+
+        const selections = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "classes" })).selections;
+        // find suitable class
+        let selection;
+        for (let i = 0; i < selections.length; ++i) {
+            if (selections[i].minLevel <= 5) {
+                selection = selections[i];
+            }
+        }
+
+        if (!selection) {
+            throw Errors.CantChooseClass;
+        }
+
+        const classSelected = selection.classes.find(x => x.name == className);
+        if (!classSelected) {
+            throw Errors.UnknownClass;
+        }
+
+        this._classSelected = classSelected;
+
+        return classSelected;
     }
 
     async getDailyRewardStatus() {

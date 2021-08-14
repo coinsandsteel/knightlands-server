@@ -88,7 +88,7 @@ class Unit {
             defense = 0;
         }
 
-        const baseDefense = 200 + 10 * this._level;
+        const baseDefense =  10 * this._level;
         let damageReduction = defense / (defense + baseDefense);
         let finalDamage = Math.floor(damage * (1 - damageReduction));
 
