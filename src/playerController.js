@@ -1161,7 +1161,7 @@ class PlayerController extends IPaymentListener {
         }
 
         const userUnit = user.getTowerFloorCombatUnit();
-        const floorEnemyUnit = new FloorEnemyUnit(towerFloor.attack, towerFloor.health);
+        const floorEnemyUnit = new FloorEnemyUnit(towerFloor.attack, towerFloor.health, 1);
 
         const attackResult = userUnit.attack(floorEnemyUnit);
         if (floorEnemyUnit.isAlive) {

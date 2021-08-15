@@ -1,7 +1,7 @@
 const Unit = require("./unit");
 
 class TowerPlayerUnit extends Unit {
-    constructor(stats, currentHealth, maxHealth) {
+    constructor(stats, currentHealth, maxHealth, level) {
         let currentStats = {
             ...stats
         };
@@ -12,7 +12,7 @@ class TowerPlayerUnit extends Unit {
         };
         maxStats.health = maxHealth;
 
-        super(currentStats, maxStats);
+        super(currentStats, maxStats, level);
     }
 }
 
