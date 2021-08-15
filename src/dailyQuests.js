@@ -139,9 +139,9 @@ class DailyQuests {
             await this._user.inventory.addItemTemplates(items);
         }
 
-        await this._user.addSoftCurrency(rewards.soft);
+        await this._user.addSoftCurrency(rewards.soft, true);
         await this._user.addHardCurrency(rewards.hard);
-        await this._user.addExperience(rewards.exp);
+        await this._user.addExperience(rewards.exp, true);
 
         this._data.claimedTasks[taskType] = true;
 
