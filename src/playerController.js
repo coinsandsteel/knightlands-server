@@ -826,7 +826,7 @@ class PlayerController extends IPaymentListener {
         const meta = await this._db.collection(Collections.Meta).findOne({ _id: "meta" }, { projection: { nicknamePrice: 1 } })
         let price = 0;
 
-        if (user.nickname) {
+        if (user.nickname && user.nickname.changed) {
             price = meta.nicknamePrice;
         }
 
@@ -834,13 +834,16 @@ class PlayerController extends IPaymentListener {
             throw Errors.NotEnoughCurrency;
         }
 
-        const isExist = await this._db.collection(Collections.Users).findOne({ "character.nickname": data.nickname }, { projection: { _id: 1 } });
+        const isExist = await this._db.collection(Collections.Users).findOne({ "character.name.v": data.nickname }, { projection: { _id: 1 } });
         if (isExist) {
             throw Errors.NameUsed;
         }
 
         await user.addHardCurrency(-price);
-        user.nickname = data.nickname;
+        user.nickname = {
+            v: data.nickname,
+            changed: user.nickname ? 1 : 0
+        };
     }
 
     // Raids
@@ -1083,6 +1086,11 @@ class PlayerController extends IPaymentListener {
 
         if (page == -1) {
             page = Math.floor(floorsCleared / TowerFloorPageSize);
+
+            const totalFloors = await this._db.collection(Collections.TowerMeta).find().count()
+            if (floorsCleared >= totalFloors - 1) { // it has a "misc" record, which we can just ignore, legacy stuff, redo it!
+                page -= 1;
+            }
         }
 
         const startIndex = page * TowerFloorPageSize;

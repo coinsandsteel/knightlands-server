@@ -213,11 +213,11 @@ class User {
     }
 
     get nickname() {
-        return this._data.character.nickname;
+        return this._data.character.name;
     }
 
     set nickname(value) {
-        this._data.character.nickname = value;
+        this._data.character.name = value;
     }
 
     set avatar(value) {
@@ -1152,7 +1152,7 @@ class User {
                     },
                     stamina: {
                         value: 0,
-                        lastRegenTime: 0,
+                        lastRegenTime: 0, 
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
@@ -1278,6 +1278,15 @@ class User {
 
         if (!user.airdrops) {
             user.airdrops = {};
+        }
+
+        if (user.character.nickname) {
+            if (typeof user.character.nickname == "string") {
+                user.character.name = {
+                    v: user.character.nickname,
+                    changed: 0
+                }
+            }
         }
 
         return user;
