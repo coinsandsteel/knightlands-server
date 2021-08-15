@@ -56,6 +56,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchRefillTimerStatus, this._fetchRefillTimerStatus.bind(this));
         this._socket.on(Operations.GetTimerRefillInfo, this._getTimerRefillInfo.bind(this));
         this._socket.on(Operations.FetchCharacter, this._fetchCharacter.bind(this));
+        this._socket.on(Operations.GetOnline, this._getOnline.bind(this));
 
         // payed functions 
         this._socket.on(Operations.ChangeNickname, this._gameHandler(this._changeNickname.bind(this)));
@@ -322,6 +323,10 @@ class PlayerController extends IPaymentListener {
         await user.loadInventory();
         response.inventory = user.inventory.info;
         respond(null, response);
+    }
+
+    async _getOnline(data, respond) {
+        respond(null, { online: Game.getTotalOnline() });
     }
 
     async getUser(address) {

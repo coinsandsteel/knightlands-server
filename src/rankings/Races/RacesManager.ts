@@ -252,9 +252,10 @@ class RacesManager implements IRankingTypeHandler {
         let promises = [];
         for (const raceId of this._state.runningRaces) {
             let race = new Race(this._db);
+            race.on(Race.Finished, this._handleRaceFinished.bind(this));
             promises.push(race.load(raceId));
             races.push(race);
-            race.on(Race.Finished, this._handleRaceFinished.bind(this));
+
         }
 
         await Promise.all(promises);

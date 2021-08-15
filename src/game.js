@@ -240,6 +240,10 @@ class Game extends EventEmitter {
         this.emit(userId, event, args);
     }
 
+    getTotalOnline() {
+        return Object.keys(this._playersById).length;
+    }
+
     handleIncomingConnection(socket) {
         let controller = new PlayerController(socket);
 
@@ -259,6 +263,8 @@ class Game extends EventEmitter {
             this._playersById[controller.id] = controller;
 
             controller.onAuthenticated();
+
+            this.publishToChannel("online", { online: this.getTotalOnline() });
         });
 
         // socket.on("deauthenticate", () => {
@@ -271,6 +277,8 @@ class Game extends EventEmitter {
             this._deletePlayerController(controller);
 
             controller.onDisconnect();
+
+            this.publishToChannel("online", { online: this.getTotalOnline() });
         });
     }
 
