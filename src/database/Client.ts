@@ -32,10 +32,12 @@ export class DatabaseClient {
         };
         // Step 3: Use withTransaction to start a transaction, execute the callback, and commit (or abort on error)
         // Note: The callback for withTransaction MUST be async and/or return a Promise.
+        let fnResult;
         try {
-            return await session.withTransaction(async () => {
-                await fn(this.db)
+            await session.withTransaction(async () => {
+                fnResult = await fn(this.db)
             }, transactionOptions);
+            return fnResult;
         } catch (exc) {
             throw exc;
         } finally {

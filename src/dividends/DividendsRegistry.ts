@@ -9,7 +9,7 @@ import Errors from "../knightlands-shared/errors";
 import CurrencyType from "../knightlands-shared/currency_type";
 
 const PAYOUT_PERIOD = 86400;
-const PAYOUT_LAG = 10;
+const PAYOUT_LAG = 5;
 
 export class DividendsRegistry {
     private _supply: number;
@@ -256,6 +256,10 @@ export class DividendsRegistry {
     async initiateDividendsWithdrawal(userId: string, to: string, blockchainId: string, amount: string) {
         await this._lock.acquire("divs");
         try {
+            if (await Game.activityHistory.hasRecord(userId, { pending: true, token: 'native' })) {
+                throw Errors.DividendsWithdrawalPending;
+            }
+
             const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(to));
 
             return await Game.dbClient.withTransaction(async db => {
@@ -274,7 +278,7 @@ export class DividendsRegistry {
 
                 await Game.activityHistory.update(db, { _id: new ObjectId(withdrawalId) }, { signature });
 
-                const state = await Game.db.collection(Collections.DivTokenState)
+                const state = await db.collection(Collections.DivTokenState)
                     .findOne({ _id: "payouts" });
 
                 if (state && state.payouts) {
@@ -282,14 +286,17 @@ export class DividendsRegistry {
                     const reward = this._toBigIntAmount(amount);
 
                     if (current > reward) {
-                        await Game.db.collection(Collections.DivTokenState)
+                        console.log(current, reward, current - reward)
+                        await db.collection(Collections.DivTokenState)
                             .updateOne({ _id: "payouts" }, { $set: { [`payouts.${blockchainId}`]: (current - reward).toString() } });
 
-                        await Game.db.collection(Collections.DivsWithdrawals)
+                        await db.collection(Collections.DivsWithdrawals)
                             .insertOne({ to, userId, blockchain: blockchainId, amount, availableAmount: current.toString() });
                     } else {
-                        await Game.db.collection(Collections.DivsWithdrawals)
+                        await db.collection(Collections.DivsWithdrawals)
                             .insertOne({ to, userId, blockchain: blockchainId, amount, error: "NOT_ENOUGH_FUNDS", availableAmount: current.toString() });
+
+                        throw Errors.NoDividendsWithdrawal;
                     }
                 }
 
@@ -312,14 +319,14 @@ export class DividendsRegistry {
     }
 
     async getStatus(userId: string) {
-        const pools = await Game.db.collection(Collections.DivsPayouts).findOne({ _id: this.getCurrentPayout() });
+        const payouts = await Game.db.collection(Collections.DivTokenState).findOne({ _id: "payouts" });
         return {
             season: this._season.getStatus(),
             supply: this.getSupply(),
             totalStake: this._totalStake,
             hasHistory: await Game.activityHistory.hasHistory(Game.db, userId),
             nextPayout: this.getNextPayout(),
-            pools: pools ? pools.payouts : {}
+            pools: payouts ? payouts.payouts : {}
         };
     }
 

@@ -131,7 +131,7 @@ export class Dividends {
     async claimDividends(to: string, blockchainId: string) {
         let args = null
 
-        if (this._data.payouts[blockchainId]) {
+        if (this._data.payouts[blockchainId] && BigInt(this._data.payouts[blockchainId]) > 0) {
             args = await Game.dividends.initiateDividendsWithdrawal(this._user.address, to, blockchainId, this._data.payouts[blockchainId]);
             this._data.payouts[blockchainId] = "0";
         }

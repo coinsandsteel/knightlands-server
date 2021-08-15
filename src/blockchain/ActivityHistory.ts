@@ -17,6 +17,10 @@ export class ActivityHistory {
         return Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
     }
 
+    async hasRecord(user: string, filter: any) {
+        return (await Game.db.collection(Collections.ActivityHistory).find({ user, ...filter }).count()) > 0;
+    }
+
     async save(db: Db, user: string, type: string, chain: string, data: any) {
         return db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain });
     }

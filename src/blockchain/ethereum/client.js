@@ -299,7 +299,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             values.push(arg);
         });
         const hash = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(types, values));
-        console.log(hash, ethers.utils.hashMessage(ethers.utils.arrayify(hash)))
         return this._signer.signMessage(ethers.utils.arrayify(hash));
     }
 

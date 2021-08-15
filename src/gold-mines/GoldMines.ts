@@ -28,7 +28,7 @@ export class GoldMines {
         }
 
         const collectedGold = Math.floor(this.data.storage.gold); // floating point accumulation
-        await this.user.addSoftCurrency(collectedGold);
+        await this.user.addSoftCurrency(collectedGold, true);
 
         this.data.storage.gold -= collectedGold;
     }

@@ -262,7 +262,7 @@ class User {
 
     async addSoftCurrency(value, ignorePassiveBonuses = false) {
         if (value > 0 && !ignorePassiveBonuses) {
-            value += this.getMaxStatValue(CharacterStat.ExtraGold);
+            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold)/1000);
 
             const bonuses = await this.getCardBonuses();
             value *= (1 + bonuses.soft / 100);
@@ -283,9 +283,9 @@ class User {
     }
 
     async addDkt(value, includeDktPassive = false) {
-        value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 100);
-
         if (includeDktPassive) {
+            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 1000);
+
             value = await this.dividends.applyBonusDkt(value);
 
             const bonuses = await this.getCardBonuses();
@@ -317,13 +317,13 @@ class User {
         const character = this._data.character;
 
         if (character.level == maxLevels) {
-            return;
+            return exp;
         }
 
         let totalExp = exp;
 
         if (!ignoreBonus) {
-            totalExp += this.getMaxStatValue(CharacterStat.ExtraExp);
+            totalExp *= (1 + this.getMaxStatValue(CharacterStat.ExtraExp)/1000);
 
             const bonuses = await this.getCardBonuses();
             totalExp *= (1 + bonuses.exp / 100);
@@ -351,7 +351,7 @@ class User {
                 // assign currencies
                 let levelMeta = levelUpMeta.records[i];
                 if (levelMeta) {
-                    await this.addSoftCurrency(levelMeta.soft);
+                    await this.addSoftCurrency(levelMeta.soft, true);
                     await this.addHardCurrency(levelMeta.hard);
                 }
             }
@@ -1608,7 +1608,7 @@ class User {
             const cyclesPassed = cardCycle - lastCardsClaimed;
 
             await this.addHardCurrency(meta.dailyHard * cyclesPassed);
-            await this.addSoftCurrency(meta.dailySoft * cyclesPassed);
+            await this.addSoftCurrency(meta.dailySoft * cyclesPassed, true);
         }
 
         this.subscriptions.lastClaimCycle = this.getDailyRewardCycle();
