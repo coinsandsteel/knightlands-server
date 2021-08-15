@@ -177,7 +177,7 @@ export class Ranking implements IRankingTypeHandler {
                     score: "$records.score",
                     id: "$records.id",
                     name: {
-                        $ifNull: [{ $arrayElemAt: ["$user.character.nickname", 0] }, ""]
+                        $ifNull: [{ $arrayElemAt: ["$user.character.name.v", 0] }, ""]
                     }
                 }
             },

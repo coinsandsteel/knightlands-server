@@ -278,7 +278,7 @@ class Raid extends EventEmitter {
         const army = await this._getArmy(attacker.address, legionIndex);
         const damageLog = {
             by: attacker.id,
-            name: attacker.nickname,
+            name: attacker.nickname.v,
             damage: 0,
             hits: 0
         };
