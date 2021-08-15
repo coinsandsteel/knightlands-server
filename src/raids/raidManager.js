@@ -14,7 +14,7 @@ import random from "../random";
 import { TokenRateTimeseries } from "./TokenRateTimeseries";
 import { isNumber } from "../validation";
 
-const WeaknessRotationCycle = 86400000 * 7;
+const WeaknessRotationCycle = 86400000 * 7; // 7 days
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
 const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.Bow, EquipmentType.Wand, EquipmentType.Spear];
 
@@ -411,7 +411,7 @@ class RaidManager {
         let factorSettings = this._factorSettings[0];
         const scaledStep = factorSettings.attemptFactor * step;
         const log = Math.log2(step / factorSettings.baseFactor) / Math.log2(factorSettings.base);
-        return 1 / (scaledStep * log + 1) * factorSettings.multiplier * Game.dividends.getDivTokenRate();
+        return 1 / (scaledStep * log + 1) * factorSettings.multiplier;
     }
 
     async _getNextDktFactor(raidTemplateId, peek = false) {
