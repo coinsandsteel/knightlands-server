@@ -107,16 +107,18 @@ export class ArmyManager {
         const prevUnitId = legion.units[slotId];
         const prevUnitRecord = await this._units.getUserUnit(userId, prevUnitId);
 
-        if (!unitId) {
-            if (prevUnitRecord) {
-                // empty slot
-                unit = prevUnitRecord[prevUnitId];
-                if (unit) {
-                    unit.legion = NO_LEGION;
-                }
+        if (prevUnitRecord) {
+            // empty slot
+            unit = prevUnitRecord[prevUnitId];
+            if (unit) {
+                unit.legion = NO_LEGION;
+                await this._units.onUnitUpdated(userId, unit);
             }
+        }
 
-            delete legion.units[slotId];
+        delete legion.units[slotId];
+
+        if (!unitId) {
             await this._armiesCollection.updateOne(
                 { _id: userId },
                 { $set: { [`legions.${legionIndex}`]: legion } }
