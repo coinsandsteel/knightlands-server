@@ -201,7 +201,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                 }
             }
 
-            if (this.targetsHit == 0) { // short circuit race
+            if (this.targetsHit == this.config.rewards.length) { // short circuit race
                 await this._finish();
             }
         }

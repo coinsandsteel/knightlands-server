@@ -372,9 +372,11 @@ class User {
 
     async _updateTimersRegen() {
         const classSelected = await this._loadAndCacheClassData(this._data.character.class);
-        
-        this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen - this.level * 0.4;
-        this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen - this.level * 0.4;
+
+        if (classSelected) {
+            this.getTimer(CharacterStats.Energy).regenTime = classSelected.energyRegen - this.level * 0.4;
+            this.getTimer(CharacterStats.Stamina).regenTime = classSelected.staminaRegen - this.level * 0.4;
+        }
     }
 
     _restoreTimers() {
@@ -1530,6 +1532,10 @@ class User {
     }
 
     async _loadAndCacheClassData(className) {
+        if (!className) {
+            return;
+        }
+
         if (this._classSelected) {
             return this._classSelected;
         }

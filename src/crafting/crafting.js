@@ -14,6 +14,7 @@ const {
 } = require("../knightlands-shared/equipment_slot");
 
 const ItemType = require("../knightlands-shared/item_type");
+const ROLLBACK_LEVEL = 9;
 
 class Crafting {
     constructor(user, inventory, equipment) {
@@ -273,7 +274,7 @@ class Crafting {
 
         // roll success 
         if (currency == CurrencyType.Soft && Random.range(0, 100, true) > stepData.successRate) {
-            if (item.enchant > 4) {
+            if (item.enchant > ROLLBACK_LEVEL) {
                 item.enchant--;
                 this._inventory.setItemUpdated(item);
             }
