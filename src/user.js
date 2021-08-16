@@ -1792,6 +1792,11 @@ class User {
     }
 
     async _addExperienceToBeast(boostCount, beastMeta, regular) {
+        if (beastMeta.levels.length <= this._data.beast.index) {
+            this._data.beast.index = beastMeta.levels.length - 1;
+            return;
+        }
+
         let currentBeast = beastMeta.levels[this._data.beast.index];
         if (this._data.beast.level >= currentBeast.levels.length) {
             throw Errors.BeastMaxLevel;
@@ -1821,7 +1826,7 @@ class User {
                 this._recalculateStats = true;
 
                 if (this._data.beast.level >= currentBeast.levels.length) {
-                    this.evolveBeast();
+                    this.evolveBeast(beastMeta);
                     break;
                 }
             }
@@ -1835,8 +1840,7 @@ class User {
         };
     }
 
-    async evolveBeast() {
-        const beastMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "beasts" });
+    async evolveBeast(beastMeta) {
         const currentBeast = beastMeta.levels[this._data.beast.index];
 
         // not enough level to evolve, should be last
@@ -1845,7 +1849,7 @@ class User {
         }
 
         // can evolve
-        if (this._data.beast.index < beastMeta.levels.length + 1) {
+        if (this._data.beast.index < beastMeta.levels.length - 1) {
             this._data.beast.index++;
             this._data.beast.level = 0;
         }

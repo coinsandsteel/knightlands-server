@@ -245,6 +245,10 @@ class Raid extends EventEmitter {
             throw Errors.InvalidRaid;
         }
 
+        if (hits > 50) {
+            hits = 50;
+        }
+
         let combatUnit = attacker.getCombatUnit({
             raid: this._template._id
         });

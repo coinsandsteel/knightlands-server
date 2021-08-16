@@ -61,12 +61,26 @@ export class DailyShop {
     }
 
     async purchase(itemIndex: number, fixed: boolean = false) {
-        if (itemIndex < 0 || this._data.items.length <= itemIndex) {
+        if (itemIndex < 0) {
             throw Errors.IncorrectArguments;
         }
 
         const meta = await this._getMeta();
-        const item = fixed ? meta.fixedItems[itemIndex].data : this._data.items[itemIndex];
+        let item;
+        if (fixed) {
+            if (meta.fixedItems.length <= itemIndex) {
+                throw Errors.IncorrectArguments;
+            }
+
+            item = meta.fixedItems[itemIndex].data;
+        } else {
+            if (this._data.items.length <= itemIndex) {
+                throw Errors.IncorrectArguments;
+            }
+
+            item = this._data.items[itemIndex];
+        }
+
         const purchaseData = fixed ? this._data.fixedItems : this._data.purchasedItems;
         if (purchaseData[item.item] >= item.max) {
             throw Errors.IncorrectArguments;

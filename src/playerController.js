@@ -868,9 +868,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _attackRaidBoss(user, data) {
-        data.hits *= 1;
-
-        if (!Number.isInteger(data.hits)) {
+        if (!isNumber(data.hits) || !Number.isInteger(data.hits) || !isNumber(data.legionIndex) || !Number.isInteger(data.legionIndex)) {
             throw Errors.IncorrectArguments;
         }
 

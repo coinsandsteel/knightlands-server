@@ -51,10 +51,10 @@ export class ArmyCombatLegion {
             units[i] = unitsDict[unitIds[i]];
         }
 
-        const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid, playerStats);
+        const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid, playerStats, bonusDamage);
         // console.log(JSON.stringify(resolveResult, null, 2))
 
-        raidBoss._applyDamage(resolveResult.totalDamageOutput * bonusDamage);
+        raidBoss._applyDamage(resolveResult.totalDamageOutput);
 
         return resolveResult;
     }
