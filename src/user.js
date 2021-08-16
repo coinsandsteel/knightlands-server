@@ -283,7 +283,7 @@ class User {
     }
 
     async addDkt(value, includeDktPassive = false) {
-        if (includeDktPassive) {
+        if (value > 0 && includeDktPassive) {
             value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 1000);
 
             value = await this.dividends.applyBonusDkt(value);
