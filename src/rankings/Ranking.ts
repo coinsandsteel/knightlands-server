@@ -36,7 +36,7 @@ export class Ranking implements IRankingTypeHandler {
 
         this._id = tableId;
         this._typeOptions = state.typeOptions;
-        this._pageSize = 20;
+        this._pageSize = 100;
         this._collection = collection;
         this._participantScores = {};
     }
@@ -168,7 +168,7 @@ export class Ranking implements IRankingTypeHandler {
         const pipeline: any[] = [
             { $match: { tableId: this._id } },
             { $unwind: "$records" },
-            { $sort: { "score": -1 } },
+            { $sort: { "records.score": -1 } },
             { $skip: page * this._pageSize },
             { $limit: limit },
             { $lookup: { from: "users", localField: "records.id", foreignField: "_id", as: "user" } },
@@ -183,8 +183,7 @@ export class Ranking implements IRankingTypeHandler {
             },
             {
                 $project: { _id: 0 }
-            },
-            { $sort: { "score": -1 } }
+            }
         ];
 
         return this._collection.aggregate(pipeline).toArray();
