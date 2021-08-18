@@ -452,10 +452,14 @@ class Trials {
         return this._getFightMeta(stageMeta, fightIndex);
     }
 
-    addAttempts(trialType, count, isFree) {
+    addAttempts(trialType, count, isFree, extra) {
         const trialState = this._getTrialTypeState(trialType);
         if (isFree) {
-            trialState.freeAttempts = count;
+            if (extra) {
+                trialState.freeAttempts += count;
+            } else {
+                trialState.freeAttempts = count;
+            }
         } else {
             trialState.attempts += count;
         }
