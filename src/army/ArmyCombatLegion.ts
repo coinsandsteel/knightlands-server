@@ -12,6 +12,7 @@ export class ArmyCombatLegion {
     private _armyUnits: ArmyUnits;
     private _legions: ArmyLegions;
     private _unitIndex: {};
+    private _userInventory: any;
 
     public unitIds: number[];
 
@@ -22,8 +23,10 @@ export class ArmyCombatLegion {
         allUnits: ArmyUnit[],
         armyUnits: ArmyUnits,
         reservedUnits: ArmyReserve,
-        legions: ArmyLegions
+        legions: ArmyLegions,
+        userInventory: any
     ) {
+        this._userInventory = userInventory;
         this._userId = userId;
         this._armyResolver = armyResolver;
         this._legionIndex = legionIndex;
@@ -49,6 +52,14 @@ export class ArmyCombatLegion {
         const units: ArmyUnit[] = new Array(unitIds.length);
         for (let i = 0; i < unitIds.length; ++i) {
             units[i] = unitsDict[unitIds[i]];
+            const unit = units[i];
+
+            for (let slotId in unit.items) {
+                const itemInSlot = unit.items[slotId];
+                if (itemInSlot) {
+                    unit.items[slotId] = this._userInventory.getItemById(itemInSlot.id);
+                }
+            }
         }
 
         const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid, playerStats, bonusDamage);

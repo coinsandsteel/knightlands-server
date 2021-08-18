@@ -1072,7 +1072,7 @@ class User {
 
     async unequipItem(itemSlot) {
         await this._inventory.loadAllItems();
-        await this._inventory.unequipItem(this.equipment[itemSlot]);
+        await this._inventory.unequipItem(this.equipment[itemSlot].id);
         this._recalculateStats = true;
     }
 

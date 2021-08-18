@@ -611,7 +611,7 @@ class Inventory {
         const itemSlot = getSlot(template.equipmentType);
 
         await this.unequipItem(equippedItems[itemSlot]);
-        item = await this.unequipItem(item);
+        item = await this.unequipItem(item.id);
 
         if (item.count > 1) {
             // split stack and create new item
@@ -633,7 +633,9 @@ class Inventory {
         return item;
     }
 
-    async unequipItem(item) {
+    async unequipItem(itemId) {
+        let item = this.getItemById(itemId);
+
         if (!item || !item.equipped) {
             return item;
         }
@@ -648,6 +650,9 @@ class Inventory {
             equippedItems = unit.items;
         }
 
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        const itemSlot = getSlot(template.equipmentType);
+
         item.holder = UserHolder;
         item.equipped = false;
 
@@ -659,7 +664,7 @@ class Inventory {
             const length = items.length;
             for (let i = 0; i < length; ++i) {
                 const existingItem = items[i];
-                if (!existingItem.unique && existingItem.id != item.id) {
+                if (!existingItem.unique && existingItem.id != item.id && !existingItem.equipped) {
                     stacked = true;
                     this.removeItem(item.id);
                     this.modifyStack(existingItem, 1);
@@ -675,9 +680,6 @@ class Inventory {
             this.setItemUpdated(item);
         }
 
-        const template = await Game.itemTemplates.getTemplate(item.template);
-        const itemSlot = getSlot(template.equipmentType);
-
         delete equippedItems[itemSlot];
     
 
@@ -688,6 +690,25 @@ class Inventory {
         return item;
     }
 
+    // getEquippedItem(item) {
+    //     if (item && item.equipped) {
+    //         let equippedItems;
+
+    //         if (item.holder == UserHolder) {
+    //             equippedItems = this._user.equipment;
+    //         } else {
+    //             const unit = await Game.armyManager.getUnit(this._userId, item.holder);
+    //             equippedItems = unit.items;
+    //         }
+
+    //         const template = await Game.itemTemplates.getTemplate(item.template);
+    //         const itemSlot = getSlot(template.equipmentType);
+    //         return equippedItems[itemSlot];
+    //     }
+
+    //     return item;
+    // }
+
     getItemById(id) {
         if (Array.isArray(id)) {
             const total = id.length;
@@ -695,14 +716,13 @@ class Inventory {
             let index = 0;
             
             for (; index < total; ++index) {
-                items[index] = this._items[this._itemsById.get(id[index] * 1)];
+                items[index] = this._items[this._itemsById.get(+id[index])];
             }
             return items;
         }
 
-        id *= 1;
         // index -> item
-        return this._items[this._itemsById.get(id)];
+        return this._items[this._itemsById.get(+id)];
     }
 
     hasItems(template, count, skipEquipped = false) {

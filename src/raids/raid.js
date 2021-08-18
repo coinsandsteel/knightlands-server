@@ -35,7 +35,6 @@ class Raid extends EventEmitter {
 
         this._damageLog = new CBuffer(20);
         this._challenges = [];
-        this._armyCache = {};
     }
 
     get id() {
@@ -230,16 +229,6 @@ class Raid extends EventEmitter {
         });
     }
 
-    async _getArmy(attackerId, legionIndex) {
-        let army = this._armyCache[attackerId];
-        if (!army || army.index != legionIndex) {
-            army = await Game.armyManager.createCombatLegion(attackerId, legionIndex)
-            this._armyCache[attackerId] = army;
-        }
-
-        return army;
-    }
-
     async attack(attacker, hits, legionIndex) {
         if (!this.isParticipant(attacker.id)) {
             throw Errors.InvalidRaid;
@@ -279,7 +268,7 @@ class Raid extends EventEmitter {
             }
         }
 
-        const army = await this._getArmy(attacker.address, legionIndex);
+        const army = await Game.armyManager.createCombatLegion(attacker.address, legionIndex);
         const damageLog = {
             by: attacker.id,
             name: attacker.nickname.v,

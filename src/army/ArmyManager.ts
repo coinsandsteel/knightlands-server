@@ -32,6 +32,7 @@ export class ArmyManager {
     private _summoner: ArmySummoner;
     private _armyResolver: ArmyResolver;
     private _legions: ArmyLegions;
+    private _combatLegions: { [key: string]: { [key: number]: ArmyCombatLegion } };
     private PaymentTag = "ArmySummonTag";
 
     constructor(db: Db) {
@@ -346,7 +347,7 @@ export class ArmyManager {
         const item = unit.items[slotId];
         if (item) {
             const inventory = await Game.loadInventory(userId);
-            await inventory.unequipItem(item);
+            await inventory.unequipItem(item.id);
             await this._units.onUnitUpdated(userId, unit);
         }
     }
@@ -362,14 +363,14 @@ export class ArmyManager {
         const meta = unit.troop ? this._troops : this._generals;
         const template = this._unitTemplates[unit.template];
         const stars = template.stars + unit.promotions;
-        const maxStars = template.stars < 3 ? 3 : 10;
+        const maxStars = template.stars <= 3 ? 3 : 10;
 
         if (stars >= maxStars) {
             throw Errors.ArmyUnitMaxPromotions;
         }
 
         const fusionTemplates = meta.fusionMeta.templates;
-        const fusionTemplate = fusionTemplates[stars];
+        const fusionTemplate = fusionTemplates[stars + 1];
         if (!fusionTemplate) {
             throw Errors.IncorrectArguments;
         }
@@ -553,6 +554,7 @@ export class ArmyManager {
     }
 
     async createCombatLegion(userId: string, legionIndex: number) {
+        const inventory = await Game.loadInventory(userId);
         const combatLegion = new ArmyCombatLegion(
             userId,
             legionIndex,
@@ -560,7 +562,8 @@ export class ArmyManager {
             await this._units.getInventory(userId),
             this._units,
             await this._units.getReserve(userId),
-            this._legions
+            this._legions,
+            inventory
         );
         return combatLegion;
     }

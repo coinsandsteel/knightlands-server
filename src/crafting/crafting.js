@@ -17,8 +17,7 @@ const ItemType = require("../knightlands-shared/item_type");
 const ROLLBACK_LEVEL = 9;
 
 class Crafting {
-    constructor(user, inventory, equipment) {
-        this._equipment = equipment;
+    constructor(user, inventory) {
         this._inventory = inventory;
         this._user = user;
     }

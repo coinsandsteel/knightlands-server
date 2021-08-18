@@ -267,11 +267,11 @@ class Game extends EventEmitter {
             this.publishToChannel("online", { online: this.getTotalOnline() });
         });
 
-        // socket.on("deauthenticate", () => {
-        //     this._deletePlayerController(controller);
+        socket.on("deauthenticate", () => {
+            this._deletePlayerController(controller);
 
-        //     controller.onDisconnect();
-        // });
+            controller.onDisconnect();
+        });
 
         socket.on("close", () => {
             this._deletePlayerController(controller);
