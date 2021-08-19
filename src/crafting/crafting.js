@@ -786,7 +786,7 @@ class Crafting {
         };
     }
 
-    async evolve(itemId) {
+    async evolve(itemId, extraItemId) {
         const evolveMeta = await Game.db.collection(Collections.Meta).findOne({ _id: "evolve" });
         const item = this._inventory.getItemById(itemId);
         if (!item) {
@@ -806,11 +806,44 @@ class Crafting {
             throw Errors.NotMaxLevel;
         }
 
-        if (item.rarity == Rarity.Mythical) {
+        const nextTemplate = evolveMeta.templates[item.template];
+        if (!nextTemplate) {
             throw Errors.IncorrectArguments;
         }
 
+        let meta = await this._getMeta();
+        if (item.breakLimit != 2 || item.level != meta.itemLimitBreaks[item.rarity][item.breakLimit]) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (item.element != Elements.Physical) {
+            const extraItem = this._inventory.getItemById(extraItemId);
+            if (!extraItem || extraItem.equipped) {
+                throw Errors.NoItem;
+            }
+
+            if (extraItem.locked) {
+                throw Errors.ItemLocked;
+            }
+
+            if (extraItem.template != nextTemplate) {
+                throw Errors.IncorrectArguments;
+            }
+
+            if (extraItem.element != Elements.Physical || extraItem.breakLimit != 2) {
+                throw Errors.IncorrectArguments;
+            }
+
+            if (extraItem.level != meta.itemLimitBreaks[extraItem.rarity][extraItem.breakLimit]) {
+                throw Errors.IncorrectArguments;
+            }
+        }
+
         await this._craftRecipe(evolveRecipe.recipe, CurrencyType.Soft, 1);
+
+        if (extraItemId) {
+            this._inventory.removeItem(extraItemId);
+        }
 
         let nextRarity = item.rarity;
         switch (nextRarity) {
@@ -833,6 +866,7 @@ class Crafting {
 
         item.rarity = nextRarity;
         item.breakLimit = 0;
+        item.template = nextTemplate;
 
         await this._inventory.autoCommitChanges(async inv => {
             inv.setItemUpdated(item);
