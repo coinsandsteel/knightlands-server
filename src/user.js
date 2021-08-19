@@ -463,7 +463,7 @@ class User {
         if (stat == CharacterStats.Health) {
             const price = Math.ceil(
                 Math.log(this.level) *
-                (this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 10 + 10
+                (this.getMaxStatValue(stat) - this.getTimerValue(stat)) * 5 + 100
             );
 
             return {
