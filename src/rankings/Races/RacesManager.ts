@@ -466,6 +466,11 @@ class RacesManager implements IRankingTypeHandler {
             }
         }
 
+        if (!race) {
+            race = new Race(this._db);
+            await race.load(raceId);
+        }
+
         if (race) {
             this._handleRaceMultipliers(race.finalDuration, race.targetsHit, race.config);
 
