@@ -610,7 +610,10 @@ class Inventory {
         const template = await Game.itemTemplates.getTemplate(item.template);
         const itemSlot = getSlot(template.equipmentType);
 
-        await this.unequipItem(equippedItems[itemSlot]);
+        if (equippedItems[itemSlot]) {
+            await this.unequipItem(equippedItems[itemSlot].id);
+        }
+        
         item = await this.unequipItem(item.id);
 
         if (item.count > 1) {

@@ -15,6 +15,7 @@ import SummonType from "../knightlands-shared/army_summon_type";
 import ItemType from "../knightlands-shared/item_type";
 import Random from "../random";
 import { isNumber } from "../validation";
+import { getSlot } from "../knightlands-shared/equipment_slot";
 
 const NO_LEGION = -1;
 
@@ -314,6 +315,7 @@ export class ArmyManager {
         const inventory = await Game.loadInventory(userId);
         const length = itemIds.length;
         const unit = unitRecord[unitId];
+        const slotsEquipped = {};
 
         for (let i = 0; i < length; ++i) {
             const itemId = itemIds[i];
@@ -326,6 +328,13 @@ export class ArmyManager {
             if (!itemTemplate) {
                 throw Errors.NoTemplate;
             }
+
+            const slotId = getSlot(itemTemplate.equipmentType);
+            if (slotsEquipped[slotId]) {
+                continue;
+            }
+
+            slotsEquipped[slotId] = true;
 
             if (itemTemplate.type != ItemType.Equipment) {
                 throw Errors.NotEquipment;
