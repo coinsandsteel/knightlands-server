@@ -211,11 +211,6 @@ class DailyQuests {
                 });
             }
         }
-
-        if (countTowardsAll) {
-            // force commit and send changes
-            await this._user.autoCommitChanges(() => { }, { dailyQuests: 1 });
-        }
     }
 }
 

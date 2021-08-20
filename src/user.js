@@ -581,7 +581,7 @@ class User {
 
         this._data = userData;
         this._inventory = new Inventory(this, Game.dbClient.db);
-        this._crafting = new Crafting(this, this._inventory, this.equipment);
+        this._crafting = new Crafting(this, this._inventory);
         this._itemStatResolver = new ItemStatResolver(
             this._meta.statConversions,
             this._meta.itemPower,
