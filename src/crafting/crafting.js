@@ -816,7 +816,7 @@ class Crafting {
             throw Errors.IncorrectArguments;
         }
 
-        if (item.element != Elements.Physical) {
+        if (item.element && item.element != Elements.Physical) {
             const extraItem = this._inventory.getItemById(extraItemId);
             if (!extraItem || extraItem.equipped) {
                 throw Errors.NoItem;

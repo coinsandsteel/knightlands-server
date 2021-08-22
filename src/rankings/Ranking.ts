@@ -132,6 +132,7 @@ export class Ranking implements IRankingTypeHandler {
         const match = await this._collection.aggregate([
             { $match: { tableId: this._id } },
             { $unwind: "$records" },
+            { $sort: { "records.score": -1 } },
             { $match: { "records.score": { $gte: this.getParticipantScore(id) } } },
             { $count: "total" }
         ]).toArray();
@@ -147,7 +148,7 @@ export class Ranking implements IRankingTypeHandler {
         const pipeline: any[] = [
             { $match: { tableId: this._id } },
             { $unwind: "$records" },
-            { $sort: { "score": -1 } },
+            { $sort: { "records.score": -1 } },
             { $limit: count },
             {
                 $project: {
@@ -157,8 +158,7 @@ export class Ranking implements IRankingTypeHandler {
             },
             {
                 $project: { _id: 0 }
-            },
-            { $sort: { "score": -1 } }
+            }
         ];
 
         return this._collection.aggregate(pipeline).toArray();

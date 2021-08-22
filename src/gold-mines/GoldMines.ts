@@ -109,7 +109,7 @@ export class GoldMines {
         this.data.storage.gold += goldMined;
 
         const storageSize = meta.storage[this.data.storage.level].size;
-        if (goldMined > storageSize) {
+        if (this.data.storage.gold > storageSize) {
             this.data.storage.gold = storageSize;
         }
 
