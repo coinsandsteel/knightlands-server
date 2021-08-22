@@ -58,7 +58,7 @@ class Unit {
     }
 
     isCritical() {
-        return Random.range(1, 100, true) <= this.getStat(CharacterStat.CriticalChance);
+        return Random.range(1, 10000, true) <= this.getStat(CharacterStat.CriticalChance);
     }
 
     attackRaid(raidBoss, bonusDamage, flatDamage) {
