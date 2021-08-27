@@ -98,7 +98,7 @@ class Presale {
 
         let request = await this._db.collection("coins_requests").findOne({ wallet })
         if (request && request.allowed) {
-            res.json({ error: "allowance claimed" });
+            res.json({ error: "allowance claimed", allowance: request.allowance });
             return;
         }
 
@@ -120,7 +120,7 @@ class Presale {
 
         await this._db.collection("coins_allowence").insertOne({ wallet, allowance: 0.19 * tokens.length * 450 })
 
-        res.json({ ok: true })
+        res.json({ ok: true, allowance: 0.19 * tokens.length * 450 })
     }
 
     async _requestForCoins(req, res) {
