@@ -102,7 +102,7 @@ class Presale {
             return;
         }
 
-        const tokens = await this._db.collection("coins_and_steel").find({ wallet }).toArray();
+        const tokens = await this._db.collection("coins_and_steel").find({ owner: wallet }).toArray();
         if (!tokens || tokens.length == 0) {
             res.json({ error: "no tokens" });
             return;
