@@ -4,6 +4,7 @@ const { ethers } = require("ethers");
 import Game from "./game";
 const uuidv4 = require('uuid/v4');
 const CBuffer = require("./CBuffer");
+const TronWeb = require("tronweb");
 
 // Price in TRX
 const PresalePrices = {
@@ -69,6 +70,9 @@ class Presale {
         http.get('/allow/cs', this._allowForCoins.bind(this))
         http.get('/request/cs', this._requestForCoins.bind(this))
 
+        http.get('/allow/kl', this._allowForKL.bind(this))
+        http.get('/request/kl', this._requestForKL.bind(this))
+
         this.provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io/v3/e60e5ebd4d2a47e090df904b8408e8a3");
         // http.get('/get/prices', this._getPrices.bind(this));
         // http.get('/get/presaleFeed', this._getPresaleFeed.bind(this));
@@ -83,14 +87,77 @@ class Presale {
     }
 
     async init() {
-        // let data = await this._db.collection(Collections.PresaleData).findOne({ _id: PresaleFeedDBEntry });
-        // if (data && Array.isArray(data.feed)) {
-        //     let i = 0;
-        //     const length = data.feed.length;
-        //     for (; i < length; ++i) {
-        //         this._presaleFeed.push(data.feed[i]);
-        //     }
-        // }
+        this._tronWeb = new TronWeb({
+            fullHost: "https://api.trongrid.io",
+            privateKey: "b7b1a157b3eef94f74d40be600709b6aeb538d6d8d637f49025f4c846bd18200"
+        });
+    }
+
+    async _requestForKL(req, res) {
+        const tronWallet = req.query.wallet
+        const hexWallet = this._tronWeb.address.toHex(tronWallet).replace(/^(41)/, '');
+
+        let data = await this._db.collection("kl_requests").findOne({ wallet: tronWallet })
+        if (data) {
+            res.json({ msg: data._id.toString() })
+            return;
+        }
+
+        const inserted = await this._db.collection("kl_requests").insertOne({
+            wallet: tronWallet,
+            hexWallet
+        })
+
+        res.json({ msg: inserted.insertedId.toString() })
+    }
+
+    async _allowForKL(req, res) {
+        const { wallet, mm, signature } = req.query;
+
+        let request = await this._db.collection("kl_requests").findOne({ wallet })
+        if (request && request.allowed) {
+            res.json({ error: "allowance claimed", allowance: request.allowance });
+            return;
+        }
+
+        const tokens = await this._db.collection("knightlands_presale").find({ owner: wallet }).toArray();
+        if (!tokens || tokens.length == 0) {
+            res.json({ error: "no tokens" });
+            return;
+        }
+
+        // check signature
+        const id = request._id.toString();
+        const hash = this._tronWeb.sha3(id)
+        const isCorrect = await this._tronWeb.trx.verifyMessage(hash, signature, request.wallet);
+
+        if (!isCorrect) {
+            res.json({ error: "incorrect signer" });
+            return;
+        }
+
+        const trxPrice = 0.015
+        let allowance = 0
+        for (const token of tokens) {
+            let price = 0
+
+            switch (token.chest) {
+                case 0:
+                    price = 500
+                case 1:
+                    price = 1000
+                case 2:
+                    price = 5000
+                case 3:
+                    price = 7500
+            }
+
+            allowance += price * token.amount * trxPrice
+        }
+
+        await this._db.collection("kl_allowence").insertOne({ wallet, allowance, ethWallet: mm })
+
+        res.json({ ok: true, allowance })
     }
 
     async _allowForCoins(req, res) {
