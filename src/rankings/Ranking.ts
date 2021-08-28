@@ -178,6 +178,9 @@ export class Ranking implements IRankingTypeHandler {
                     id: "$records.id",
                     name: {
                         $ifNull: [{ $arrayElemAt: ["$user.character.name.v", 0] }, ""]
+                    },
+                    avatar: {
+                        $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1]
                     }
                 }
             },
