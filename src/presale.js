@@ -120,7 +120,7 @@ class Presale {
             return;
         }
 
-        const tokens = await this._db.collection("knightlands_presale").find({ owner: wallet }).toArray();
+        const tokens = await this._db.collection("knightlands_presale").find({ owner: `0x${request.hexWallet}` }).toArray();
         if (!tokens || tokens.length == 0) {
             res.json({ error: "no tokens" });
             return;
