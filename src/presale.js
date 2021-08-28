@@ -141,7 +141,7 @@ class Presale {
         for (const token of tokens) {
             let price = 0
 
-            switch (token.chest) {
+            switch (token.tokenId) {
                 case 0:
                     price = 500
                 case 1:
