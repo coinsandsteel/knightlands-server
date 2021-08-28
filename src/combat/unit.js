@@ -9,6 +9,10 @@ class Unit {
         this._maxStats = maxStats;
     }
 
+    get maxStats() {
+        return this._maxStats;
+    }
+
     getAttack() {
         let attack = this.getStat(CharacterStat.Attack);
         const crit = this.isCritical();
@@ -17,8 +21,8 @@ class Unit {
         }
 
         // roll damage 2 times, half attack, with 20% variation, for normal distribution
-        const dmg1 = random.range(attack * 0.4, attack*0.6);
-        const dmg2 = random.range(attack * 0.4, attack*0.6);
+        const dmg1 = random.range(attack * 0.4, attack * 0.6);
+        const dmg2 = random.range(attack * 0.4, attack * 0.6);
 
         return {
             attack: Math.floor(dmg1 + dmg2),
@@ -88,7 +92,7 @@ class Unit {
             defense = 0;
         }
 
-        const baseDefense =  10 * this._level;
+        const baseDefense = 10 * this._level;
         let damageReduction = defense / (defense + baseDefense);
         let finalDamage = Math.floor(damage * (1 - damageReduction));
 

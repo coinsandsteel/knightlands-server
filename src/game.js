@@ -4,6 +4,7 @@ const User = require("./user");
 import EventEmitter from 'events';
 const PlayerController = require("./playerController");
 const ItemTemplates = require("./itemTemplates");
+const AccessoryOptions = require('./accessoryOptions')
 const { Collections } = require("./database/database");
 import DisconnectCodes from "./knightlands-shared/disconnectCodes";
 import { DivTokenFarmedTimeseries } from "./dividends/DivTokenFarmedTimeseries";
@@ -22,13 +23,13 @@ class Game extends EventEmitter {
 
     async init(
         dbClient,
-        server, 
-        db, 
-        blockchain, 
-        paymentProcessor, 
-        raidManager, 
-        lootGenerator, 
-        currencyConversionService, 
+        server,
+        db,
+        blockchain,
+        paymentProcessor,
+        raidManager,
+        lootGenerator,
+        currencyConversionService,
         craftingQueue,
         userPremiumService,
         rankings,
@@ -54,6 +55,7 @@ class Game extends EventEmitter {
         this.tokenAmounts = new DivTokenFarmedTimeseries(db, this._dividends);
         this.depositGateway = new DepositGateway(blockchain);
         this.activityHistory = new ActivityHistory();
+        this.accessoryOptions = new AccessoryOptions(db);
 
         this._players = {};
         this._playersById = {};
@@ -61,6 +63,7 @@ class Game extends EventEmitter {
         await this._season.init();
         await this._dividends.init();
         await this._season.checkSeason();
+        await this.accessoryOptions.init();
 
         this._lock = new Lock();
     }
@@ -126,7 +129,7 @@ class Game extends EventEmitter {
     }
 
     get nowSec() {
-        return Math.floor(this.now / 1000); 
+        return Math.floor(this.now / 1000);
     }
 
     async _getExpTable() {
@@ -247,7 +250,7 @@ class Game extends EventEmitter {
     handleIncomingConnection(socket) {
         let controller = new PlayerController(socket);
 
-        socket.on("authenticate", async () => {
+        socket.on("authenticate", async() => {
             if (!controller.address) {
                 return;
             }

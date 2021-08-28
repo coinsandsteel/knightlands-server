@@ -6,7 +6,7 @@ import CharacterStat, {
     StatConversions,
     DefaultStats
 }
-    from "./knightlands-shared/character_stat";
+from "./knightlands-shared/character_stat";
 
 import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
@@ -16,6 +16,7 @@ import Buffs from "./knightlands-shared/buffs";
 import Errors from "./knightlands-shared/errors";
 import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
+import AccessoryOption, { AccessoryOptionToId } from "./knightlands-shared/accessory_option";
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
@@ -245,13 +246,13 @@ class User {
     }
 
     getCombatUnit(config) {
-        let stats = { ...this.maxStats };
+        let stats = {...this.maxStats };
         if (config && config.raid) {
             this._buffsResolver.calculate(Game.now, this.rawStats, this._data.character.buffs, config.raid);
             stats = this._buffsResolver.finalStats;
         }
 
-        const maxStats = { ...stats };
+        const maxStats = {...stats };
 
         stats[CharacterStat.Energy] = this.getTimerValue(CharacterStats.Energy);
         stats[CharacterStat.Stamina] = this.getTimerValue(CharacterStats.Stamina);
@@ -262,7 +263,7 @@ class User {
 
     async addSoftCurrency(value, ignorePassiveBonuses = false) {
         if (value > 0 && !ignorePassiveBonuses) {
-            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold)/1000);
+            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraGold) / 1000);
 
             const bonuses = await this.getCardBonuses();
             value *= (1 + bonuses.soft / 100);
@@ -323,7 +324,7 @@ class User {
         let totalExp = exp;
 
         if (!ignoreBonus) {
-            totalExp *= (1 + this.getMaxStatValue(CharacterStat.ExtraExp)/1000);
+            totalExp *= (1 + this.getMaxStatValue(CharacterStat.ExtraExp) / 1000);
 
             const bonuses = await this.getCardBonuses();
             totalExp *= (1 + bonuses.exp / 100);
@@ -332,7 +333,7 @@ class User {
         }
 
         character.exp += totalExp;
-        
+
         const previousLevel = character.level;
         while (character.level < maxLevels) {
             let toNextLevel = this._expTable[character.level - 1];
@@ -563,12 +564,10 @@ class User {
         }
 
         userData = (await users.findOneAndUpdate(
-            searchQuery,
-            {
+            searchQuery, {
                 $setOnInsert: userData,
                 $set: { lastLogin: Game.nowSec }
-            },
-            {
+            }, {
                 returnDocument: 'after',
                 upsert: true
             }
@@ -774,13 +773,14 @@ class User {
 
         finalStats[CharacterStats.Stamina] += levelMetaData[CharacterStats.Stamina];
         finalStats[CharacterStats.Energy] += levelMetaData[CharacterStats.Energy]
-        // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
+            // finalStats[CharacterStats.Honor] += levelUpMeta[CharacterStats.Energy]
         finalStats[CharacterStats.Health] += levelMetaData[CharacterStats.Health]
 
         let combatMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "combat_meta" });
 
         let mainHandType;
         let offHandType;
+        let relativeStats = {}
 
         // calculate stats from equipment
         for (let slotId in character.equipment) {
@@ -797,6 +797,8 @@ class User {
                 mainHandType = template.equipmentType;
             } else if (slot == EquipmentSlots.OffHand) {
                 offHandType = template.equipmentType;
+            } else if (slot == EquipmentSlots.Ring || slot == EquipmentSlots.Necklace) {
+                this._applyAccessoryProperties(equippedItem, finalStats, relativeStats);
             }
 
             let stats = this._itemStatResolver.convertStats(template, equippedItem.level, equippedItem.enchant);
@@ -832,6 +834,10 @@ class User {
             finalStats[CharacterStat.Defense] += currentBeast.defense;
         }
 
+        // apply relative stats
+        for (let stat in relativeStats) {
+            finalStats[stat] += Math.floor(finalStats[stat] * relativeStats[stat])
+        }
 
         let oldStats = character.stats;
         this.rawStats = finalStats;
@@ -844,6 +850,24 @@ class User {
             let timer = character.timers[i];
             if (timer.value == oldStats[i]) {
                 timer.value = finalStats[i];
+            }
+        }
+    }
+
+    _applyAccessoryProperties(item, finalStats, relativeStats) {
+        for (const prop of item.properties) {
+            const propTemplate = Game.accessoryOptions.getOption(prop.id);
+            switch (propTemplate.type) {
+                case AccessoryOption.IncreasedStat:
+                    relativeStats[propTemplate.stat] = (relativeStats[propTemplate.stat] || 0) + prop.value;
+                    break
+                case AccessoryOption.ArmyDamageInRaidElement:
+                    const byElement = finalStats[CharacterStats.ArmyDamageInRaidElement];
+                    if (!byElement[propTemplate.element]) {
+                        byElement[propTemplate.element] = 0;
+                    }
+                    byElement[propTemplate.element] += prop.value;
+                    break
             }
         }
     }
@@ -921,8 +945,7 @@ class User {
                 let prop = props[k];
                 if (prop.type == ItemProperties.ExtraStatIfItemNotEquipped) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
-                }
-                else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
+                } else if (item.type == ItemType.Charm && prop.type == ItemProperties.ExtraStatIfItemOwned) {
                     extraStatIfItemOwned(prop, item.count, finalStats);
                 }
             }
@@ -960,7 +983,7 @@ class User {
 
         let itemsRequired = count;
 
-        if (count > 10)  {
+        if (count > 10) {
             throw Errors.IncorrectArguments;
         }
 
@@ -971,7 +994,7 @@ class User {
         if (itemToUse.count < itemsRequired) {
             throw Errors.NoEnoughItems;
         }
-        
+
         const actionValue = actionData.value * count;
         let actionResult;
 
@@ -1106,7 +1129,7 @@ class User {
                 if (updateQuery) {
                     finalQuery.$set = updateQuery;
                 }
-                
+
                 if (removeQuery) {
                     finalQuery.$unset = removeQuery;
                 }
@@ -1143,7 +1166,7 @@ class User {
                     health: {
                         value: 0,
                         lastRegenTime: 0,
-                        regenTime: 30
+                        regenTime: 5
                     },
                     energy: {
                         value: 0,
@@ -1152,11 +1175,11 @@ class User {
                     },
                     stamina: {
                         value: 0,
-                        lastRegenTime: 0, 
+                        lastRegenTime: 0,
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
-                stats: { ...DefaultStats },
+                stats: {...DefaultStats },
                 attributes: {
                     health: 0,
                     attack: 0,
@@ -1316,8 +1339,7 @@ class User {
             if (!adventure.hasOwnProperty("startTime")) {
                 changed = true;
                 adventuresList[i] = await this._createNewAdventureSlot();
-            }
-            else if ((adventure.startTime == 0 && !adventure.list) || (adventure.list && adventure.list.length == 0)) {
+            } else if ((adventure.startTime == 0 && !adventure.list) || (adventure.list && adventure.list.length == 0)) {
                 changed = true;
                 adventure.list = await this._rollAdventureList();
             }
@@ -1779,7 +1801,7 @@ class User {
             if (!iapMeta) {
                 throw Errors.UknownIAP;
             }
-            
+
             await this.addHardCurrency(-iapMeta.price);
             boostCount = iapMeta.tickets;
         }

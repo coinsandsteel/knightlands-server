@@ -13,6 +13,12 @@ class PlayerUnit extends Unit {
         this._user = user;
     }
 
+    updateStats(raidElement) {
+        if (this._maxStats[CharacterStats.ArmyDamageInRaidElement][raidElement]) {
+            this._maxStats[CharacterStats.ArmyDamage] += Math.floor(this._maxStats[CharacterStats.ArmyDamage] * this._maxStats[CharacterStats.ArmyDamageInRaidElement][raidElement])
+        }
+    }
+
     setHealth(value) {
         super.setHealth(value);
         this._user.setTimerValue(CharacterStats.Health, this.getHealth());

@@ -71,7 +71,7 @@ class Raid extends EventEmitter {
 
     async create(summonerId, raidTemplateId, isFree) {
         raidTemplateId *= 1;
-        
+
         let raidEntry = {
             summoner: summonerId,
             raidTemplateId,
@@ -122,7 +122,7 @@ class Raid extends EventEmitter {
     }
 
     getInfo() {
-        let info = { ...this._data };
+        let info = {...this._data };
         info.id = this.id;
         delete info._id;
         return info;
@@ -251,7 +251,7 @@ class Raid extends EventEmitter {
             throw Errors.NoStamina;
         }
 
-        let bonusDamage = 1 + ExtraDamagePerAdditionalHit * hits;
+        let bonusDamage = 1 + ExtraDamagePerAdditionalHit * (hits - 1);
         let hitsToPerform = hits;
 
         // apply weakness bonuses
@@ -267,6 +267,8 @@ class Raid extends EventEmitter {
                 bonusDamage *= 1.3;
             }
         }
+
+        combatUnit.updateStats(this._weakness.current.element)
 
         const army = await Game.armyManager.createCombatLegion(attacker.address, legionIndex);
         const damageLog = {
@@ -301,7 +303,7 @@ class Raid extends EventEmitter {
             if (combatUnit.isAlive) {
                 damageLog.hits++;
 
-                const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, attacker.maxStats, this._template._id);
+                const armyAttackResult = await army.attackRaid(this._bossUnit, bonusDamage, combatUnit.maxStats, this._template._id);
                 const playerAttackResult = combatUnit.attackRaid(this._bossUnit, bonusDamage, armyAttackResult.playerStats.attack);
 
                 const damageDone = playerAttackResult.damage + armyAttackResult.totalDamageOutput;
@@ -311,23 +313,23 @@ class Raid extends EventEmitter {
                 attackLog.player.crit = attackLog.player.crit || playerAttackResult.crit;
 
                 for (const unitId of army.unitIds) {
-                    attackLog.armyDamage[unitId] = (attackLog.armyDamage[unitId]||0) + armyAttackResult.unitsDamageOutput[unitId];
+                    attackLog.armyDamage[unitId] = (attackLog.armyDamage[unitId] || 0) + armyAttackResult.unitsDamageOutput[unitId];
                     if (armyAttackResult.damageProcs[unitId]) {
-                        attackLog.procs[unitId] = (attackLog.procs[unitId]||0) + armyAttackResult.damageProcs[unitId];
+                        attackLog.procs[unitId] = (attackLog.procs[unitId] || 0) + armyAttackResult.damageProcs[unitId];
                     }
-                    
+
                     if (armyAttackResult.health[unitId]) {
-                        attackLog.health[unitId] = (attackLog.health[unitId]||0) + armyAttackResult.health[unitId];
+                        attackLog.health[unitId] = (attackLog.health[unitId] || 0) + armyAttackResult.health[unitId];
                         combatUnit.restoreHealth(armyAttackResult.health[unitId]);
                     }
-                    
+
                     if (armyAttackResult.energy[unitId]) {
-                        attackLog.energy[unitId] = (attackLog.energy[unitId]||0) + armyAttackResult.energy[unitId];
+                        attackLog.energy[unitId] = (attackLog.energy[unitId] || 0) + armyAttackResult.energy[unitId];
                         combatUnit.restoreEnergy(armyAttackResult.energy[unitId]);
                     }
-                    
+
                     if (armyAttackResult.stamina[unitId]) {
-                        attackLog.stamina[unitId] = (attackLog.stamina[unitId]||0) + armyAttackResult.stamina[unitId];
+                        attackLog.stamina[unitId] = (attackLog.stamina[unitId] || 0) + armyAttackResult.stamina[unitId];
                         combatUnit.restoreStamina(armyAttackResult.stamina[unitId]);
                     }
                 }
@@ -351,7 +353,7 @@ class Raid extends EventEmitter {
 
         if (damageLog.damage > 0) {
             this._data.participants[attacker.id] += damageLog.damage;
-            
+
             this._damageLog.push(damageLog);
 
             attackLog.exp = await attacker.addExperience(attackLog.exp);
@@ -419,17 +421,12 @@ class Raid extends EventEmitter {
         // determine raid loot record based on user damage
         let chosenLoot;
         let raidStage = this.template;
-        let userDamage = this._data.participants[userId];
-        {
+        let userDamage = this._data.participants[userId]; {
             let i = 0;
             let loot = this.loot;
 
             if (this._data.isFree) {
-                const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate(
-                    { raidId: this.templateId, user: userId },
-                    { $setOnInsert: { raidId: this.templateId, user: userId } },
-                    { returnDocument: 'false', upsert: true }
-                );
+                const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate({ raidId: this.templateId, user: userId }, { $setOnInsert: { raidId: this.templateId, user: userId } }, { returnDocument: 'false', upsert: true });
 
                 if (!firstClearance.value) {
                     loot = this.loot.firstClearance;
@@ -457,7 +454,7 @@ class Raid extends EventEmitter {
             items: []
         };
 
-        if (chosenLoot) { 
+        if (chosenLoot) {
             rewards.gold = chosenLoot.gold;
 
             rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
