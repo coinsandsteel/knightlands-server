@@ -61,7 +61,11 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     get winners() {
-        return Object.keys(this._state.looted);
+        return this._state.winners;
+    }
+
+    get tableId() {
+        return this._state._id.toHexString();
     }
 
     async add(userId: string) {
@@ -79,7 +83,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             return;
         }
 
-        await this._lock.acquire(userId);
+        await this._lock.acquire("rank");
 
         try {
             let userRank = <RankingRecord>await this.getUserRank(userId);
@@ -101,13 +105,20 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
                 this._state.looted[userId] = false;
                 // can claim reward, track player
-                await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
+                await this._db.collection(Collections.Races).updateOne({ _id: this.id }, {
+                    $set: { "looted": this._state.looted }, $push: {
+                        winners: {
+                            $each: [userId]
+                        }
+                    }
+                });
+                this._state.winners.push(userId)
                 Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
             }
 
             await this._handleRankUpdate();
         } finally {
-            await this._lock.release(userId);
+            await this._lock.release("rank");
         }
     }
 
@@ -120,7 +131,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             rewardsMultiplier,
             targetMultiplier,
             looted: {},
-            finalDuration: 0
+            finalDuration: 0,
+            winners: []
         };
 
         this._state = state;
@@ -142,6 +154,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         let rank = await this._ranking.getParticipantRank(userId);
         if (rank && (rank.score < this.target || rank.rank > this.config.rewards.length)) {
             rank.rank = 0;
+        } else {
+            rank.rank = this.winners.findIndex(x => x == userId) + 1;
         }
         return rank;
     }
@@ -162,7 +176,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     async loadFromState(state: RaceRecord) {
         this._state = state;
-        this._ranking = new Ranking(this._db.collection(Collections.RaceTables), this._state._id.toHexString(), {
+        this._state.winners = this._state.winners || [];
+        this._ranking = new Ranking(this._db.collection(Collections.RaceTables), this.tableId, {
             typeOptions: this._state.config.type
         });
         await this._ranking.init();
@@ -192,14 +207,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
         if (players.length > 0) {
             // results are ordered in desc order by score
-            totalRewards = totalRewards > players.length ? players.length : totalRewards;
-            for (let i = 0; i < totalRewards; ++i) {
-                if (players[i].score >= target) {
-                    this.targetsHit++;
-                } else {
-                    break;
-                }
-            }
+            this.targetsHit = totalRewards > this.winners.length ? this.winners.length : totalRewards;
 
             if (this.targetsHit == this.config.rewards.length) { // short circuit race
                 await this._finish();

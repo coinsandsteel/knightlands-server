@@ -51,6 +51,7 @@ export interface RaceRecord {
     targetMultiplier: number;
     rewardsMultiplier: number;
     looted: { [key: string]: boolean };
+    winners: any[];
     config: RaceConfiguration;
 }
 

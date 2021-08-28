@@ -203,6 +203,7 @@ class RacesManager implements IRankingTypeHandler {
                 id: race.id,
                 rank: (await race.getUserRank(userId)),
                 maxParticipants: race.config.rewards.length,
+                winners: race.winners,
                 tier: race.tier,
                 target: race.target,
                 type: race.type,
