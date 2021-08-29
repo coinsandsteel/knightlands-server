@@ -144,12 +144,19 @@ class Presale {
             switch (token.tokenId) {
                 case 0:
                     price = 500
+                    break;
                 case 1:
                     price = 1000
+                    break;
                 case 2:
                     price = 5000
+                    break;
                 case 3:
                     price = 7500
+                    break;
+                case 4:
+                    price = 1000
+                    break;
             }
 
             allowance += price * token.amount * trxPrice
