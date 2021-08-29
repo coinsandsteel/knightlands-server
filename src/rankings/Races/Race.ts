@@ -152,11 +152,14 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     async getUserRank(userId: string) {
         let rank = await this._ranking.getParticipantRank(userId);
-        if (rank && (rank.score < this.target || rank.rank > this.config.rewards.length)) {
-            rank.rank = 0;
-        } else {
-            rank.rank = this.winners.findIndex(x => x == userId) + 1;
+        if (rank) {
+            if (rank.score < this.target || rank.rank > this.config.rewards.length) {
+                rank.rank = 0;
+            } else {
+                rank.rank = this.winners.findIndex(x => x == userId) + 1;
+            }
         }
+
         return rank;
     }
 
