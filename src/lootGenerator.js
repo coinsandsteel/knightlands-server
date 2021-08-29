@@ -27,12 +27,14 @@ class LootGenerator {
         let allChests = await this._db.collection(Collections.GachaMeta).find({}).toArray();
         allChests.forEach(chest => {
             for (let iap in chest.iaps) {
-                iapExecutor.registerAction(iap, async (context) => {
+                iapExecutor.registerAction(iap, async(context) => {
                     return await this._openChest(context.user, context.chestId, context.count);
                 });
                 iapExecutor.mapIAPtoEvent(iap, Events.ChestOpened);
-            } 
+            }
         });
+
+        this._luckLoot = await this._db.collection(Collections.QuestLoot).findOne({ _id: "luck_loot" })
     }
 
     async getChestOpenStatus(userId, chestMeta, iap) {
@@ -71,7 +73,7 @@ class LootGenerator {
     async openChest(user, chestId, count, free = false) {
         let items = await Game.lootGenerator.getLootFromGacha(user.address, chestId, count);
 
-        await user.inventory.autoCommitChanges(async inv=>{
+        await user.inventory.autoCommitChanges(async inv => {
             await inv.addItemTemplates(items);
         });
 
@@ -156,10 +158,10 @@ class LootGenerator {
 
                 let isDropped = await this._db.collection(Collections.Users).findOne(lootQuery);
                 if (!isDropped) {
-                    let updateQuery = {$set:{}};
+                    let updateQuery = { $set: {} };
                     updateQuery.$set[`firstTimeLoot.${zone}.${questIndex}`] = true;
 
-                    await this._db.collection(Collections.Users).updateOne({address: userId}, updateQuery);
+                    await this._db.collection(Collections.Users).updateOne({ address: userId }, updateQuery);
 
                     const length = table.firstTimeRecords.length;
                     for (let j = 0; j < length; ++j) {
@@ -172,7 +174,7 @@ class LootGenerator {
                             }, items, itemsHash, record, true);
                         }
                     }
-                }   
+                }
             }
 
             await this._rollQuestLoot({
@@ -183,8 +185,15 @@ class LootGenerator {
             }, table, questFinished, items, itemsHash, luck);
         }
 
-        // check luck rolls
-        await this._rollLuckDrops({ items, userId, stage, itemsHash });
+
+        let user = await Game.getUser(userId);
+
+        for (let k = 0; k < itemsToRoll; ++k) {
+            // check drop options
+            await this._extraDrops({ items, userId, itemsHash, itemsToRoll, user })
+                // check luck rolls
+            await this._rollLuckDrops({ items, userId, stage, itemsHash, itemsToRoll, user });
+        }
 
         return items;
     }
@@ -219,12 +228,27 @@ class LootGenerator {
         }, table, table.weights, items, itemsHash);
     }
 
-    async _rollLuckDrops({ items, itemsHash, userId, stage }) {
-        let user = await Game.getUser(userId);
-        const luckDrops = await this._db.collection(Collections.QuestLoot).findOne({ _id: "luck_loot" }, { projection: { [stage]: 1 } });
-        // if user has minimum required luck
+    async _extraDrops({ items, itemsHash, user }) {
+        const byItem = user.maxStats[CharacterStat.DropItemQuest];
+        for (const itemId in byItem) {
+            const roll = Random.range(0, 1, true);
+            if (roll <= byItem[itemId]) {
+                console.log('drop item ', itemId)
+                this._addLootToTable(items, itemsHash, {
+                    quantity: 1,
+                    item: +itemId,
+                    guaranteed: false
+                })
+            }
+        }
+    }
+
+    async _rollLuckDrops({ items, itemsHash, stage, user }) {
+        const luckDrops = this._luckLoot[stage]
+            // if user has minimum required luck
         const stageLoot = luckDrops[stage];
         const userLuck = user.getMaxStatValue(CharacterStat.Luck);
+
         for (let i = stageLoot.length - 1; i >= 0; --i) {
             // we assume that luck requirements are in ascending order
             let table = stageLoot[i];
@@ -334,7 +358,7 @@ class LootGenerator {
 
                 if (lootRecord.table) {
                     // roll again from embedded loot table
-                    let newContext = {...lootContext};
+                    let newContext = {...lootContext };
                     newContext.itemsToRoll = 1;
                     lootRecord = await this._rollItemsFromLootTable(newContext, lootRecord.table, lootRecord.table.weights, [], {}, skipConsumables);
                     // returns array 
@@ -354,7 +378,7 @@ class LootGenerator {
                         itemsToRoll++;
                         continue;
                     }
-                    
+
                     lootContext.tableTag = table.tag;
                     await this._addRecordToTable(lootContext, items, itemsHash, lootRecord);
                 }
@@ -387,7 +411,7 @@ class LootGenerator {
                 }
                 // count towards total item per draw
                 itemsPerDraw -= quantity;
-                
+
                 // skip consumables for guaranteed rolls
                 await this._rollItemsFromLootTable({
                     itemsToRoll: quantity
@@ -406,7 +430,7 @@ class LootGenerator {
         if (isBox) {
             gachaState = await this._getGachaState(userId, gacha);
             if (!gachaState) {
-                gachaState = { totalWeight: totalWeight, rarityGroupsWeights: {...gacha.rarityGroupsWeights} };
+                gachaState = { totalWeight: totalWeight, rarityGroupsWeights: {...gacha.rarityGroupsWeights } };
             }
 
             totalWeight = gachaState.totalWeight;
@@ -446,7 +470,7 @@ class LootGenerator {
             if (isBox) {
                 // if rarityGroup has reset condition - reset initial state of the gacha
                 if (rolledGroup.resetWeights) {
-                    gachaState.rarityGroupsWeights = {...gacha.rarityGroupsWeights};
+                    gachaState.rarityGroupsWeights = {...gacha.rarityGroupsWeights };
                     gachaState.totalWeight = gacha.totalWeight;
                 } else {
                     // decrease current group weight
@@ -475,7 +499,7 @@ class LootGenerator {
     async _getGachaState(userId, gacha) {
         return await this._db.collection(Collections.GachaState).findOne({ user: userId, gacha: gacha._id });
     }
-        
+
     async _rollBasket(itemsToRoll, userId, gacha, items, itemsHash) {
         // get basket roll chance
         let gachaState = await this._getGachaState(userId, gacha);
@@ -549,7 +573,7 @@ class LootGenerator {
         }
 
         let min = record.minCount * lootCount;
-        let max =  record.maxCount * lootCount;
+        let max = record.maxCount * lootCount;
 
         if (dropModifier) {
             min = Math.ceil(dropModifier.quantity * (1 - dropModifier.spread));
@@ -571,7 +595,7 @@ class LootGenerator {
 
     rollLootRecord(record) {
         let min = record.minCount;
-        let max =  record.maxCount;
+        let max = record.maxCount;
         let count = Math.round(Random.range(min, max, true));
 
         return {

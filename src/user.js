@@ -868,6 +868,14 @@ class User {
                     }
                     byElement[propTemplate.element] += prop.value;
                     break
+
+                case AccessoryOption.DropItemInQuest:
+                    const byItem = finalStats[CharacterStats.DropItemQuest];
+                    if (!byItem[propTemplate.itemId]) {
+                        byItem[propTemplate.itemId] = 0;
+                    }
+                    byItem[propTemplate.itemId] += prop.value;
+                    break
             }
         }
     }
