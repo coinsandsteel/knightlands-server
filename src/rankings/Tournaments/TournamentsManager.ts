@@ -265,9 +265,9 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     private async _getDivTokenRewards(dktPoolSize: number): Promise<TournamentDivTokenRewards> {
-        const ma = await Game.tokenAmounts.getMA(14);
+        const meta = await Game.db.collection(Collections.Meta).findOne({ _id: "dividends" }, { $projection: { tourneyMaxEmission: 1 } })
         return {
-            tokenPool: ma * dktPoolSize
+            tokenPool: meta.tourneyMaxEmission * dktPoolSize
         };
     }
 
