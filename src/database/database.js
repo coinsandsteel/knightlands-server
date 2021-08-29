@@ -4,7 +4,7 @@ const ObjectUtils = require("../objectUtils");
 // TODO support arrays
 function _buildPaths(key, changes, paths = {}) {
     for (let i in changes) {
-        if (typeof (changes[i]) == "object" && !Array.isArray(changes[i])) {
+        if (typeof(changes[i]) == "object" && !Array.isArray(changes[i])) {
             let innerPath = _buildPaths(i, changes[i]);
             if (Object.keys(innerPath).length > 0) {
                 for (let j in innerPath) {
@@ -62,6 +62,7 @@ module.exports = {
         DivsWithdrawals: "divs_withdrawals",
         DivsWithdrawalRequests: "divs_withdrawal_requests",
         DivTokenState: "div_token_state",
+        RaidPointsPayouts: "raid_points_payouts",
         DivsPayouts: "divs_payouts",
         DivTokenFarmed: "div_token_farmed",
         DivTokenRateTimeseries: "div_token_rate_timeseries",
@@ -89,7 +90,7 @@ module.exports = {
         if (ObjectUtils.detectChanges(oldData, newData, changes)) {
             updateQuery = {};
             for (let i in changes) {
-                if (typeof (changes[i]) == "object") {
+                if (typeof(changes[i]) == "object") {
                     let paths = _buildPaths(i, changes[i]);
                     for (let j in paths) {
                         updateQuery[j] = paths[j];
@@ -105,7 +106,7 @@ module.exports = {
         if (ObjectUtils.detectRemovals(oldData, newData, removals)) {
             removeQuery = {};
             for (let i in removals) {
-                if (typeof (removals[i]) == "object") {
+                if (typeof(removals[i]) == "object") {
                     let paths = _buildPaths(i, removals[i]);
                     for (let j in paths) {
                         removeQuery[j] = paths[j];

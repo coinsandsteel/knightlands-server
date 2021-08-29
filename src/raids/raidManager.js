@@ -65,7 +65,7 @@ class RaidManager {
         }
 
         await this._updateWeaknesses(true);
-        await this._restoreDktForAllRaids(true);
+        // await this._restoreDktForAllRaids(true);
         this._scheduleWeaknessUpdate();
         this._scheduleDktUpdate();
     }
@@ -127,7 +127,7 @@ class RaidManager {
             throw Errors.NoRecipeIngridients;
         }
 
-       return this._summonRaid(summoner.address, raidTemplateId, free);
+        return this._summonRaid(summoner.address, raidTemplateId, free);
     }
 
     async _summonRaid(summonerId, raidTemplateId, isFree) {
@@ -167,21 +167,18 @@ class RaidManager {
         };
 
         if (isFree) {
-            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne(
-                { raidId: +raidTemplateId, user: userId }
-            );
+            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne({ raidId: +raidTemplateId, user: userId });
             info.isFirst = !!firstClearance;
         }
 
-        info.dktFactor = await this._getNextDktFactor(raidTemplateId, true);
+        // info.dktFactor = await this._getNextDktFactor(raidTemplateId, true);
         info.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: +raidTemplateId });
         info.weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
         return info;
     }
 
     async getRaidInfo(userId, raidId) {
-        let raid = await this._db.collection(Collections.Raids).aggregate([
-            {
+        let raid = await this._db.collection(Collections.Raids).aggregate([{
                 $match: {
                     _id: new ObjectId(raidId)
                 }
@@ -203,22 +200,18 @@ class RaidManager {
                     "let": {
                         "raid": "$raidTemplateId"
                     },
-                    "pipeline": [
-                        {
-                            "$match": {
-                                "$expr": {
-                                    "$and": [
-                                        {
-                                            "$eq": [
-                                                "$raid",
-                                                "$$raid"
-                                            ]
-                                        }
+                    "pipeline": [{
+                        "$match": {
+                            "$expr": {
+                                "$and": [{
+                                    "$eq": [
+                                        "$raid",
+                                        "$$raid"
                                     ]
-                                }
+                                }]
                             }
                         }
-                    ],
+                    }],
                     "as": "weakness"
                 }
             },
@@ -241,14 +234,12 @@ class RaidManager {
         let info = raid[0];
 
         if (info.isFree) {
-            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne(
-                { raidId: +info.raidTemplateId, user: userId }
-            );
+            const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOne({ raidId: +info.raidTemplateId, user: userId });
             info.isFirst = !!firstClearance;
         }
 
         info.weakness.untilNextWeakness = WeaknessRotationCycle - Game.now % WeaknessRotationCycle;
-        info.dktFactor = await this._getNextDktFactor(info.raidTemplateId, true);
+        // info.dktFactor = await this._getNextDktFactor(info.raidTemplateId, true);
         return info;
     }
 
@@ -258,8 +249,7 @@ class RaidManager {
 
         let matchQuery = {
             $match: {
-                $or: [
-                    {
+                $or: [{
                         $and: [lootQuery, { defeat: true }]
                     },
                     {
@@ -337,8 +327,6 @@ class RaidManager {
         if (raid.free) {
             const user = await Game.getUserById(raid.summoner);
             await user.dailyQuests.onFreeRaidFinished();
-        } else {
-            dktFactor = await this._getNextDktFactor(raid.templateId)
         }
 
         await raid.finish(dktFactor);
@@ -351,12 +339,12 @@ class RaidManager {
 
     async claimLoot(user, raidId) {
         let raid = await this._getFinishedRaid(user.id, raidId);
-        return await raid.claimLoot(user.id);
+        return await raid.claimLoot(user);
     }
 
     async getLootPreview(user, raidId) {
         let raid = await this._getFinishedRaid(user.id, raidId);
-        return await raid.getRewards(user.id);
+        return await raid.getRewards(user);
     }
 
     async _getFinishedRaid(userId, raidId) {
@@ -397,7 +385,7 @@ class RaidManager {
     }
 
     _scheduleDktUpdate() {
-        setTimeout(async () => {
+        setTimeout(async() => {
             try {
                 await this._restoreDktForAllRaids();
             } finally {
@@ -440,7 +428,7 @@ class RaidManager {
             this.tokenRates.updateRate(raidTemplateId, factorValue);
         }
 
-        return factorValue ;
+        return factorValue;
     }
 
     async _restoreDktForAllRaids(onlyMissing = false) {
@@ -502,14 +490,14 @@ class RaidManager {
         if (rateQueries.length > 0) {
             await this.tokenRates.insertRates(rateQueries);
         }
-        
+
         if (queries.length > 0) {
             await this._db.collection(Collections.RaidsDktFactors).bulkWrite(queries);
         }
     }
 
     _scheduleWeaknessUpdate() {
-        setTimeout(async () => {
+        setTimeout(async() => {
             try {
                 await this._updateWeaknesses();
             } finally {
@@ -523,8 +511,7 @@ class RaidManager {
         let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
         let allRaidsWeaknesses = await this._db.collection(Collections.RaidsWeaknessRotations).find({}).toArray();
 
-        const weaknessLookup = {};
-        {
+        const weaknessLookup = {}; {
             const length = allRaidsWeaknesses.length;
             for (let i = 0; i < length; i++) {
                 const weakness = allRaidsWeaknesses[i];

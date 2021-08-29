@@ -15,6 +15,7 @@ import { Lock } from './utils/lock';
 import { ObjectId } from "mongodb";
 import Inventory from "./inventory";
 import { ActivityHistory } from './blockchain/ActivityHistory';
+import { RaidPointsManager } from './raids/RaidPointsManager';
 
 class Game extends EventEmitter {
     constructor() {
@@ -56,6 +57,7 @@ class Game extends EventEmitter {
         this.depositGateway = new DepositGateway(blockchain);
         this.activityHistory = new ActivityHistory();
         this.accessoryOptions = new AccessoryOptions(db);
+        this.raidPoints = new RaidPointsManager();
 
         this._players = {};
         this._playersById = {};
@@ -64,6 +66,7 @@ class Game extends EventEmitter {
         await this._dividends.init();
         await this._season.checkSeason();
         await this.accessoryOptions.init();
+        await this.raidPoints.init();
 
         this._lock = new Lock();
     }

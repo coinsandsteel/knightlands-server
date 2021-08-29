@@ -73,7 +73,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AttackRaidBoss, this._gameHandler(this._attackRaidBoss.bind(this), "raid", Config.game.attackCooldown));
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
         this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
-        this._socket.on(Operations.FetchTokenRates, this._gameHandler(this._fetchTokenRates.bind(this)));
+        this._socket.on(Operations.FetchRaidPoints, this._gameHandler(this._fetchRaidPoints.bind(this)));
 
         // misc
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
@@ -233,7 +233,7 @@ class PlayerController extends IPaymentListener {
         if (this._user) {
             this._user.dispose();
         }
-        
+
         this.address = null;
     }
 
@@ -284,7 +284,7 @@ class PlayerController extends IPaymentListener {
 
             const userLastLogin = await this._db.collection(Collections.Users).findOne({ address: this.address }, { projection: { lastLogin: 1 } });
             if (userLastLogin) {
-                if (userLastLogin.lastLogin >= decodedToken[1].iat) { 
+                if (userLastLogin.lastLogin >= decodedToken[1].iat) {
                     throw Errors.MalformedAuth;
                 }
             }
@@ -356,7 +356,7 @@ class PlayerController extends IPaymentListener {
     }
 
     _gameHandler(handler, throttleId = "default", throttle = 0) {
-        return async (data, respond) => {
+        return async(data, respond) => {
             await this._lock.acquire("game_handler");
 
             try {
@@ -630,7 +630,7 @@ class PlayerController extends IPaymentListener {
             if (user.hardCurrency < price) {
                 throw Errors.NotEnoughCurrency;
             }
-            
+
             await user.addHardCurrency(-price);
             chestsToOpen = gachaMeta.iaps[iap].count;
         } else {
@@ -884,18 +884,8 @@ class PlayerController extends IPaymentListener {
         return this._raidManager.getLootPreview(user, data.raidId);
     }
 
-    async _fetchTokenRates(user, data) {
-        let { from, to, raid } = data;
-
-        from = parseInt(from);
-        to = parseInt(to);
-        raid = parseInt(raid);
-
-        if (isNaN(from) || isNaN(to) || isNaN(raid)) {
-            throw Errors.IncorrectArguments;
-        }
-
-        return this._raidManager.tokenRates.query(raid, from, to);
+    async _fetchRaidPoints(user, data) {
+        return user.raidPoints.getInfo();
     }
 
     async _claimLootRaid(user, data) {
@@ -908,10 +898,10 @@ class PlayerController extends IPaymentListener {
         await user.addSoftCurrency(rewards.gold);
         await user.addExperience(rewards.exp);
         await user.inventory.addItemTemplates(rewards.items);
-        await user.addDkt(rewards.dkt, true);
+        await user.addRP(rewards.rp, true);
         await user.addHardCurrency(rewards.hardCurrency);
 
-        await Game.tokenAmounts.insertTokens(rewards.dkt);
+        // await Game.tokenAmounts.insertTokens(rewards.dkt);
 
         return rewards;
     }
@@ -939,7 +929,7 @@ class PlayerController extends IPaymentListener {
 
         recipeId = parseInt(recipeId);
         amount = parseInt(amount);
-        
+
         if (amount < 1) {
             throw Errors.IncorrectArguments;
         }
@@ -1213,7 +1203,7 @@ class PlayerController extends IPaymentListener {
         }
 
         towerFloor.claimed = true;
-        
+
         if (user.freeTowerAttempts > 0) {
             user.freeTowerAttempts--;
         } else {
@@ -1436,7 +1426,7 @@ class PlayerController extends IPaymentListener {
         return Game.rankings.tournaments.getRankings(data.tournamentId, parseInt(data.page));
     }
 
-    async _getTournamentInfo(user, data) {        
+    async _getTournamentInfo(user, data) {
         return Game.rankings.tournaments.getRank(data.tournamentId, user.id);
     }
 
@@ -1468,7 +1458,7 @@ class PlayerController extends IPaymentListener {
         return rewards;
     }
 
-    async _getRaceInfo(user, data) {        
+    async _getRaceInfo(user, data) {
         return Game.rankings.races.getRank(data.raceId, user.id);
     }
 
@@ -1527,7 +1517,7 @@ class PlayerController extends IPaymentListener {
         return Game.armyManager.levelUp(user.address, data.unitId);
     }
 
-    async _unitEquipItem(user, data)  {
+    async _unitEquipItem(user, data) {
         return Game.armyManager.equipItem(user.address, data.unitId, data.itemIds);
     }
 
@@ -1575,7 +1565,7 @@ class PlayerController extends IPaymentListener {
     async _collectMine(user) {
         return user.goldMines.collectGold();
     }
-    
+
     // Inventory
     async _lockItem(user, data) {
         await user.inventory.lockItem(+data.item);

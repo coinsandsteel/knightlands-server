@@ -339,14 +339,6 @@ class Raid extends EventEmitter {
 
                 // notify current challenges
                 this.emit(this.Hit, attacker, damageDone, crit);
-
-                if (!this._bossUnit.isAlive) {
-                    this.emit(this.BossKilled, attacker, damageDone, crit, this._data.timeLeft);
-
-                    // emit victory and let know to raid manager
-                    this._publishEvent({ event: Events.RaidFinished, defeat: true });
-                    this.emit(this.Defeat, this);
-                }
             }
         }
 
@@ -383,6 +375,18 @@ class Raid extends EventEmitter {
                 raid: this._template._id
             }, damageLog.damage);
         }
+
+        if (!this._bossUnit.isAlive) {
+            // this.emit(this.BossKilled, attacker, damageDone, crit, this._data.timeLeft);
+
+            // emit victory and let know to raid manager
+            this._publishEvent({ event: Events.RaidFinished, defeat: true });
+            this.emit(this.Defeat, this);
+        }
+
+        return {
+            alive: combatUnit.isAlive
+        }
     }
 
     async _checkpoint() {
@@ -406,15 +410,15 @@ class Raid extends EventEmitter {
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
                 loot: this._data.loot,
-                challenges: this._data.challenges,
-                dktFactor: this._data.dktFactor
+                challenges: this._data.challenges
             }
         });
 
         this._scheduleCheckpoint();
     }
 
-    async getRewards(userId) {
+    async getRewards(user) {
+        const userId = user.id;
         if (this._data.loot[userId]) {
             return this._data.loot[userId];
         }
@@ -448,7 +452,7 @@ class Raid extends EventEmitter {
 
         // all participants get at least min dkt
         let rewards = {
-            dkt: raidStage.minDkt,
+            rp: raidStage.minDkt,
             exp: 0,
             gold: 0,
             hardCurrency: 0,
@@ -458,7 +462,7 @@ class Raid extends EventEmitter {
         if (chosenLoot) {
             rewards.gold = chosenLoot.gold;
 
-            rewards.dkt = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
+            rewards.rp = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
             rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
             // evaluate challenges
@@ -477,31 +481,31 @@ class Raid extends EventEmitter {
                         }
                     }
 
-                    rewards.dkt += challengeRewards.dkt;
+                    rewards.rp += challengeRewards.dkt;
                     rewards.gold += challengeRewards.softCurrency;
                     rewards.hardCurrency += challengeRewards.hardCurrency;
                 }
             }
         }
 
-        // modify dkt given by fixed dkt factor
-        rewards.dkt *= this._data.dktFactor;
-
         if (this._data.isFree) {
-            rewards.dkt = 0;
+            rewards.rp = 0;
         } else {
+            rewards.rp = await user.getBonusRP(rewards.rp);
+
             await this._updateLoot(userId, rewards);
         }
 
         return rewards;
     }
 
-    async claimLoot(userId) {
+    async claimLoot(user) {
+        const userId = user.id;
         if (this._data.loot[userId] === true) {
             throw Errors.RaidLootClaimed;
         }
 
-        const rewards = await this.getRewards(userId);
+        const rewards = await this.getRewards(user);
 
         // set loot claimed
         await this._updateLoot(userId, true);

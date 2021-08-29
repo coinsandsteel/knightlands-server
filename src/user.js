@@ -16,7 +16,8 @@ import Buffs from "./knightlands-shared/buffs";
 import Errors from "./knightlands-shared/errors";
 import Events from "./knightlands-shared/events";
 import ItemProperties from "./knightlands-shared/item_properties";
-import AccessoryOption, { AccessoryOptionToId } from "./knightlands-shared/accessory_option";
+import AccessoryOption from "./knightlands-shared/accessory_option";
+import { RaidPoints } from "./raids/RaidPoints"
 import Random from "./random";
 import TrialType from "./knightlands-shared/trial_type";
 import RankingType from "./knightlands-shared/ranking_type";
@@ -283,16 +284,24 @@ class User {
         return value;
     }
 
-    async addDkt(value, includeDktPassive = false) {
-        if (value > 0 && includeDktPassive) {
-            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 1000);
+    async addRP(value) {
+        await this.raidPoints.addPoints(value);
+        await this.inventory.modifyCurrency(CurrencyType.RaidPoints, value);
+    }
 
+    async getBonusRP(value) {
+        if (value > 0) {
+            value *= (1 + this.getMaxStatValue(CharacterStat.ExtraDkt) / 1000);
             value = await this.dividends.applyBonusDkt(value);
 
             const bonuses = await this.getCardBonuses();
             value *= (1 + bonuses.dkt / 100);
         }
 
+        return value;
+    }
+
+    async addDkt(value) {
         value = Math.floor(value * DividendsRegistry.DktDecimals) / DividendsRegistry.DktDecimals;
 
         // if payout day is shifted, commit previous days balance
@@ -592,6 +601,7 @@ class User {
         this._goldMines = new GoldMines(this, this._data.goldMines);
         this._dividends = new Dividends(this._data.dividends, this);
         this._dailyShop = new DailyShop(this._data.dailyShop, this);
+        this.raidPoints = new RaidPoints(this._data.raidPoints, this);
 
         this._advanceTimers();
 
@@ -601,6 +611,7 @@ class User {
         await this._trials.init();
         await this._dailyQuests.init();
         await this.collectDailyRefills();
+        await this.raidPoints.tryClaimDkt();
         await this._dividends.tryCommitPayout();
         await this._dailyShop.update();
 
@@ -1321,6 +1332,10 @@ class User {
 
         if (!user.airdrops) {
             user.airdrops = {};
+        }
+
+        if (!user.raidPoints) {
+            user.raidPoints = {};
         }
 
         if (user.character.nickname) {
