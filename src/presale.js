@@ -114,6 +114,11 @@ class Presale {
     async _allowForKL(req, res) {
         const { wallet, mm, signature } = req.query;
 
+        if (!mm) {
+            res.json({ error: "No metamask wallet" })
+            return;
+        }
+
         let request = await this._db.collection("kl_requests").findOne({ wallet })
         if (request && request.allowed) {
             res.json({ error: "allowance claimed", allowance: request.allowance });
