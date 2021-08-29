@@ -101,8 +101,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                 scoreLeft < value ? scoreLeft : value
             );
 
-            userRank = <RankingRecord>await this.getUserRank(userId);
-            if (userRank.rank > 0 && userRank.rank <= this._state.config.rewards.length) {
+            if (this._ranking.getParticipantScore(userId) == this.target && this.winners.length < this._state.config.rewards.length) {
                 this._state.looted[userId] = false;
                 // can claim reward, track player
                 await this._db.collection(Collections.Races).updateOne({ _id: this.id }, {
@@ -113,6 +112,8 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                     }
                 });
                 this._state.winners.push(userId)
+
+                userRank = <RankingRecord>await this.getUserRank(userId);
                 Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
             }
 
@@ -156,7 +157,7 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
             if (rank.score < this.target || rank.rank > this.config.rewards.length) {
                 rank.rank = 0;
             } else {
-                rank.rank = this.winners.findIndex(x => x == userId) + 1;
+                rank.rank = this.winners.findIndex(x => x.equals(userId)) + 1;
             }
         }
 
