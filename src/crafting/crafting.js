@@ -101,7 +101,7 @@ class Crafting {
         if (isNaN(amount) || amount < 0) {
             throw Errors.IncorrectArguments;
         }
-        
+
         let baseTemplate = await Game.itemTemplates.getTemplate(baseTemplateId);
         if (!baseTemplate) {
             throw Errors.NoTemplate;
@@ -125,7 +125,7 @@ class Crafting {
             throw Errors.IncorrectArguments;
         }
 
-        const recipe = accCraftMeta.recipes[rarity]; 
+        const recipe = accCraftMeta.recipes[rarity];
 
         if (!this._inventory.hasItems(recipe.resource, recipe.resourceCount * amount)) {
             throw Errors.NotEnoughResource;
@@ -161,11 +161,19 @@ class Crafting {
     }
 
     async _generateAccessoryOptions(optionsMeta, count) {
-        const templates = new WeightedList(optionsMeta).peek(count, false);
+        const templates = new WeightedList(optionsMeta).shuffle()
         const length = templates.length;
         const properties = new Array(count);
+        let typesRolled = 0
+        const pickedTypes = {}
         for (let i = 0; i < length; ++i) {
             const template = templates[i].data;
+            if (pickedTypes[template.type]) {
+                continue;
+            }
+
+            pickedTypes[template.type] = true;
+
             let relative = true;
             const property = {
                 value: Random.range(template.minValue, template.maxValue, true),
@@ -179,21 +187,21 @@ class Crafting {
                 case AccessoryOption.ExpOnHitInRaid:
                     relative = false;
                     break;
-                
+
                 case AccessoryOption.DropItemInQuest:
-                    case AccessoryOption.DropItemInRaid:
-                    case AccessoryOption.DropUnitShard:
+                case AccessoryOption.DropItemInRaid:
+                case AccessoryOption.DropUnitShard:
                     property.itemId = template.itemId;
                     break;
-                
+
                 case AccessoryOption.IncreasedStat:
                     property.stat = template.stat;
                     break;
-                
+
                 case AccessoryOption.RewardsTrial:
                     property.trialType = template.trialType;
                     break;
-                
+
                 case AccessoryOption.ArmyDamageInRaidElement:
                     property.element = template.element;
                     break;
@@ -203,7 +211,12 @@ class Crafting {
                 property.value = Math.floor(property.value);
             }
 
-            properties[i] = property;
+            properties[typesRolled] = property;
+            typesRolled++;
+
+            if (typesRolled == count) {
+                break;
+            }
         }
         return properties;
     }
@@ -527,7 +540,7 @@ class Crafting {
                         throw Errors.IncompatibleLevelingMaterial;
                     }
                 }
-                
+
                 let totalMaterial = materialItem.count;
                 if (materialItem.id == item.id) {
                     // item is not yet unique, reserve 1 for it
@@ -767,7 +780,7 @@ class Crafting {
         }
 
         await this._craftRecipe(elementalCreation.recipe, currency, 1);
-        
+
         await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CraftedItemsByRarity,
             rarity: item.rarity
@@ -797,7 +810,7 @@ class Crafting {
             throw Errors.ItemLocked;
         }
 
-        const evolveRecipe = evolveMeta.evolveRecipes.find(x=>x.fromRarity == item.rarity);
+        const evolveRecipe = evolveMeta.evolveRecipes.find(x => x.fromRarity == item.rarity);
         if (!evolveRecipe) {
             throw Errors.IncorrectArguments;
         }
