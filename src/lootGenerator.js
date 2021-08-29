@@ -233,7 +233,6 @@ class LootGenerator {
         for (const itemId in byItem) {
             const roll = Random.range(0, 1, true);
             if (roll <= byItem[itemId]) {
-                console.log('drop item ', itemId)
                 this._addLootToTable(items, itemsHash, {
                     quantity: 1,
                     item: +itemId,
