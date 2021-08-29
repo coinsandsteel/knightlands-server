@@ -761,7 +761,7 @@ class User {
             return;
         }
 
-        let finalStats = Object.assign({}, DefaultStats);
+        let finalStats = Object.assign({}, cloneDeep(DefaultStats));
         let character = this._data.character;
         for (let i in character.attributes) {
             finalStats[i] += StatConversions[i] * character.attributes[i];
