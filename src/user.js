@@ -876,6 +876,14 @@ class User {
                     }
                     byItem[propTemplate.itemId] += prop.value;
                     break
+
+                case AccessoryOption.GoldOnHitInRaid:
+                    finalStats[CharacterStat.GoldOnHitInRaid] += prop.value;
+                    break;
+
+                case AccessoryOption.ExpOnHitInRaid:
+                    finalStats[CharacterStat.ExpOnHitInRaid] += prop.value;
+                    break;
             }
         }
     }

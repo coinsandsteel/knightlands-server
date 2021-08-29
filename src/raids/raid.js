@@ -17,6 +17,7 @@ import RankingType from "../knightlands-shared/ranking_type";
 
 import RaidChallengeType from "../knightlands-shared/raid_challenge";
 import { ObjectId } from "bson";
+import CharacterStat from "../knightlands-shared/character_stat";
 const TopDamageDealers = require("./topDamageDealersChallenge");
 
 const ExtraDamagePerAdditionalHit = 0.01;
@@ -292,8 +293,8 @@ class Raid extends EventEmitter {
         };
 
         while (hitsToPerform > 0 && combatUnit.isAlive && this._bossUnit.isAlive) {
-            attackLog.exp += this.template.exp;
-            attackLog.soft += this.template.gold;
+            attackLog.exp += this.template.exp + attacker.maxStats[CharacterStat.ExpOnHitInRaid];
+            attackLog.soft += this.template.gold + attacker.maxStats[CharacterStat.GoldOnHitInRaid];
 
             hitsToPerform--;
 
