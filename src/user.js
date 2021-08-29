@@ -1179,7 +1179,7 @@ class User {
                         regenTime: DefaultRegenTimeSeconds
                     }
                 },
-                stats: {...DefaultStats },
+                stats: {...cloneDeep(DefaultStats) },
                 attributes: {
                     health: 0,
                     attack: 0,
@@ -1189,7 +1189,11 @@ class User {
                     stamina: 0
                 },
                 buffs: [],
-                equipment: {}
+                equipment: {},
+                name: {
+                    v: "",
+                    changed: 0
+                }
             };
 
             user.character = character;
