@@ -97,6 +97,28 @@ export class ArmyManager {
         return Game.paymentProcessor.fetchPaymentStatus(userId, this.PaymentTag, {});
     }
 
+    async getArmyPreview(userId: string) {
+        const army = await this._armiesCollection.findOne(
+            { _id: userId },
+            { projection: { legions: 1, units: 1 } }
+        )
+
+        if (!army) {
+            return null;
+        }
+
+        army.legions = [army.legions[0]]
+
+        const lookup = {};
+        const legion = army.legions[0];
+        for (const slotId in legion.units) {
+            lookup[legion.units[slotId]] = true;
+        }
+        army.units = army.units.filter(x => lookup[x.id])
+
+        return army;
+    }
+
     async getArmy(userId: string) {
         return this._loadArmy(userId);
     }
