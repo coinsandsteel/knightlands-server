@@ -51,7 +51,7 @@ class Inventory {
                 _id: "meta"
             });
         }
-        
+
         return this._meta;
     }
 
@@ -77,14 +77,14 @@ class Inventory {
                     type: RankingType.GoldLooted
                 }, value);
             }
-            
+
         } else if (currency == CurrencyType.Hard && value < 0) {
             await this._user.dailyQuests.onPremiumPurchase(-value);
         } else if (currency == CurrencyType.Dkt && value > 0) {
             await Game.rankings.updateRank(this._user.id, {
                 type: RankingType.DktEarned
             }, value);
-        }  else if (currency == CurrencyType.Dkt2 && value > 0) {
+        } else if (currency == CurrencyType.Dkt2 && value > 0) {
             await Game.rankings.updateRank(this._user.id, {
                 type: RankingType.Dkt2Earned
             }, value);
@@ -92,8 +92,7 @@ class Inventory {
     }
 
     static async loadItems(userId, ids) {
-        return Game.db.collection(Collections.Inventory).aggregate([
-            {
+        return Game.db.collection(Collections.Inventory).aggregate([{
                 $match: {
                     "_id": userId
                 }
@@ -116,16 +115,14 @@ class Inventory {
                     _id: 0
                 }
             }
-        ],
-            {
-                "allowDiskUse": false
-            }).toArray();
+        ], {
+            "allowDiskUse": false
+        }).toArray();
     }
 
     async getPassiveItems() {
         // join items with templates
-        let items = await this._db.collection(Collections.Inventory).aggregate([
-            {
+        let items = await this._db.collection(Collections.Inventory).aggregate([{
                 "$match": {
                     "_id": this._userId
                 }
@@ -148,8 +145,7 @@ class Inventory {
                                 "$mergeObjects": [
                                     "$$item",
                                     {
-                                        "$arrayElemAt": [
-                                            {
+                                        "$arrayElemAt": [{
                                                 "$filter": {
                                                     "input": "$templates",
                                                     "as": "template",
@@ -177,8 +173,7 @@ class Inventory {
                             input: "$items",
                             as: "item",
                             cond: {
-                                $or: [
-                                    {
+                                $or: [{
                                         $gt: [
                                             { $size: "$$item.properties" },
                                             0
@@ -195,10 +190,9 @@ class Inventory {
 
 
             }
-        ],
-            {
-                "allowDiskUse": false
-            }).toArray();
+        ], {
+            "allowDiskUse": false
+        }).toArray();
 
         return items && items.length > 0 && items[0].items;
     }
@@ -375,8 +369,7 @@ class Inventory {
 
         let templateIds = new Array(length);
         let itemQuantities = {};
-        let elements = {};
-        {
+        let elements = {}; {
             let i = 0;
             for (; i < length; ++i) {
                 templateIds[i] = templateRecords[i].item;
@@ -560,7 +553,7 @@ class Inventory {
         return true;
     }
 
-    removeItems(items) {    
+    removeItems(items) {
         let index = 0;
         const length = items.length;
         for (; index < length; ++index) {
@@ -611,18 +604,18 @@ class Inventory {
         const itemSlot = getSlot(template.equipmentType);
 
         if (equippedItems[itemSlot]) {
-            await this.unequipItem(equippedItems[itemSlot].id);
+            await this.unequipItem(equippedItems[itemSlot].id, holderId != -1);
         }
-        
-        item = await this.unequipItem(item.id);
+
+        item = await this.unequipItem(item.id, holderId != -1);
 
         if (item.count > 1) {
             // split stack and create new item
-            const copy = { ...item };
+            const copy = {...item };
             copy.id = this.nextId
             copy.equipped = true;
             copy.count = 1;
-            
+
             this.removeItem(item.id);
             item = this.addItem(copy, true);
         } else {
@@ -636,7 +629,7 @@ class Inventory {
         return item;
     }
 
-    async unequipItem(itemId) {
+    async unequipItem(itemId, byArmy = false) {
         let item = this.getItemById(itemId);
 
         if (!item || !item.equipped) {
@@ -684,9 +677,8 @@ class Inventory {
         }
 
         delete equippedItems[itemSlot];
-    
 
-        if (unit) {
+        if (unit && !byArmy) {
             await Game.armyManager.updateUnit(this._userId, unit)
         }
 
@@ -717,7 +709,7 @@ class Inventory {
             const total = id.length;
             let items = new Array(total);
             let index = 0;
-            
+
             for (; index < total; ++index) {
                 items[index] = this._items[this._itemsById.get(+id[index])];
             }
@@ -829,7 +821,7 @@ class Inventory {
         }
     }
 
-    setItemUpdated(item) {   
+    setItemUpdated(item) {
         this._newItems.set(item.id, item);
     }
 
@@ -864,7 +856,7 @@ class Inventory {
     }
 
     copyItem(original, count) {
-        const copy = { ...original };
+        const copy = {...original };
         copy.id = this.nextId;
         copy.count = count;
         return copy;
@@ -905,7 +897,7 @@ class Inventory {
     async _getEquipped(item) {
         let equippedItems;
         let unit;
-        
+
         if (item.holder == UserHolder || item.holder === undefined) {
             equippedItems = this._user.equipment;
         } else {
@@ -926,7 +918,7 @@ class Inventory {
             throw Errors.NoItem;
         }
 
-        
+
         // if holder is character use chracter items
         if (item.equipped) {
             const equipped = await this._getEquipped(item);
@@ -934,8 +926,8 @@ class Inventory {
                 equipped.locked = isLocked;
             }
         }
-        
-        
+
+
         item.locked = isLocked;
         this.setItemUpdated(item)
     }

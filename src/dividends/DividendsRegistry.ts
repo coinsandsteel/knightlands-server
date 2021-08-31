@@ -104,12 +104,15 @@ export class DividendsRegistry {
 
                 amount += BigInt(data.divs);
 
+                const payouts = { [`payouts.${chainId}`]: amount.toString() };
                 await db.collection(Collections.DivTokenState)
                     .updateOne(
                         { _id: "payouts" },
-                        { $set: { [`payouts.${chainId}`]: amount.toString() } },
+                        { $set: payouts },
                         { upsert: true }
                     );
+
+                Game.publishToChannel("divs_info", { pools: payouts });
             })
         }
         finally {
@@ -182,6 +185,8 @@ export class DividendsRegistry {
                 { $set: { supply: this._supply } },
                 { upsert: true }
             );
+
+            Game.publishToChannel("divs_info", { supply: this._supply });
         })
     }
 
@@ -261,7 +266,7 @@ export class DividendsRegistry {
             }
 
             const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(to));
-
+            throw "sdasd";
             return await Game.dbClient.withTransaction(async db => {
                 let withdrawalId = await this._createWithdrawal(db, userId, "divs-w", blockchainId, {
                     user: userId,
@@ -318,15 +323,21 @@ export class DividendsRegistry {
         return this._supply;
     }
 
-    async getStatus(userId: string) {
+    async getInfo() {
         const payouts = await Game.db.collection(Collections.DivTokenState).findOne({ _id: "payouts" });
         return {
             season: this._season.getStatus(),
             supply: this.getSupply(),
             totalStake: this._totalStake,
-            hasHistory: await Game.activityHistory.hasHistory(Game.db, userId),
             nextPayout: this.getNextPayout(),
             pools: payouts ? payouts.payouts : {}
+        }
+    }
+
+    async getStatus(userId: string) {
+        return {
+            ...await this.getInfo(),
+            hasHistory: await Game.activityHistory.hasHistory(Game.db, userId),
         };
     }
 
@@ -344,7 +355,6 @@ export class DividendsRegistry {
     }
 
     private async _commitTotalStake(newStake: number) {
-
         await this._lock.acquire("inc_stake");
         try {
             await Game.dbClient.withTransaction(async db => {
@@ -357,6 +367,8 @@ export class DividendsRegistry {
                     { $set: { stake: this._totalStake } },
                     { upsert: true }
                 );
+
+                Game.publishToChannel("divs_info", { totalStake: this._totalStake });
             });
         } finally {
             await this._lock.release("inc_stake");

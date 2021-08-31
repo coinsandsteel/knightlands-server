@@ -375,12 +375,21 @@ export class ArmyManager {
         }
 
         const unit = unitRecord[unitId];
-        const item = unit.items[slotId];
-        if (item) {
-            const inventory = await Game.loadInventory(userId);
-            await inventory.unequipItem(item.id);
-            await this._units.onUnitUpdated(userId, unit);
+        const inventory = await Game.loadInventory(userId);
+
+        if (isNumber(slotId)) {
+            const item = unit.items[slotId];
+            if (item) {
+                await inventory.unequipItem(item.id);
+            }
+        } else {
+            // unequip all
+            for (const slotId in unit.items) {
+                await inventory.unequipItem(unit.items[slotId].id);
+            }
         }
+
+        await this._units.onUnitUpdated(userId, unit);
     }
 
     async promote(userId: string, unitId: number, units: { [k: string]: number[] }) {
