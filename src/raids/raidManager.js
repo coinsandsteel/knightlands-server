@@ -279,7 +279,7 @@ class RaidManager {
                     id: 1,
                     isFree: 1,
                     _id: 0,
-                    [participantId]: 1
+                    participants: 1
                 }
             }
         ]).toArray();
