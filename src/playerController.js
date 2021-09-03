@@ -227,6 +227,7 @@ class PlayerController extends IPaymentListener {
     }
 
     onDisconnect() {
+        console.log('disconnected')
         Game.off(this.address, this._handleEventBind);
         Game.off(this.id, this._handleEventBind);
 
@@ -238,7 +239,10 @@ class PlayerController extends IPaymentListener {
     }
 
     onAuthenticated() {
+        Game.removeAllListeners(this.address)
         Game.on(this.address, this._handleEventBind);
+
+        Game.removeAllListeners(this.id)
         Game.on(this.id, this._handleEventBind);
     }
 
