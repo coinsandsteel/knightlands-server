@@ -661,10 +661,7 @@ export class ArmyManager {
             // unequip items
             for (const itemSlot in unit.items) {
                 const equippedItem = unit.items[itemSlot];
-                if (equippedItem) {
-                    delete unit.items[itemSlot];
-                    inventory.addItem(equippedItem).equipped = false;
-                }
+                await inventory.unequipItem(equippedItem.id);
             }
         }
     }
