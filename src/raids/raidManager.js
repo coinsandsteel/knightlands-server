@@ -193,37 +193,6 @@ class RaidManager {
                 $project: {
                     _id: 0
                 }
-            },
-            {
-                "$lookup": {
-                    "from": "raid_weakness_rotations",
-                    "let": {
-                        "raid": "$raidTemplateId"
-                    },
-                    "pipeline": [{
-                        "$match": {
-                            "$expr": {
-                                "$and": [{
-                                    "$eq": [
-                                        "$raid",
-                                        "$$raid"
-                                    ]
-                                }]
-                            }
-                        }
-                    }],
-                    "as": "weakness"
-                }
-            },
-            {
-                "$addFields": {
-                    "weakness": {
-                        "$arrayElemAt": [
-                            "$weakness",
-                            0
-                        ]
-                    }
-                }
             }
         ]).toArray();
 
@@ -279,7 +248,8 @@ class RaidManager {
                     id: 1,
                     isFree: 1,
                     _id: 0,
-                    participants: 1
+                    participants: 1,
+                    weakness: 1
                 }
             }
         ]).toArray();

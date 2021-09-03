@@ -87,7 +87,7 @@ export class RaidPointsManager {
 
                 await Game.db.collection(Collections.DivTokenState).updateOne(
                     { _id: "raid_points_state" },
-                    { $set: { totalPoint: this._totalPoints, totalShares: this._totalShares } },
+                    { $set: { totalPoints: this._totalPoints, totalShares: this._totalShares } },
                     { upsert: true }
                 );
             })

@@ -101,8 +101,11 @@ class Raid extends EventEmitter {
         bossState[CharacterStats.Attack] = parseInt(raidData.attack);
         raidEntry.bossState = bossState;
 
+        raidEntry.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId });
+
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
         raidEntry._id = insertResult.insertedId;
+
         await this._initFromData(raidEntry);
     }
 
@@ -135,7 +138,6 @@ class Raid extends EventEmitter {
 
     async _initFromData(data) {
         this._template = await this._loadRaidTemplate(data.raidTemplateId);
-        this._weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: data.raidTemplateId });
 
         this._data = data;
 
@@ -248,7 +250,7 @@ class Raid extends EventEmitter {
         }
 
         // check if player has enough stamina for requested hits
-        if (attacker.getTimerValue(CharacterStats.Stamina) < hits) {
+        if (attacker.getTimerValue(CharacterStats.Stamina) < hits * this.template.staminaCost) {
             throw Errors.NoStamina;
         }
 
@@ -260,16 +262,16 @@ class Raid extends EventEmitter {
         if (attackerWeaponCombatData) {
             // if element matches +30%
             // if weapon matches +30%
-            if (attackerWeaponCombatData.element == this._weakness.current.element) {
+            if (attackerWeaponCombatData.element == this._data.weakness.current.element) {
                 bonusDamage *= 1.3;
             }
 
-            if (attackerWeaponCombatData.type == this._weakness.current.weapon) {
+            if (attackerWeaponCombatData.type == this._data.weakness.current.weapon) {
                 bonusDamage *= 1.3;
             }
         }
 
-        combatUnit.updateStats(this._weakness.current.element)
+        combatUnit.updateStats(this._data.weakness.current.element)
 
         const army = await Game.armyManager.createCombatLegion(attacker.address, legionIndex);
         const damageLog = {
@@ -410,7 +412,8 @@ class Raid extends EventEmitter {
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
                 loot: this._data.loot,
-                challenges: this._data.challenges
+                challenges: this._data.challenges,
+                weakness: this._data.weakness
             }
         });
 
