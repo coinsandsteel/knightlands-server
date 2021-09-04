@@ -716,7 +716,8 @@ class PlayerController extends IPaymentListener {
         let {
             stat,
             refillType,
-            items
+            items,
+            restores
         } = data;
 
         if (!stat && !refillType) {
@@ -760,7 +761,22 @@ class PlayerController extends IPaymentListener {
 
             user.refillTimerWithItems(stat, items, templates);
         } else {
-            let refillCost = await user.getTimerRefillCost(stat);
+            if (!Number.isInteger(restores)) {
+                throw Errors.IncorrectArguments;
+            }
+
+            // check that restore
+            let refillAmount = await user.getRefillAmount(stat, restores);
+
+            if (stat != CharacterStat.Health) {
+                const refillMeta = await user.getMeta("refill");
+                if (refillAmount - user.getMaxStatValue(stat) > refillMeta[stat][user.level - 1]) {
+                    throw Errors.IncorrectArguments;
+                }
+            }
+
+
+            let refillCost = await user.getTimerRefillCost(stat, restores);
             if (refillCost.hard > 0) {
                 if (refillCost.hard > user.hardCurrency) {
                     throw Errors.NotEnoughCurrency;
@@ -775,7 +791,7 @@ class PlayerController extends IPaymentListener {
                 await user.addSoftCurrency(-refillCost.soft);
             }
 
-            user.refillTimer(stat);
+            await user.refillTimer(stat, restores);
         }
 
         return null;

@@ -226,10 +226,16 @@ class User {
         this._data.character.avatar = value;
     }
 
-    async getMeta() {
+    async getMeta(id) {
         if (!this._meta) {
-
+            this._meta = {};
         }
+
+        if (!this._meta[id]) {
+            this._meta[id] = await Game.db.collection(Collections.Meta).findOne({ _id: id });
+        }
+
+        return this._meta[id];
     }
 
     async getWeaponCombatData() {
@@ -427,9 +433,8 @@ class User {
             this._advanceTimer(stat);
             timer.value += value;
 
-            if (timer.value > this.getMaxStatValue(stat)) {
-                value -= (timer.value - this.getMaxStatValue(stat));
-                timer.value = this.getMaxStatValue(stat);
+            if (timer.value + value > this.getMaxStatValue(stat)) {
+                value = 0;
             }
 
             if (stat == CharacterStat.Energy && value < 0) {
@@ -469,7 +474,7 @@ class User {
         return timePassed % TimerRefillReset;
     }
 
-    async getTimerRefillCost(stat) {
+    async getTimerRefillCost(stat, count) {
         if (stat == CharacterStats.Health) {
             const price = Math.ceil(
                 Math.log(this.level) *
@@ -481,26 +486,32 @@ class User {
             };
         }
 
-        let refills = await Game.db.collection(Collections.Meta).findOne({ _id: `${stat}_refill_cost` });
-
+        let refillMeta = await this.getMeta("refill");
         let refillsToday = this.getRefillsCount(stat);
+        let hard = 0;
 
-        if (refillsToday >= refills.cost.length) {
-            refillsToday = refills.cost.length - 1;
+        for (let i = 0; i < count; ++i) {
+            hard += Math.round(refillMeta.base * Math.pow(i + refillsToday + 1, refillMeta.expScale));
         }
 
-        return refills.cost[refillsToday];
+        return {
+            hard
+        }
     }
 
-    refillTimer(stat, refills) {
-        let timer = this.getTimer(stat);
-        timer.value = this.getMaxStatValue(stat);
-
-        if (!refills) {
-            refills = this.getRefillsCount(stat);
+    async getRefillAmount(stat, refills) {
+        let refillMeta = await this.getMeta("refill");
+        if (stat == CharacterStats.Health) {
+            return this.getMaxStatValue(stat);
         }
 
-        timer.refills = refills + 1;
+        return this.getTimerValue(stat) + refillMeta[stat][this.level - 1] * refills;
+    }
+
+    async refillTimer(stat, refills) {
+        let timer = this.getTimer(stat);
+        timer.value = await this.getRefillAmount(stat, refills);
+        timer.refills = this.getRefillsCount(stat) + refills;
         this._advanceTimer(stat);
     }
 
@@ -526,9 +537,11 @@ class User {
         if (valueRenerated > 0) {
             // adjust regen time to accomodate rounding
             timer.lastRegenTime += valueRenerated * timer.regenTime;
+
+            let doClamp = character.stats[stat] < timer.value;
             timer.value += valueRenerated;
             // clamp to max value
-            timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
+            timer.value = doClamp ? character.stats[stat] : timer.value;
             // this._originalData.character.timers[stat] = cloneDeep(timer);
         }
     }
