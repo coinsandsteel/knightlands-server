@@ -474,11 +474,13 @@ class Inventory {
             this.addItem(item);
         }
 
-        await Game.rankings.updateRank(this._user.id, {
-            type: RankingType.CollectedItemsByRarity,
-            rarity: template.rarity,
-            itemType: template.type
-        }, count);
+        if (template.type != ItemType.Resource && template.type != ItemType.Currency && template.type != ItemType.Key) {
+            await Game.rankings.updateRank(this._user.id, {
+                type: RankingType.CollectedItemsByRarity,
+                rarity: template.rarity,
+                itemType: template.type
+            }, count);
+        }
     }
 
     async addItemTemplate(template, quantity = 1, element) {
