@@ -7,6 +7,7 @@ import { Season } from "../seasons/Season";
 import { PayoutsPerShare } from "./types";
 import Errors from "../knightlands-shared/errors";
 import CurrencyType from "../knightlands-shared/currency_type";
+import events from "../knightlands-shared/events";
 
 const PAYOUT_PERIOD = 86400;
 const PAYOUT_LAG = 5;
@@ -69,9 +70,10 @@ export class DividendsRegistry {
     async handleTokenWithdawal(blockchainId: string, data: TokenWithdrawalData) {
         await this._lock.acquire("token_withdrawal");
         try {
-            await Game.activityHistory.update(Game.db, {
+            const record = await Game.activityHistory.update(Game.db, {
                 _id: new ObjectId(data.withdrawalId)
             }, { pending: false, token: data.token, transactionHash: data.transactionHash, to: data.to });
+            Game.emitPlayerEvent(record.user, events.TokenWithdrawal, { id: data.withdrawalId })
         } finally {
             await this._lock.release("token_withdrawal");
         }
@@ -80,10 +82,12 @@ export class DividendsRegistry {
     async handleDivsWithdawal(blockchainId: string, data: DivsWithdrawalData) {
         await this._lock.acquire("withdrawal");
         try {
-            await Game.activityHistory
+            const record = await Game.activityHistory
                 .update(Game.db, {
                     _id: new ObjectId(data.withdrawalId)
                 }, { pending: false, transactionHash: data.transactionHash, to: data.to });
+
+            Game.emitPlayerEvent(record.user, events.DivTokenWithdrawal, { id: data.withdrawalId })
         } finally {
             await this._lock.release("withdrawal");
         }
@@ -258,6 +262,29 @@ export class DividendsRegistry {
         return Game.db.collection(Collections.WithdrawalRequests).find({ userId, pending: true }).toArray();
     }
 
+    async claimDividends(userId: string, blockchainId: string, amount: string) {
+        return await Game.dbClient.withTransaction(async db => {
+            const state = await db.collection(Collections.DivTokenState)
+                .findOne({ _id: "payouts" });
+
+            if (state && state.payouts) {
+                const current = this._toBigIntAmount(state.payouts[blockchainId] || 0);
+                const reward = this._toBigIntAmount(amount);
+
+                if (current > reward) {
+                    console.log(current, reward, current - reward)
+                    await db.collection(Collections.DivTokenState)
+                        .updateOne({ _id: "payouts" }, { $set: { [`payouts.${blockchainId}`]: (current - reward).toString() } });
+                } else {
+                    await db.collection(Collections.DivsWithdrawals)
+                        .insertOne({ userId, blockchain: blockchainId, amount, error: "NOT_ENOUGH_FUNDS", availableAmount: current.toString() });
+
+                    throw Errors.NoDividendsWithdrawal;
+                }
+            }
+        })
+    }
+
     async initiateDividendsWithdrawal(userId: string, to: string, blockchainId: string, amount: string) {
         await this._lock.acquire("divs");
         try {
@@ -266,7 +293,6 @@ export class DividendsRegistry {
             }
 
             const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(to));
-            throw "sdasd";
             return await Game.dbClient.withTransaction(async db => {
                 let withdrawalId = await this._createWithdrawal(db, userId, "divs-w", blockchainId, {
                     user: userId,
@@ -285,25 +311,10 @@ export class DividendsRegistry {
 
                 const state = await db.collection(Collections.DivTokenState)
                     .findOne({ _id: "payouts" });
+                const current = this._toBigIntAmount(state.payouts[blockchainId] || 0);
 
-                if (state && state.payouts) {
-                    const current = this._toBigIntAmount(state.payouts[blockchainId] || 0);
-                    const reward = this._toBigIntAmount(amount);
-
-                    if (current > reward) {
-                        console.log(current, reward, current - reward)
-                        await db.collection(Collections.DivTokenState)
-                            .updateOne({ _id: "payouts" }, { $set: { [`payouts.${blockchainId}`]: (current - reward).toString() } });
-
-                        await db.collection(Collections.DivsWithdrawals)
-                            .insertOne({ to, userId, blockchain: blockchainId, amount, availableAmount: current.toString() });
-                    } else {
-                        await db.collection(Collections.DivsWithdrawals)
-                            .insertOne({ to, userId, blockchain: blockchainId, amount, error: "NOT_ENOUGH_FUNDS", availableAmount: current.toString() });
-
-                        throw Errors.NoDividendsWithdrawal;
-                    }
-                }
+                await db.collection(Collections.DivsWithdrawals)
+                    .insertOne({ to, userId, blockchain: blockchainId, amount, availableAmount: current.toString() });
 
                 return {
                     _id: withdrawalId,

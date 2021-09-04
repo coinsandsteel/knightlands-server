@@ -35,5 +35,6 @@ export interface DividendsData {
     lastPayout: number;
     lastMiningUpdate: number;
     payouts: { [key: string]: string };
+    claimed: { [key: string]: string };
     stake: number;
 }

@@ -1,3 +1,4 @@
+import { ReturnDocument } from "mongodb";
 import { Db } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
@@ -17,6 +18,10 @@ export class ActivityHistory {
         return Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
     }
 
+    async getRecords(user: string, filter: any) {
+        return Game.db.collection(Collections.ActivityHistory).find({ user, ...filter }).toArray();
+    }
+
     async hasRecord(user: string, filter: any) {
         return (await Game.db.collection(Collections.ActivityHistory).find({ user, ...filter }).count()) > 0;
     }
@@ -31,6 +36,6 @@ export class ActivityHistory {
             dataQuery[`data.${k}`] = data[k];
         }
 
-        return db.collection(Collections.ActivityHistory).updateOne(filter, { $set: dataQuery });
+        return (await db.collection(Collections.ActivityHistory).findOneAndUpdate(filter, { $set: dataQuery }, { upsert: true, returnDocument: ReturnDocument.AFTER })).value;
     }
 }

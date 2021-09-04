@@ -22,6 +22,11 @@ export class Dividends {
             this._data.lastMiningUpdate = 0;
             this._data.lastPayout = Game.dividends.getCurrentPayout();
             this._data.payouts = {};
+            this._data.claimed = {};
+        }
+
+        if (!this._data.claimed) {
+            this._data.claimed = {};
         }
     }
 
@@ -124,19 +129,44 @@ export class Dividends {
         return 0;
     }
 
+    async getPendingWithdrawal(chain: string, tokens: boolean) {
+        return Game.activityHistory.getRecords(this._user.address, { chain, "data.pending": true, type: tokens ? "token-w" : "divs-w" })
+    }
+
     async withdrawTokens(to: string, currencyType: string, blockchainId: string, amount: number) {
+        const pendingRecords = await this.getPendingWithdrawal(blockchainId, true);
+        if (pendingRecords && pendingRecords.length != 0) {
+            throw errors.DividendsWithdrawalPending;
+        }
+
         return Game.dividends.initiateTokenWithdrawal(this._user.address, to, currencyType, blockchainId, amount);
     }
 
-    async claimDividends(to: string, blockchainId: string) {
+    async withdrawDividends(to: string, blockchainId: string) {
         let args = null
 
-        if (this._data.payouts[blockchainId] && BigInt(this._data.payouts[blockchainId]) > 0) {
-            args = await Game.dividends.initiateDividendsWithdrawal(this._user.address, to, blockchainId, this._data.payouts[blockchainId]);
-            this._data.payouts[blockchainId] = "0";
+        const pendingRecords = await this.getPendingWithdrawal(blockchainId, false);
+        if (pendingRecords && pendingRecords.length != 0) {
+            throw errors.DividendsWithdrawalPending;
+        }
+
+        if (this._data.claimed[blockchainId] && BigInt(this._data.claimed[blockchainId]) > 0) {
+            args = await Game.dividends.initiateDividendsWithdrawal(this._user.address, to, blockchainId, this._data.claimed[blockchainId]);
+            this._data.claimed[blockchainId] = "0";
         }
 
         return args;
+    }
+
+    async claimDividends(blockchainId: string) {
+        let args = null
+
+        if (this._data.payouts[blockchainId] && BigInt(this._data.payouts[blockchainId]) > 0) {
+            args = await Game.dividends.claimDividends(this._user.address, blockchainId, this._data.payouts[blockchainId]);
+            const claimedAmount = this._data.claimed[blockchainId] ? BigInt(this._data.claimed[blockchainId]) : BigInt(0)
+            this._data.claimed[blockchainId] = (claimedAmount + BigInt(this._data.payouts[blockchainId])).toString()
+            this._data.payouts[blockchainId] = "0";
+        }
     }
 
     async purchase(itemId: number) {

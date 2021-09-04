@@ -154,8 +154,6 @@ class PlayerController extends IPaymentListener {
 
         // Dividends
         this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
-        this._socket.on(Operations.FetchPendingDividendTokenWithdrawal, this._gameHandler(this._fetchPendingDividenTokenWithdrawal.bind(this)));
-        this._socket.on(Operations.SendDividendTokenWithdrawal, this._gameHandler(this._sendDividendTokenWithdrawal.bind(this)));
         this._socket.on(Operations.GetDivsStatus, this._gameHandler(this._getDividendsStatus.bind(this)));
         this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
         this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
@@ -164,6 +162,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.WithdrawTokens, this._gameHandler(this._withdrawTokens.bind(this)));
         this._socket.on(Operations.GetWithdrawTokensStatus, this._gameHandler(this._getWithdrawTokensStatus.bind(this)));
         this._socket.on(Operations.StakeDivs, this._gameHandler(this._stakeDivs.bind(this)));
+        this._socket.on(Operations.PendingDivs, this._gameHandler(this._getPendingDivs.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -227,7 +226,6 @@ class PlayerController extends IPaymentListener {
     }
 
     onDisconnect() {
-        console.log('disconnected')
         Game.off(this.address, this._handleEventBind);
         Game.off(this.id, this._handleEventBind);
 
@@ -1376,25 +1374,20 @@ class PlayerController extends IPaymentListener {
     }
 
     // Dividends
-
-    async _withdrawDividendToken(user, data) {
-        // return Game.dividends.requestTokenWithdrawal(user, data.amount);
-    }
-
-    async _fetchPendingDividenTokenWithdrawal(user) {
-        // return Game.dividends.getPendingWithdrawal(user.address);
-    }
-
-    async _sendDividendTokenWithdrawal(user, data) {
-        // return Game.dividends.acceptTransaction(user.address, data.tx);
+    async _getPendingDivs(user, data) {
+        return user.dividends.getPendingWithdrawal(data.chain, !!data.tokens);
     }
 
     async _getDividendsStatus(user) {
         return Game.dividends.getStatus(user.address);
     }
 
+    async _withdrawDividendToken(user, data) {
+        return user.dividends.withdrawDividends(data.to, data.blockchainId);
+    }
+
     async _claimDividends(user, data) {
-        return user.dividends.claimDividends(data.to, data.blockchainId);
+        return user.dividends.claimDividends(data.blockchainId);
     }
 
     async _claimMinedDkt(user) {
