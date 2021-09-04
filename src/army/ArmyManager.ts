@@ -308,6 +308,10 @@ export class ArmyManager {
         }
 
         const user = await Game.getUser(userId);
+        if (unit.level >= user.level) {
+            throw Errors.ArmyUnitMaxLvl;
+        }
+
         if (user.softCurrency < levelRecord.gold) {
             throw Errors.NotEnoughSoft;
         }
