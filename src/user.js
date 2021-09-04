@@ -1107,6 +1107,10 @@ class User {
             throw Errors.NoItem;
         }
 
+        if (itemToEquip.level * 2 > this.level) {
+            throw Errors.IncorrectArguments;
+        }
+
         let template = await await Game.itemTemplates.getTemplate(itemToEquip.template);
         if (!template) {
             throw Errors.NoTemplate;

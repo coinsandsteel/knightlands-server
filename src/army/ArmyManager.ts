@@ -346,6 +346,10 @@ export class ArmyManager {
                 throw Errors.NoItem;
             }
 
+            if (item.level * 2 > unit.level) {
+                throw Errors.IncorrectArguments;
+            }
+
             const itemTemplate = await Game.itemTemplates.getTemplate(item.template);
             if (!itemTemplate) {
                 throw Errors.NoTemplate;
