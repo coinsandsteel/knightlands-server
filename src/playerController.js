@@ -433,6 +433,11 @@ class PlayerController extends IPaymentListener {
             throw "incorrect stage";
         }
 
+        let totalZones = await zones.find({}).count();
+        if (+data.stage * totalZones + data.zone > user.level) {
+            throw Errors.IncorrectArguments;
+        }
+
         // check if previous zone was completed on the same stage
         let previousZone = await zones.findOne({
             _id: data.zone - 1
@@ -444,7 +449,6 @@ class PlayerController extends IPaymentListener {
 
         if (data.stage > 0) {
             // check if previous zones finished
-            let totalZones = await zones.find({}).count();
             if (!user.isZoneCompleted(totalZones, data.stage - 1)) {
                 throw "complete previous difficulty";
             }
