@@ -810,6 +810,11 @@ class Crafting {
             throw Errors.ItemLocked;
         }
 
+        const template = await Game.itemTemplates.getTemplate(item.template);
+        if (!template || this.isAccessory(template.equipmentType)) {
+            throw Errors.IncorrectArguments;
+        }
+
         const evolveRecipe = evolveMeta.evolveRecipes.find(x => x.fromRarity == item.rarity);
         if (!evolveRecipe) {
             throw Errors.IncorrectArguments;
