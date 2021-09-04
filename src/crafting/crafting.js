@@ -488,7 +488,19 @@ class Crafting {
         }
 
         let meta = await this._getMeta();
-        let maxLevel = meta.itemLimitBreaks[item.rarity][item.breakLimit];
+
+        let holderLevel = this._user.level;
+        // if item is equipped - do not allow to level it above the holder
+        if (item.equipped) {
+            if (item.holder != -1) {
+                const unit = await Game.armyManager.getUnit(this._userId, item.holder);
+                if (unit) {
+                    holderLevel = unit.level;
+                }
+            }
+        }
+
+        let maxLevel = Math.min(meta.itemLimitBreaks[item.rarity][item.breakLimit], Math.floor(holderLevel / 2));
         if (item.level >= maxLevel) {
             throw Errors.ItemMaxLevel;
         }
