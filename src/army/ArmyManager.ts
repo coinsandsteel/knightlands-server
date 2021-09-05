@@ -16,6 +16,7 @@ import ItemType from "../knightlands-shared/item_type";
 import Random from "../random";
 import { isNumber } from "../validation";
 import { getSlot } from "../knightlands-shared/equipment_slot";
+import CurrencyType from "../knightlands-shared/currency_type";
 
 const NO_LEGION = -1;
 
@@ -465,11 +466,18 @@ export class ArmyManager {
 
         // check souls
         const inventory = await Game.loadInventory(userId);
-        if (inventory.countItemsByTemplate(this._meta.soulsItem) < fusionTemplate.price) {
+        if (inventory.countItemsByTemplate(this._meta.soulsItem) < fusionTemplate.souls) {
             throw Errors.NotEnoughResource;
         }
 
-        inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.price);
+        // check ash
+        const price = Game.currencyConversionService.convertToNative(fusionTemplate.price);
+        if (price > inventory.getCurrency(CurrencyType.Dkt2)) {
+            throw Errors.NotEnoughCurrency;
+        }
+
+        inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.souls);
+        await inventory.modifyCurrency(CurrencyType.Dkt2, -price)
         unit.souls += fusionTemplate.price;
 
         // everything is ok, promote unit

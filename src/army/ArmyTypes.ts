@@ -77,6 +77,7 @@ export interface UnitFusionIngridient {
 export interface UnitFusionRecipeTemplate {
     stars: number;
     price: number;
+    souls: number;
     ingridients: UnitFusionIngridient[];
 }
 
