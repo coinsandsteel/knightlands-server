@@ -90,7 +90,7 @@ class Crafting {
 
         const isRing = getSlot(baseTemplate.equipmentType) == EquipmentSlots.Ring;
         const meta = isRing ? accCraftMeta.ring : accCraftMeta.necklace;
-        await this._rerollAccessoryOptions(meta.reroll, item);
+        await this._rerollAccessoryOptions(meta, item);
 
         await this._user.addSoftCurrency(-price);
         item.rerolls = rerolls + 1;
@@ -159,11 +159,15 @@ class Crafting {
         const length = item.properties.length;
         for (let i = 0; i < length; ++i) {
             const prop = item.properties[i];
-            const rangeMeta = meta[prop.id];
+            const rangeMeta = meta.reroll[prop.id];
             const range = rangeMeta[prop.rarity];
             prop.prevValue = prop.value;
-            prop.value = Random.range(range.minValue, range.maxValue, true)
+            prop.value = this._randomValue(range.minValue, range.maxValue, prop.r || true)
         }
+    }
+
+    _randomValue(min, max, relative) {
+        return relative ? Random.range(min, max, true) : Random.intRange(min, max, true);
     }
 
     async _generateAccessoryOptions(optionsMeta, count) {
@@ -182,7 +186,7 @@ class Crafting {
 
             let relative = true;
             const property = {
-                value: Random.range(template.minValue, template.maxValue, true),
+                value: 0,
                 prevValue: null,
                 id: template.id,
                 rarity: template.rarity
@@ -213,9 +217,8 @@ class Crafting {
                     break;
             }
 
-            if (!relative) {
-                property.value = Math.floor(property.value);
-            }
+            property.value = this._randomValue(template.minValue, template.maxValue, relative);
+            property.r = relative;
 
             properties[typesRolled] = property;
             typesRolled++;
