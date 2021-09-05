@@ -14,7 +14,7 @@ const {
 } = require("../knightlands-shared/equipment_slot");
 
 const ItemType = require("../knightlands-shared/item_type");
-const ROLLBACK_LEVEL = 9;
+const ROLLBACK_LEVEL = 5;
 
 class Crafting {
     constructor(user, inventory) {
@@ -126,12 +126,18 @@ class Crafting {
         }
 
         const recipe = accCraftMeta.recipes[rarity];
+        const price = Game.currencyConversionService.convertToNative(recipe.price);
+
+        if (price > this._inventory.getCurrency(CurrencyType.Dkt2)) {
+            throw Errors.NotEnoughCurrency;
+        }
 
         if (!this._inventory.hasItems(recipe.resource, recipe.resourceCount * amount)) {
             throw Errors.NotEnoughResource;
         }
 
         this._inventory.removeItemByTemplate(recipe.resource, recipe.resourceCount * amount);
+        await this._inventory.modifyCurrency(CurrencyType.Dkt2, -price);
 
         await Game.rankings.updateRank(this._user.id, {
             type: RankingType.CraftedItemsByRarity,
@@ -142,7 +148,7 @@ class Crafting {
         while (amount-- > 0) {
             const item = this._inventory.createItemByTemplate(baseTemplate);
             item.rerolls = 1;
-            item.properties = await this._generateAccessoryOptions(meta.options[rarity], recipe.optionsCount);
+            item.properties = this._generateAccessoryOptions(meta.options[rarity], recipe.optionsCount);
             items[amount] = this._inventory.addItem(item, true);
         }
 
@@ -272,7 +278,8 @@ class Crafting {
 
         let enchantCost = stepData.soft;
         if (currency == CurrencyType.Hard) {
-            enchantCost = stepData.hard;
+            currency = CurrencyType.Dkt2;
+            enchantCost = Game.currencyConversionService.convertToNative(stepData.hard);
         }
 
         if (this._inventory.getCurrency(currency) < enchantCost) {
@@ -353,7 +360,8 @@ class Crafting {
             // check the balance
             let recipeCost = recipe.soft;
             if (currency == CurrencyType.Hard) {
-                recipeCost = recipe.hard;
+                currency = CurrencyType.Dkt2;
+                recipeCost = Game.currencyConversionService.convertToNative(recipe.hard);
             }
 
             recipeCost *= amount;

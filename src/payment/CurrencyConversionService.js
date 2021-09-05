@@ -37,11 +37,12 @@ class CurrencyConversionService {
 
     get conversionRate() {
         // return this._conversionRate.price;
-        return 41.66;
+        return 1;
     }
 
     convertToNative(usdPrice) {
-        return Math.floor(usdPrice * this.conversionRate * this._nativeConversion);
+        // usdPrice in cents
+        return Math.floor(usdPrice * this.conversionRate / 100);
     }
 
     async _pullConversionRates() {
