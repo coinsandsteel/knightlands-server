@@ -79,7 +79,7 @@ export class Dividends {
     async applyBonusDkt(value: number) {
         const meta: DividendsMeta = await this._getMeta();
         if (this._data.dropRateLevel > 0) {
-            value *= (1 + meta.dropRates[this._data.dropRateLevel - 1].rate);
+            value *= (1 + meta.dropRate[this._data.dropRateLevel - 1].rate);
         }
 
         return value;
@@ -88,15 +88,15 @@ export class Dividends {
     async upgradeDktDropRate() {
         const meta: DividendsMeta = await this._getMeta();
 
-        if (this._data.dropRateLevel >= meta.dropRates.length) {
+        if (this._data.dropRateLevel >= meta.dropRate.length) {
             throw errors.IncorrectArguments;
         }
 
-        const price = meta.dropRates[this._data.dropRateLevel].price;
+        const price = meta.dropRate[this._data.dropRateLevel].price;
 
-        if (this._data.unlockedTokens >= price) {
+        if (this._user.dkt2 >= price) {
             this._data.dropRateLevel++;
-            this._data.unlockedTokens -= price;
+            await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, -price);
         }
     }
 
@@ -106,9 +106,9 @@ export class Dividends {
         const meta: DividendsMeta = await this._getMeta();
         const price = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor);
 
-        if (this._data.unlockedTokens >= price) {
+        if (this._user.dkt2 >= price) {
             this._data.miningLevel++;
-            this._data.unlockedTokens -= price;
+            await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, -price);
         }
     }
 
@@ -119,7 +119,7 @@ export class Dividends {
                 const meta = await this._getMeta();
                 const rate = Math.pow(meta.mining.rate.base * this._data.miningLevel, meta.mining.rate.factor) / 86400; // rate is per 1 day
                 const mined = timePassed * rate;
-                await this._user.inventory.modifyCurrency(CurrencyType.Dkt, mined);
+                await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, mined);
                 this._data.lastMiningUpdate = Game.nowSec;
 
                 return mined;

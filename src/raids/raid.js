@@ -465,7 +465,7 @@ class Raid extends EventEmitter {
         if (chosenLoot) {
             rewards.gold = chosenLoot.gold;
 
-            rewards.rp = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.7, raidStage.maxDkt);
+            rewards.rp = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.9, raidStage.maxDkt);
             rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
             // evaluate challenges

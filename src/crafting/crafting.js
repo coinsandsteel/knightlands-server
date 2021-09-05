@@ -367,6 +367,10 @@ class Crafting {
                 recipeCost = Game.currencyConversionService.convertToNative(recipe.hard);
             }
 
+            if (currency == CurrencyType.Dkt2) {
+                recipeCost = Game.currencyConversionService.convertToNative(recipe.ashFee);
+            }
+
             recipeCost *= amount;
 
             if (this._inventory.getCurrency(currency) < recipeCost) {

@@ -21,7 +21,7 @@ export interface DividendsMiningMeta {
 
 export interface DividendsMeta {
     mining: DividendsMiningMeta;
-    dropRates: DropRateEntry[];
+    dropRate: DropRateEntry[];
     shop: { [key: string]: ShopEntry }
 }
 
