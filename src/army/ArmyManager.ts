@@ -308,7 +308,7 @@ export class ArmyManager {
         }
 
         const user = await Game.getUser(userId);
-        if (unit.level >= user.level) {
+        if (user.level < 200 && unit.level >= user.level) {
             throw Errors.ArmyUnitMaxLvl;
         }
 

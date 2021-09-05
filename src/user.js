@@ -538,10 +538,9 @@ class User {
             // adjust regen time to accomodate rounding
             timer.lastRegenTime += valueRenerated * timer.regenTime;
 
-            let doClamp = character.stats[stat] < timer.value;
             timer.value += valueRenerated;
             // clamp to max value
-            timer.value = doClamp ? character.stats[stat] : timer.value;
+            timer.value = character.stats[stat] < timer.value ? character.stats[stat] : timer.value;
             // this._originalData.character.timers[stat] = cloneDeep(timer);
         }
     }
