@@ -389,12 +389,12 @@ export class ArmyManager {
         if (isNumber(slotId)) {
             const item = unit.items[slotId];
             if (item) {
-                await inventory.unequipItem(item.id);
+                await inventory.unequipItem(item.id, true);
             }
         } else {
             // unequip all
             for (const slotId in unit.items) {
-                await inventory.unequipItem(unit.items[slotId].id);
+                await inventory.unequipItem(unit.items[slotId].id, true);
             }
         }
 
@@ -677,7 +677,7 @@ export class ArmyManager {
             // unequip items
             for (const itemSlot in unit.items) {
                 const equippedItem = unit.items[itemSlot];
-                await inventory.unequipItem(equippedItem.id);
+                await inventory.unequipItem(equippedItem.id, true);
             }
         }
     }
