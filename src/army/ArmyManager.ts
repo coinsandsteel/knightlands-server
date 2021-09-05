@@ -386,7 +386,7 @@ export class ArmyManager {
         const unit = unitRecord[unitId];
         const inventory = await Game.loadInventory(userId);
 
-        if (isNumber(slotId)) {
+        if (slotId) {
             const item = unit.items[slotId];
             if (item) {
                 await inventory.unequipItem(item.id, true);
