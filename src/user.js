@@ -878,6 +878,10 @@ class User {
     }
 
     _applyAccessoryProperties(item, finalStats, relativeStats) {
+        if (!item.properties || !Array.isArray(item.properties)) {
+            return;
+        }
+
         for (const prop of item.properties) {
             const propTemplate = Game.accessoryOptions.getOption(prop.id);
             switch (propTemplate.type) {

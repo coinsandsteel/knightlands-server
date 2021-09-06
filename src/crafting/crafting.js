@@ -170,7 +170,7 @@ class Crafting {
         return relative ? Random.range(min, max, true) : Random.intRange(min, max, true);
     }
 
-    async _generateAccessoryOptions(optionsMeta, count) {
+    _generateAccessoryOptions(optionsMeta, count) {
         const templates = new WeightedList(optionsMeta).shuffle()
         const length = templates.length;
         const properties = new Array(count);
