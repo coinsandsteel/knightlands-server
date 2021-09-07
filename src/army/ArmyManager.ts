@@ -87,6 +87,9 @@ export class ArmyManager {
 
     async getUnit(userId: string, id: number) {
         let units = await this._units.getUserUnit(userId, id);
+        if (!units) {
+            return null;
+        }
         return units[id];
     }
 

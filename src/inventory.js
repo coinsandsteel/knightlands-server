@@ -506,7 +506,7 @@ class Inventory {
                 const length = templates.length;
                 for (; i < length; ++i) {
                     const foundItem = templates[i];
-                    if (!foundItem.unique && foundItem.element == item.element) {
+                    if (!foundItem.equipped && !foundItem.unique && foundItem.element == item.element) {
                         this.modifyStack(foundItem, item.count);
                         return foundItem;
                     }
@@ -638,14 +638,14 @@ class Inventory {
             return item;
         }
 
-        let equippedItems;
+        let equippedItems = this._user.equipment;
         let unit;
         // if holder is character use chracter items
-        if (item.holder == UserHolder) {
-            equippedItems = this._user.equipment;
-        } else {
+        if (item.holder != UserHolder) {
             unit = await Game.armyManager.getUnit(this._userId, item.holder);
-            equippedItems = unit.items;
+            if (unit) {
+                equippedItems = unit.items;
+            }
         }
 
         const template = await Game.itemTemplates.getTemplate(item.template);
