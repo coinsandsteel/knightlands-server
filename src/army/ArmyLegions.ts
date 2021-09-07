@@ -17,21 +17,32 @@ export class ArmyLegions {
     }
 
     async getLegion(userId: string, legionIndex: number) {
-        if (!this._cacheExists(userId)) {
-            const userRecord = await this._db.collection(Collections.Armies).findOne(
-                { _id: userId },
-                { projection: { "legions": 1 } }
-            );
+        // if (!this._cacheExists(userId)) {
+        //     const userRecord = await this._db.collection(Collections.Armies).findOne(
+        //         { _id: userId },
+        //         { projection: { "legions": 1 } }
+        //     );
 
-            if (userRecord) {
-                this._cache[userId] = userRecord.legions;
-            } else {
-                this._cache[userId] = this.createLegions();
-            }
+        //     if (userRecord) {
+        //         this._cache[userId] = userRecord.legions;
+        //     } else {
+        //         this._cache[userId] = this.createLegions();
+        //     }
+        // }
+
+        const userRecord = await this._db.collection(Collections.Armies).findOne(
+            { _id: userId },
+            { projection: { "legions": 1 } }
+        );
+
+        if (userRecord) {
+            return userRecord.legions[legionIndex];
         }
 
-        const legions = this._cache[userId];
-        return legions[legionIndex];
+        return {
+            units: {},
+            index: legionIndex
+        };
     }
 
     async onLegionUpdated(userId: string, legion: Legion) {

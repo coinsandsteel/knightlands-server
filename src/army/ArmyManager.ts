@@ -585,24 +585,26 @@ export class ArmyManager {
         }
 
         const reserve = await this._units.getReservedUnits(userId, units);
-
+        const reserveDelta = {}
         for (const unitId of unitIds) {
             const unit = unitRecords[unitId];
             const key = this._units.getReserveKey(unit);
 
-            if (reserve[key]) {
-                reserve[key].count++;
-            } else {
-                reserve[key] = {
+            if (!reserveDelta[key]) {
+                reserveDelta[key] = {
                     template: unit.template,
                     promotions: unit.promotions,
-                    count: 1
+                    count: reserve[key] ? reserve[key].count : 1
                 };
+            }
+
+            if (reserve[key]) {
+                reserveDelta[key].count++;
             }
         }
 
 
-        await this._units.updateReservedUnits(userId, reserve);
+        await this._units.updateReservedUnits(userId, reserveDelta);
         await this._removeEquipmentFromUnits(userId, unitRecords);
         await this._units.removeUnits(userId, unitIds);
     }
