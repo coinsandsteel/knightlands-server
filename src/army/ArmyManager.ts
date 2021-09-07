@@ -146,19 +146,14 @@ export class ArmyManager {
 
         delete legion.units[slotId];
 
-        if (!unitId) {
-            await this._armiesCollection.updateOne(
-                { _id: userId },
-                { $set: { [`legions.${legionIndex}`]: legion } }
-            )
-        } else {
+        if (unitId) {
             const slot = this._meta.slots.find(x => x.id == slotId);
             if (!slot) {
                 throw Errors.IncorrectArguments;
             }
 
             const unitRecord = (await this._units.getUserUnit(userId, unitId))[unitId];
-            if (!unitRecord || unitRecord.troop != slot.troop) {
+            if (!unitRecord || unitRecord.troop != slot.troop || unitRecord.legion != NO_LEGION) {
                 throw Errors.IncorrectArguments;
             }
 

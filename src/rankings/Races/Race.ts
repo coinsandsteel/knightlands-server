@@ -32,6 +32,10 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         this._lock = new Lock();
     }
 
+    get isLoaded() {
+        return !!this._state;
+    }
+
     get id(): ObjectId {
         return this._state._id;
     }
@@ -189,8 +193,10 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     async load(id: ObjectId) {
         const state = <RaceRecord>await this._db.collection(Collections.Races).findOne({ _id: id })
-        await this.loadFromState(state);
-        await this._launch();
+        if (state) {
+            await this.loadFromState(state);
+            await this._launch();
+        }
     }
 
     private async _launch() {

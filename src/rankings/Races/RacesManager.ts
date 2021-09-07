@@ -262,7 +262,9 @@ class RacesManager implements IRankingTypeHandler {
         await Promise.all(promises);
 
         for (const race of races) {
-            this._addRace(race);
+            if (race.isLoaded) {
+                this._addRace(race);
+            }
         }
     }
 
