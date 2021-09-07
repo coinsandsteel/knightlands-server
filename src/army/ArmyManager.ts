@@ -349,7 +349,7 @@ export class ArmyManager {
                 throw Errors.NoItem;
             }
 
-            if (item.level * 2 > unit.level) {
+            if (item.level > unit.level) {
                 throw Errors.IncorrectArguments;
             }
 

@@ -1123,7 +1123,7 @@ class User {
             throw Errors.NoItem;
         }
 
-        if (itemToEquip.level * 2 > this.level) {
+        if (itemToEquip.level > this.level) {
             throw Errors.IncorrectArguments;
         }
 
