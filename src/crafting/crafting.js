@@ -515,7 +515,7 @@ class Crafting {
             }
         }
 
-        let maxLevel = Math.min(meta.itemLimitBreaks[item.rarity][item.breakLimit], Math.floor(holderLevel / 2));
+        let maxLevel = Math.min(meta.itemLimitBreaks[item.rarity][item.breakLimit], Math.floor(holderLevel));
         if (item.level >= maxLevel) {
             throw Errors.ItemMaxLevel;
         }
