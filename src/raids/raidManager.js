@@ -105,13 +105,13 @@ class RaidManager {
             recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
         }
 
-        if (!(await user.inventory.hasEnoughIngridients(joinRecipe.ingridients))) {
+        if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
             throw Errors.NoRecipeIngridients;
         }
 
         await user.inventory.autoCommitChanges(async inventory => {
             // consume crafting materials
-            await inventory.consumeItemsFromCraftingRecipe(joinRecipe);
+            await inventory.consumeItemsFromCraftingRecipe(recipe);
         });
 
 
