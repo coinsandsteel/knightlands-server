@@ -491,7 +491,7 @@ class User {
         let hard = 0;
 
         for (let i = 0; i < count; ++i) {
-            hard += Math.round(refillMeta.base * Math.pow(i + refillsToday + 1, refillMeta.expScale));
+            hard += Math.round(refillMeta.cost.base * Math.pow(i + refillsToday + 1, refillMeta.cost.expScale));
         }
 
         return {
