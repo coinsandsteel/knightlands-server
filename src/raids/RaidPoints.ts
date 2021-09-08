@@ -14,6 +14,7 @@ function toShares(amount, poolIn, poolOut) {
 
 const CURVATURE = 20000;
 const FLESH_EMISSION = 1000;
+const FREE_FLESH_EMISSION = 35;
 
 export class RaidPoints {
     private _user: any;
@@ -34,6 +35,12 @@ export class RaidPoints {
         return Game.raidPoints.getCurrentPayout();
     }
 
+    reset() {
+        this._data.lastClaimed = this.getCurrentPayout();
+        this._data.pointsPool = this._data.sharesPool = CURVATURE;
+        this._data.score = this._data.shares = 0;
+    }
+
     async addPoints(amount: number) {
         await this.tryClaimDkt();
 
@@ -44,7 +51,7 @@ export class RaidPoints {
         this._data.shares += shares;
         this._data.score += amount;
 
-        await Game.raidPoints.increaseTotalPoints(amount, shares);
+        await Game.raidPoints.increaseTotalPoints(amount, shares, this._user.isFreeAccount);
     }
 
     async tryClaimDkt() {
@@ -52,13 +59,16 @@ export class RaidPoints {
             const data = await Game.raidPoints.getSnapshotForPayout(this._data.lastClaimed);
 
             if (data) {
-                const dkt = this._data.shares / data.totalShares * FLESH_EMISSION;
+                let dkt = this._data.shares / data.totalShares * FLESH_EMISSION;
+
+                if (this._user.isFreeAccount) {
+                    dkt = this._data.shares / data.totalFreeShares * FREE_FLESH_EMISSION;
+                }
+
                 await this._user.addDkt(dkt);
             }
 
-            this._data.lastClaimed = this.getCurrentPayout();
-            this._data.pointsPool = this._data.sharesPool = CURVATURE;
-            this._data.score = this._data.shares = 0;
+            this.reset();
         }
     }
 

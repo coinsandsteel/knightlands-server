@@ -97,7 +97,13 @@ class RaidManager {
         }
 
         const user = await Game.getUserById(userId);
-        let joinRecipe = await this._loadSummonRecipe(raid.template.joinRecipe);
+        let recipe;
+        if (user.isFreeAccount) {
+            // use free raid recipe
+            recipe = await this._loadRaidTemplate(raid.templateId);
+        } else {
+            recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
+        }
 
         if (!(await user.inventory.hasEnoughIngridients(joinRecipe.ingridients))) {
             throw Errors.NoRecipeIngridients;
@@ -107,6 +113,7 @@ class RaidManager {
             // consume crafting materials
             await inventory.consumeItemsFromCraftingRecipe(joinRecipe);
         });
+
 
         await user.dailyQuests.onPaidRaidJoin();
         await raid.join(user.id.toHexString());
@@ -120,7 +127,7 @@ class RaidManager {
         }
 
         // check if there is enough crafting materials
-        let data = free ? raitTemplate.soloData : raitTemplate.data;
+        let data = (free || summoner.isFreeAccount) ? raitTemplate.soloData : raitTemplate.data;
         let summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
 
         if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {

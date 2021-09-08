@@ -86,6 +86,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
         this._socket.on(Operations.Tutorial, this._gameHandler(this._handleTutorial.bind(this)));
+        this._socket.on(Operations.UpgradeAccount, this._gameHandler(this._upgradeAccount.bind(this)))
 
         // Crafting
         this._socket.on(Operations.UpgradeItem, this._gameHandler(this._levelUpItem.bind(this)));
@@ -693,6 +694,10 @@ class PlayerController extends IPaymentListener {
         }
 
         return null;
+    }
+
+    async _upgradeAccount(user, data) {
+        user.upgradeAccount();
     }
 
     async _handleTutorial(user, data) {

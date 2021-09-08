@@ -226,6 +226,15 @@ class User {
         this._data.character.avatar = value;
     }
 
+    get isFreeAccount() {
+        return !this._data.accountType;
+    }
+
+    upgradeAccount() {
+        this._data.accountType = 1;
+        this.raidPoints.reset();
+    }
+
     async getMeta(id) {
         if (!this._meta) {
             this._meta = {};
