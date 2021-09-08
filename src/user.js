@@ -83,7 +83,7 @@ class User {
         let data = Object.assign({}, this._data);
         // remove unwanted fields
         delete data.nonce;
-        delete data.address;
+        // delete data.address;
 
         data.depositorId = this.depositorId;
 
