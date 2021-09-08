@@ -231,7 +231,7 @@ class User {
     }
 
     upgradeAccount() {
-        this._data.accountType = 1;
+        this._data.accountType = this._data.accountType ? 0 : 1;
         this.raidPoints.reset();
     }
 
