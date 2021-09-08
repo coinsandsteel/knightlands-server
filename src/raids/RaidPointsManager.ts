@@ -95,7 +95,7 @@ export class RaidPointsManager {
                 } else {
                     this._totalFreePoints += points;
                     this._totalFreeShares += shares;
-                    Game.publishToChannel("total_rp", { totalPoints: this._totalFreePoints, totalShares: this._totalFreeShares });
+                    Game.publishToChannel("total_rp", { totalFreePoints: this._totalFreePoints, totalFreeShares: this._totalFreeShares });
                 }
 
                 await Game.db.collection(Collections.DivTokenState).updateOne(

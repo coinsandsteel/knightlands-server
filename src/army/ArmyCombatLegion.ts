@@ -53,12 +53,12 @@ export class ArmyCombatLegion {
         const units: ArmyUnit[] = new Array(unitsFound);
         let unitIndex = 0;
         for (let i in unitsDict) {
-            units[unitIndex] = unitsDict[i];
-
-            const unit = units[i];
+            const unit = unitsDict[i];
             if (!unit) {
                 continue;
             }
+
+            units[unitIndex] = unit;
 
             for (let slotId in unit.items) {
                 const itemInSlot = unit.items[slotId];
