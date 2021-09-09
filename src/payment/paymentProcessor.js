@@ -61,8 +61,7 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async getPendingPayments(userId, iaps) {
-        await this._db.collection(Collections.PaymentRequests).aggregate([
-            {
+        await this._db.collection(Collections.PaymentRequests).aggregate([{
                 $match: {
                     userId: userId,
                     claimed: false,
@@ -111,11 +110,13 @@ class PaymentProcessor extends EventEmitter {
 
         const payment = await this._db.collection(Collections.PaymentRequests).findOne({
             $and: [{
-                userId, _id: idObject,
-            },
-            {
-                $or: [{ status: PaymentStatus.Pending }, { status: PaymentStatus.WaitingForTx }]
-            }]
+                    userId,
+                    _id: idObject,
+                },
+                {
+                    $or: [{ status: PaymentStatus.Pending }, { status: PaymentStatus.WaitingForTx }]
+                }
+            ]
         });
 
         if (!payment) {
@@ -132,12 +133,13 @@ class PaymentProcessor extends EventEmitter {
     async fetchPendingPayments(userId, tag, filter = {}) {
         let query = {
             $and: [{ $or: [{ status: PaymentStatus.Pending }, { status: PaymentStatus.WaitingForTx }] }, {
-                userId,
-                tag,
-                claimed: false
-            },
-            { ...filter },
-            { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }]
+                    userId,
+                    tag,
+                    claimed: false
+                },
+                {...filter },
+                { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }
+            ]
         };
         return await this._db.collection(Collections.PaymentRequests).find(query).toArray();
     }
@@ -178,7 +180,7 @@ class PaymentProcessor extends EventEmitter {
         const nonce = Number(await this._blockchain.getBlockchain(chain).getPaymentNonce(address));
 
         // price is in cents
-        let price = Game.currencyConversionService.convertToNative(iapObject.price / 100);
+        let price = Game.currencyConversionService.convertToNative(iapObject.price);
         let timestamp = Game.nowSec;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,
@@ -302,7 +304,7 @@ class PaymentProcessor extends EventEmitter {
 
     async _handleBlockchainPayment(id, paymentRecipe) {
         console.log('handle payment', id, paymentRecipe)
-        // first update status in database
+            // first update status in database
         try {
             let requestNonce = new ObjectId(paymentRecipe.paymentId);
             let request = await this._db.collection(Collections.PaymentRequests).findOne({
