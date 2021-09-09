@@ -75,6 +75,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
         this._socket.on(Operations.FetchRaidPoints, this._gameHandler(this._fetchRaidPoints.bind(this)));
         this._socket.on(Operations.GetPublicRaids, this._gameHandler(this._fetchPublicRaids.bind(this)));
+        this._socket.on(Operations.GetRaidPlayers, this._gameHandler(this._fetchRaidPlayers.bind(this)));
 
         // misc
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
@@ -936,6 +937,10 @@ class PlayerController extends IPaymentListener {
 
     async _fetchPublicRaids(user, data) {
         return this._raidManager.fetchPublicRaids(user.id, user.level, +data.page);
+    }
+
+    async _fetchRaidPlayers(user, data) {
+        return this._raidManager.fetchPlayersFromRaid(data.raid);
     }
 
     // crafting

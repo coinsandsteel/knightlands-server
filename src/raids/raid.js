@@ -66,6 +66,10 @@ class Raid extends EventEmitter {
         return !this._bossUnit.isAlive;
     }
 
+    get isPublic() {
+        return this._data.public;
+    }
+
     get summoner() {
         return this._data.summoner;
     }
@@ -129,6 +133,17 @@ class Raid extends EventEmitter {
 
     async init(data) {
         await this._initFromData(data);
+    }
+
+    async getPlayers() {
+        const playerIds = new Array(this._data.busySlots);
+        let idx = 0;
+        for (const id in this._data.participants) {
+            playerIds[idx] = new ObjectId(id);
+            idx++;
+        }
+
+        return this._db.collection(Collections.Users).find({ _id: { $in: playerIds } }, { projection: { "name": "$character.name.v", "avatar": "$character.avatar", _id: 1 } }).toArray();
     }
 
     getInfo() {

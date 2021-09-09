@@ -32,11 +32,6 @@ class RaidManager {
         this._db = db;
         this._factors = {};
         this._paymentProcessor = paymentProcessor;
-
-        this._paymentProcessor.on(this._paymentProcessor.PaymentFailed, this._handlePaymentFailed.bind(this));
-        this._paymentProcessor.on(this._paymentProcessor.PaymentSent, this._handlePaymentSent.bind(this));
-
-        this.tokenRates = new TokenRateTimeseries(db);
     }
 
     async init() {
@@ -67,23 +62,15 @@ class RaidManager {
         await this._updateWeaknesses(true);
         // await this._restoreDktForAllRaids(true);
         this._scheduleWeaknessUpdate();
-        this._scheduleDktUpdate();
     }
 
-    async _handlePaymentFailed(tag, context) {
-        if (tag == this.JoinPaymentTag) {
-            // payment failed, free slot
-            let raid = this.getRaid(context.raidId);
-            await raid.setReserveSlot(false);
+    async fetchPlayersFromRaid(raidId) {
+        let raid = this.getRaid(raidId);
+        if (!raid || raid.free) {
+            throw Errors.InvalidRaid;
         }
-    }
 
-    async _handlePaymentSent(tag, context) {
-        if (tag == this.JoinPaymentTag) {
-            // payment sent, reserve slot
-            let raid = this.getRaid(context.raidId);
-            await raid.setReserveSlot(true);
-        }
+        return raid.getPlayers();
     }
 
     async joinRaid(userId, raidId) {
@@ -367,6 +354,10 @@ class RaidManager {
 
         await raid.finish(dktFactor);
         this._removeRaid(raid.id);
+
+        if (raid.isPublic) {
+            Game.publishToChannel("public_raids", { full: raid.id });
+        }
     }
 
     _removeRaid(id) {
@@ -418,118 +409,6 @@ class RaidManager {
         }
 
         return raid;
-    }
-
-    _scheduleDktUpdate() {
-        setTimeout(async() => {
-            try {
-                await this._restoreDktForAllRaids();
-            } finally {
-                this._scheduleDktUpdate();
-            }
-        }, DktFactorUpdateInterval - Game.now % DktFactorUpdateInterval);
-    }
-
-    _getDktFactor(step) {
-        step = step || 1;
-        let factorSettings = this._factorSettings[0];
-        const scaledStep = factorSettings.attemptFactor * step;
-        const log = Math.log2(step / factorSettings.baseFactor) / Math.log2(factorSettings.base);
-        return 1 / (scaledStep * log + 1) * factorSettings.multiplier;
-    }
-
-    async _getNextDktFactor(raidTemplateId, peek = false) {
-        let factor = await this._db.collection(Collections.RaidsDktFactors).findOne({
-            raid: raidTemplateId
-        });
-
-        if (!factor) {
-            factor = {
-                step: 0
-            }
-        }
-
-        // TODO settings per difficulty
-        const factorValue = this._getDktFactor(factor.step);
-
-        if (!peek) {
-            factor.step++;
-            // save 
-            await this._db.collection(Collections.RaidsDktFactors).updateOne({
-                raid: raidTemplateId
-            }, { $set: factor }, {
-                upsert: true
-            });
-
-            this.tokenRates.updateRate(raidTemplateId, factorValue);
-        }
-
-        return factorValue;
-    }
-
-    async _restoreDktForAllRaids(onlyMissing = false) {
-        let allRaids = await this._db.collection(Collections.RaidsMeta).find({}).toArray();
-
-        const templates = [];
-        for (const raidTemplate of allRaids) {
-            templates.push(raidTemplate._id);
-        }
-
-        let factors = await this._db.collection(Collections.RaidsDktFactors).find({
-            raid: { $in: templates }
-        }).toArray();
-
-        const factorsLookup = {};
-
-        for (const factor of factors) {
-            factorsLookup[factor.raid] = factor;
-        }
-
-        const queries = [];
-        const rateQueries = [];
-        const now = Game.now;
-        // every 30 minutes restore 5%
-        for (const raidId of templates) {
-            let missing = false;
-            if (!factorsLookup[raidId]) {
-                missing = true;
-                factorsLookup[raidId] = {
-                    step: 1
-                }
-            }
-
-            factorsLookup[raidId].step -= Math.ceil(factorsLookup[raidId].step * DKT_RESTORE_FACTOR);
-
-            if ((onlyMissing && missing) || !onlyMissing) {
-                queries.push({
-                    updateOne: {
-                        filter: {
-                            raid: raidId
-                        },
-                        update: {
-                            $set: factorsLookup[raidId]
-                        },
-                        upsert: true
-                    }
-                });
-
-                rateQueries.push({
-                    insertOne: {
-                        raidTemplateId: raidId,
-                        r: this._getDktFactor(factorsLookup[raidId].step),
-                        t: now
-                    }
-                });
-            }
-        }
-
-        if (rateQueries.length > 0) {
-            await this.tokenRates.insertRates(rateQueries);
-        }
-
-        if (queries.length > 0) {
-            await this._db.collection(Collections.RaidsDktFactors).bulkWrite(queries);
-        }
     }
 
     _scheduleWeaknessUpdate() {
