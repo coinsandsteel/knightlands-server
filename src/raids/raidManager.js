@@ -185,6 +185,7 @@ class RaidManager {
         let matchQuery = {
             $match: {
                 finished: false,
+                isFree: false,
                 public: true,
                 [`participants.${userId}`]: { $exists: false },
                 $and: [
