@@ -52,7 +52,7 @@ export class RaidPointsManager {
     async commitPayoutDay(db) {
         if (this._lastPayout != this.getCurrentPayout()) {
             await db.collection(Collections.RaidPointsPayouts).updateOne(
-                { _id: this.getCurrentPayout() },
+                { _id: this._lastPayout },
                 { $set: { totalPoints: this._totalPoints, totalShares: this._totalShares, totalFreePoints: this._totalFreePoints, totalFreeShares: this._totalFreeShares } },
                 { upsert: true }
             );
