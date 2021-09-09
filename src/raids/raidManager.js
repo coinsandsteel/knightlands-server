@@ -21,7 +21,7 @@ const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.
 const DktFactorUpdateInterval = 1800000; // every 30 minutes
 // const DktFactorUpdateInterval = 10000; // every 10 seconds
 const DKT_RESTORE_FACTOR = 0.05;
-
+const RAIDS_PER_PAGE = 20;
 const FINISHED_RAID_CACHE_TTL = 3600000; // 1 hour
 
 class RaidManager {
@@ -97,10 +97,16 @@ class RaidManager {
         }
 
         const user = await Game.getUserById(userId);
+        const raitTemplate = await this._loadRaidTemplate(raid.templateId);
+
+        if (user.level < raitTemplate.level) {
+            throw Errors.NotEnoughLevel;
+        }
+
         let recipe;
         if (user.isFreeAccount) {
             // use free raid recipe
-            const raitTemplate = await this._loadRaidTemplate(raid.templateId);
+
             recipe = await this._loadSummonRecipe(raitTemplate.soloData.summonRecipe);
         } else {
             recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
@@ -118,13 +124,21 @@ class RaidManager {
 
         await user.dailyQuests.onPaidRaidJoin();
         await raid.join(user.id.toHexString());
+
+        if (raid.isFull) {
+            Game.publishToChannel("public_raids", { full: raid.id });
+        }
     }
 
-    async summonRaid(summoner, raidTemplateId, free) {
+    async summonRaid(summoner, raidTemplateId, free, isPublic, allowFreePlayers) {
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
         if (!raitTemplate) {
             throw Errors.InvalidRaid;
+        }
+
+        if (summoner.level < raitTemplate.level) {
+            throw Errors.NotEnoughLevel;
         }
 
         // check if there is enough crafting materials
@@ -135,10 +149,10 @@ class RaidManager {
             throw Errors.NoRecipeIngridients;
         }
 
-        return this._summonRaid(summoner.address, raidTemplateId, free);
+        return this._summonRaid(summoner.address, raidTemplateId, free, isPublic);
     }
 
-    async _summonRaid(summonerId, raidTemplateId, isFree) {
+    async _summonRaid(summonerId, raidTemplateId, isFree, isPublic) {
         // consume crafting resources
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
         const data = isFree ? raidTemplate.soloData : raidTemplate.data;
@@ -151,16 +165,59 @@ class RaidManager {
         });
 
         const raid = new Raid(this._db);
-        await raid.create(user.id, raidTemplateId, isFree);
+        await raid.create(user.id, raidTemplateId, isFree, isPublic);
         this._addRaid(raid);
 
         if (!isFree) {
             await user.dailyQuests.onPaidRaidJoin();
+
+            if (isPublic) {
+                Game.publishToChannel("public_raids", { raid: raid.getInfo() });
+            }
         }
 
         return {
             raid: raid.id
         };
+    }
+
+    async fetchPublicRaids(userId, userLevel, page) {
+        let matchQuery = {
+            $match: {
+                finished: false,
+                public: true,
+                [`participants.${userId}`]: { $exists: false },
+                $and: [
+                    { $expr: { $lt: ["$busySlots", "$maxSlots"] } },
+                    { $expr: { $lte: ["$level", userLevel] } }
+                ]
+            }
+        };
+        return await this._db.collection(Collections.Raids).aggregate([
+            matchQuery,
+            {
+                "$addFields": {
+                    "id": { "$toString": "$_id" }
+                }
+            },
+            { $sort: { level: -1 } },
+            { $skip: page * RAIDS_PER_PAGE },
+            { $limit: RAIDS_PER_PAGE },
+            {
+                $project: {
+                    raidTemplateId: 1,
+                    timeLeft: 1,
+                    busySlots: 1,
+                    bossState: 1,
+                    finished: 1,
+                    id: 1,
+                    isFree: 1,
+                    _id: 0,
+                    participants: 1,
+                    weakness: 1
+                }
+            }
+        ]).toArray();
     }
 
     async fetchRaidCurrentMeta(userId, raidTemplateId, isFree) {

@@ -70,10 +70,18 @@ class Raid extends EventEmitter {
         return this._data.summoner;
     }
 
-    async create(summonerId, raidTemplateId, isFree) {
+    async create(summonerId, raidTemplateId, isFree, isPublic) {
         raidTemplateId *= 1;
+        let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
+        if (!raidTemplate) {
+            throw Errors.IncorrectArguments;
+        }
+
+        let raidData = isFree ? raidTemplate.soloData : raidTemplate.data;
 
         let raidEntry = {
+            maxSlots: raidData.maxSlots,
+            level: raidTemplate.level,
             summoner: summonerId,
             raidTemplateId,
             participants: {
@@ -85,11 +93,9 @@ class Raid extends EventEmitter {
                 [summonerId]: false
             },
             damageLog: [],
-            isFree
+            isFree,
+            public: isPublic
         };
-
-        let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
-        let raidData = isFree ? raidTemplate.soloData : raidTemplate.data;
 
         raidEntry.creationTime = Game.nowSec;
         raidEntry.duration = raidData.duration;

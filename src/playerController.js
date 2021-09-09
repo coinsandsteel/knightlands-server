@@ -74,6 +74,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ClaimRaidLoot, this._gameHandler(this._claimLootRaid.bind(this)));
         this._socket.on(Operations.FetchRaidRewards, this._gameHandler(this._fetchRaidRewards.bind(this)));
         this._socket.on(Operations.FetchRaidPoints, this._gameHandler(this._fetchRaidPoints.bind(this)));
+        this._socket.on(Operations.GetPublicRaids, this._gameHandler(this._fetchPublicRaids.bind(this)));
 
         // misc
         this._socket.on(Operations.ChangeClass, this._gameHandler(this._changeClass.bind(this)));
@@ -887,7 +888,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonRaid(user, data) {
-        return this._raidManager.summonRaid(user, +data.raid, data.free);
+        return this._raidManager.summonRaid(user, +data.raid, data.free, data.options.public);
     }
 
     async _joinRaid(user, data) {
@@ -931,6 +932,10 @@ class PlayerController extends IPaymentListener {
         // await Game.tokenAmounts.insertTokens(rewards.dkt);
 
         return rewards;
+    }
+
+    async _fetchPublicRaids(user, data) {
+        return this._raidManager.fetchPublicRaids(user.id, user.level, +data.page);
     }
 
     // crafting
