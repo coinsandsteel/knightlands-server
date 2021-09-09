@@ -143,7 +143,16 @@ class Raid extends EventEmitter {
             idx++;
         }
 
-        return this._db.collection(Collections.Users).find({ _id: { $in: playerIds } }, { projection: { "name": "$character.name.v", "avatar": "$character.avatar", _id: 1 } }).toArray();
+        return this._db.collection(Collections.Users).find({
+            _id: { $in: playerIds }
+        }, {
+            projection: {
+                level: "$character.level",
+                name: "$character.name.v",
+                avatar: "$character.avatar",
+                _id: 1
+            }
+        }).toArray();
     }
 
     getInfo() {
