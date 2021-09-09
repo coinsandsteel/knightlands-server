@@ -100,7 +100,8 @@ class RaidManager {
         let recipe;
         if (user.isFreeAccount) {
             // use free raid recipe
-            recipe = await this._loadRaidTemplate(raid.templateId);
+            const raitTemplate = await this._loadRaidTemplate(raid.templateId);
+            recipe = await this._loadSummonRecipe(raitTemplate.soloData.summonRecipe);
         } else {
             recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
         }
