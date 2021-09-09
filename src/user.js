@@ -1761,9 +1761,9 @@ class User {
 
     applyBonusRefills(tower, armourTrial, weaponTrial, accTrial) {
         this.freeTowerAttempts += tower;
-        this._trials.addAttempts(TrialType.Armour, armourTrial, true);
-        this._trials.addAttempts(TrialType.Weapon, weaponTrial, true);
-        this._trials.addAttempts(TrialType.Accessory, accTrial, true);
+        this._trials.addAttempts(TrialType.Armour, armourTrial, true, true);
+        this._trials.addAttempts(TrialType.Weapon, weaponTrial, true, true);
+        this._trials.addAttempts(TrialType.Accessory, accTrial, true, true);
     }
 
     async getCardBonuses() {
