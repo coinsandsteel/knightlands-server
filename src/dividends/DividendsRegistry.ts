@@ -11,6 +11,27 @@ import events from "../knightlands-shared/events";
 
 const PAYOUT_PERIOD = 86400;
 const PAYOUT_LAG = 5;
+const WITHDRAWAL_TIMEOUT = 600; // 10 minutes
+const WITHDRAWAL_CANCEL_JITTER = 250;
+export const TOKEN_WITHDRAWAL = "token-w";
+export const DIVS_WITHDRAWAL = "divs-w";
+
+function toDecimal(num, decimals) {
+    let str = num.toString();
+    let decimal = "";
+    if (str != "0") {
+        if (str.length < decimals) {
+            str = str.padStart(decimals, "0");
+            decimal = "0." + str.slice(0, str.length);
+        } else {
+            decimal =
+                str.slice(0, str.length - decimals) +
+                "." +
+                str.slice(str.length - decimals);
+        }
+    }
+    return decimal.replace(/(\.[0-9]*[1-9])0+$|\.0*$/, "$1") || "0";
+}
 
 export class DividendsRegistry {
     private _supply: number;
@@ -86,7 +107,7 @@ export class DividendsRegistry {
                 .update(Game.db, {
                     _id: new ObjectId(data.withdrawalId)
                 }, { pending: false, transactionHash: data.transactionHash, to: data.to });
-
+            console.log(record)
             Game.emitPlayerEvent(record.user, events.DivTokenWithdrawal, { id: data.withdrawalId })
         } finally {
             await this._lock.release("withdrawal");
@@ -198,6 +219,10 @@ export class DividendsRegistry {
         return PAYOUT_PERIOD;
     }
 
+    getWithdrawalTimeout() {
+        return Game.nowSec + WITHDRAWAL_TIMEOUT;
+    }
+
     getCurrentPayout() {
         return Math.floor(Game.nowSec / PAYOUT_PERIOD) * PAYOUT_PERIOD;
     }
@@ -227,8 +252,9 @@ export class DividendsRegistry {
                 const chain = this._blockchain.getBlockchain(blockchainId);
                 const bigAmount = chain.getBigIntDivTokenAmount(amount);
                 const nonce = Number(await chain.getTokenNonce(to, type));
+                const deadline = this.getWithdrawalTimeout();
 
-                let withdrawalId = await this._createWithdrawal(db, userId, "token-w", blockchainId, {
+                let withdrawalId = await this._createWithdrawal(db, userId, TOKEN_WITHDRAWAL, blockchainId, {
                     user: userId,
                     chain: blockchainId,
                     currency: type,
@@ -237,10 +263,11 @@ export class DividendsRegistry {
                     amount: bigAmount.toString(),
                     nonce,
                     to,
-                    token: chain.getTokenAddress(type)
+                    token: chain.getTokenAddress(type),
+                    deadline
                 });
 
-                let signature = await chain.sign(chain.getTokenAddress(type), to, withdrawalId, bigAmount, nonce);
+                let signature = await chain.sign(chain.getTokenAddress(type), to, withdrawalId, bigAmount, nonce, deadline);
 
                 await Game.activityHistory.update(db, { _id: new ObjectId(withdrawalId) }, { signature });
 
@@ -250,16 +277,13 @@ export class DividendsRegistry {
                     _id: withdrawalId,
                     signature,
                     nonce,
+                    deadline,
                     amount: bigAmount.toString()
                 };
             })
         } finally {
             await this._lock.release("withdrawal");
         }
-    }
-
-    async getPendingDivsWithdrawals(userId: string) {
-        return Game.db.collection(Collections.WithdrawalRequests).find({ userId, pending: true }).toArray();
     }
 
     async claimDividends(userId: string, blockchainId: string, amount: string) {
@@ -294,10 +318,12 @@ export class DividendsRegistry {
 
             const nonce = Number(await this._blockchain.getBlockchain(blockchainId).getPaymentNonce(to));
             return await Game.dbClient.withTransaction(async db => {
-                let withdrawalId = await this._createWithdrawal(db, userId, "divs-w", blockchainId, {
+                const deadline = this.getWithdrawalTimeout();
+                let withdrawalId = await this._createWithdrawal(db, userId, DIVS_WITHDRAWAL, blockchainId, {
                     user: userId,
                     chain: blockchainId,
                     date: Game.now,
+                    deadline,
                     pending: true,
                     amount,
                     nonce,
@@ -305,7 +331,7 @@ export class DividendsRegistry {
                     to,
                     currency: 'native'
                 });
-                let signature = await this._blockchain.getBlockchain(blockchainId).sign(to, withdrawalId, BigInt(amount), nonce);
+                let signature = await this._blockchain.getBlockchain(blockchainId).sign(to, withdrawalId, BigInt(amount), nonce, deadline);
 
                 await Game.activityHistory.update(db, { _id: new ObjectId(withdrawalId) }, { signature });
 
@@ -320,6 +346,7 @@ export class DividendsRegistry {
                     _id: withdrawalId,
                     signature,
                     nonce,
+                    deadline,
                     amount
                 };
             })
@@ -328,6 +355,67 @@ export class DividendsRegistry {
         } finally {
             await this._lock.release("divs");
         }
+    }
+
+    async getPendingTransactions(userId: string, chain: string, tokens: boolean) {
+        return Game.activityHistory.getRecords(
+            userId,
+            {
+                chain,
+                "data.pending": true,
+                type: tokens ? TOKEN_WITHDRAWAL : DIVS_WITHDRAWAL,
+                "data.deadline": { $gte: Game.nowSec + WITHDRAWAL_CANCEL_JITTER }
+            }
+        )
+    }
+
+    async _getCancellableTxs(userId: string, type: string, id: string) {
+        const records = await Game.activityHistory.getRecords(
+            userId,
+            {
+                type, _id: new ObjectId(id),
+                "data.pending": true,
+                cancelled: false,
+                "data.deadline": { $lt: Game.nowSec + WITHDRAWAL_CANCEL_JITTER }
+            }
+        );
+        if (!records || records.length != 1) {
+            throw Errors.NoDividendsWithdrawal;
+        }
+
+        return records[0];
+    }
+
+    async cancelTokenWithdrawal(userId: string, id: string) {
+        const record = await this._getCancellableTxs(userId, TOKEN_WITHDRAWAL, id);
+        if (record.cancelled) {
+            throw Errors.IncorrectArguments;
+        }
+        const user = await Game.getUser(userId);
+
+        return Game.dbClient.withTransaction(async db => {
+            if (record.type == TOKEN_WITHDRAWAL) {
+                await user.inventory.modifyCurrency(record.data.currency, toDecimal(record.data.amount, 6), true);
+            }
+
+            await Game.activityHistory.delete(db, new ObjectId(id));
+
+            Game.emitPlayerEvent(record.user, events.TokenWithdrawal, { cancelled: id });
+        });
+    }
+
+    async cancelDividendsWithdrawal(userId: string, id: string) {
+        const record = await this._getCancellableTxs(userId, DIVS_WITHDRAWAL, id);
+        if (record.cancelled) {
+            throw Errors.IncorrectArguments;
+        }
+
+        await Game.activityHistory.delete(Game.db, new ObjectId(id));
+        Game.emitPlayerEvent(record.user, events.DivTokenWithdrawal, { cancelled: id });
+        return {
+            amount: record.data.amount,
+            chain: record.chain
+        };
     }
 
     getSupply() {

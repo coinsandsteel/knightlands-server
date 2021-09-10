@@ -14,4 +14,5 @@ export interface IBlockchain extends EventEmitter {
     getTokenNonce(wallet: string, type: string): Promise<number>;
     getTokenAddress(currency): string;
     convertTokenAmount(amount: string): number;
+    getTime(): number;
 }

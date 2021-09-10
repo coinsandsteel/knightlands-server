@@ -59,6 +59,11 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return Flesh.address;
     }
 
+    async getTime() {
+        const block = await this._provider.getBlock()
+        return block.timestamp;
+    }
+
     getTokenAddress(currency) {
         if (currency == CurrencyType.Dkt) {
             return Flesh.address;
@@ -93,7 +98,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         const str = bigInt.toString();
         let decimal = "0";
         if (str != "0") {
-            decimal = str.slice(0, str.length-6) + "." + str.slice(str.length-6);
+            decimal = str.slice(0, str.length - 6) + "." + str.slice(str.length - 6);
         }
         return Number(decimal);
     }
@@ -109,8 +114,8 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return ethers.utils.isAddress(addr)
     }
 
-    _watchEvent(eventName, eventFilter, contract , handler) {
-        this._eventWatchers = setTimeout(this._scanEventsFor.bind(this, eventName, eventFilter, contract , handler), 3000);
+    _watchEvent(eventName, eventFilter, contract, handler) {
+        this._eventWatchers = setTimeout(this._scanEventsFor.bind(this, eventName, eventFilter, contract, handler), 3000);
     }
 
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
@@ -128,7 +133,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             if (endBlock > lastBlock) {
                 endBlock = lastBlock;
             }
-    
+
             // get block 1 by 1 and search for events
             while (endBlock >= startBlock) {
                 let events = await contract.queryFilter(eventFilter, startBlock, endBlock)
@@ -136,7 +141,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                 if (length == 0) {
                     break;
                 }
-    
+
                 let i = 0;
                 for (; i < length; i++) {
                     handler.call(this, events[i]);
@@ -149,7 +154,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                     endBlock = lastBlock;
                 }
             }
-    
+
             await this._updateLastEventReceived(endBlock, eventName);
         } finally {
             this._watchEvent(eventName, eventFilter, contract, handler);
@@ -157,7 +162,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async _scanEvents() {
-        console.log("Scanning missed events..."); 
+        console.log("Scanning missed events...");
 
         this._watchEvent("Purchase", this._paymentContract.filters.Purchase(), this._paymentContract, this._emitPayment);
         this._watchEvent("Withdrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
@@ -267,9 +272,9 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     _isHex(string) {
-        return (typeof string === 'string'
-            && !isNaN(parseInt(string, 16))
-            && /^(0x|)[a-fA-F0-9]+$/.test(string));
+        return (typeof string === 'string' &&
+            !isNaN(parseInt(string, 16)) &&
+            /^(0x|)[a-fA-F0-9]+$/.test(string));
     }
 
     async sign(...args) {
@@ -280,13 +285,11 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                 // assume that hex is address until other hex values will be used
                 arg = ethers.utils.getAddress(arg);
                 types.push("address");
-            } 
-            else if (typeof arg == 'bigint') {
+            } else if (typeof arg == 'bigint') {
                 values.push(ethers.BigNumber.from(arg.toString()));
                 types.push('uint256');
                 return;
-            }
-            else if (typeof arg === "string") {
+            } else if (typeof arg === "string") {
                 if (arg.substr(0, 2) == "0x") {
                     types.push("bytes");
                 } else {
@@ -352,7 +355,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async getPaymentNonce(walletAddress) {
-        const result =  await this._paymentContract.nonces(walletAddress);
+        const result = await this._paymentContract.nonces(walletAddress);
         return result.valueOf();
     }
 
@@ -360,16 +363,16 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         let result;
 
         if (type == currency_type.Dkt) {
-            result =  await this._stakingToken.nonces(walletAddress);
+            result = await this._stakingToken.nonces(walletAddress);
         } else {
-            result =  await this._burntToken.nonces(walletAddress);
+            result = await this._burntToken.nonces(walletAddress);
         }
-        
+
         return result.valueOf();
     }
 
     async getDividendTokenNonce(walletAddress) {
-        const result =  await this._stakingToken.nonces(walletAddress);
+        const result = await this._stakingToken.nonces(walletAddress);
         return result.valueOf();
     }
 }

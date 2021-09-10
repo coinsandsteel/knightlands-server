@@ -1,4 +1,5 @@
 import { ReturnDocument } from "mongodb";
+import { ObjectId } from "mongodb";
 import { Db } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
@@ -27,7 +28,11 @@ export class ActivityHistory {
     }
 
     async save(db: Db, user: string, type: string, chain: string, data: any) {
-        return db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain });
+        return db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain, cancelled: false });
+    }
+
+    async delete(db: Db, id: ObjectId) {
+        return db.collection(Collections.ActivityHistory).updateOne({ _id: id }, { $set: { cancelled: true } });
     }
 
     async update(db: Db, filter: any, data: any) {

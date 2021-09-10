@@ -59,11 +59,15 @@ class Inventory {
         return this._currencies[currency] || 0;
     }
 
-    async modifyCurrency(currency, value) {
+    async modifyCurrency(currency, value, forced = false) {
         if (!this._currencies[currency]) {
             this._currencies[currency] = value * 1;
         } else {
             this._currencies[currency] += value * 1;
+        }
+
+        if (forced) {
+            return;
         }
 
         if (currency == CurrencyType.Soft) {

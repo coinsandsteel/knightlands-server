@@ -1,7 +1,7 @@
 import Game from "../game";
 import CurrencyType from "../knightlands-shared/currency_type";
 import { DividendsData, DividendsMeta, PayoutsPerShare } from "./types";
-import { DividendsRegistry } from "./DividendsRegistry"
+import { DividendsRegistry, TOKEN_WITHDRAWAL, DIVS_WITHDRAWAL } from "./DividendsRegistry"
 import { Collections } from "../database/database";
 import errors from "../knightlands-shared/errors";
 import { isNumber } from "../validation";
@@ -130,7 +130,17 @@ export class Dividends {
     }
 
     async getPendingWithdrawal(chain: string, tokens: boolean) {
-        return Game.activityHistory.getRecords(this._user.address, { chain, "data.pending": true, type: tokens ? "token-w" : "divs-w" })
+        return Game.dividends.getPendingTransactions(this._user.address, chain, tokens);
+    }
+
+    async cancelAction({ type, id }) {
+        if (type == TOKEN_WITHDRAWAL) {
+            await Game.dividends.cancelTokenWithdrawal(this._user.address, id);
+        } else if (type == DIVS_WITHDRAWAL) {
+            const result = await Game.dividends.cancelDividendsWithdrawal(this._user.address, id);
+            const claimedAmount = this._data.claimed[result.chain] ? BigInt(this._data.claimed[result.chain]) : BigInt(0)
+            this._data.claimed[result.chain] = (claimedAmount + BigInt(result.amount)).toString()
+        }
     }
 
     async withdrawTokens(to: string, currencyType: string, blockchainId: string, amount: number) {

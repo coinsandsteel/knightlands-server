@@ -181,7 +181,7 @@ class PaymentProcessor extends EventEmitter {
 
         // price is in cents
         let price = Game.currencyConversionService.convertToNative(iapObject.price);
-        let timestamp = Game.nowSec;
+        let timestamp = Game.nowSec + 600;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,
             iap,

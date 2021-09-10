@@ -34,6 +34,7 @@ export interface Withdrawal {
     nonce: number;
     pending: boolean;
     currency: string;
+    deadline: number;
 }
 
 export interface TokenDepositData {
