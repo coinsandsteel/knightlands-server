@@ -1944,6 +1944,9 @@ class User {
     }
 
     async evolveBeast(beastMeta) {
+        if (!beastMeta) {
+            beastMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "beasts" });
+        }
         const currentBeast = beastMeta.levels[this._data.beast.index];
 
         // not enough level to evolve, should be last
