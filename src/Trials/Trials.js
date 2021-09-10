@@ -1,4 +1,3 @@
-
 import TrialCards from "./TrialCards";
 import TrialType from "../knightlands-shared/trial_type";
 import Game from "../game";
@@ -131,7 +130,7 @@ class Trials {
         }
 
         const iapMeta = meta.iaps[iapIndex];
-        
+
         if (this._user.hardCurrency < iapMeta.price) {
             throw Errors.NotEnoughCurrency;
         }
@@ -170,6 +169,11 @@ class Trials {
         if (!currentFight) {
             throw Errors.TrialFightFinished;
         }
+
+        if (currentFight.cards) {
+            return currentFight.cards;
+        }
+
         // trigger cards of hate (based on chance and hits)
         const cards = this._cards.rollCards(trialType, currentFight.hits);
         if (cards) {
@@ -239,10 +243,10 @@ class Trials {
             await this._user.dailyQuests.onArmourTrialsEngaged(1);
         } else if (trialType == TrialType.Weapon) {
             await this._user.dailyQuests.onWeaponTrialsEngaged(1);
-        }  else if (trialType == TrialType.Accessory) {
+        } else if (trialType == TrialType.Accessory) {
             await this._user.dailyQuests.onAccessoryTrialsEngaged(1);
         }
-        
+
 
         return response;
     }
@@ -477,8 +481,7 @@ class Trials {
         // find last trial id cleared
         const unlockOrder = this._trialsMeta[trialType].trialUnlockOrder;
         let trialId = -1;
-        let nextTrialId = -1;
-        {
+        let nextTrialId = -1; {
             let i = 0;
             for (; i < unlockOrder.length; ++i) {
                 const trialOrderId = unlockOrder[i];
@@ -503,7 +506,7 @@ class Trials {
         let stagesCompleted = true;
         for (const stageId in trialMeta.stages) {
             const stageState = trialState.stages[stageId];
-            
+
             if (!stageState || (!stageState.firstTimeCleared && !stageState.cleared)) {
                 stagesCompleted = false;
                 break;
@@ -533,7 +536,7 @@ class Trials {
         const trialState = this._getTrialTypeState(trialType);
         // consume free attemp first
         if (trialState.freeAttempts > 0) {
-            trialState.freeAttempts--; 
+            trialState.freeAttempts--;
         } else if (trialState.attempts > 0) {
             trialState.attempts--;
         } else {
