@@ -464,6 +464,12 @@ class PlayerController extends IPaymentListener {
             exp: 0
         };
 
+        // calculate hits
+        let hits = 1;
+        if (await user.hasFastCombat()) {
+            hits = 3;
+        }
+
         if (isBoss) {
             let allQuestsFinished = true;
             for (let index = 0; index < zone.quests.length; index++) {
@@ -503,7 +509,9 @@ class PlayerController extends IPaymentListener {
 
             let playerUnit = user.getCombatUnit();
 
-            while (user.enoughHp && bossUnit.isAlive) {
+
+
+            while (user.enoughHp && bossUnit.isAlive && hits > 0) {
                 // exp and gold are calculated based on damage inflicted
                 let attackResult = playerUnit.attack(bossUnit);
                 damages.push(attackResult);
@@ -520,10 +528,7 @@ class PlayerController extends IPaymentListener {
                 bossProgress.gold -= softCurrencyGained;
                 resourcesGained.soft += softCurrencyGained;
 
-                // if just 1 hit 
-                if (data.max !== true) {
-                    break;
-                }
+                hits--;
             }
 
             // override to save in database
@@ -548,11 +553,7 @@ class PlayerController extends IPaymentListener {
                 throw "quest is finished";
             }
 
-            // calculate hits
-            let hits = 1;
-            if (data.max) {
-                hits = quest.hits - questProgress.hits;
-            }
+            hits = Math.min(quest.hits - questProgress.hits, hits);
 
             let energyLeft = user.getTimerValue(CharacterStats.Energy);
             // make sure user has enough energy

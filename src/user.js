@@ -1787,6 +1787,23 @@ class User {
         return bonuses;
     }
 
+    async hasFastCombat() {
+        for (const id in this.cards) {
+            const card = this.cards[id];
+            if (card.end < Game.nowSec) {
+                continue;
+            }
+
+            const meta = await Game.shop.getCardMeta(+id);
+
+            if (meta.fastQuests) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     getDailyRewardCycle() {
         return Math.floor(Game.now / Config.game.dailyRewardCycle);
     }
