@@ -94,7 +94,7 @@ class PaymentProcessor extends EventEmitter {
                 "paymentId": payment._id.toHexString(),
                 "price": payment.price,
                 "nonce": payment.nonce,
-                "timestamp": payment.timestamp,
+                "deadline": payment.deadline,
                 "context": payment.context,
                 "signature": payment.signature,
                 "id": payment._id,
@@ -138,7 +138,7 @@ class PaymentProcessor extends EventEmitter {
                     claimed: false
                 },
                 {...filter },
-                { timestamp: { $gt: Game.nowSec - Config.paymentTimeout } }
+                { deadline: { $gte: Game.nowSec } }
             ]
         };
         return await this._db.collection(Collections.PaymentRequests).find(query).toArray();
@@ -181,7 +181,7 @@ class PaymentProcessor extends EventEmitter {
 
         // price is in cents
         let price = Game.currencyConversionService.convertToNative(iapObject.price);
-        let timestamp = Game.nowSec + 600;
+        let deadline = Game.nowSec + 600;
         let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
             userId,
             iap,
@@ -192,14 +192,15 @@ class PaymentProcessor extends EventEmitter {
             context,
             price,
             nonce,
-            timestamp,
+            deadline,
             chain
         });
 
         let paymentId = inserted.insertedId.toHexString();
 
+        const gateway = this._blockchain.getBlockchain(chain).PaymentGatewayAddress;
         // create signature for the smart contract and return it
-        let signature = await this._blockchain.getBlockchain(chain).sign(iap, paymentId, price, nonce, timestamp);
+        let signature = await this._blockchain.getBlockchain(chain).sign(gateway, iap, paymentId, price, nonce, deadline);
 
         await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
             $set: {
@@ -212,7 +213,7 @@ class PaymentProcessor extends EventEmitter {
             iap,
             price,
             nonce,
-            timestamp,
+            deadline,
             paymentId
         };
     }
