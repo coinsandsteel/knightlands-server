@@ -341,7 +341,7 @@ class User {
         const maxLevels = this._expTable.length;
         const character = this._data.character;
 
-        if (character.level == maxLevels) {
+        if (character.level >= maxLevels) {
             return exp;
         }
 
@@ -360,7 +360,7 @@ class User {
 
         const previousLevel = character.level;
         while (character.level < maxLevels) {
-            let toNextLevel = this._expTable[character.level - 1];
+            let toNextLevel = this._expTable[character.level];
             if (toNextLevel <= character.exp) {
                 character.level++;
                 character.exp -= toNextLevel;
