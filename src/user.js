@@ -1035,10 +1035,6 @@ class User {
 
         let itemsRequired = count;
 
-        if (count > 10) {
-            throw Errors.IncorrectArguments;
-        }
-
         if (actionData.required > 0) {
             itemsRequired *= actionData.required;
         }
@@ -1066,6 +1062,10 @@ class User {
                 break;
 
             case ItemActions.OpenBox:
+                if (count > 10) {
+                    throw Errors.IncorrectArguments;
+                }
+
                 let items = await Game.lootGenerator.getLootFromTable(actionData.lootTable, null, count);
                 await this.addLoot(items);
                 actionResult = items;
@@ -1077,6 +1077,9 @@ class User {
                 break;
 
             case ItemActions.SummonUnit:
+                if (count > 10) {
+                    throw Errors.IncorrectArguments;
+                }
                 actionResult = await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
                 break;
         }
@@ -1916,12 +1919,11 @@ class User {
 
             if (!regular && Random.range(1, 100, true) <= beastMeta.critBoostChance) {
                 boostCritCount++;
-                totalGained += expGained * 10;
-                this._data.beast.exp += expGained * 10;
-            } else {
-                totalGained += expGained;
-                this._data.beast.exp += expGained;
+                expGained *= 10;
             }
+
+            totalGained += expGained;
+            this._data.beast.exp += expGained;
 
             if (this._data.beast.exp >= expRequired) {
                 this._data.beast.exp -= expRequired;
