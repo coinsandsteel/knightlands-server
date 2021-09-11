@@ -3,16 +3,19 @@ import { IRankingTypeHandler } from "../IRankingTypeHandler";
 import { RankingOptions } from "../Ranking";
 import { Collections } from "../../database/database";
 import RankingType from "../../knightlands-shared/ranking_type";
+import { Long } from "mongodb";
 
 export class Leaderboard implements IRankingTypeHandler {
     private _collection: Collection;
     private _typeOptions: RankingOptions;
     private _pageSize: number;
+    private _isDecimal: boolean;
 
     type: number;
 
-    constructor(pageSize: number) {
+    constructor(pageSize: number, isDecimal: boolean) {
         this._pageSize = pageSize;
+        this._isDecimal = isDecimal;
     }
 
     async init(db: Db, options: RankingOptions) {
@@ -38,10 +41,16 @@ export class Leaderboard implements IRankingTypeHandler {
             return;
         }
 
+        let finalValue: number | Long = value;
+
+        if (!this._isDecimal) {
+            finalValue = new Long(value.toString(), true);
+        }
+
         await this._collection.updateOne(
             { _id: userId },
             {
-                $inc: { score: value },
+                $inc: { score: finalValue },
                 $setOnInsert: { id: userId }
             },
             { upsert: true }
@@ -58,14 +67,14 @@ export class Leaderboard implements IRankingTypeHandler {
             { $lookup: { from: "users", localField: "id", foreignField: "_id", as: "user" } },
             {
                 $project: {
-                    score: 1,
                     id: 1,
                     name: {
                         $ifNull: [{ $arrayElemAt: ["$user.character.name.v", 0] }, ""]
                     },
                     avatar: {
                         $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1]
-                    }
+                    },
+                    score: { $convert: { input: "$score", to: "string" } }
                 }
             },
             {
@@ -81,10 +90,12 @@ export class Leaderboard implements IRankingTypeHandler {
 
     async getUserRank(userId: string) {
         let userRecord = await this._collection.findOne({ _id: userId });
-        let score = userRecord ? userRecord.score : 0;
-        if (score == 0) {
+        let score = userRecord ? userRecord.score : null;
+        if (!score) {
             return null;
         }
+
+        score = score.toUnsigned();
 
         let rank = await this._collection.find({ score: { $gt: score } }).count() + 1;
         return {
@@ -92,7 +103,7 @@ export class Leaderboard implements IRankingTypeHandler {
             rank: {
                 rank,
                 id: userId,
-                score
+                score: score.toString()
             }
         };
     }
