@@ -413,8 +413,8 @@ class Trials {
         const items = await Game.lootGenerator.getLootFromTable(rewardPreset.loot);
         await this._user.inventory.addItemTemplates(items);
 
-        const softCollected = await this._user.addSoftCurrency(rewardPreset.soft);
-        const expCollected = await this._user.addExperience(rewardPreset.exp);
+        const softCollected = await this._user.addSoftCurrency(rewardPreset.soft, true);
+        const expCollected = await this._user.addExperience(rewardPreset.exp, true);
 
         stageState.collected = true;
 

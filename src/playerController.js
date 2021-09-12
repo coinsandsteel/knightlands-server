@@ -1271,8 +1271,8 @@ class PlayerController extends IPaymentListener {
 
         const items = await Game.lootGenerator.getLootFromTable(loot);
 
-        await this._user.addSoftCurrency(floorMeta.softCurrency);
-        await this._user.addExperience(floorMeta.exp);
+        await this._user.addSoftCurrency(floorMeta.softCurrency, true);
+        await this._user.addExperience(floorMeta.exp, true);
         await this._user.inventory.addItemTemplates(items);
         await this._user.dailyQuests.onTowerComplete(1);
 
