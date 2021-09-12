@@ -95,7 +95,10 @@ export class Leaderboard implements IRankingTypeHandler {
             return null;
         }
 
-        score = score.toUnsigned();
+        if (this._isDecimal && score.toUnsigned) {
+            score = score.toUnsigned();
+        }
+
 
         let rank = await this._collection.find({ score: { $gt: score } }).count() + 1;
         return {
