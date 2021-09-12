@@ -269,8 +269,8 @@ class Trials {
             const stageMeta = this._getStageMeta(trialsMeta, currentFight.trialId, currentFight.stageId);
             // reward soft and exp
             const fightMeta = this._getFightMeta(stageMeta, currentFight.index);
-            await this._user.addSoftCurrency(fightMeta.soft);
-            await this._user.addExperience(fightMeta.exp);
+            await this._user.addSoftCurrency(fightMeta.soft, true);
+            await this._user.addExperience(fightMeta.exp, true);
 
             this._cards.mana += this._generalTrialsMeta.manaPerFight;
 
