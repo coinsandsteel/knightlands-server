@@ -315,7 +315,7 @@ class PlayerController extends IPaymentListener {
                 this._socket.emit(Events.InventoryUpdate, args);
 
                 const user = await this.getUser();
-                await user.onInventoryChanged();
+                await user.onInventoryChanged(args);
                 break;
 
             default:

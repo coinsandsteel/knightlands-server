@@ -201,7 +201,6 @@ class DailyQuests {
 
             // complete task
             this._data.completedTasks[taskType] = true;
-            this._data.taskProgress[DailyQuestType.DailyAllTasks] = (this._data.taskProgress[DailyQuestType.DailyAllTasks] || 0) + 1;
 
             if (countTowardsAll) {
                 this._countTowardsAllTasks();
@@ -210,6 +209,14 @@ class DailyQuests {
                     type: taskType
                 });
             }
+        }
+
+        // corner case, raid is emitting event, which breaks await chain
+        switch (taskType) {
+            case DailyQuestType.DailyFreeRaid:
+            case DailyQuestType.DailyPaidRaid:
+                await this._user.autoCommitChanges();
+                break;
         }
     }
 }

@@ -355,7 +355,7 @@ class User {
 
             totalExp = Math.floor(totalExp);
         }
-
+        console.log('totalExp', totalExp)
         character.exp += totalExp;
 
         const previousLevel = character.level;
@@ -784,8 +784,11 @@ class User {
         this._recalculateStats = true;
     }
 
-    async onInventoryChanged() {
-        await this._calculateFinalStats(true);
+    async onInventoryChanged({ changes }) {
+        // if any item was removed or added, do not trigger on currencies balances
+        if (Object.keys(changes).length != 0) {
+            await this._calculateFinalStats(true);
+        }
     }
 
     async _calculateFinalStats(force = false) {
@@ -1210,7 +1213,12 @@ class User {
     }
 
     async autoCommitChanges(changeCallback, filterResponse) {
-        let response = await changeCallback(this);
+        let response;
+
+        if (changeCallback) {
+            response = await changeCallback(this);
+        }
+
         await this.commitChanges();
 
         return response;
