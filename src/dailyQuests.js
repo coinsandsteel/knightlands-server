@@ -174,10 +174,10 @@ class DailyQuests {
         return tasksMeta;
     }
 
-    _countTowardsAllTasks() {
-        this._advanceTask(DailyQuestType.DailyAllTasks, 1, false);
-        this._advanceTask(DailyQuestType.DailyAllTasks2, 1, false);
-        this._advanceTask(DailyQuestType.DailyAllTasks3, 1, false);
+    async _countTowardsAllTasks() {
+        await this._advanceTask(DailyQuestType.DailyAllTasks, 1, false);
+        await this._advanceTask(DailyQuestType.DailyAllTasks2, 1, false);
+        await this._advanceTask(DailyQuestType.DailyAllTasks3, 1, false);
     }
 
     async _advanceTask(taskType, count, countTowardsAll = true) {
@@ -203,7 +203,7 @@ class DailyQuests {
             this._data.completedTasks[taskType] = true;
 
             if (countTowardsAll) {
-                this._countTowardsAllTasks();
+                await this._countTowardsAllTasks();
 
                 Game.emitPlayerEvent(this._user.address, Events.DailyTaskComplete, {
                     type: taskType
