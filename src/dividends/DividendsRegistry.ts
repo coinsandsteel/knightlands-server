@@ -232,7 +232,7 @@ export class DividendsRegistry {
     }
 
     async onSeasonFinished() {
-        await this._commitTotalStake(0);
+        // await this._commitTotalStake(0);
     }
 
     async initiateTokenWithdrawal(userId: string, to: string, type: string, blockchainId: string, amount: number) {

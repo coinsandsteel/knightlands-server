@@ -156,15 +156,15 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.ClaimDailyTasksRewards, this._gameHandler(this._claimDailyTasksRewards.bind(this)));
 
         // Dividends
-        this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
+        // this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
         this._socket.on(Operations.GetDivsStatus, this._gameHandler(this._getDividendsStatus.bind(this)));
-        this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
-        this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
+        // this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
+        // this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
         this._socket.on(Operations.DivsMineUpgrade, this._gameHandler(this._upgradeDktMine.bind(this)));
         this._socket.on(Operations.DivsDropUpgrade, this._gameHandler(this._upgradeDktDropRate.bind(this)));
         this._socket.on(Operations.WithdrawTokens, this._gameHandler(this._withdrawTokens.bind(this)));
         this._socket.on(Operations.GetWithdrawTokensStatus, this._gameHandler(this._getWithdrawTokensStatus.bind(this)));
-        this._socket.on(Operations.StakeDivs, this._gameHandler(this._stakeDivs.bind(this)));
+        // this._socket.on(Operations.StakeDivs, this._gameHandler(this._stakeDivs.bind(this)));
         this._socket.on(Operations.PendingDivs, this._gameHandler(this._getPendingDivs.bind(this)));
         this._socket.on(Operations.CancelAsset, this._gameHandler(this._cancelAsset.bind(this)));
 
