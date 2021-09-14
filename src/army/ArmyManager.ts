@@ -217,13 +217,21 @@ export class ArmyManager {
 
     async summontUnits(userId: string, count: number, summonType: number, iapIndex: number) {
         let armyProfile = await this._loadArmyProfile(userId);
-        await this._checkFreeSlots(armyProfile, count);
 
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
         if (!summonMeta) {
             throw Errors.IncorrectArguments;
         }
+
+        let resetCycle = 86400 / summonMeta.freeOpens;
+        let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
+        const isFree = timeUntilNextFreeOpening > resetCycle;
+        if (isFree) {
+            count = 1;
+        }
+
+        await this._checkFreeSlots(armyProfile, count);
 
         const user = await Game.getUser(userId);
         let lastSummon = armyProfile.lastSummon;
@@ -242,11 +250,7 @@ export class ArmyManager {
             count = iapMeta.count;
             await user.addHardCurrency(-iapMeta.price);
         } else {
-            let resetCycle = 86400 / summonMeta.freeOpens;
-            let timeUntilNextFreeOpening = Game.nowSec - (armyProfile.lastSummon[summonType] || 0);
-            if (timeUntilNextFreeOpening > resetCycle) {
-                // free summon
-                count = 1;
+            if (isFree) {
                 lastSummon[summonType] = Game.nowSec;
             } else {
                 // check if user has enough tickets
