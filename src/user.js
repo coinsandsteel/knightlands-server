@@ -118,10 +118,6 @@ class User {
         return this._inventory.getCurrency(CurrencyType.Dkt);
     }
 
-    get dkt2() {
-        return this._inventory.getCurrency(CurrencyType.Dkt2);
-    }
-
     get stakedDkt() {
         return this._inventory.getCurrency(CurrencyType.StakedDkt);
     }
@@ -322,11 +318,6 @@ class User {
         // if payout day is shifted, commit previous days balance
         await this.dividends.tryCommitPayout();
         await this.inventory.modifyCurrency(CurrencyType.Dkt, value);
-    }
-
-    async addStakedDkt(value) {
-        await this.inventory.modifyCurrency(CurrencyType.StakedDkt, value);
-        await this.inventory.modifyCurrency(CurrencyType.Dkt2, value);
     }
 
     getChests() {

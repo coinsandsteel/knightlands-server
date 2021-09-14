@@ -468,14 +468,14 @@ export class ArmyManager {
             throw Errors.NotEnoughResource;
         }
 
-        // check ash
+        // check flesh
         const price = Game.currencyConversionService.convertToNative(fusionTemplate.price);
-        if (price > inventory.getCurrency(CurrencyType.Dkt2)) {
+        if (price > inventory.getCurrency(CurrencyType.Dkt)) {
             throw Errors.NotEnoughCurrency;
         }
 
         inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.souls);
-        await inventory.modifyCurrency(CurrencyType.Dkt2, -price)
+        await inventory.modifyCurrency(CurrencyType.Dkt, -price)
         unit.souls += fusionTemplate.price;
 
         // everything is ok, promote unit

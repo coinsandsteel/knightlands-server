@@ -55,26 +55,26 @@ export class Dividends {
             this._data.lastPayout = Game.dividends.getCurrentPayout();
         }
 
-        if (this._data.season != Game.season.getSeason()) {
-            this._data.season = Game.season.getSeason();
-            await this._user.addStakedDkt(-this._user.stakedDkt);
-        }
+        // if (this._data.season != Game.season.getSeason()) {
+        //     this._data.season = Game.season.getSeason();
+        //     await this._user.addStakedDkt(-this._user.stakedDkt);
+        // }
     }
 
-    async stake(amount: number) {
-        if (!isNumber(amount)) {
-            throw errors.IncorrectArguments;
-        }
-        amount = +amount;
+    // async stake(amount: number) {
+    //     if (!isNumber(amount)) {
+    //         throw errors.IncorrectArguments;
+    //     }
+    //     amount = +amount;
 
-        if (this._user.dkt < amount) {
-            throw errors.NotEnoughCurrency;
-        }
+    //     if (this._user.dkt < amount) {
+    //         throw errors.NotEnoughCurrency;
+    //     }
 
-        await this._user.addDkt(-amount);
-        await this._user.addStakedDkt(amount);
-        await Game.dividends.increaseTotalStake(amount);
-    }
+    //     await this._user.addDkt(-amount);
+    //     await this._user.addStakedDkt(amount);
+    //     await Game.dividends.increaseTotalStake(amount);
+    // }
 
     async applyBonusDkt(value: number) {
         const meta: DividendsMeta = await this._getMeta();
@@ -94,9 +94,9 @@ export class Dividends {
 
         const price = meta.dropRate[this._data.dropRateLevel].price;
 
-        if (this._user.dkt2 >= price) {
+        if (this._user.dkt >= price) {
             this._data.dropRateLevel++;
-            await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, -price);
+            await this._user.inventory.modifyCurrency(CurrencyType.Dkt, -price);
         }
     }
 
@@ -106,9 +106,9 @@ export class Dividends {
         const meta: DividendsMeta = await this._getMeta();
         const price = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor);
 
-        if (this._user.dkt2 >= price) {
+        if (this._user.dkt >= price) {
             this._data.miningLevel++;
-            await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, -price);
+            await this._user.inventory.modifyCurrency(CurrencyType.Dkt, -price);
         }
     }
 
@@ -119,7 +119,7 @@ export class Dividends {
                 const meta = await this._getMeta();
                 const rate = Math.pow(meta.mining.rate.base * this._data.miningLevel, meta.mining.rate.factor) / 86400; // rate is per 1 day
                 const mined = timePassed * rate;
-                await this._user.inventory.modifyCurrency(CurrencyType.Dkt2, mined);
+                await this._user.inventory.modifyCurrency(CurrencyType.Dkt, mined);
                 this._data.lastMiningUpdate = Game.nowSec;
 
                 return mined;
