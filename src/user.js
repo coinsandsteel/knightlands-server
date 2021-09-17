@@ -1915,14 +1915,15 @@ class User {
 
         while (boostCount > 0) {
             boostCount--;
+            let expToAdd = expGained;
 
             if (!regular && Random.range(1, 100, true) <= beastMeta.critBoostChance) {
                 boostCritCount++;
-                expGained *= 10;
+                expToAdd *= 10;
             }
 
-            totalGained += expGained;
-            this._data.beast.exp += expGained;
+            totalGained += expToAdd;
+            this._data.beast.exp += expToAdd;
 
             if (this._data.beast.exp >= expRequired) {
                 this._data.beast.exp -= expRequired;
