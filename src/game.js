@@ -16,6 +16,7 @@ import { ObjectId } from "mongodb";
 import Inventory from "./inventory";
 import { ActivityHistory } from './blockchain/ActivityHistory';
 import { RaidPointsManager } from './raids/RaidPointsManager';
+import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -58,6 +59,7 @@ class Game extends EventEmitter {
         this.activityHistory = new ActivityHistory();
         this.accessoryOptions = new AccessoryOptions(db);
         this.raidPoints = new RaidPointsManager();
+        this.prizePool = new PrizePoolManager();
 
         this._players = {};
         this._playersById = {};
@@ -67,6 +69,7 @@ class Game extends EventEmitter {
         await this._season.checkSeason();
         await this.accessoryOptions.init();
         await this.raidPoints.init();
+        await this.prizePool.init();
 
         this._lock = new Lock();
     }
