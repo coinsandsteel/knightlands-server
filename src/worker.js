@@ -30,11 +30,13 @@ import { Blockchain } from "./blockchain/Blockchain";
 import { Shop } from "./shop/Shop";
 import { DatabaseClient } from "./database/Client";
 
-if (process.env.ENV == 'dev') {
-    process.on("unhandledRejection", (error) => {
+
+
+process.on("unhandledRejection", (error) => {
+    if (process.env.ENV == 'dev') {
         console.error(error); // This prints error with stack included (as for normal errors)
-    });
-}
+    }
+});
 
 class Worker extends SCWorker {
     async run() {

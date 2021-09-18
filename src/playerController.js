@@ -167,6 +167,7 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.StakeDivs, this._gameHandler(this._stakeDivs.bind(this)));
         this._socket.on(Operations.PendingDivs, this._gameHandler(this._getPendingDivs.bind(this)));
         this._socket.on(Operations.CancelAsset, this._gameHandler(this._cancelAsset.bind(this)));
+        this._socket.on(Operations.FetchSeason, this._gameHandler(this._fetchSeason.bind(this)));
 
         // Tournaments
         this._socket.on(Operations.FetchTournaments, this._gameHandler(this._fetchTournaments.bind(this)));
@@ -1398,6 +1399,10 @@ class PlayerController extends IPaymentListener {
     // Dividends
     async _getPendingDivs(user, data) {
         return user.dividends.getPendingWithdrawal(data.chain, !!data.tokens);
+    }
+
+    async _fetchSeason(user, data) {
+        return Game.season.getStatus();
     }
 
     async _cancelAsset(user, data) {
