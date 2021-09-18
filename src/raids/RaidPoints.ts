@@ -65,6 +65,10 @@ export class RaidPoints {
                     dkt = this._data.shares / data.totalFreeShares * FREE_FLESH_EMISSION;
                 }
 
+                if (isNaN(dkt)) {
+                    dkt = 0;
+                }
+
                 await this._user.addDkt(dkt);
             }
 

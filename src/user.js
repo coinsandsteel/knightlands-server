@@ -297,7 +297,6 @@ class User {
 
     async addRP(value) {
         await this.raidPoints.addPoints(value);
-        await this.inventory.modifyCurrency(CurrencyType.RaidPoints, value);
     }
 
     async getBonusRP(value) {
@@ -868,6 +867,9 @@ class User {
         let oldStats = character.stats;
         this.rawStats = finalStats;
 
+        await Game.prizePool.updateRank(this.id, {
+            type: RankingType.CharacterPower
+        }, this._itemStatResolver.inverseStats(finalStats));
         await this._recalculateBuffs(false);
         finalStats = character.stats;
 
@@ -1076,6 +1078,16 @@ class User {
                 }
                 actionResult = await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
                 break;
+
+            case ItemActions.AddPrizePoints:
+                await Game.prizePool.updateRank(this.id, {
+                    type: RankingType.CollectedItem,
+                    item: itemToUse.template
+                }, actionValue)
+                break;
+
+            default:
+                throw Errors.UnknownAction;
         }
 
         // remove used item

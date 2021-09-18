@@ -454,7 +454,7 @@ class Raid extends EventEmitter {
         let raidStage = this.template;
         let userDamage = this._data.participants[userId]; {
             let i = 0;
-            let loot = this.loot;
+            let loot = this.loot.thresholds;
 
             if (this._data.isFree) {
                 const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate({ raidId: this.templateId, user: userId }, { $setOnInsert: { raidId: this.templateId, user: userId } }, { returnDocument: 'false', upsert: true });
@@ -490,6 +490,11 @@ class Raid extends EventEmitter {
 
             rewards.rp = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.9, raidStage.maxDkt);
             rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
+
+            if (!this._data.isFree) {
+                let winLoot = user.isFreeAccount ? this.loot.winnerLootFree : this.loot.winnerLootNormal;
+                rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
+            }
 
             // evaluate challenges
             {

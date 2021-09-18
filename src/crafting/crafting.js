@@ -88,6 +88,12 @@ class Crafting {
             throw Errors.NotEnoughCurrency;
         }
 
+        if (!this._user.inventory.hasItems(priceMeta.shardItem, priceMeta.shards)) {
+            throw Errors.NoItem;
+        }
+
+        this._user.inventory.removeItemByTemplate(priceMeta.shardItem, priceMeta.shards);
+
         const isRing = getSlot(baseTemplate.equipmentType) == EquipmentSlots.Ring;
         const meta = isRing ? accCraftMeta.ring : accCraftMeta.necklace;
         await this._rerollAccessoryOptions(meta, item);

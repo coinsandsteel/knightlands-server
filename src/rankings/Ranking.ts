@@ -11,6 +11,7 @@ export interface RankingOptions {
     itemType?: string;
     raid?: string;
     rarity?: string;
+    item?: number;
 }
 
 export interface RankingRecord {

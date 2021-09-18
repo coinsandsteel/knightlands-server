@@ -159,7 +159,7 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.WithdrawDividendToken, this._gameHandler(this._withdrawDividendToken.bind(this)));
         this._socket.on(Operations.GetDivsStatus, this._gameHandler(this._getDividendsStatus.bind(this)));
         // this._socket.on(Operations.ClaimDivs, this._gameHandler(this._claimDividends.bind(this)));
-        // this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
+        this._socket.on(Operations.ClaimMinedDkt, this._gameHandler(this._claimMinedDkt.bind(this)));
         this._socket.on(Operations.DivsMineUpgrade, this._gameHandler(this._upgradeDktMine.bind(this)));
         this._socket.on(Operations.DivsDropUpgrade, this._gameHandler(this._upgradeDktDropRate.bind(this)));
         this._socket.on(Operations.WithdrawTokens, this._gameHandler(this._withdrawTokens.bind(this)));
@@ -191,6 +191,11 @@ class PlayerController extends IPaymentListener {
         // Leaderboards
         this._socket.on(Operations.GetLeaderboardRankings, this._gameHandler(this._getLeaderboardRankings.bind(this)));
         this._socket.on(Operations.GetLeaderboardRank, this._gameHandler(this._getLeaderboardRank.bind(this)));
+
+        // Prize pool
+        this._socket.on(Operations.FetchPrizePool, this._gameHandler(this._fetchPrizePool.bind(this)));
+        this._socket.on(Operations.GetPrizePoolRank, this._gameHandler(this._getPrizePoolRank.bind(this)));
+        this._socket.on(Operations.GetPrizePoolRewards, this._gameHandler(this._getPrizePoolRewards.bind(this)));
 
         // Army
         this._socket.on(Operations.GetArmy, this._gameHandler(this._getArmy.bind(this)));
@@ -1527,6 +1532,19 @@ class PlayerController extends IPaymentListener {
 
     async _getLeaderboardRank(user, data) {
         return Game.rankings.leaderboards.getUserRank(parseInt(data.type), user.id);
+    }
+
+    // Prize pool
+    async _fetchPrizePool(user, data) {
+        return Game.prizePool.getRankings(parseInt(data.page));
+    }
+
+    async _getPrizePoolRank(user, data) {
+        return Game.prizePool.getUserRank(user.id);
+    }
+
+    async _getPrizePoolRewards(user, data) {
+        return Game.prizePool.getRewards();
     }
 
     // Armies

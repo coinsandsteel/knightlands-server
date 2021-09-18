@@ -5,6 +5,8 @@ import { Leaderboard } from "./Leaderboard";
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
 import { RankingOptions } from "../Ranking";
 
+const PAGE_SIZE = 50;
+
 class LeaderboardsManager implements IRankingTypeHandler {
     private _db: Db;
     private _meta: LeaderboardsMeta;
@@ -49,7 +51,7 @@ class LeaderboardsManager implements IRankingTypeHandler {
 
         const promises = [];
         for (const definition of this._meta.definitions) {
-            const leaderboard = new Leaderboard(20, definition.isDecimal);
+            const leaderboard = new Leaderboard(PAGE_SIZE, definition.isDecimal);
             this._leaderboards.push(leaderboard);
             promises.push(leaderboard.init(this._db, definition.type));
         }

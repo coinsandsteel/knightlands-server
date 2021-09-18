@@ -113,20 +113,20 @@ export class Dividends {
     }
 
     async claimMinedDkt() {
+        let mined = 0;
         if (this._data.miningLevel > 0) {
             const timePassed = Game.nowSec - this._data.lastMiningUpdate;
             if (timePassed > 0) {
                 const meta = await this._getMeta();
                 const rate = Math.pow(meta.mining.rate.base * this._data.miningLevel, meta.mining.rate.factor) / 86400; // rate is per 1 day
-                const mined = timePassed * rate;
-                await this._user.inventory.modifyCurrency(CurrencyType.Dkt, mined);
-                this._data.lastMiningUpdate = Game.nowSec;
-
-                return mined;
+                mined = await this._user.getBonusRP(timePassed * rate);
+                await this._user.addRP(mined);
             }
         }
 
-        return 0;
+        this._data.lastMiningUpdate = Game.nowSec;
+
+        return mined;
     }
 
     async getPendingWithdrawal(chain: string, tokens: boolean) {
