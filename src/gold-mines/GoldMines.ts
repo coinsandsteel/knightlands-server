@@ -67,7 +67,7 @@ export class GoldMines {
     async upgradeStorage() {
         const meta = await this.getMeta();
 
-        if (meta.storage.length <= this.data.storage.level) {
+        if (meta.storage.length <= this.data.storage.level + 1) {
             throw Errors.GoldMineStorageMaxLevel;
         }
 

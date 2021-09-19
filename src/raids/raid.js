@@ -491,7 +491,10 @@ class Raid extends EventEmitter {
             rewards.rp = chosenLoot.dktReward * Random.range(raidStage.maxDkt * 0.9, raidStage.maxDkt);
             rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
-            if (!this._data.isFree) {
+            if (this._data.isFree) {
+                let winLoot = this.loot.winnerLootFree;
+                rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
+            } else {
                 let winLoot = user.isFreeAccount ? this.loot.winnerLootFree : this.loot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
             }
