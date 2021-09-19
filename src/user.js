@@ -345,7 +345,6 @@ class User {
 
             totalExp = Math.floor(totalExp);
         }
-        console.log('totalExp', totalExp)
         character.exp += totalExp;
 
         const previousLevel = character.level;
