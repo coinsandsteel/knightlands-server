@@ -897,12 +897,18 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonRaid(user, data) {
-        const meta = await Game.db.collection(Collections.RaidsMeta).findOne({ _id: "meta" });
-        if (user.getSoloRaidAttempts(data.raid) == meta.dailySoloLimit) {
-            throw Errors.ExhaustedSoloRaidAttempts;
+        if (data.free) {
+            const meta = await Game.db.collection(Collections.RaidsMeta).findOne({ _id: "meta" });
+            if (user.getSoloRaidAttempts(data.raid) == meta.dailySoloLimit) {
+                throw Errors.ExhaustedSoloRaidAttempts;
+            }
         }
+
         const result = await this._raidManager.summonRaid(user, +data.raid, data.free, data.options.public);
-        user.increaseSoloRaidAttempts(data.raid);
+        if (data.free) {
+            user.increaseSoloRaidAttempts(data.raid);
+        }
+
         return result;
     }
 
