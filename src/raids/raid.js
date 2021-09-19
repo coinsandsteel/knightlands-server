@@ -460,9 +460,9 @@ class Raid extends EventEmitter {
                 const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate({ raidId: this.templateId, user: userId }, { $setOnInsert: { raidId: this.templateId, user: userId } }, { returnDocument: 'false', upsert: true });
 
                 if (!firstClearance.value) {
-                    loot = this.loot.firstClearance;
+                    loot = this.loot.firstClearance.thresholds;
                 } else {
-                    loot = this.loot.repeatedClearance;
+                    loot = this.loot.repeatedClearance.thresholds;
                 }
             }
 
