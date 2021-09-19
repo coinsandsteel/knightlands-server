@@ -620,7 +620,7 @@ class User {
         await this._inventory.loadAll();
         await this._trials.init();
         await this._dailyQuests.init();
-        await this.collectDailyRefills();
+        await this.executeDailyReset();
         await this.raidPoints.tryClaimDkt();
         await this._dividends.tryCommitPayout();
         await this._dailyShop.update();
@@ -1389,6 +1389,10 @@ class User {
             }
         }
 
+        if (!user.sRaidAttempts) {
+            user.sRaidAttempts = {};
+        }
+
         return user;
     }
 
@@ -1689,7 +1693,7 @@ class User {
         };
     }
 
-    async collectDailyRefills() {
+    async executeDailyReset() {
         if (this._data.dailyRefillCollect >= this.getDailyRewardCycle()) {
             return;
         }
@@ -1770,6 +1774,16 @@ class User {
                 meta.accessoryTrialAttempts
             );
         }
+
+        this.sRaidAttempts = {};
+    }
+
+    getSoloRaidAttempts(raidId) {
+        return this._data.sRaidAttempts[raidId] || 0;
+    }
+
+    increaseSoloRaidAttempts(raidId) {
+        this._data.sRaidAttempts[raidId] = (this._data.sRaidAttempts[raidId] || 0) + 1;
     }
 
     applyBonusRefills(tower, armourTrial, weaponTrial, accTrial) {
