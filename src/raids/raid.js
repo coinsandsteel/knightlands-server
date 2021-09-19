@@ -452,6 +452,7 @@ class Raid extends EventEmitter {
         // determine raid loot record based on user damage
         let chosenLoot;
         let raidStage = this.template;
+        let baseLoot = this.loot;
         let userDamage = this._data.participants[userId]; {
             let i = 0;
             let loot = this.loot.thresholds;
@@ -460,10 +461,12 @@ class Raid extends EventEmitter {
                 const firstClearance = await this._db.collection(Collections.FreeRaidsClearance).findOneAndUpdate({ raidId: this.templateId, user: userId }, { $setOnInsert: { raidId: this.templateId, user: userId } }, { returnDocument: 'false', upsert: true });
 
                 if (!firstClearance.value) {
-                    loot = this.loot.firstClearance.thresholds;
+                    baseLoot = baseLoot.firstClearance;
                 } else {
-                    loot = this.loot.repeatedClearance.thresholds;
+                    baseLoot = baseLoot.repeatedClearance;
                 }
+
+                loot = baseLoot.thresholds;
             }
 
             const length = loot.length;
@@ -492,10 +495,10 @@ class Raid extends EventEmitter {
             rewards.items = await Game.lootGenerator.getRaidLoot(chosenLoot);
 
             if (this._data.isFree) {
-                let winLoot = this.loot.winnerLootFree;
+                let winLoot = baseLoot.winnerLootFree;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
             } else {
-                let winLoot = user.isFreeAccount ? this.loot.winnerLootFree : this.loot.winnerLootNormal;
+                let winLoot = user.isFreeAccount ? baseLoot.winnerLootFree : baseLoot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
             }
 
