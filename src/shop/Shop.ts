@@ -98,7 +98,7 @@ export class Shop {
         }
 
         await user.addHardCurrency(-goldLot.price);
-        await user.addSoftCurrency(goldLot.amount);
+        await user.addSoftCurrency(goldLot.amount, true);
 
         return goldLot.amount;
     }
