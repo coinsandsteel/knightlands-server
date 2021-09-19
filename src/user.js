@@ -915,6 +915,10 @@ class User {
                 case AccessoryOption.ExpOnHitInRaid:
                     finalStats[CharacterStat.ExpOnHitInRaid] += prop.value;
                     break;
+
+                case AccessoryOption.AddStat:
+                    finalStats[propTemplate.stat] += prop.value;
+                    break;
             }
         }
     }

@@ -77,13 +77,28 @@ class Unit {
         return { damage: raidBoss._applyDamage(attack), crit };
     }
 
-    attack(victim) {
-        let { attack, crit } = this.getAttack();
+    dodged(attacker) {
+        // for now attacker is not used
+        return random.range(0, 1, true) <= this.getStat(CharacterStat.Dodge);
+    }
 
-        return {
-            damage: victim._applyDamage(attack),
-            crit
+    attack(victim) {
+        const result = {
+            damage: 0,
+            dodged: false,
+            crit: false
+        };
+
+        if (victim.dodged(this)) {
+            result.dodged = true;
+        } else {
+            let { attack, crit } = this.getAttack();
+
+            result.damage = victim._applyDamage(attack);
+            result.crit = crit;
         }
+
+        return result;
     }
 
     _applyDamage(damage) {
