@@ -297,6 +297,7 @@ class TournamentsManager implements IRankingTypeHandler {
         {
             const index = this._tournamets.findIndex(x => x.id.equals(tournamentId));
             if (index != -1) {
+                this._tiersRunning[this._tournamets[index].tier] = false;
                 this._tournamets[index].removeAllListeners(Tournament.Finished);
                 this._tournamets.splice(index, 1);
             }
