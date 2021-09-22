@@ -707,7 +707,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _upgradeAccount(user, data) {
-        user.upgradeAccount();
+      await user.upgradeAccount();
     }
 
     async _handleTutorial(user, data) {
