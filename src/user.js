@@ -226,8 +226,13 @@ class User {
         return !this._data.accountType;
     }
 
-    upgradeAccount() {
-        this._data.accountType = this._data.accountType ? false : true;
+    async upgradeAccount() {
+        let activeRaidsCount = await Game.raidManager.activeRaidsCount(this.id);
+        if (activeRaidsCount) {
+          return;
+        }
+
+        this._data.accountType = !this._data.accountType;
         this.raidPoints.reset();
     }
 
