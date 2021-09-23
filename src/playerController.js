@@ -610,6 +610,8 @@ class PlayerController extends IPaymentListener {
             await user.addLoot(items);
         }
 
+        user.resetZoneProgress(zone, data.stage);
+
         return { damages, items };
     }
 
@@ -711,7 +713,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _upgradeAccount(user, data) {
-      await user.upgradeAccount();
+        await user.upgradeAccount();
     }
 
     // Founder sale
