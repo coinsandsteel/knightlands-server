@@ -10,7 +10,7 @@ const PaymentGateway = require("./PaymentGateway.json");
 // const PresaleChestGateway = require("./PresaleChestGateway.json");
 // const Presale = require("./Presale.json");
 const Flesh = require("./Flesh.json");
-const Ash = require("./Ash.json");
+const PresaleCardsGate = require('./PresaleCardsGate.json');
 const TokensDepositGateway = require("./TokensDepositGateway.json");
 import blockchains from "../../knightlands-shared/blockchains";
 import currency_type from "../../knightlands-shared/currency_type";
@@ -29,8 +29,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         super();
 
         this.Payment = Blockchain.Payment;
-        this.PresaleChestTransfer = "PresaleChestTransfer";
-        this.PresaleChestPurchased = "PresaleChestPurchased";
+        this.PresaleCardDeposit = Blockchain.PresaleCardDeposit;
         this.TransactionFailed = Blockchain.TransactionFailed;
         this.DividendTokenWithdrawal = Blockchain.DividendTokenWithdrawal;
         this.BurntTokenWithdrawal = Blockchain.BurntTokenWithdrawal;
@@ -47,7 +46,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         // this._presaleChestsGateway = this._provider.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
         // this._dividends = this._provider.contract(Dividends.abi, Dividends.address);
         this._stakingToken = new ethers.Contract(Flesh.address, Flesh.abi, this._provider);
-        this._burntToken = new ethers.Contract(Ash.address, Ash.abi, this._provider);
+        this._presaleGate = new ethers.Contract(PresaleCardsGate.address, PresaleCardsGate.abi, this._provider);
         this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
     }
 
@@ -156,6 +155,8 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             }
 
             await this._updateLastEventReceived(endBlock, eventName);
+        } catch (exc) {
+            console.error(exc)
         } finally {
             this._watchEvent(eventName, eventFilter, contract, handler);
         }
@@ -169,7 +170,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         // this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
         // this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
         this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
-        this._watchEvent("Withdrawal", this._burntToken.filters.Withdrawal(), this._burntToken, this._emitWithdrawal(this.BurntTokenWithdrawal));
+        this._watchEvent("Deposit", this._presaleGate.filters.Deposit(), this._presaleGate, this._emitPresaleCardDeposit);
         this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
 
         console.log("Scan finished.");
@@ -219,6 +220,16 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             to: event.args.from,
             withdrawalId: event.args.withdrawalId,
             amount: event.args.amount.toString(),
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash
+        });
+    }
+
+    _emitPresaleCardDeposit(event) {
+        this.emit(Blockchain.PresaleCardDeposit, {
+            depositId: event.args.depositId,
+            to: event.args.from,
+            tokenIds: event.args.tokensIds,
             blockNumber: event.blockNumber,
             transactionHash: event.transactionHash
         });
@@ -364,8 +375,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         if (type == currency_type.Dkt) {
             result = await this._stakingToken.nonces(walletAddress);
-        } else {
-            result = await this._burntToken.nonces(walletAddress);
         }
 
         return result.valueOf();

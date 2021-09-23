@@ -78,7 +78,8 @@ module.exports = {
         DktMining: "dkt_mining",
         Depositors: "depositors",
         ActivityHistory: "activity_history",
-        TokenDepositErrors: "token_deposit_errors"
+        TokenDepositErrors: "token_deposit_errors",
+        PresaleCardDeposits: "presale_card_deposits"
     },
 
 

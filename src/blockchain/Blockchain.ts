@@ -47,6 +47,15 @@ export interface TokenDepositData {
     transactionHash: string;
 }
 
+export interface PresaleCardDepositData {
+    to: string;
+    amount: string;
+    tokenIds: string[];
+    depositId: string;
+    blockNumber: number;
+    transactionHash: string;
+}
+
 export class Blockchain {
     private _blockchains: { [key: string]: IBlockchain };
 
@@ -78,9 +87,14 @@ export class Blockchain {
         return "__token_deposit__";
     }
 
+    public static get PresaleCardDeposit() {
+        return "__presale_card_deposit__";
+    }
+
     constructor(db: Db) {
         this._blockchains = {};
         this._blockchains[Blockchains.Ethereum] = createBlockchain(Blockchains.Ethereum, db);
+        // this._blockchains[Blockchains.Polygon] = createBlockchain(Blockchains.Polygon, db);
     }
 
     async start() {

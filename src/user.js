@@ -24,6 +24,7 @@ import RankingType from "./knightlands-shared/ranking_type";
 import { GoldMines } from './gold-mines/GoldMines';
 import { Dividends } from "./dividends/Dividends.new";
 import { DailyShop } from "./shop/DailyShop";
+import { PresaleCards } from "./shop/PresaleCards";
 import { isNumber } from "./validation";
 import { ObjectId } from "mongodb";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
@@ -127,7 +128,7 @@ class User {
     }
 
     get enoughHp() {
-        return this.getTimerValue(CharacterStats.Health) >= 10;
+        return this.getTimerValue(CharacterStats.Health) > 0;
     }
 
     get inventory() {
@@ -224,6 +225,13 @@ class User {
 
     get isFreeAccount() {
         return !this._data.accountType;
+    }
+
+    setFlag(flag, value) {
+        if (!this._data.flags) {
+            this._data.flags = {};
+        }
+        this._data.flags[flag] = value;
     }
 
     upgradeAccount() {
@@ -562,7 +570,7 @@ class User {
     }
 
     async load(id) {
-        if (this._address == undefined || this._address == null) {
+        if (!id && (this._address == undefined || this._address == null)) {
             return;
         }
 
@@ -612,6 +620,7 @@ class User {
         this._dividends = new Dividends(this._data.dividends, this);
         this._dailyShop = new DailyShop(this._data.dailyShop, this);
         this.raidPoints = new RaidPoints(this._data.raidPoints, this);
+        this.founderSale = new PresaleCards(this._data.pCards, this);
 
         this._advanceTimers();
 
@@ -1089,6 +1098,10 @@ class User {
                 }, actionValue)
                 break;
 
+            case ItemActions.AddArmySlots:
+                await Game.armyManager.expandSlots(this.address, actionValue)
+                break;
+
             default:
                 throw Errors.UnknownAction;
         }
@@ -1218,11 +1231,15 @@ class User {
         })
     }
 
-    async autoCommitChanges(changeCallback, filterResponse) {
+    async autoCommitChanges(changeCallback) {
         let response;
 
         if (changeCallback) {
-            response = await changeCallback(this);
+            try {
+                response = await changeCallback(this);
+            } catch (exc) {
+                console.error(exc);
+            }
         }
 
         await this.commitChanges();
@@ -1395,6 +1412,14 @@ class User {
 
         if (!user.sRaidAttempts) {
             user.sRaidAttempts = {};
+        }
+
+        if (!user.pCards) {
+            user.pCards = {};
+        }
+
+        if (!user.flag) {
+            user.flags = {};
         }
 
         return user;
@@ -2066,4 +2091,4 @@ class User {
     }
 }
 
-module.exports = User;
+export default User;

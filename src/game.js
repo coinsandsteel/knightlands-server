@@ -1,6 +1,6 @@
 'use strict';
 
-const User = require("./user");
+import User from "./user";
 import EventEmitter from 'events';
 const PlayerController = require("./playerController");
 const ItemTemplates = require("./itemTemplates");
@@ -17,6 +17,7 @@ import Inventory from "./inventory";
 import { ActivityHistory } from './blockchain/ActivityHistory';
 import { RaidPointsManager } from './raids/RaidPointsManager';
 import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
+import { PresaleCardsService } from "./shop/PresaleCards";
 
 class Game extends EventEmitter {
     constructor() {
@@ -60,16 +61,19 @@ class Game extends EventEmitter {
         this.accessoryOptions = new AccessoryOptions(db);
         this.raidPoints = new RaidPointsManager();
         this.prizePool = new PrizePoolManager();
+        this.founderSale = new PresaleCardsService(blockchain);
 
         this._players = {};
         this._playersById = {};
 
+        await this.lootGenerator.init();
         await this._season.init();
         await this._dividends.init();
         await this._season.checkSeason();
         await this.accessoryOptions.init();
         await this.raidPoints.init();
         await this.prizePool.init();
+        await this.founderSale.init();
 
         this._lock = new Lock();
     }

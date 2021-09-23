@@ -177,45 +177,48 @@ class PaymentProcessor extends EventEmitter {
             throw "unknown iap";
         }
 
-        const nonce = Number(await this._blockchain.getBlockchain(chain).getPaymentNonce(address));
+        return Game.dbClient.withTransaction(async db => {
+            const chainClient = this._blockchain.getBlockchain(chain);
+            const nonce = Number(await chainClient.getPaymentNonce(address));
+            // price is in cents
+            let price = Game.currencyConversionService.convertToNative(iapObject.price);
 
-        // price is in cents
-        let price = Game.currencyConversionService.convertToNative(iapObject.price);
-        let deadline = Game.nowSec + 600;
-        let inserted = await this._db.collection(Collections.PaymentRequests).insertOne({
-            userId,
-            iap,
-            tag,
-            date: Game.now,
-            status: PaymentStatus.WaitingForTx,
-            claimed: false,
-            context,
-            price,
-            nonce,
-            deadline,
-            chain
-        });
+            let inserted = await db.collection(Collections.PaymentRequests).insertOne({
+                userId,
+                iap,
+                tag,
+                date: Game.now,
+                status: PaymentStatus.WaitingForTx,
+                claimed: false,
+                context,
+                price,
+                nonce,
+                deadline,
+                chain
+            });
 
-        let paymentId = inserted.insertedId.toHexString();
+            let paymentId = inserted.insertedId.toHexString();
 
-        const gateway = this._blockchain.getBlockchain(chain).PaymentGatewayAddress;
-        // create signature for the smart contract and return it
-        let signature = await this._blockchain.getBlockchain(chain).sign(gateway, iap, paymentId, price, nonce, deadline);
+            const gateway = chainClient.PaymentGatewayAddress;
+            let deadline = Game.nowSec + 600;
+            // create signature for the smart contract and return it
+            let signature = await chainClient.sign(gateway, iap, paymentId, price, nonce, deadline);
 
-        await this._db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
-            $set: {
-                signature
-            }
-        });
+            await db.collection(Collections.PaymentRequests).updateOne({ _id: inserted.insertedId }, {
+                $set: {
+                    signature
+                }
+            });
 
-        return {
-            signature,
-            iap,
-            price,
-            nonce,
-            deadline,
-            paymentId
-        };
+            return {
+                signature,
+                iap,
+                price,
+                nonce,
+                deadline,
+                paymentId
+            };
+        })
     }
 
     async start() {

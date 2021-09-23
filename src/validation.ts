@@ -9,3 +9,7 @@ export function isNumber(value: any) {
     value = +value;
     return typeof value === 'number' && !isNaN(value);
 }
+
+export function isString(value: any) {
+    return typeof value === 'string';
+}

@@ -17,57 +17,8 @@ class LootGenerator {
         this._db = db;
     }
 
-    get ChestPaymentTag() {
-        return "open_chest";
-    }
-
-    async init(iapExecutor) {
-        console.log("Registering Chests IAPs...");
-
-        let allChests = await this._db.collection(Collections.GachaMeta).find({}).toArray();
-        allChests.forEach(chest => {
-            for (let iap in chest.iaps) {
-                iapExecutor.registerAction(iap, async(context) => {
-                    return await this._openChest(context.user, context.chestId, context.count);
-                });
-                iapExecutor.mapIAPtoEvent(iap, Events.ChestOpened);
-            }
-        });
-
+    async init() {
         this._luckLoot = await this._db.collection(Collections.QuestLoot).findOne({ _id: "luck_loot" })
-    }
-
-    async getChestOpenStatus(userId, chestMeta, iap) {
-        return await Game.paymentProcessor.fetchPaymentStatus(userId, this.ChestPaymentTag, {
-            "context.user": userId,
-            "context.chestId": chestMeta.name,
-            "context.count": chestMeta.iaps[iap]
-        });
-    }
-
-    async requestChestOpening(userId, chestMeta, iap) {
-        let iapContext = {
-            user: userId,
-            chestId: chestMeta.name,
-            count: chestMeta.iaps[iap]
-        };
-
-        // check if payment request already created
-        let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, this.ChestPaymentTag);
-        if (hasPendingPayment) {
-            throw Errors.PaymentIsPending;
-        }
-
-        try {
-            return await Game.paymentProcessor.requestPayment(
-                userId,
-                iap,
-                this.ChestPaymentTag,
-                iapContext
-            );
-        } catch (exc) {
-            throw exc;
-        }
     }
 
     async openChest(user, chestId, count, free = false) {

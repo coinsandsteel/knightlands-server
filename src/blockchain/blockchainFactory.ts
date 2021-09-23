@@ -6,6 +6,7 @@ const MockBlockchain = require("./mockBlockchain");
 export function createBlockchain(blockchainType, db) {
     switch (blockchainType) {
         case Blockchains.Ethereum:
+        case Blockchains.Polygon:
             return new EthereumClient(db);
 
         case Blockchains.Mock:

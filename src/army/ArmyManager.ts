@@ -628,17 +628,8 @@ export class ArmyManager {
         return combatLegion;
     }
 
-    async expandSlots(userId: string) {
-        const inventory = await Game.loadInventory(userId);
-
-        if (!inventory.hasItems(this._meta.armyExpansion.expansionItem, 1, true)) {
-            throw Errors.NoItem;
-        }
-
-        await this._expandSlots(userId, this._meta.armyExpansion.expansionSize);
-        await inventory.autoCommitChanges(inventory => {
-            inventory.removeItem(this._meta.armyExpansion.expansionItem, 1)
-        })
+    async expandSlots(userId: string, slots: number) {
+        await this._expandSlots(userId, slots);
     }
 
     async buySlotsExpansion(userId: string) {

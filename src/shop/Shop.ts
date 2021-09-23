@@ -1,6 +1,6 @@
 import Game from "../game";
 import { Collections } from "../database/database";
-import { ShiniesTopUp, RaidTicketsTopUp, TopUpShopMeta, PremiumShopMeta, PackMeta, SubscriptionsShopMeta, SubscriptionMeta } from "./Types";
+import { TopUpShopMeta, PremiumShopMeta, PackMeta, SubscriptionsShopMeta, SubscriptionMeta } from "./Types";
 import Errors from "../knightlands-shared/errors";
 const Events = require("../knightlands-shared/events");
 
@@ -36,6 +36,10 @@ export class Shop {
         const cardMeta = meta.cards[cardId];
 
         if (!cardMeta) {
+            throw Errors.UnknownIap;
+        }
+
+        if (!cardMeta.iap) {
             throw Errors.UnknownIap;
         }
 
@@ -226,6 +230,10 @@ export class Shop {
         const subscriptionMeta = await this._getSubscriptionsMeta();
         for (const id in subscriptionMeta.cards) {
             const card = subscriptionMeta.cards[id];
+
+            if (!card.iap) {
+                continue;
+            }
 
             iapExecutor.registerAction(card.iap, async context => {
                 return this._claimSubscription(card, context.userId);

@@ -23,7 +23,7 @@ const {
 import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
-import { exist, isNumber } from "./validation";
+import { exist, isNumber, isString } from "./validation";
 
 const TowerFloorPageSize = 20;
 
@@ -88,7 +88,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
         this._socket.on(Operations.Tutorial, this._gameHandler(this._handleTutorial.bind(this)));
-        this._socket.on(Operations.UpgradeAccount, this._gameHandler(this._upgradeAccount.bind(this)))
+        this._socket.on(Operations.UpgradeAccount, this._gameHandler(this._upgradeAccount.bind(this)));
+
+        // Founder sale
+        this._socket.on(Operations.FetchFounderPresale, this._gameHandler(this._fetchFounderPresale.bind(this)));
+        this._socket.on(Operations.DepositFounderPack, this._gameHandler(this._depositFounderPack.bind(this)));
 
         // Crafting
         this._socket.on(Operations.UpgradeItem, this._gameHandler(this._levelUpItem.bind(this)));
@@ -708,6 +712,55 @@ class PlayerController extends IPaymentListener {
 
     async _upgradeAccount(user, data) {
         user.upgradeAccount();
+    }
+
+    // Founder sale
+    async _depositFounderPack(user, data) {
+        const { from, chain, tokenIds } = data;
+
+        if (!isString(from) || !isString(chain) || !Array.isArray(tokenIds)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return user.founderSale.depositCards(tokenIds, from, chain);
+    }
+
+    async _fetchFounderPresale(user, data) {
+        const { from } = data;
+
+        if (!isString(from)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const deposits = await Game.db.collection(Collections.PresaleCardDeposits).find({ user: user.id, from: from }).toArray();
+        const depositedTokens = {};
+        const tokens = [];
+        // remove finished deposits, keep pending deposits
+        for (const record of deposits) {
+            for (const tokenId of record.tokenIds) {
+                depositedTokens[tokenId] = true;
+                tokens.push({
+                    tokenId,
+                    pending: record.pending,
+                    depositId: record._id.toString()
+                });
+            }
+        }
+
+        // mark the rest of the tokens as depositable if applicable
+        const ownedTokens = await Game.db.collection("founder_presale").find({ from: from }, { projection: { _id: 0 } }).toArray();
+        for (const record of ownedTokens) {
+            if (depositedTokens[record.tokenId]) {
+                continue;
+            }
+
+            tokens.push({
+                tokenId: record.tokenId,
+                canDeposit: user.founderSale.verifyToken(record.tokenId)
+            });
+        }
+
+        return tokens;
     }
 
     async _handleTutorial(user, data) {
@@ -1607,7 +1660,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _unitReserve(user, data) {
-        return Game.armyManager.sendToReserve(user.address, data.units);
+        return Game.armyManager.sendToReserve(user.id, data.units);
     }
 
     async _expandArmyInventory(user, data) {

@@ -258,7 +258,7 @@ export class DividendsRegistry {
                     user: userId,
                     chain: blockchainId,
                     currency: type,
-                    date: Game.now,
+                    date: Game.nowSec,
                     pending: true,
                     amount: bigAmount.toString(),
                     nonce,
@@ -280,7 +280,7 @@ export class DividendsRegistry {
                     deadline,
                     amount: bigAmount.toString()
                 };
-            })
+            });
         } finally {
             await this._lock.release("withdrawal");
         }
@@ -322,7 +322,7 @@ export class DividendsRegistry {
                 let withdrawalId = await this._createWithdrawal(db, userId, DIVS_WITHDRAWAL, blockchainId, {
                     user: userId,
                     chain: blockchainId,
-                    date: Game.now,
+                    date: Game.nowSec,
                     deadline,
                     pending: true,
                     amount,

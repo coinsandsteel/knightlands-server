@@ -115,7 +115,6 @@ class Worker extends SCWorker {
         await this._raidManager.init();
         await this._craftingQueue.init(this._iapExecutor);
         await this._userPremiumService.init(this._iapExecutor);
-        await this._lootGenerator.init(this._iapExecutor);
         await this._rankings.init();
         await this._presale.init();
         await this._blockchain.start();
