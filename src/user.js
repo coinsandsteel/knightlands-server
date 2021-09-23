@@ -1814,7 +1814,7 @@ class User {
             );
         }
 
-        this.sRaidAttempts = {};
+        this._data.sRaidAttempts = {};
     }
 
     getSoloRaidAttempts(raidId) {
