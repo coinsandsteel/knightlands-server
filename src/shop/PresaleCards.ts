@@ -172,7 +172,7 @@ export class PresaleCardsService {
             }
         });
 
-        await Game.db.collection(Collections.PresaleCardDeposits).updateOne({ _id: new ObjectId(data.depositId) }, { $set: { pending: false } });
+        await Game.db.collection(Collections.PresaleCardDeposits).updateOne({ _id: new ObjectId(data.depositId) }, { $set: { pending: false, data } });
         Game.emitPlayerEvent(depositData.user, events.FounderPackAcquired, { tokenIds: data.tokenIds.map(x => x.toString()) });
     }
 

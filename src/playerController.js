@@ -901,8 +901,13 @@ class PlayerController extends IPaymentListener {
 
         // check if avatar feets the requirements
         const avatars = await this._db.collection(Collections.Meta).findOne({ _id: "avatars" });
-        if (avatars.unlockables[data.id] > user.level) {
+        const avatarMeta = avatars.unlockables[data.id];
+        if (avatarMeta.level && avatarMeta.level < user.level) {
             throw Errors.NotEnoughLevel;
+        }
+
+        if (avatarMeta.userFlag && !user.hasFlag(avatarMeta.userFlag)) {
+            throw Errors.IncorrectArguments;
         }
 
         user.avatar = data.id;

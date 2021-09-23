@@ -227,6 +227,10 @@ class User {
         return !this._data.accountType;
     }
 
+    hasFlag(flag) {
+        return !!this._data.flags[flag];
+    }
+
     setFlag(flag, value) {
         if (!this._data.flags) {
             this._data.flags = {};
@@ -1195,7 +1199,7 @@ class User {
     async commitChanges() {
         await this._calculateFinalStats();
 
-        Game.dbClient.withTransaction(async db => {
+        await Game.dbClient.withTransaction(async db => {
             let users = db.collection(Collections.Users);
             let {
                 updateQuery,
@@ -1418,7 +1422,7 @@ class User {
             user.pCards = {};
         }
 
-        if (!user.flag) {
+        if (!user.flags) {
             user.flags = {};
         }
 
