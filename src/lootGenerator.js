@@ -194,9 +194,8 @@ class LootGenerator {
     }
 
     async _rollLuckDrops({ items, itemsHash, stage, user }) {
-        const luckDrops = this._luckLoot[stage]
+        const stageLoot = this._luckLoot[stage]
             // if user has minimum required luck
-        const stageLoot = luckDrops[stage];
         const userLuck = user.getMaxStatValue(CharacterStat.Luck);
 
         for (let i = stageLoot.length - 1; i >= 0; --i) {
