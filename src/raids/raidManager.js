@@ -308,6 +308,15 @@ class RaidManager {
         ]).toArray();
     }
 
+    async activeRaidsCount(userId) {
+        let matchQuery = {
+            finished: false,
+            [`participants.${userId}`]: { $exists: true }
+        };
+
+        return await this._db.collection(Collections.Raids).count(matchQuery);
+    }
+
     async _loadRaidTemplate(raidTemplateId) {
         return await this._db.collection(Collections.RaidsMeta).findOne({
             _id: raidTemplateId * 1
