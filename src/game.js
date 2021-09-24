@@ -166,7 +166,7 @@ class Game extends EventEmitter {
                 equipmentIds.push(item.id);
             }
 
-            army = await this.armyManager.getArmyPreview(user.address)
+            army = await this.armyManager.getArmyPreview(user.id)
 
             if (army) {
                 const lookup = {};
@@ -185,7 +185,7 @@ class Game extends EventEmitter {
                 })
             }
 
-            items = (await Inventory.loadItems(user.address, equipmentIds))[0];
+            items = (await Inventory.loadItems(user.id, equipmentIds))[0];
         }
 
         delete user.address;

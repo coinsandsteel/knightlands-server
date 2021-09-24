@@ -4,11 +4,12 @@ import { ArmyUnits } from "./ArmyUnits";
 import { ArmyLegions } from "./ArmyLegions";
 import Game from "../game";
 import Random from "../random";
+import { ObjectId } from "mongodb";
 
 export class ArmyCombatLegion {
     private _armyResolver: ArmyResolver;
     private _legionIndex: number;
-    private _userId: string;
+    private _userId: ObjectId;
     private _armyUnits: ArmyUnits;
     private _legions: ArmyLegions;
     private _unitIndex: {};
@@ -17,7 +18,7 @@ export class ArmyCombatLegion {
     public unitIds: number[];
 
     constructor(
-        userId: string,
+        userId: ObjectId,
         legionIndex: number,
         armyResolver: ArmyResolver,
         allUnits: ArmyUnit[],

@@ -2,6 +2,7 @@ import { Legion } from "./ArmyTypes";
 import { Db } from "mongodb";
 import { Collections } from "../database/database";
 import { string } from "random-js";
+import { ObjectId } from "mongodb";
 
 export class ArmyLegions {
     private _db: Db;
@@ -12,11 +13,11 @@ export class ArmyLegions {
         this._cache = {};
     }
 
-    resetCache(userId: string) {
-        delete this._cache[userId];
+    resetCache(userId: ObjectId) {
+        delete this._cache[userId.toHexString()];
     }
 
-    async getLegion(userId: string, legionIndex: number) {
+    async getLegion(userId: ObjectId, legionIndex: number) {
         // if (!this._cacheExists(userId)) {
         //     const userRecord = await this._db.collection(Collections.Armies).findOne(
         //         { _id: userId },
@@ -45,7 +46,7 @@ export class ArmyLegions {
         };
     }
 
-    async onLegionUpdated(userId: string, legion: Legion) {
+    async onLegionUpdated(userId: ObjectId, legion: Legion) {
         await this._db.collection(Collections.Armies).updateOne(
             { _id: userId },
             { $set: { [`legions.${legion.index}`]: legion } }
@@ -64,7 +65,7 @@ export class ArmyLegions {
         return legions;
     }
 
-    private _cacheExists(userId: string) {
-        return !!this._cache[userId];
+    private _cacheExists(userId: ObjectId) {
+        return !!this._cache[userId.toHexString()];
     }
 }

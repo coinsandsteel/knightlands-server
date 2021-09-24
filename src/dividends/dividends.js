@@ -132,18 +132,18 @@ class Dividends {
         return 1 / (0.01 * Math.log2(this._supply) / Math.log2(1.5) + 1);
     }
 
-    async _refundAndNotifyFail(userId, amount) {
+    async _refundAndNotifyFail(address, amount) {
         amount = this._blockchain.getNumberDivTokenAmount(amount);
 
         // refund DKT
-        const inventory = await Game.loadInventory(userId);
+        const inventory = await Game.loadInventory(address);
         if (inventory) {
             await inventory.autoCommitChanges(async inv => {
                 await inv.modifyCurrency(CurrencyType.Dkt, amount);
             });
         }
 
-        let controller = Game.getPlayerController(userId);
+        let controller = Game.getPlayerController(address);
         if (controller) {
             await controller.onDividendTokenWithdrawal(false);
         }

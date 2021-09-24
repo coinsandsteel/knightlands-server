@@ -15,7 +15,6 @@ const UserHolder = -1;
 class Inventory {
     constructor(user, db) {
         this._db = db;
-        this._userId = user.address;
         this._user = user;
         this._items = [];
         this._itemsByTemplate = {};
@@ -128,7 +127,7 @@ class Inventory {
         // join items with templates
         let items = await this._db.collection(Collections.Inventory).aggregate([{
                 "$match": {
-                    "_id": this._userId
+                    "_id": this._user.id
                 }
             },
             {
@@ -213,7 +212,7 @@ class Inventory {
         this._loaded = true;
 
         let inventory = await this._db.collection(Collections.Inventory).findOne({
-            _id: this._userId
+            _id: this._user.id
         });
 
         if (!inventory) {
@@ -273,7 +272,7 @@ class Inventory {
                     query = {
                         updateOne: {
                             filter: {
-                                "_id": this._userId,
+                                "_id": this._user.id,
                                 "items.id": id
                             },
                             update: {
@@ -289,7 +288,7 @@ class Inventory {
                     query = {
                         updateOne: {
                             filter: {
-                                "_id": this._userId
+                                "_id": this._user.id
                             },
                             update: {
                                 $push: {
@@ -314,7 +313,7 @@ class Inventory {
                 let deleteQuery = {
                     updateOne: {
                         filter: {
-                            "_id": this._userId
+                            "_id": this._user.id
                         },
                         update: {
                             $pull: {
@@ -336,7 +335,7 @@ class Inventory {
         let updateQuery = {
             updateOne: {
                 filter: {
-                    "_id": this._userId
+                    "_id": this._user.id
                 },
                 update: {
                     $set: {
@@ -355,7 +354,7 @@ class Inventory {
         this._newItems.clear();
         this._removedItems.clear();
 
-        Game.emitPlayerEvent(this._userId, Inventory.Changed, {
+        Game.emitPlayerEvent(this._user.address, Inventory.Changed, {
             changes,
             delta,
             currencies: this._currencies
@@ -646,7 +645,7 @@ class Inventory {
         let unit;
         // if holder is character use chracter items
         if (item.holder != UserHolder) {
-            unit = await Game.armyManager.getUnit(this._userId, item.holder);
+            unit = await Game.armyManager.getUnit(this._user.id, item.holder);
             if (unit) {
                 equippedItems = unit.items;
             }
@@ -685,7 +684,7 @@ class Inventory {
         delete equippedItems[itemSlot];
 
         if (unit && !byArmy) {
-            await Game.armyManager.updateUnit(this._userId, unit)
+            await Game.armyManager.updateUnit(this._user, unit)
         }
 
         return item;
@@ -698,7 +697,7 @@ class Inventory {
     //         if (item.holder == UserHolder) {
     //             equippedItems = this._user.equipment;
     //         } else {
-    //             const unit = await Game.armyManager.getUnit(this._userId, item.holder);
+    //             const unit = await Game.armyManager.getUnit(this._user.id, item.holder);
     //             equippedItems = unit.items;
     //         }
 
@@ -907,7 +906,7 @@ class Inventory {
         if (item.holder == UserHolder || item.holder === undefined) {
             equippedItems = this._user.equipment;
         } else {
-            unit = await Game.armyManager.getUnit(this._userId, item.holder);
+            unit = await Game.armyManager.getUnit(this._user.id, item.holder);
             equippedItems = unit.items;
         }
 

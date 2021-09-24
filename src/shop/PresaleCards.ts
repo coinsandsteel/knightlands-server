@@ -140,6 +140,7 @@ export class PresaleCardsService {
             return;
         }
 
+        // TODO Probably, that's a "user.address", not "user"
         const user = await Game.getUserById(depositData.user);
         if (!user) {
             await this._logError("unknown user", data);
