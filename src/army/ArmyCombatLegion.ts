@@ -49,8 +49,7 @@ export class ArmyCombatLegion {
         this.unitIds = unitIds;
 
         const unitsDict = await this._armyUnits.getUserUnits(this._userId, unitIds);
-        const unitsFound = Object.keys(unitsDict).length;
-        const units: ArmyUnit[] = new Array(unitsFound);
+        const units = {};
         let unitIndex = 0;
         for (let i in unitsDict) {
             const unit = unitsDict[i];
@@ -70,8 +69,13 @@ export class ArmyCombatLegion {
             unitIndex++;
         }
 
-        const resolveResult = this._armyResolver.resolve(units, this._unitIndex, raid, playerStats, bonusDamage);
-        // console.log(JSON.stringify(resolveResult, null, 2))
+        const resolveResult = this._armyResolver.resolve({
+            units,
+            unitsIndex: this._unitIndex,
+            raid,
+            userStats: playerStats,
+            bonusDamage
+        } as unknown as any[]);
 
         raidBoss._applyDamage(resolveResult.totalDamageOutput);
 

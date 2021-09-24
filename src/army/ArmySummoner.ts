@@ -147,15 +147,24 @@ export class ArmySummoner {
 
         if (randomAbilitiesCount > 0) {
             const fillerPool = template.troop ? this._abilities.fillers.troops : this._abilities.fillers.generals;
+            const abilityTemplates = template.troop ? this._abilities.troops : this._abilities.general;
             const perUnitList = new WeightedList(template.abilityPool.abilities);
             const fillerList = new WeightedList(fillerPool.abilities);
 
-            while (randomAbilitiesCount-- > 0) {
+            while (randomAbilitiesCount > 0) {
                 // first determine if filler passive must be rolled
                 if (Random.intRange(1, 100) <= fillerPool.weight || perUnitList.length == 0) {
                     abilities.push(...fillerList.peek(1, true))
                 } else {
                     abilities.push(...perUnitList.peek(1, true))
+                }
+
+                const lastAbility = abilities[abilities.length - 1];
+                // do not onclude abilities that include unit itself
+                if (abilityTemplates[lastAbility].unitType != template.unitType && abilityTemplates[lastAbility].unitType2 != template.unitType) {
+                    randomAbilitiesCount--;
+                } else {
+                    abilities.pop();
                 }
             }
         }
