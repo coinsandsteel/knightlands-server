@@ -376,38 +376,39 @@ class LootGenerator {
         let groupsWeights = gacha.rarityGroupsWeights;
         let gachaState = null;
 
-        if (isBox) {
-            gachaState = await this._getGachaState(userId, gacha);
-            if (!gachaState) {
-                gachaState = { totalWeight: totalWeight, rarityGroupsWeights: {...gacha.rarityGroupsWeights } };
-            }
+        // if (isBox) {
+        //     gachaState = await this._getGachaState(userId, gacha);
+        //     if (!gachaState) {
+        //         gachaState = { totalWeight: totalWeight, rarityGroupsWeights: {...gacha.rarityGroupsWeights } };
+        //     }
 
-            totalWeight = gachaState.totalWeight;
-            groupsWeights = gachaState.rarityGroupsWeights;
-        }
+        //     totalWeight = gachaState.totalWeight;
+        //     groupsWeights = gachaState.rarityGroupsWeights;
+        // }
 
         let basketRolls = 0;
         while (itemsPerDraw-- > 0) {
-            if (gacha.basket) {
-                if (gacha.basket.timesPerDraw > 0 && basketRolls < gacha.basket.timesPerDraw) {
-                    basketRolls++
-                    let rolled = await this._rollBasket(1, userId, gacha, items, itemsHash);
-                    if (rolled) {
-                        continue;
-                    }
-                }
-            }
+            // if (gacha.basket) {
+            //     if (gacha.basket.timesPerDraw > 0 && basketRolls < gacha.basket.timesPerDraw) {
+            //         basketRolls++
+            //         let rolled = await this._rollBasket(1, userId, gacha, items, itemsHash);
+            //         if (rolled) {
+            //             continue;
+            //         }
+            //     }
+            // }
 
             // roll rarity group
             let roll = Random.range(0, totalWeight, true);
-            // console.log(`rarity roll ${roll} ${totalWeight}` );
+            console.log(`rarity roll ${roll} ${totalWeight}`);
 
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
-                // console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
                 if (roll <= groupsWeights[rarity]) {
+                    console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
+                    console.log(`chose ${rarity} rarity`)
                     break;
                 }
             }
@@ -416,17 +417,17 @@ class LootGenerator {
                 continue;
             }
 
-            if (isBox) {
-                // if rarityGroup has reset condition - reset initial state of the gacha
-                if (rolledGroup.resetWeights) {
-                    gachaState.rarityGroupsWeights = {...gacha.rarityGroupsWeights };
-                    gachaState.totalWeight = gacha.totalWeight;
-                } else {
-                    // decrease current group weight
-                    gachaState.rarityGroupsWeights[rolledGroup.rarity] -= rolledGroup.decreaseWeightOnRoll;
-                    gachaState.totalWeight -= rolledGroup.decreaseWeightOnRoll;
-                }
-            }
+            // if (isBox) {
+            //     // if rarityGroup has reset condition - reset initial state of the gacha
+            //     if (rolledGroup.resetWeights) {
+            //         gachaState.rarityGroupsWeights = {...gacha.rarityGroupsWeights };
+            //         gachaState.totalWeight = gacha.totalWeight;
+            //     } else {
+            //         // decrease current group weight
+            //         gachaState.rarityGroupsWeights[rolledGroup.rarity] -= rolledGroup.decreaseWeightOnRoll;
+            //         gachaState.totalWeight -= rolledGroup.decreaseWeightOnRoll;
+            //     }
+            // }
 
             await this._rollItemsFromLootTable({
                 itemsToRoll: 1
@@ -435,7 +436,7 @@ class LootGenerator {
 
         if (isBox) {
             // if rarityGroup has reset condition - reset initial state of the gacha
-            await this._setGachaState(userId, gacha, gachaState);
+            // await this._setGachaState(userId, gacha, gachaState);
         }
 
         return items;
