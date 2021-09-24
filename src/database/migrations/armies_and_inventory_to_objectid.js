@@ -17,6 +17,13 @@ async function run() {
 async function swapIDs(collectionName, db) {
   const result = await db.collection(collectionName).find().forEach(async (entry) => {
     let address = entry._id;
+
+    // Protect processed entries from being deleted
+    if (!/@/.test(address) && !/\./.test(address)) {
+      console.log(`${collectionName}: ${address} is not an email. Aborting.`);
+      return;
+    }
+
     // Retrieve user
     let user = await db.collection(Collections.Users).findOne({ address });
 
