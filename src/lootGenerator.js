@@ -374,7 +374,7 @@ class LootGenerator {
 
         let totalWeight = gacha.totalWeight;
         let groupsWeights = gacha.rarityGroupsWeights;
-        let gachaState = null;
+        // let gachaState = null;
 
         // if (isBox) {
         //     gachaState = await this._getGachaState(userId, gacha);
@@ -386,7 +386,7 @@ class LootGenerator {
         //     groupsWeights = gachaState.rarityGroupsWeights;
         // }
 
-        let basketRolls = 0;
+        // let basketRolls = 0;
         while (itemsPerDraw-- > 0) {
             // if (gacha.basket) {
             //     if (gacha.basket.timesPerDraw > 0 && basketRolls < gacha.basket.timesPerDraw) {
@@ -400,15 +400,15 @@ class LootGenerator {
 
             // roll rarity group
             let roll = Random.range(0, totalWeight, true);
-            console.log(`rarity roll ${roll} ${totalWeight}`);
+            // console.log(`rarity roll ${roll} ${totalWeight}`);
 
             let rolledGroup;
             for (let rarity in gacha.rarityGroups) {
                 const group = gacha.rarityGroups[rarity];
                 rolledGroup = group;
                 if (roll <= groupsWeights[rarity]) {
-                    console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
-                    console.log(`chose ${rarity} rarity`)
+                    // console.log(`roll ${roll} <= rarity weight ${groupsWeights[rarity]}`);
+                    // console.log(`chose ${rarity} rarity`)
                     break;
                 }
             }
