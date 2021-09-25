@@ -295,6 +295,11 @@ class Trials {
                 }
             }
 
+            if (trialType != TrialType.Accessory) {
+                // accessory trial consumes on every attack instead
+                this._consumeAttempt(trialType);
+            }
+
             await this._tryAdvanceToNextTrial(trialType);
         }
 
@@ -354,11 +359,6 @@ class Trials {
         // check if there is enough attempts
         if (!this._hasAttempts(trialType)) {
             throw Errors.TrialNoAttempts;
-        }
-
-        if (trialType != TrialType.Accessory) {
-            // accessory trial consumes on every attack instead
-            this._consumeAttempt(trialType);
         }
 
         stageState.cleared = false;
