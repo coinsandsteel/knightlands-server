@@ -217,8 +217,8 @@ export class ArmyManager {
         return newUnits;
     }
 
-    async summontUnits(initialUser: User, count: number, summonType: number, iapIndex: number) {
-        let armyProfile = await this._loadArmyProfile(initialUser.id);
+    async summontUnits(user: User, count: number, summonType: number, iapIndex: number) {
+        let armyProfile = await this._loadArmyProfile(user.id);
 
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
@@ -235,7 +235,6 @@ export class ArmyManager {
 
         await this._checkFreeSlots(armyProfile, count);
 
-        let user = await Game.getUser(initialUser.address);
         let lastSummon = armyProfile.lastSummon;
         let isFirstSummon = false;
 
@@ -256,7 +255,7 @@ export class ArmyManager {
                 lastSummon[summonType] = Game.nowSec;
             } else {
                 // check if user has enough tickets
-                const inventory = await Game.loadInventory(user.address);
+                const inventory = await Game.loadInventoryById(user.id);
                 const ticketItem = inventory.getItemByTemplate(summonMeta.ticketItem);
                 if (!ticketItem) {
                     throw Errors.NoEnoughItems;
@@ -283,8 +282,8 @@ export class ArmyManager {
         return newUnits;
     }
 
-    async levelUp(initialUser: User, unitId: number) {
-        const unitRecord = await this._units.getUserUnit(initialUser.id, unitId);
+    async levelUp(user: User, unitId: number) {
+        const unitRecord = await this._units.getUserUnit(user.id, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
@@ -312,7 +311,6 @@ export class ArmyManager {
             throw Errors.UnexpectedArmyUnit;
         }
 
-        const user = await Game.getUser(initialUser.address);
         if (user.level < 200 && unit.level >= user.level) {
             throw Errors.ArmyUnitMaxLvl;
         }
@@ -343,7 +341,7 @@ export class ArmyManager {
             throw Errors.ArmyNoUnit;
         }
 
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
         const length = itemIds.length;
         const unit = unitRecord[unitId];
         const slotsEquipped = {};
@@ -388,7 +386,7 @@ export class ArmyManager {
         }
 
         const unit = unitRecord[unitId];
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
 
         if (slotId) {
             const item = unit.items[slotId];
@@ -469,7 +467,7 @@ export class ArmyManager {
         }
 
         // check souls
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
         if (inventory.countItemsByTemplate(this._meta.soulsItem) < fusionTemplate.souls) {
             throw Errors.NotEnoughResource;
         }
@@ -552,7 +550,7 @@ export class ArmyManager {
         const cachedUser = await Game.getUser(user.address);
         await cachedUser.addSoftCurrency(Math.floor(resourcesUsed.gold));
 
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
         await inventory.addItemTemplates([
             { item: this._troops.essenceItem, quantity: Math.floor(resourcesUsed.troopEssence) },
             { item: this._generals.essenceItem, quantity: Math.floor(resourcesUsed.generalEssence) },
@@ -616,7 +614,7 @@ export class ArmyManager {
     }
 
     async createCombatLegion(user: User, legionIndex: number) {
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
         const combatLegion = new ArmyCombatLegion(
             user.id,
             legionIndex,
@@ -665,7 +663,7 @@ export class ArmyManager {
     }
 
     private async _removeEquipmentFromUnits(user: User, units: { [key: number]: ArmyUnit }) {
-        const inventory = await Game.loadInventory(user.address);
+        const inventory = await Game.loadInventoryById(user.id);
 
         for (const unitId in units) {
             const unit = units[unitId];
