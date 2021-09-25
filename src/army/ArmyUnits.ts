@@ -3,6 +3,8 @@ import { Db, Collection } from "mongodb";
 import { ArmyUnit, ArmyReserve } from "./ArmyTypes";
 import Game from "../game";
 import Events from "../knightlands-shared/events";
+import { ObjectId } from "mongodb";
+import User from "../user";
 
 type ArmyInventory = { [key: string]: ArmyUnit };
 
@@ -27,7 +29,7 @@ export class ArmyUnits {
         return `${unit.template}_${unit.promotions}`;
     }
 
-    async getReservedUnits(userId: string, units: ArmyUnit[]): Promise<ArmyReserve> {
+    async getReservedUnits(userId: ObjectId, units: ArmyUnit[]): Promise<ArmyReserve> {
         const length = units.length;
         const reserve = await this.getReserve(userId);
         const foundReserves = {};
@@ -40,25 +42,25 @@ export class ArmyUnits {
         return foundReserves;
     }
 
-    async getUserUnits(userId: string, ids: number[]) {
+    async getUserUnits(userId: ObjectId, ids: number[]) {
         return this.getInventoryUnits(userId, ids);
     }
 
-    async getUserUnit(userId: string, id: number) {
+    async getUserUnit(userId: ObjectId, id: number) {
         return this.getInventoryUnits(userId, [id]);
     }
 
-    async onUnitUpdated(userId: string, unit: ArmyUnit) {
+    async onUnitUpdated(user: User, unit: ArmyUnit) {
         await this._collection.updateOne(
-            { _id: userId, "units.id": unit.id },
+            { _id: user.id, "units.id": unit.id },
             { $set: { "units.$": unit } }
         );
 
-        Game.emitPlayerEvent(userId, Events.UnitUpdated, unit);
-        this.resetCache(userId);
+        Game.emitPlayerEvent(user.address, Events.UnitUpdated, unit);
+        this.resetCache(user.id);
     }
 
-    async addUnits(userId: string, units: ArmyUnit[], lastUnitId: number, lastSummon: number | undefined = undefined) {
+    async addUnits(userId: ObjectId, units: ArmyUnit[], lastUnitId: number, lastSummon: number | undefined = undefined) {
         let $set: any = { lastUnitId }
         if (lastSummon) {
             $set.lastSummon = lastSummon;
@@ -66,44 +68,46 @@ export class ArmyUnits {
         await this._collection.updateOne({ "_id": userId }, { $push: { "units": { $each: units } }, $set, $inc: { "occupiedSlots": units.length } }, { upsert: true });
     }
 
-    async removeUnits(userId: string, ids: number[]) {
+    async removeUnits(user: User, ids: number[]) {
         await this._collection.updateOne(
-            { "_id": userId },
+            { "_id": user.id },
             { $pull: { "units": { "id": { $in: ids } } }, $inc: { "occupiedSlots": -ids.length } }
         );
-        Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
-        this.resetCache(userId);
+
+        Game.emitPlayerEvent(user.address, Events.UnitsRemoved, ids);
+        this.resetCache(user.id);
     }
 
-    async updateReservedUnits(userId: string, reserve: ArmyReserve) {
+    async updateReservedUnits(user: User, reserve: ArmyReserve) {
         const setQuery = {};
         for (let key in reserve) {
             setQuery[`reserve.${key}`] = reserve[key];
         }
         await this._collection.updateOne(
-            { _id: userId },
+            { _id: user.id },
             { $set: setQuery }
         );
-        Game.emitPlayerEvent(userId, Events.UnitsReserveUpdate, reserve);
-        this.resetCache(userId);
+
+        Game.emitPlayerEvent(user.address, Events.UnitsReserveUpdate, reserve);
+        this.resetCache(user.id);
     }
 
-    async getInventory(userId: string) {
+    async getInventory(userId: ObjectId) {
         const { units } = await this.getCache(userId);
         return units;
     }
 
-    async getReserve(userId: string) {
+    async getReserve(userId: ObjectId) {
         const { reserve } = await this.getCache(userId);
         return reserve;
     }
 
-    resetCache(userId: string) {
-        delete this._cache[userId];
+    resetCache(userId: ObjectId) {
+        delete this._cache[userId.toHexString()];
     }
 
-    private async getCache(userId: string): Promise<CacheRecord> {
-        if (!this._cache[userId]) {
+    private async getCache(userId: ObjectId): Promise<CacheRecord> {
+        if (!this._cache[userId.toHexString()]) {
             // build an index
             let userRecord = await this._collection.findOne(
                 { _id: userId }
@@ -127,14 +131,14 @@ export class ArmyUnits {
                     cacheRecord.reserve[key] = unit;
                 }
 
-                this._cache[userId] = cacheRecord;
+                this._cache[userId.toHexString()] = cacheRecord;
             }
         }
 
-        return this._cache[userId];
+        return this._cache[userId.toHexString()];
     }
 
-    private async getInventoryUnits(userId: string, ids: number[]) {
+    private async getInventoryUnits(userId: ObjectId, ids: number[]) {
         if (!ids || ids.length == 0) {
             return null;
         }

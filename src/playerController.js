@@ -1628,11 +1628,11 @@ class PlayerController extends IPaymentListener {
 
     // Armies
     async _getArmy(user, data) {
-        return Game.armyManager.getArmy(user.address);
+        return Game.armyManager.getArmy(user);
     }
 
     async _setLegionSlot(user, data) {
-        await Game.armyManager.setLegionSlot(user.address, user.level, data.legionIndex, data.slotId, data.unitId);
+        await Game.armyManager.setLegionSlot(user, user.level, data.legionIndex, data.slotId, data.unitId);
     }
 
     async _summonArmyUnit(user, data) {
@@ -1641,42 +1641,42 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return Game.armyManager.summontUnits(user.address, count, summonType, iap);
+        return Game.armyManager.summontUnits(user, count, summonType, iap);
     }
 
     async _summonArmyInfo(user, data) {
-        return Game.armyManager.getSummonOverview(user.address);
+        return Game.armyManager.getSummonOverview(user);
     }
 
     async _levelUpArmyUnit(user, data) {
-        return Game.armyManager.levelUp(user.address, data.unitId);
+        return Game.armyManager.levelUp(user, data.unitId);
     }
 
     async _unitEquipItem(user, data) {
-        return Game.armyManager.equipItem(user.address, data.unitId, data.itemIds);
+        return Game.armyManager.equipItem(user, data.unitId, data.itemIds);
     }
 
     async _unitUnequipItem(user, data) {
-        return Game.armyManager.unequipItem(user.address, data.unitId, data.slotId);
+        return Game.armyManager.unequipItem(user, data.unitId, data.slotId);
     }
 
     async _unitPromotion(user, data) {
-        return Game.armyManager.promote(user.address, data.unitId, data.units);
+        return Game.armyManager.promote(user, data.unitId, data.units);
     }
 
     async _unitBanish(user, data) {
-        return Game.armyManager.banish(user.address, data.units);
+        return Game.armyManager.banish(user, data.units);
     }
 
     async _unitReserve(user, data) {
-        return Game.armyManager.sendToReserve(user.id, data.units);
+        return Game.armyManager.sendToReserve(user, data.units);
     }
 
     async _expandArmyInventory(user, data) {
         if (data.byItem) {
-            return Game.armyManager.expandSlots(user.address)
+            return Game.armyManager.expandSlots(user)
         } else {
-            return Game.armyManager.buySlotsExpansion(user.address)
+            return Game.armyManager.buySlotsExpansion(user)
         }
     }
 

@@ -15,7 +15,7 @@
       "**/*.test.ts",
       "**/*.spec.ts"
     ],
-    "delay": "1000",
+    "delay": 1500,
     "watch": [
       "src"
     ],

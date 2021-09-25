@@ -296,7 +296,7 @@ class Raid extends EventEmitter {
 
         combatUnit.updateStats(this._data.weakness.current.element)
 
-        const army = await Game.armyManager.createCombatLegion(attacker.address, legionIndex);
+        const army = await Game.armyManager.createCombatLegion(attacker, legionIndex);
         const damageLog = {
             by: attacker.id,
             name: attacker.nickname.v,

@@ -17,6 +17,8 @@ import Random from "../random";
 import { isNumber } from "../validation";
 import { getSlot } from "../knightlands-shared/equipment_slot";
 import CurrencyType from "../knightlands-shared/currency_type";
+import { ObjectId } from "mongodb";
+import User from "../user";
 
 const NO_LEGION = -1;
 
@@ -85,7 +87,7 @@ export class ArmyManager {
         );
     }
 
-    async getUnit(userId: string, id: number) {
+    async getUnit(userId: ObjectId, id: number) {
         let units = await this._units.getUserUnit(userId, id);
         if (!units) {
             return null;
@@ -93,15 +95,15 @@ export class ArmyManager {
         return units[id];
     }
 
-    async updateUnit(userId, unit: ArmyUnit) {
-        return this._units.onUnitUpdated(userId, unit);
+    async updateUnit(user: User, unit: ArmyUnit) {
+        return this._units.onUnitUpdated(user, unit);
     }
 
-    async getSummonStatus(userId) {
-        return Game.paymentProcessor.fetchPaymentStatus(userId, this.PaymentTag, {});
+    async getSummonStatus(user) {
+        return Game.paymentProcessor.fetchPaymentStatus(user.address, this.PaymentTag, {});
     }
 
-    async getArmyPreview(userId: string) {
+    async getArmyPreview(userId: ObjectId) {
         const army = await this._armiesCollection.findOne(
             { _id: userId },
             { projection: { legions: 1, units: 1 } }
@@ -123,24 +125,24 @@ export class ArmyManager {
         return army;
     }
 
-    async getArmy(userId: string) {
-        return this._loadArmy(userId);
+    async getArmy(user: User) {
+        return this._loadArmy(user.id);
     }
 
-    async setLegionSlot(userId: string, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
-        const legion = await this._loadLegion(userId, legionIndex);
+    async setLegionSlot(user: User, userLevel: number, legionIndex: number, slotId: number, unitId: number) {
+        const legion = await this._loadLegion(user.id, legionIndex);
 
         let unit;
 
         const prevUnitId = legion.units[slotId];
-        const prevUnitRecord = await this._units.getUserUnit(userId, prevUnitId);
+        const prevUnitRecord = await this._units.getUserUnit(user.id, prevUnitId);
 
         if (prevUnitRecord) {
             // empty slot
             unit = prevUnitRecord[prevUnitId];
             if (unit) {
                 unit.legion = NO_LEGION;
-                await this._units.onUnitUpdated(userId, unit);
+                await this._units.onUnitUpdated(user, unit);
             }
         }
 
@@ -152,7 +154,7 @@ export class ArmyManager {
                 throw Errors.IncorrectArguments;
             }
 
-            const unitRecord = (await this._units.getUserUnit(userId, unitId))[unitId];
+            const unitRecord = (await this._units.getUserUnit(user.id, unitId))[unitId];
             if (!unitRecord || unitRecord.troop != slot.troop || unitRecord.legion != NO_LEGION) {
                 throw Errors.IncorrectArguments;
             }
@@ -167,7 +169,7 @@ export class ArmyManager {
                 for (const slotId in legion.units) {
                     ids.push(legion.units[slotId]);
                 }
-                const usedUnits = await this._units.getUserUnits(userId, ids);
+                const usedUnits = await this._units.getUserUnits(user.id, ids);
                 for (const id in usedUnits) {
                     if (usedUnits[id].template == unitRecord.template) {
                         throw Errors.IncorrectArguments;
@@ -188,18 +190,18 @@ export class ArmyManager {
         }
 
         if (unit) {
-            await this._units.onUnitUpdated(userId, unit);
+            await this._units.onUnitUpdated(user, unit);
         }
 
-        await this._legions.onLegionUpdated(userId, legion);
+        await this._legions.onLegionUpdated(user.id, legion);
     }
 
-    async getSummonOverview(userId: string) {
-        return this._loadArmyProfile(userId);
+    async getSummonOverview(user: User) {
+        return this._loadArmyProfile(user.id);
     }
 
-    async summonRandomUnit(userId: string, count: number, stars: number, summonType: number) {
-        const armyProfile = await this._loadArmyProfile(userId);
+    async summonRandomUnit(user: User, count: number, stars: number, summonType: number) {
+        const armyProfile = await this._loadArmyProfile(user.id);
 
         await this._checkFreeSlots(armyProfile, 1);
 
@@ -210,13 +212,13 @@ export class ArmyManager {
             unit.id = ++lastUnitId;
         }
 
-        await this._units.addUnits(userId, newUnits, lastUnitId);
-        this._units.resetCache(userId);
+        await this._units.addUnits(user.id, newUnits, lastUnitId);
+        this._units.resetCache(user.id);
         return newUnits;
     }
 
-    async summontUnits(userId: string, count: number, summonType: number, iapIndex: number) {
-        let armyProfile = await this._loadArmyProfile(userId);
+    async summontUnits(user: User, count: number, summonType: number, iapIndex: number) {
+        let armyProfile = await this._loadArmyProfile(user.id);
 
         let summonMeta = summonType == SummonType.Normal ? this._summonMeta.normalSummon : this._summonMeta.advancedSummon;
 
@@ -233,7 +235,6 @@ export class ArmyManager {
 
         await this._checkFreeSlots(armyProfile, count);
 
-        const user = await Game.getUser(userId);
         let lastSummon = armyProfile.lastSummon;
         let isFirstSummon = false;
 
@@ -254,7 +255,7 @@ export class ArmyManager {
                 lastSummon[summonType] = Game.nowSec;
             } else {
                 // check if user has enough tickets
-                const inventory = await Game.loadInventory(userId);
+                const inventory = await Game.loadInventoryById(user.id);
                 const ticketItem = inventory.getItemByTemplate(summonMeta.ticketItem);
                 if (!ticketItem) {
                     throw Errors.NoEnoughItems;
@@ -274,15 +275,15 @@ export class ArmyManager {
         }
 
         // add to user's army
-        await this._units.addUnits(userId, newUnits, lastUnitId, lastSummon);
+        await this._units.addUnits(user.id, newUnits, lastUnitId, lastSummon);
         await user.dailyQuests.onUnitSummoned(count, summonType == SummonType.Advanced);
 
-        this._units.resetCache(userId);
+        this._units.resetCache(user.id);
         return newUnits;
     }
 
-    async levelUp(userId: any, unitId: number) {
-        const unitRecord = await this._units.getUserUnit(userId, unitId);
+    async levelUp(user: User, unitId: number) {
+        const unitRecord = await this._units.getUserUnit(user.id, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
@@ -310,7 +311,6 @@ export class ArmyManager {
             throw Errors.UnexpectedArmyUnit;
         }
 
-        const user = await Game.getUser(userId);
         if (user.level < 200 && unit.level >= user.level) {
             throw Errors.ArmyUnitMaxLvl;
         }
@@ -329,19 +329,19 @@ export class ArmyManager {
         await user.addSoftCurrency(-levelRecord.gold);
         user.inventory.removeItemByTemplate(meta.essenceItem, levelRecord.essence);
         unit.level++;
-        await this._units.onUnitUpdated(userId, unit);
+        await this._units.onUnitUpdated(user, unit);
         await user.dailyQuests.onUnitLevelUp(1, unit.troop);
 
         return unit;
     }
 
-    async equipItem(userId: string, unitId: number, itemIds: number[]) {
-        const unitRecord = await this._units.getUserUnit(userId, unitId);
+    async equipItem(user: User, unitId: number, itemIds: number[]) {
+        const unitRecord = await this._units.getUserUnit(user.id, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
 
-        const inventory = await Game.loadInventory(userId);
+        const inventory = await Game.loadInventoryById(user.id);
         const length = itemIds.length;
         const unit = unitRecord[unitId];
         const slotsEquipped = {};
@@ -376,17 +376,17 @@ export class ArmyManager {
             await inventory.equipItem(item, unit.items, unit.id);
         }
 
-        await this._units.onUnitUpdated(userId, unit);
+        await this._units.onUnitUpdated(user, unit);
     }
 
-    async unequipItem(userId: string, unitId: number, slotId: number) {
-        const unitRecord = await this._units.getUserUnit(userId, unitId);
+    async unequipItem(user: User, unitId: number, slotId: number) {
+        const unitRecord = await this._units.getUserUnit(user.id, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
 
         const unit = unitRecord[unitId];
-        const inventory = await Game.loadInventory(userId);
+        const inventory = await Game.loadInventoryById(user.id);
 
         if (slotId) {
             const item = unit.items[slotId];
@@ -400,12 +400,12 @@ export class ArmyManager {
             }
         }
 
-        await this._units.onUnitUpdated(userId, unit);
+        await this._units.onUnitUpdated(user, unit);
     }
 
-    async promote(userId: string, unitId: number, units: { [k: string]: number[] }) {
+    async promote(user: User, unitId: number, units: { [k: string]: number[] }) {
         // units - { ingridient id -> unit ids }
-        const unitRecord = await this._units.getUserUnit(userId, unitId);
+        const unitRecord = await this._units.getUserUnit(user.id, unitId);
         if (!unitRecord) {
             throw Errors.ArmyNoUnit;
         }
@@ -436,7 +436,7 @@ export class ArmyManager {
 
             toRemove = toRemove.concat(unitsForFusion);
 
-            const targetUnits = await this._units.getUserUnits(userId, unitsForFusion);
+            const targetUnits = await this._units.getUserUnits(user.id, unitsForFusion);
 
             for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
@@ -467,7 +467,7 @@ export class ArmyManager {
         }
 
         // check souls
-        const inventory = await Game.loadInventory(userId);
+        const inventory = await Game.loadInventoryById(user.id);
         if (inventory.countItemsByTemplate(this._meta.soulsItem) < fusionTemplate.souls) {
             throw Errors.NotEnoughResource;
         }
@@ -484,18 +484,18 @@ export class ArmyManager {
 
         // everything is ok, promote unit
         unit.promotions++;
-        await this._units.onUnitUpdated(userId, unit);
+        await this._units.onUnitUpdated(user, unit);
         // remove ingridient units
-        await this._units.removeUnits(userId, toRemove);
+        await this._units.removeUnits(user.id, toRemove);
     }
 
-    async banish(userId: string, unitIds: number[]) {
+    async banish(user: User, unitIds: number[]) {
         // TODO move to config
         if (unitIds.length > 10) {
             throw Errors.IncorrectArguments;
         }
 
-        const unitRecords = await this._units.getUserUnits(userId, unitIds);
+        const unitRecords = await this._units.getUserUnits(user.id, unitIds);
         if (!unitRecords) {
             throw Errors.ArmyNoUnit;
         }
@@ -538,19 +538,19 @@ export class ArmyManager {
             }
         }
 
-        await this._removeEquipmentFromUnits(userId, unitRecords);
+        await this._removeEquipmentFromUnits(user, unitRecords);
 
         resourcesUsed.gold *= this._meta.refund.gold;
         resourcesUsed.troopEssence *= this._meta.refund.troopEssence;
         resourcesUsed.generalEssence *= this._meta.refund.generalEssence;
 
         // remove units
-        await this._units.removeUnits(userId, unitIds);
+        await this._units.removeUnits(user, unitIds);
         // refund
-        const user = await Game.getUser(userId);
-        await user.addSoftCurrency(Math.floor(resourcesUsed.gold));
+        const cachedUser = await Game.getUser(user.address);
+        await cachedUser.addSoftCurrency(Math.floor(resourcesUsed.gold));
 
-        const inventory = await Game.loadInventory(userId);
+        const inventory = await Game.loadInventoryById(user.id);
         await inventory.addItemTemplates([
             { item: this._troops.essenceItem, quantity: Math.floor(resourcesUsed.troopEssence) },
             { item: this._generals.essenceItem, quantity: Math.floor(resourcesUsed.generalEssence) },
@@ -558,8 +558,8 @@ export class ArmyManager {
         ]);
     }
 
-    async sendToReserve(userId: string, unitIds: number[]) {
-        const unitRecords = await this._units.getUserUnits(userId, unitIds);
+    async sendToReserve(user: User, unitIds: number[]) {
+        const unitRecords = await this._units.getUserUnits(user.id, unitIds);
         if (!unitRecords) {
             throw Errors.ArmyNoUnit;
         }
@@ -588,7 +588,7 @@ export class ArmyManager {
             units.push(unit);
         }
 
-        const reserve = await this._units.getReservedUnits(userId, units);
+        const reserve = await this._units.getReservedUnits(user.id, units);
         const reserveDelta = {}
         for (const unitId of unitIds) {
             const unit = unitRecords[unitId];
@@ -608,38 +608,36 @@ export class ArmyManager {
         }
 
 
-        await this._units.updateReservedUnits(userId, reserveDelta);
-        await this._removeEquipmentFromUnits(userId, unitRecords);
-        await this._units.removeUnits(userId, unitIds);
+        await this._units.updateReservedUnits(user, reserveDelta);
+        await this._removeEquipmentFromUnits(user, unitRecords);
+        await this._units.removeUnits(user, unitIds);
     }
 
-    async createCombatLegion(userId: string, legionIndex: number) {
-        const inventory = await Game.loadInventory(userId);
+    async createCombatLegion(user: User, legionIndex: number) {
+        const inventory = await Game.loadInventoryById(user.id);
         const combatLegion = new ArmyCombatLegion(
-            userId,
+            user.id,
             legionIndex,
             this._armyResolver,
-            await this._units.getInventory(userId),
+            await this._units.getInventory(user.id),
             this._units,
-            await this._units.getReserve(userId),
+            await this._units.getReserve(user.id),
             this._legions,
             inventory
         );
         return combatLegion;
     }
 
-    async expandSlots(userId: string, slots: number) {
-        await this._expandSlots(userId, slots);
+    async expandSlots(user: User, slots: number) {
+        await this._expandSlots(user, slots);
     }
 
-    async buySlotsExpansion(userId: string) {
-        const user = await Game.getUser(userId);
-
+    async buySlotsExpansion(user: User) {
         if (user.hardCurrency < this._meta.armyExpansion.expansionPrice) {
             throw Errors.NotEnoughCurrency;
         }
 
-        await this._expandSlots(userId, this._meta.armyExpansion.expansionSize);
+        await this._expandSlots(user, this._meta.armyExpansion.expansionSize);
         await user.addHardCurrency(-this._meta.armyExpansion.expansionPrice);
     }
 
@@ -649,23 +647,23 @@ export class ArmyManager {
         }
     }
 
-    private async _expandSlots(userId: string, count: number) {
-        const armyProfile = await this._loadArmy(userId, { "maxSlots": 1 })
+    private async _expandSlots(user: User, count: number) {
+        const armyProfile = await this._loadArmy(user.id, { "maxSlots": 1 })
 
         if (armyProfile.maxSlots >= this._meta.armyExpansion.maxSlots) {
             throw Errors.ArmyMaxSlots;
         }
 
         await this._armiesCollection.updateOne(
-            { _id: userId },
+            { _id: user.id },
             { $inc: { maxSlots: count } }
         )
 
-        Game.emitPlayerEvent(userId, Events.ArmySlots, { maxSlots: armyProfile.maxSlots + count })
+        Game.emitPlayerEvent(user.address, Events.ArmySlots, { maxSlots: armyProfile.maxSlots + count })
     }
 
-    private async _removeEquipmentFromUnits(userId: string, units: { [key: number]: ArmyUnit }) {
-        const inventory = await Game.loadInventory(userId);
+    private async _removeEquipmentFromUnits(user: User, units: { [key: number]: ArmyUnit }) {
+        const inventory = await Game.loadInventoryById(user.id);
 
         for (const unitId in units) {
             const unit = units[unitId];
@@ -677,15 +675,15 @@ export class ArmyManager {
         }
     }
 
-    private async _loadLegion(userId: string, legionIndex: number) {
+    private async _loadLegion(userId: ObjectId, legionIndex: number) {
         return this._legions.getLegion(userId, legionIndex);
     }
 
-    private async _loadArmyProfile(userId: string) {
+    private async _loadArmyProfile(userId: ObjectId) {
         return this._loadArmy(userId, { "units": 0 })
     }
 
-    private async _loadArmy(userId: string, projection: any = {}) {
+    private async _loadArmy(userId: ObjectId, projection: any = {}) {
         return (await this._armiesCollection.findOneAndUpdate(
             { _id: userId },
             {

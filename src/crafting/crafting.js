@@ -23,6 +23,10 @@ class Crafting {
     }
 
     get _userId() {
+        return this._user.id;
+    }
+
+    get _userAddress() {
         return this._user.address;
     }
 
@@ -257,7 +261,7 @@ class Crafting {
             throw Errors.ItemNotEnchantable;
         }
 
-        let enchantingInProcess = await Game.craftingQueue.isEnchantingInProcess(this._userId, itemId);
+        let enchantingInProcess = await Game.craftingQueue.isEnchantingInProcess(this._userAddress, itemId);
         if (enchantingInProcess) {
             throw Errors.EnchantingInProcess;
         }
@@ -364,7 +368,7 @@ class Crafting {
         }
 
         if (currency == CurrencyType.Fiat) {
-            return await Game.craftingQueue.requestCraftingPayment(this._userId, recipe, amount);
+            return await Game.craftingQueue.requestCraftingPayment(this._userAddress, recipe, amount);
         } else {
             // check the balance
             let recipeCost = recipe.soft;
