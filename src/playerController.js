@@ -610,7 +610,9 @@ class PlayerController extends IPaymentListener {
             await user.addLoot(items);
         }
 
-        user.resetZoneProgress(zone, data.stage);
+        if (questComplete) {
+            user.resetZoneProgress(zone, data.stage);
+        }
 
         return { damages, items };
     }
