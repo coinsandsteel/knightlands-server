@@ -87,9 +87,8 @@ class Inventory {
             await Game.rankings.updateRank(this._user.id, {
                 type: RankingType.DktEarned
             }, value);
-        } else if (currency == CurrencyType.Dkt2 && value > 0) {
-            await Game.rankings.updateRank(this._user.id, {
-                type: RankingType.Dkt2Earned
+            await Game.prizePool.updateRank(this._user.id, {
+                type: RankingType.DktEarned
             }, value);
         }
     }

@@ -1,5 +1,5 @@
 import { IRankingTypeHandler } from "../IRankingTypeHandler";
-import { Db, ObjectId, Collection, Long } from "mongodb";
+import { ObjectId, Collection } from "mongodb";
 import { Collections } from "../../database/database";
 import { RankingOptions } from "../Ranking";
 import { PrizePoolMeta } from "./Types";
