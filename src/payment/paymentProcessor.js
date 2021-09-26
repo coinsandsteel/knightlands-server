@@ -181,7 +181,8 @@ class PaymentProcessor extends EventEmitter {
             const chainClient = this._blockchain.getBlockchain(chain);
             const nonce = Number(await chainClient.getPaymentNonce(address));
             // price is in cents
-            let price = Game.currencyConversionService.convertToNative(iapObject.price);
+            let price = Game.currencyConversionService.convertToNative(chainClient.getNativeCurrency(), iapObject.price);
+            price = chainClient.getBigIntDivTokenAmount(price);
             let deadline = Game.nowSec + 600;
 
             let inserted = await db.collection(Collections.PaymentRequests).insertOne({
@@ -192,7 +193,7 @@ class PaymentProcessor extends EventEmitter {
                 status: PaymentStatus.WaitingForTx,
                 claimed: false,
                 context,
-                price,
+                price: price.toString(),
                 nonce,
                 deadline,
                 chain
@@ -213,7 +214,7 @@ class PaymentProcessor extends EventEmitter {
             return {
                 signature,
                 iap,
-                price,
+                price: price.toString(),
                 nonce,
                 deadline,
                 paymentId

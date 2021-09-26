@@ -1,73 +1,76 @@
 const rp = require('request-promise-native');
 import Blockchains from "../knightlands-shared/blockchains";
+import CurrencyType from "../knightlands-shared/currency_type";
 
 class CurrencyConversionService {
-    constructor(blockchain, config) {
-        // minutes -> milliseconds
-        switch (blockchain) {
-            case Blockchains.Tron:
-                this._primaryCurrency = "TRX";
-                this._nativeConversion = 1000000;
-                break;
+    constructor() {
+        this._refreshInterval = 1800000;
+        this._requests = {};
 
-            case Blockchains.Waves:
-                this._primaryCurrency = "WAVES";
-                break;
+        this._conversionRates = {
+            [CurrencyType.Dkt]: 0.75,
+            [CurrencyType.Dkt2]: 0.75,
+            ["ethereum"]: 1,
+            ["polygon"]: 1
+        };
 
-            case Blockchains.EOS:
-                this._primaryCurrency = "EOS";
-                break;
-
-            case Blockchains.Ethereum:
-                this._primaryCurrency = "ETH";
-                break;
-        }
-
-        this._refreshInterval = config.refreshInterval * 60 * 1000;
-
-        let env = (process.env.ENV || "dev");
-
-        this._endPoint = (env == "dev" || env == "test" || end == "local") ? config.sandboxEndpoint : config.endpoint;
-
-        this._conversionRates = {};
-
-        // use coinsmarketcap for this purpose
-        // this._pullConversionRates();
-    }
-
-    get conversionRate() {
-        // return this._conversionRate.price;
-        return 0.75;
-    }
-
-    convertToNative(usdPrice) {
-        // usdPrice in cents
-        return Math.floor(usdPrice * this.conversionRate / 100);
-    }
-
-    async _pullConversionRates() {
-        const requestOptions = {
+        this._requests["ethereum"] = {
             method: 'GET',
-            uri: `${this._endPoint.uri}v1/tools/price-conversion`,
-            headers: {
-                'X-CMC_PRO_API_KEY': this._endPoint.apiKey
-            },
+            uri: `https://api.coingecko.com/api/v3/simple/price`,
             qs: {
-                'symbol': 'USD',
-                'amount': '0.01',
-                'convert': this._primaryCurrency
+                'ids': 'ethereum',
+                'vs_currencies': 'usd'
             },
             json: true,
             gzip: true
         };
 
-        try {
-            let response = await rp(requestOptions);
+        // this._requests["polygon"] = {
+        //     method: 'GET',
+        //     uri: `https://api.coingecko.com/api/v3/simple/price`,
+        //     qs: {
+        //         'ids': 'matic-network',
+        //         'vs_currencies': 'usd'
+        //     },
+        //     json: true,
+        //     gzip: true
+        // };
 
-            this._conversionRate = response.data.quote[this._primaryCurrency];
-        } catch (exc) {
-            console.log("Price pull exception", exc);
+        // this._requests["dkt"] = {
+        //     method: 'GET',
+        //     uri: `https://api.coingecko.com/api/v3/simple/price`,
+        //     qs: {
+        //         'ids': 'matic-network',
+        //         'vs_currencies': 'usd'
+        //     },
+        //     json: true,
+        //     gzip: true
+        // };
+
+        this._pullConversionRates();
+    }
+
+    conversionRate(currency) {
+        return this._conversionRates[currency] || 0;
+    }
+
+    convertToNative(currency, usdPrice) {
+        // usdPrice in cents
+        return usdPrice * this.conversionRate(currency) / 100;
+    }
+
+    async _pullConversionRates() {
+        for (const currency in this._requests) {
+            try {
+                let response = await rp(this._requests[currency]);
+                console.log(response)
+
+                this._conversionRates[currency] = response[currency].usd;
+            } catch (exc) {
+                console.log("Price pull exception", exc);
+            }
         }
+
 
         setTimeout(this._pullConversionRates.bind(this), this._refreshInterval);
     }

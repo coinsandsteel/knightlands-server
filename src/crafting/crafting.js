@@ -136,7 +136,7 @@ class Crafting {
         }
 
         const recipe = accCraftMeta.recipes[rarity];
-        const price = Game.currencyConversionService.convertToNative(recipe.price);
+        const price = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, recipe.price);
 
         if (price > this._inventory.getCurrency(CurrencyType.Dkt)) {
             throw Errors.NotEnoughCurrency;
@@ -292,7 +292,7 @@ class Crafting {
         let enchantCost = stepData.soft;
         if (currency == CurrencyType.Hard) {
             currency = CurrencyType.Dkt;
-            enchantCost = Game.currencyConversionService.convertToNative(stepData.hard);
+            enchantCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, stepData.hard);
         }
 
         if (this._inventory.getCurrency(currency) < enchantCost) {
@@ -374,11 +374,11 @@ class Crafting {
             let recipeCost = recipe.soft;
             if (currency == CurrencyType.Hard) {
                 currency = CurrencyType.Dkt;
-                recipeCost = Game.currencyConversionService.convertToNative(recipe.hard);
+                recipeCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, recipe.hard);
             }
 
             if (currency == CurrencyType.Dkt) {
-                recipeCost = Game.currencyConversionService.convertToNative(recipe.ashFee);
+                recipeCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, recipe.ashFee);
             }
 
             recipeCost *= amount;

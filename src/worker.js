@@ -91,7 +91,7 @@ class Worker extends SCWorker {
         this._armyManager = new ArmyManager(this._db);
         this._shop = new Shop(this._paymentProcessor);
 
-        this._currencyConversionService = new CurrencyConversionService(Config.blockchain, Config.conversionService);
+        this._currencyConversionService = new CurrencyConversionService();
 
         await Game.init(
             client,

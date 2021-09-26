@@ -3,16 +3,35 @@ import Blockchains from "../knightlands-shared/blockchains";
 const EthereumClient = require("./ethereum/client");
 const MockBlockchain = require("./mockBlockchain");
 
+const isProd = process.env.ENV == "prod";
+
 export function createBlockchain(blockchainType, db) {
     switch (blockchainType) {
         case Blockchains.Ethereum:
-            {
-                const PaymentGateway = require("./ethereum/PaymentGateway.json");
-                const Flesh = require("./ethereum/Flesh.json");
-                const PresaleCardsGate = require('./ethereum/PresaleCardsGate.json');
-                const TokensDepositGateway = require("./ethereum/TokensDepositGateway.json");
+            if (isProd) {
+                const PaymentGateway = require("./artifacts/ethereum/PaymentGateway.json");
+                const Flesh = require("./artifacts/ethereum/Flesh.json");
+                const PresaleCardsGate = require('./artifacts/ethereum/PresaleCardsGate.json');
+                const TokensDepositGateway = require("./artifacts/ethereum/TokensDepositGateway.json");
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
+                    "ethereum",
+                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
+                    PaymentGateway,
+                    Flesh,
+                    PresaleCardsGate,
+                    TokensDepositGateway,
+                    url
+                );
+            } else {
+                const PaymentGateway = require("./artifacts/goerli/PaymentGateway.json");
+                const Flesh = require("./artifacts/goerli/Flesh.json");
+                const PresaleCardsGate = require('./artifacts/goerli/PresaleCardsGate.json');
+                const TokensDepositGateway = require("./artifacts/goerli/TokensDepositGateway.json");
+                const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
+                return new EthereumClient(
+                    "ethereum",
+                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
                     PaymentGateway,
                     Flesh,
                     PresaleCardsGate,
@@ -21,7 +40,22 @@ export function createBlockchain(blockchainType, db) {
                 );
             }
         case Blockchains.Polygon:
-            return new EthereumClient();
+            {
+                const PaymentGateway = require("./artifacts/polygon/PaymentGateway.json");
+                const Flesh = require("./artifacts/polygon/Flesh.json");
+                const PresaleCardsGate = require('./artifacts/polygon/PresaleCardsGate.json');
+                const TokensDepositGateway = require("./artifacts/polygon/TokensDepositGateway.json");
+                const url = process.env.POLYGON_URL || "http://127.0.0.1:8545";
+                return new EthereumClient(
+                    "ethereum",
+                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 50 },
+                    PaymentGateway,
+                    Flesh,
+                    PresaleCardsGate,
+                    TokensDepositGateway,
+                    url
+                );
+            }
 
         case Blockchains.Mock:
             return new MockBlockchain();

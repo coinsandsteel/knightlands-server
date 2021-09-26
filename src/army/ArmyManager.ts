@@ -473,7 +473,7 @@ export class ArmyManager {
         }
 
         // check flesh
-        const price = Game.currencyConversionService.convertToNative(fusionTemplate.price);
+        const price = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, fusionTemplate.price);
         if (price > inventory.getCurrency(CurrencyType.Dkt)) {
             throw Errors.NotEnoughCurrency;
         }

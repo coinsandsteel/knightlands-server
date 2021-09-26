@@ -11,15 +11,12 @@ import currency_type from "../../knightlands-shared/currency_type";
 import CurrencyType from "../../knightlands-shared/currency_type";
 import { Blockchain } from "../Blockchain";
 
-const NewBlockScanInterval = 15000;
-const TxFailureScanInterval = 5000;
-const FirstBlockToScan = 5197870
-const Confirmations = 1;
 const BlocksRange = 500;
 const EventsScanned = "eventsScanned";
 
 class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
     constructor(
+        currency, { firstBlock, scanInterval, confirmations },
         PaymentGateway,
         Flesh,
         PresaleCardsGate,
@@ -27,6 +24,12 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         url
     ) {
         super();
+
+        this.firstBlock = firstBlock;
+        this.scanInterval = scanInterval;
+        this.confirmations = confirmations;
+
+        this.currency = currency;
 
         this.PaymentGateway = PaymentGateway;
         this.Flesh = Flesh;
@@ -50,8 +53,12 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
     }
 
+    getNativeCurrency() {
+        return this.currency;
+    }
+
     get PaymentGatewayAddress() {
-        return PaymentGateway.address;
+        return this.PaymentGateway.address;
     }
 
     get DividendTokenAddress() {
@@ -105,7 +112,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         let blockNumber = await this._provider.getBlockNumber()
         await this._updateLastScanTimestamp(blockNumber);
 
-        setTimeout(this._watchNewBlocks.bind(this), NewBlockScanInterval);
+        setTimeout(this._watchNewBlocks.bind(this), this.scanInterval);
     }
 
     isAddress(addr) {
@@ -124,9 +131,9 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                 event: eventName
             });
 
-            const lastBlock = (await this._provider.getBlockNumber()) - Confirmations;
+            const lastBlock = (await this._provider.getBlockNumber()) - this.confirmations;
 
-            let startBlock = (eventsScanned || {}).lastScan || FirstBlockToScan;
+            let startBlock = (eventsScanned || {}).lastScan || this.firstBlock;
             let endBlock = startBlock + BlocksRange;
             if (endBlock > lastBlock) {
                 endBlock = lastBlock;

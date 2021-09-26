@@ -360,9 +360,9 @@ class PlayerController extends IPaymentListener {
         return this._user;
     }
 
-    async _getCurrencyConversionRate(_, respond) {
+    async _getCurrencyConversionRate(data, respond) {
         respond(null, {
-            rate: Game.currencyConversionService.conversionRate
+            rate: Game.currencyConversionService.conversionRate(data.currency)
         });
     }
 
@@ -899,7 +899,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _changeAvatar(user, data) {
-        if (!isNumber(data.id)) {
+        if (!isNumber(data.id) || data.id < 1) {
             throw Errors.IncorrectArguments;
         }
 
