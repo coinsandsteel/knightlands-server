@@ -158,7 +158,7 @@ class Game extends EventEmitter {
     async loadUserPreview(id) {
         let items;
         let army;
-        const user = await this._db.collection(Collections.Users).findOne({ _id: new ObjectId(id) }, { projection: { address: 1, character: 1 } });
+        const user = await this._db.collection(Collections.Users).findOne({ _id: new ObjectId(id) }, { projection: { character: 1 } });
         if (user) {
             const equipmentIds = [];
             for (const slotId in user.character.equipment) {
@@ -166,7 +166,7 @@ class Game extends EventEmitter {
                 equipmentIds.push(item.id);
             }
 
-            army = await this.armyManager.getArmyPreview(user.id)
+            army = await this.armyManager.getArmyPreview(user._id)
 
             if (army) {
                 const lookup = {};
@@ -185,10 +185,8 @@ class Game extends EventEmitter {
                 })
             }
 
-            items = (await Inventory.loadItems(user.id, equipmentIds))[0];
+            items = (await Inventory.loadItems(user._id, equipmentIds))[0];
         }
-
-        delete user.address;
 
         return {
             user,

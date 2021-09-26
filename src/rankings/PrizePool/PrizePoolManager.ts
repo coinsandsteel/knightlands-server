@@ -147,7 +147,8 @@ export class PrizePoolManager implements IRankingTypeHandler {
 
         this._meta = prizePools.pools[season];
         this._collection = Game.db.collection(`prize_pool_${season}`);
-        this._collection.createIndex({ score: 1, order: 1 });
+        this._collection.createIndex({ score: 1 });
+        this._collection.createIndex({ order: 1 });
 
         if (await this._collection.find().count() == 0) {
             await this._tryCommitRewards(season - 1);

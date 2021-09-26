@@ -58,14 +58,14 @@ class Inventory {
         return this._currencies[currency] || 0;
     }
 
-    async modifyCurrency(currency, value, forced = false) {
+    async modifyCurrency(currency, value, noRankings = false) {
         if (!this._currencies[currency]) {
             this._currencies[currency] = value * 1;
         } else {
             this._currencies[currency] += value * 1;
         }
 
-        if (forced) {
+        if (noRankings) {
             return;
         }
 
@@ -448,7 +448,7 @@ class Inventory {
         }
 
         if (template.type == ItemType.Currency) {
-            await this.modifyCurrency(template.currencyType, template.quantity * count);
+            await this.modifyCurrency(template.currencyType, template.quantity * count, true);
             return;
         }
 

@@ -26,6 +26,7 @@ export class Leaderboard implements IRankingTypeHandler {
 
         this._collection = db.collection(`${Collections.Leaderboards}_${key}`);
         await this._collection.createIndex({ score: -1 });
+        await this._collection.createIndex({ id: 1 });
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {

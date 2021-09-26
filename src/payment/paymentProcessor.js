@@ -182,6 +182,7 @@ class PaymentProcessor extends EventEmitter {
             const nonce = Number(await chainClient.getPaymentNonce(address));
             // price is in cents
             let price = Game.currencyConversionService.convertToNative(iapObject.price);
+            let deadline = Game.nowSec + 600;
 
             let inserted = await db.collection(Collections.PaymentRequests).insertOne({
                 userId,
@@ -198,9 +199,8 @@ class PaymentProcessor extends EventEmitter {
             });
 
             let paymentId = inserted.insertedId.toHexString();
-
             const gateway = chainClient.PaymentGatewayAddress;
-            let deadline = Game.nowSec + 600;
+
             // create signature for the smart contract and return it
             let signature = await chainClient.sign(gateway, iap, paymentId, price, nonce, deadline);
 

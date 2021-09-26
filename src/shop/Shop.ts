@@ -259,7 +259,7 @@ export class Shop {
         }
 
         const items = await Game.lootGenerator.getLootFromTable(pack.loot);
-        await user.inventory.autoCommitChanges(async () => {
+        await user.autoCommitChanges(async () => {
             await user.inventory.addItemTemplates(items);
         });
 

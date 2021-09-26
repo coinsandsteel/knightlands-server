@@ -70,6 +70,7 @@ class Worker extends SCWorker {
 
         try {
             await client.connect();
+            await client.ensureIndex();
             this._db = client.db;
             console.log("Connected to db", this._db.databaseName)
         } catch (err) {

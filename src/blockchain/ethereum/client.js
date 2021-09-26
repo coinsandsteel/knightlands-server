@@ -6,12 +6,6 @@ import Game from "../../game";
 
 const { Collections } = require("../../database/database");
 
-const PaymentGateway = require("./PaymentGateway.json");
-// const PresaleChestGateway = require("./PresaleChestGateway.json");
-// const Presale = require("./Presale.json");
-const Flesh = require("./Flesh.json");
-const PresaleCardsGate = require('./PresaleCardsGate.json');
-const TokensDepositGateway = require("./TokensDepositGateway.json");
 import blockchains from "../../knightlands-shared/blockchains";
 import currency_type from "../../knightlands-shared/currency_type";
 import CurrencyType from "../../knightlands-shared/currency_type";
@@ -25,8 +19,17 @@ const BlocksRange = 500;
 const EventsScanned = "eventsScanned";
 
 class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
-    constructor() {
+    constructor(
+        PaymentGateway,
+        Flesh,
+        PresaleCardsGate,
+        TokensDepositGateway,
+        url
+    ) {
         super();
+
+        this.PaymentGateway = PaymentGateway;
+        this.Flesh = Flesh;
 
         this.Payment = Blockchain.Payment;
         this.PresaleCardDeposit = Blockchain.PresaleCardDeposit;
@@ -38,13 +41,10 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this._eventsReceived = 0;
         this._eventWatchers = {};
 
-        this._provider = new ethers.providers.JsonRpcProvider(process.env.ETHEREUM_URL || "http://127.0.0.1:8545");
+        this._provider = new ethers.providers.JsonRpcProvider(url);
         this._signer = new ethers.Wallet(process.env.PK, this._provider);
 
         this._paymentContract = new ethers.Contract(PaymentGateway.address, PaymentGateway.abi, this._provider);
-        // this._presale = this._provider.contract(Presale.abi, Presale.address);
-        // this._presaleChestsGateway = this._provider.contract(PresaleChestGateway.abi, PresaleChestGateway.address);
-        // this._dividends = this._provider.contract(Dividends.abi, Dividends.address);
         this._stakingToken = new ethers.Contract(Flesh.address, Flesh.abi, this._provider);
         this._presaleGate = new ethers.Contract(PresaleCardsGate.address, PresaleCardsGate.abi, this._provider);
         this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
@@ -55,7 +55,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     get DividendTokenAddress() {
-        return Flesh.address;
+        return this.Flesh.address;
     }
 
     async getTime() {
@@ -65,10 +65,9 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
     getTokenAddress(currency) {
         if (currency == CurrencyType.Dkt) {
-            return Flesh.address;
-        } else {
-            return Ash.address;
+            return this.Flesh.address;
         }
+        return "0x0";
     }
 
     convertTokenAmount(str, decimals = 6) {
@@ -167,8 +166,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         this._watchEvent("Purchase", this._paymentContract.filters.Purchase(), this._paymentContract, this._emitPayment);
         this._watchEvent("Withdrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
-        // this._watchEvent("ChestReceived", PresaleChestGateway.address, this._emitPresaleChestsTransfer);
-        // this._watchEvent("ChestPurchased", Presale.address, this._emitPresaleChestPurchase);
         this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
         this._watchEvent("Deposit", this._presaleGate.filters.Deposit(), this._presaleGate, this._emitPresaleCardDeposit);
         this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
@@ -181,7 +178,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async _updateLastEventReceived(blockNumber, eventName) {
-        await Game.dbClient.db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: blockchains.Ethereum }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
+        await Game.db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: blockchains.Ethereum }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
     }
 
     _emitPresaleChestsTransfer(transaction, timestamp, eventData) {
@@ -273,15 +270,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return ethers.utils.getAddress(address);
     }
 
-    async verifySign(nonce, message, address) {
-        await this._ensureConnected();
-        try {
-            return await this._provider.trx.verifyMessage(this._provider.toHex(nonce), message, address);
-        } catch (_) {
-            return false;
-        }
-    }
-
     _isHex(string) {
         return (typeof string === 'string' &&
             !isNaN(parseInt(string, 16)) &&
@@ -314,55 +302,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         });
         const hash = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(types, values));
         return this._signer.signMessage(ethers.utils.arrayify(hash));
-    }
-
-    async sendTransaction(contractAddress, payload, userId, signedTransaction) {
-        try {
-            const broadCastResponse = await this._provider.trx.sendRawTransaction(signedTransaction);
-
-            if (broadCastResponse.code) {
-                let reason;
-
-                if (broadCastResponse.message) {
-                    reason = this._provider.toUtf8(broadCastResponse.message);
-                }
-
-                this._emitTransactionFailed(contractAddress, signedTransaction.txID, payload, userId, reason);
-                return;
-            } else {
-                this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
-            }
-        } catch (e) {
-            this._trackTransactionFailure(contractAddress, payload, userId, signedTransaction.txID);
-        }
-
-        return signedTransaction.txID;
-    }
-
-    async trackTransactionStatus(contractAddress, payload, userId, transactionId) {
-        this._trackTransactionFailure(contractAddress, payload, userId, transactionId, true);
-    }
-
-    // track failure, success will be tracked using events
-    async _trackTransactionFailure(contractAddress, payload, userId, txID) {
-        const output = await this._provider.trx.getTransactionInfo(txID);
-
-        if (!Object.keys(output).length) {
-            return setTimeout(() => {
-                this._trackTransactionFailure(contractAddress, payload, userId, txID);
-            }, TxFailureScanInterval);
-        }
-
-        if ((output.result && output.result == "FAILED") || !output.hasOwnProperty("contractResult")) {
-            console.log("TX failed", contractAddress, JSON.stringify(output));
-            this._emitTransactionFailed(
-                contractAddress, txID, payload, userId, output.result
-            );
-        }
-    }
-
-    async _ensureConnected() {
-        await this._provider.isConnected();
     }
 
     async getPaymentNonce(walletAddress) {
