@@ -36,7 +36,7 @@ export interface UnitAbilityFillers {
 
 export interface UnitAbilitiesMeta {
     troops: { [key: string]: UnitAbilityMeta };
-    general: { [key: string]: UnitAbilityMeta };
+    generals: { [key: string]: UnitAbilityMeta };
 
     fillers: {
         troops: UnitAbilityFillers,

@@ -147,7 +147,7 @@ export class ArmySummoner {
 
         if (randomAbilitiesCount > 0) {
             const fillerPool = template.troop ? this._abilities.fillers.troops : this._abilities.fillers.generals;
-            const abilityTemplates = template.troop ? this._abilities.troops : this._abilities.general;
+            const abilityTemplates = template.troop ? this._abilities.troops : this._abilities.generals;
             const perUnitList = new WeightedList(template.abilityPool.abilities);
             const fillerList = new WeightedList(fillerPool.abilities);
 
