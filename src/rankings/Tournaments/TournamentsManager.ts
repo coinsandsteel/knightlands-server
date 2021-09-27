@@ -7,6 +7,9 @@ import { RankingOptions, RankingRecord } from "../Ranking";
 import Errors from "../../knightlands-shared/errors";
 import random from "../../random";
 import Game from "../../game";
+import { Lock } from "../../utils/lock";
+
+const LAUNCH_LOCK = "launch__lock";
 
 class TournamentsManager implements IRankingTypeHandler {
     private _db: Db;
@@ -14,9 +17,12 @@ class TournamentsManager implements IRankingTypeHandler {
     private _state: TournamentsState;
     private _tournamets: Tournament[];
     private _tiersRunning: { [key: number]: boolean };
+    private _launchTimeout: any;
+    private _lock: Lock;
 
     constructor(db: Db) {
         this._db = db;
+        this._lock = new Lock();
         this._tournamets = [];
         this._tiersRunning = {};
     }
@@ -224,44 +230,49 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     private async _launchNewTournaments() {
+        await this._lock.acquire(LAUNCH_LOCK);
         console.log("TournamentsManager launch new tournaments...");
 
-        if (!this._state) {
-            this._state = {
-                runningTournaments: []
-            };
-        }
-
-        let tournaments = [];
-        let promises = [];
-        for (let [tier, template] of Object.entries(this._meta.templates)) {
-            // if tournament exist - skip 
-            if (this._tiersRunning[tier]) {
-                continue;
+        try {
+            if (!this._state) {
+                this._state = {
+                    runningTournaments: []
+                };
             }
 
-            let tournament = new Tournament(this._db);
+            let tournaments = [];
+            let promises = [];
+            for (let [tier, template] of Object.entries(this._meta.templates)) {
+                // if tournament exist - skip 
+                if (this._tiersRunning[tier]) {
+                    continue;
+                }
 
-            const rewards: TournamentRewardsMeta = random.pick(this._meta.rewards[tier]);
-            const typeOptions = random.pick(template.types);
+                let tournament = new Tournament(this._db);
 
-            const divTokenRewards = await this._getDivTokenRewards(rewards.dktPoolSize);
+                const rewards: TournamentRewardsMeta = random.pick(this._meta.rewards[tier]);
+                const typeOptions = random.pick(template.types);
 
-            promises.push(tournament.create(tier, typeOptions, template.duration, rewards, divTokenRewards));
-            tournaments.push(tournament);
-            this._tiersRunning[tournament.tier] = true;
+                const divTokenRewards = await this._getDivTokenRewards(rewards.dktPoolSize);
+
+                promises.push(tournament.create(tier, typeOptions, template.duration, rewards, divTokenRewards));
+                tournaments.push(tournament);
+                this._tiersRunning[tournament.tier] = true;
+            }
+
+            const tournamentIds = await Promise.all(promises);
+            for (const tournamentId of tournamentIds) {
+                this._state.runningTournaments.push(tournamentId);
+            }
+
+            for (const tournament of tournaments) {
+                this._addTournament(tournament);
+            }
+
+            await this._save();
+        } finally {
+            await this._lock.release(LAUNCH_LOCK);
         }
-
-        const tournamentIds = await Promise.all(promises);
-        for (const tournamentId of tournamentIds) {
-            this._state.runningTournaments.push(tournamentId);
-        }
-
-        for (const tournament of tournaments) {
-            this._addTournament(tournament);
-        }
-
-        await this._save();
     }
 
     private async _getDivTokenRewards(dktPoolSize: number): Promise<TournamentDivTokenRewards> {
@@ -293,21 +304,27 @@ class TournamentsManager implements IRankingTypeHandler {
     }
 
     private async _handleTournametFinished(tournamentId: ObjectId) {
-        console.log(`Tournament ${tournamentId} has been finished.`);
-        {
-            const index = this._tournamets.findIndex(x => x.id.equals(tournamentId));
-            if (index != -1) {
-                this._tiersRunning[this._tournamets[index].tier] = false;
-                this._tournamets[index].removeAllListeners(Tournament.Finished);
-                this._tournamets.splice(index, 1);
-            }
-        }
+        await this._lock.acquire(LAUNCH_LOCK);
 
-        {
-            const index = this._state.runningTournaments.findIndex(x => x.equals(tournamentId));
-            if (index != -1) {
-                this._state.runningTournaments.splice(index, 1);
+        console.log(`Tournament ${tournamentId} has been finished.`);
+        try {
+            {
+                const index = this._tournamets.findIndex(x => x.id.equals(tournamentId));
+                if (index != -1) {
+                    this._tiersRunning[this._tournamets[index].tier] = false;
+                    this._tournamets[index].removeAllListeners(Tournament.Finished);
+                    this._tournamets.splice(index, 1);
+                }
             }
+
+            {
+                const index = this._state.runningTournaments.findIndex(x => x.equals(tournamentId));
+                if (index != -1) {
+                    this._state.runningTournaments.splice(index, 1);
+                }
+            }
+        } finally {
+            await this._lock.release(LAUNCH_LOCK);
         }
 
         await this._launchNewTournaments();
