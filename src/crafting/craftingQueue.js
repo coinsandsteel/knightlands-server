@@ -54,8 +54,11 @@ class CraftingQueue {
         let user = await Game.getUser(userId);
         return await user.crafting.craftPayedRecipe(recipeId, amount);
     }
-
-    async requestCraftingPayment(userId, recipe, amount) {
+    
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async requestCraftingPayment(userId, recipe, amount) {
         let iapContext = {
             user: userId,
             recipe: recipe._id,
@@ -130,7 +133,10 @@ class CraftingQueue {
         });
     }
 
-    async isEnchantingInProcess(userId, itemId) {
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async isEnchantingInProcess(userId, itemId) {
         let status = await Game.craftingQueue.getEnchantingStatus(userId, itemId);
         return (status || {}).status == PaymentStatus.Pending || (status || {}).status == PaymentStatus.WaitingForTx;
     }

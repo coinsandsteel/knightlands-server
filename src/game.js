@@ -194,8 +194,11 @@ class Game extends EventEmitter {
             army
         };
     }
-
-    async loadUser(address) {
+    
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async loadUser(address) {
         let expTable = await this._getExpTable();
         let meta = await this._getMeta();
         let user = new User(address, this._db, expTable, meta);
@@ -231,7 +234,10 @@ class Game extends EventEmitter {
         return user;
     }
 
-    async getUser(address) {
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async getUser(address) {
         await this._lock.acquire("get-user");
 
         let user;
@@ -249,6 +255,9 @@ class Game extends EventEmitter {
         return user;
     }
 
+    /**
+     * @deprecated since 2021-09-27
+     */
     async loadInventory(address) {
         const user = await this.getUser(address);
         return user.inventory;

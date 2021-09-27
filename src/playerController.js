@@ -345,7 +345,10 @@ class PlayerController extends IPaymentListener {
         respond(null, { online: Game.getTotalOnline() });
     }
 
-    async getUser(address) {
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async getUser(address) {
         await this._lock.acquire("get-user");
 
         try {

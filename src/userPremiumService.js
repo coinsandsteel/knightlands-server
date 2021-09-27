@@ -83,7 +83,10 @@ class UserPremiumService {
         });
     }
 
-    async requireGoldExchangeBoost(userId, count) {
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async requireGoldExchangeBoost(userId, count) {
         if (!Number.isInteger(count) || count < 1) {
             throw Errors.IncorrectArguments;
         }
@@ -215,8 +218,11 @@ class UserPremiumService {
             trialType, count
         };
     }
-
-    async getBeastBoostPurchaseStatus(userId) {
+    
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async getBeastBoostPurchaseStatus(userId) {
         return await Game.paymentProcessor.fetchPaymentStatus(userId, this.BeastBoostPurchaseTag, {
             "context.user": userId
         });
@@ -264,8 +270,11 @@ class UserPremiumService {
             throw exc;
         }
     }
-
-    async getTimerRefillStatus(userId, stat) {
+    
+    /**
+     * @deprecated since 2021-09-27
+     */
+     async getTimerRefillStatus(userId, stat) {
         return await Game.paymentProcessor.fetchPaymentStatus(userId, this.UserPaymentTag, {
             "context.user": userId,
             "context.stat": stat
