@@ -16,11 +16,12 @@ const EventsScanned = "eventsScanned";
 
 class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
     constructor(
-        currency, { firstBlock, scanInterval, confirmations },
-        PaymentGateway,
-        Flesh,
-        PresaleCardsGate,
-        TokensDepositGateway,
+        currency, { firstBlock, scanInterval, confirmations }, {
+            PaymentGateway,
+            Flesh,
+            PresaleCardsGate,
+            TokensDepositGateway,
+        },
         url
     ) {
         super();

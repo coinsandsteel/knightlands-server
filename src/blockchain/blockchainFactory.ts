@@ -14,7 +14,7 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     "ethereum",
                     { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
-                    PaymentGateway,
+                    { PaymentGateway },
                     url
                 );
             } else {
@@ -26,10 +26,12 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     "ethereum",
                     { firstBlock: 13314190, scanInterval: 15000, confirmations: 7 },
-                    PaymentGateway,
-                    Flesh,
-                    PresaleCardsGate,
-                    TokensDepositGateway,
+                    {
+                        PaymentGateway,
+                        Flesh,
+                        PresaleCardsGate,
+                        TokensDepositGateway
+                    },
                     url
                 );
             }
@@ -41,8 +43,10 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     "matic-network",
                     { firstBlock: 19610505, scanInterval: 3000, confirmations: 50 },
-                    PaymentGateway,
-                    PresaleCardsGate,
+                    {
+                        PaymentGateway,
+                        PresaleCardsGate
+                    },
                     url
                 );
             }
