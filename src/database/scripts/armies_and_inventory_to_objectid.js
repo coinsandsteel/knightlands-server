@@ -46,5 +46,5 @@ async function swapIDs(collectionName, db) {
     });
 };
 
-// node -r esm -r ts-node/register src/database/migrations/armies_and_inventory_to_objectid.js
+// node -r esm -r ts-node/register src/database/scripts/armies_and_inventory_to_objectid.js
 run();

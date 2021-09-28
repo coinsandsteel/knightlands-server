@@ -5,7 +5,7 @@ const MockBlockchain = require("./mockBlockchain");
 
 const isProd = process.env.ENV == "prod";
 
-export function createBlockchain(blockchainType, db) {
+export function createBlockchain(blockchainType) {
     switch (blockchainType) {
         case Blockchains.Ethereum:
             if (isProd) {

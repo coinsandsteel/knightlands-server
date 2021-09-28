@@ -79,7 +79,7 @@ class Worker extends SCWorker {
         }
 
 
-        this._blockchain = new Blockchain(this._db);
+        this._blockchain = new Blockchain();
         this._iapExecutor = new IAPExecutor(this._db);
         this._paymentProcessor = new PaymentProcessor(this._db, this._blockchain, this._iapExecutor);
 

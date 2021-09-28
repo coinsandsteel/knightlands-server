@@ -3,6 +3,8 @@ import { createBlockchain } from "./blockchainFactory";
 import { Db } from "mongodb";
 import Blockchains from "../knightlands-shared/blockchains";
 
+const isProd = process.env.ENV == "prod";
+
 export interface PurchaseData {
     divs: string;
 }
@@ -91,10 +93,14 @@ export class Blockchain {
         return "__presale_card_deposit__";
     }
 
-    constructor(db: Db) {
+    constructor() {
         this._blockchains = {};
-        this._blockchains[Blockchains.Ethereum] = createBlockchain(Blockchains.Ethereum, db);
-        // this._blockchains[Blockchains.Polygon] = createBlockchain(Blockchains.Polygon, db);
+        this._blockchains[Blockchains.Ethereum] = createBlockchain(Blockchains.Ethereum);
+
+        if (isProd) {
+            this._blockchains[Blockchains.Polygon] = createBlockchain(Blockchains.Polygon);
+        }
+
     }
 
     async start() {
