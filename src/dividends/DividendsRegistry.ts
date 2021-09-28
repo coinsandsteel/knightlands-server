@@ -312,7 +312,7 @@ export class DividendsRegistry {
     /*
     * @deprecated since 2021-09-28
     */
-    async initiateDividendsWithdrawal(userId: string, to: string, blockchainId: string, amount: string) {
+    async initiateDividendsWithdrawal(userId: any, to: string, blockchainId: string, amount: string) {
         await this._lock.acquire("divs");
         try {
             if (await Game.activityHistory.hasRecord(userId, { pending: true, token: 'native' })) {
@@ -363,7 +363,7 @@ export class DividendsRegistry {
     /*
     * @deprecated since 2021-09-28
     */
-    async getPendingTransactions(userId: string, chain: string, tokens: boolean) {
+    async getPendingTransactions(userId: any, chain: string, tokens: boolean) {
         return Game.activityHistory.getRecords(
             userId,
             {
@@ -378,7 +378,7 @@ export class DividendsRegistry {
     /*
     * @deprecated since 2021-09-28
     */
-    async _getCancellableTxs(userId: string, type: string, id: string) {
+    async _getCancellableTxs(userId: any, type: string, id: string) {
         const records = await Game.activityHistory.getRecords(
             userId,
             {
@@ -445,7 +445,7 @@ export class DividendsRegistry {
     /*
     * @deprecated since 2021-09-28
     */
-    async getStatus(userId: string) {
+    async getStatus(userId: any) {
         return {
             ...await this.getInfo(),
             hasHistory: await Game.activityHistory.hasHistory(Game.db, userId),
@@ -455,7 +455,7 @@ export class DividendsRegistry {
     /*
     * @deprecated since 2021-09-28
     */
-    private async _createWithdrawal(db: Db, userId: string, type: string, chain: string, data: Withdrawal): Promise<string> {
+    private async _createWithdrawal(db: Db, userId: any, type: string, chain: string, data: Withdrawal): Promise<string> {
         const inserted = await Game.activityHistory.save(db, userId, type, chain, data);
         return inserted.insertedId.toHexString();
     }

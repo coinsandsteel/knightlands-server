@@ -29,7 +29,6 @@ class PaymentProcessor extends EventEmitter {
         this._listeners = {};
 
         this._blockchain.on(Blockchain.Payment, this._handleBlockchainPayment.bind(this));
-        this._blockchain.on(Blockchain.TransactionFailed, this._handlePaymentFailed.bind(this));
     }
 
     registerAsPaymentListener(userId, listener) {
