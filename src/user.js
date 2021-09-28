@@ -890,14 +890,6 @@ class User {
         }, this._itemStatResolver.inverseStats(finalStats));
         await this._recalculateBuffs(false);
         finalStats = character.stats;
-
-        // correct timers
-        for (let i in character.timers) {
-            let timer = character.timers[i];
-            if (timer.value == oldStats[i]) {
-                timer.value = finalStats[i];
-            }
-        }
     }
 
     _applyAccessoryProperties(item, finalStats, relativeStats) {
