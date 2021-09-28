@@ -67,8 +67,8 @@ if (process.env.SAPPAO) {
 } else if (environment == "prod") {
     options.protocol = "https";
     options.protocolOptions = {
-        key: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/privkey.pem"),
-        cert: fs.readFileSync("/etc/letsencrypt/live/www.knightlands.com/fullchain.pem")
+        key: fs.readFileSync(process.env.SSL_KEY),
+        cert: fs.readFileSync(process.env.SSL_CERT)
     };
 }
 
