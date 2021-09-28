@@ -2,6 +2,7 @@ const IBlockchainListener = require("../IBlockchainListener");
 const IBlockchainSigner = require("../IBlockchainSigner");
 const ClassAggregation = require("../../classAggregation");
 const { ethers } = require("ethers");
+import { threadId } from "worker_threads";
 import Game from "../../game";
 
 const { Collections } = require("../../database/database");
@@ -16,6 +17,7 @@ const EventsScanned = "eventsScanned";
 
 class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockchainSigner) {
     constructor(
+        id,
         currency, { firstBlock, scanInterval, confirmations }, {
             PaymentGateway,
             Flesh,
@@ -26,6 +28,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     ) {
         super();
 
+        this.id = id;
         this.firstBlock = firstBlock;
         this.scanInterval = scanInterval;
         this.confirmations = confirmations;
@@ -154,7 +157,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
         try {
             let eventsScanned = await Game.dbClient.db.collection(Collections.Services).findOne({
-                chain: blockchains.Ethereum,
+                chain: this.id,
                 type: EventsScanned,
                 event: eventName
             });
@@ -216,7 +219,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async _updateLastEventReceived(blockNumber, eventName) {
-        await Game.db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: blockchains.Ethereum }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
+        await Game.db.collection(Collections.Services).updateOne({ type: EventsScanned, event: eventName, chain: this.id }, { $set: { lastScan: blockNumber + 1 } }, { upsert: true });
     }
 
     _emitPresaleChestsTransfer(transaction, timestamp, eventData) {
