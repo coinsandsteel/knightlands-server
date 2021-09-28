@@ -34,7 +34,7 @@ class CurrencyConversionService {
 
     convertToNative(currency, usdPrice) {
         // usdPrice in cents
-        return usdPrice * this.conversionRate(currency) / 100;
+        return usdPrice / this.conversionRate(currency) / 100;
     }
 
     async _withRetry(request, retries) {

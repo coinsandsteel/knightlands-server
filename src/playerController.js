@@ -348,7 +348,7 @@ class PlayerController extends IPaymentListener {
     /**
      * @deprecated since 2021-09-27
      */
-     async getUser(address) {
+    async getUser(address) {
         await this._lock.acquire("get-user");
 
         try {
@@ -1171,7 +1171,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _cancelPayment(user, data) {
-        return Game.paymentProcessor.cancelPayment(this.id, data.id);
+        return Game.paymentProcessor.cancelPayment(user.id, data.id);
     }
 
     // Tower

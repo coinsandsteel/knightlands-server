@@ -157,8 +157,8 @@ export class Shop {
         return this._premiumMeta;
     }
 
-    private async _claimSubscription(card: SubscriptionMeta, userAddress: string) {
-        const user = await Game.getUser(userAddress);
+    private async _claimSubscription(card: SubscriptionMeta, userId: ObjectId) {
+        const user = await Game.getUserById(userId);
         const cards = user.cards;
 
         if (!cards[card.id]) {
@@ -243,8 +243,8 @@ export class Shop {
         }
     }
 
-    private async _claimPack(pack: PackMeta, userAddress: string) {
-        const user = await Game.getUser(userAddress);
+    private async _claimPack(pack: PackMeta, userId: ObjectId) {
+        const user = await Game.getUserById(userId);
 
         if (pack.max) {
             user.dailyShop.setPurchased(pack.id);
@@ -266,8 +266,8 @@ export class Shop {
         return items;
     }
 
-    private async _topUpRaidTickets(iap: string, userAddress: string, amount: number) {
-        const user = await Game.getUser(userAddress);
+    private async _topUpRaidTickets(iap: string, userId: ObjectId, amount: number) {
+        const user = await Game.getUserById(userId);
         const meta = await this._getTopUpMeta();
 
         if (!user.dailyShop.isPurchasedOnce(iap)) {
@@ -285,8 +285,8 @@ export class Shop {
         };
     }
 
-    private async _topUpShines(iap: string, userAddress: string, amount: number) {
-        const user = await Game.getUser(userAddress);
+    private async _topUpShines(iap: string, userId: ObjectId, amount: number) {
+        const user = await Game.getUserById(userId);
 
         if (!user.dailyShop.isPurchasedOnce(iap)) {
             const meta = await this._getTopUpMeta();

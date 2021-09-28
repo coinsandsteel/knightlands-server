@@ -103,6 +103,25 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return Number(decimal);
     }
 
+    getBigIntNativeAmount(amount) {
+        let str = amount.toString();
+        const parts = str.split(".");
+        let base = parts[0].length;
+        if (parts.length == 2) {
+            str = str.replace(".", "");
+
+            if (parts[0] == "0") {
+                str = str.substr(1);
+                const b = str.length;
+                str = str.replace(/^0+/, "");
+                base = str.length - b;
+            }
+        }
+
+        return BigInt(str.padEnd(18 + base, "0"));
+    }
+
+
     getBigIntDivTokenAmount(amount) {
         // with 6 decimals and known inflation rate, this is safe conversion
         return BigInt(Math.floor(amount * Math.pow(10, 6)).toString());

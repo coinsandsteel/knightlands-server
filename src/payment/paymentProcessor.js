@@ -50,6 +50,7 @@ class PaymentProcessor extends EventEmitter {
     }
 
     _getListeners(userId) {
+        userId = userId.toString();
         let listeners = this._listeners[userId];
         if (!listeners) {
             listeners = [];
@@ -181,7 +182,7 @@ class PaymentProcessor extends EventEmitter {
             const nonce = Number(await chainClient.getPaymentNonce(address));
             // price is in cents
             let price = Game.currencyConversionService.convertToNative(chainClient.getNativeCurrency(), iapObject.price);
-            price = chainClient.getBigIntDivTokenAmount(price);
+            price = chainClient.getBigIntNativeAmount(price);
             let deadline = Game.nowSec + 600;
 
             let inserted = await db.collection(Collections.PaymentRequests).insertOne({

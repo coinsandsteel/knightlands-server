@@ -13,7 +13,7 @@ export function createBlockchain(blockchainType) {
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
                     "ethereum",
-                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
+                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 7 },
                     { PaymentGateway },
                     url
                 );
@@ -25,7 +25,7 @@ export function createBlockchain(blockchainType) {
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
                     "ethereum",
-                    { firstBlock: 13314190, scanInterval: 15000, confirmations: 7 },
+                    { firstBlock: 13314190, scanInterval: 15000, confirmations: 1 },
                     {
                         PaymentGateway,
                         Flesh,

@@ -16,4 +16,5 @@ export interface IBlockchain extends EventEmitter {
     convertTokenAmount(amount: string): number;
     getTime(): number;
     getNativeCurrency(): string;
+    getBigIntNativeAmount(amount: number): bigint;
 }
