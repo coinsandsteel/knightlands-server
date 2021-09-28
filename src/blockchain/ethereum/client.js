@@ -182,9 +182,12 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         this._watchEvent("Purchase", this._paymentContract.filters.Purchase(), this._paymentContract, this._emitPayment);
         this._watchEvent("Withdrawal", this._paymentContract.filters.Withdrawal(), this._paymentContract, this._emitDivsWithdrawal);
-        this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
-        this._watchEvent("Deposit", this._presaleGate.filters.Deposit(), this._presaleGate, this._emitPresaleCardDeposit);
-        this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
+        // this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
+        if (this._presaleGate) {
+            this._watchEvent("Deposit", this._presaleGate.filters.Deposit(), this._presaleGate, this._emitPresaleCardDeposit);
+        }
+
+        // this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
 
         console.log("Scan finished.");
     }
