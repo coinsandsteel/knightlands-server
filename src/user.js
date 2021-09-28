@@ -1226,7 +1226,6 @@ class User {
 
             await this._inventory.commitChanges(db);
 
-            // TODO Why an "id", not an "address"?
             Game.emitPlayerEvent(this.id, Events.CommitChanges, {
                 changes,
                 removals

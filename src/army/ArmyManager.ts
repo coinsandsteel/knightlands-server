@@ -100,7 +100,7 @@ export class ArmyManager {
     }
 
     async getSummonStatus(user) {
-        return Game.paymentProcessor.fetchPaymentStatus(user.address, this.PaymentTag, {});
+        return Game.paymentProcessor.fetchPaymentStatus(user.id, this.PaymentTag, {});
     }
 
     async getArmyPreview(userId: ObjectId) {

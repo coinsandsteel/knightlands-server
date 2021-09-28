@@ -48,7 +48,7 @@ export class DepositGateway {
                 await inventory.autoCommitChanges(() => inventory.modifyCurrency(currency_type.Dkt, amount), db);
             }
 
-            await Game.activityHistory.save(db, user.address, 'token-d', chain, data);
+            await Game.activityHistory.save(db, user.id, 'token-d', chain, data);
         })
     }
 }

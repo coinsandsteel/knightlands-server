@@ -130,14 +130,14 @@ export class Dividends {
     }
 
     async getPendingWithdrawal(chain: string, tokens: boolean) {
-        return Game.dividends.getPendingTransactions(this._user.address, chain, tokens);
+        return Game.dividends.getPendingTransactions(this._user.id, chain, tokens);
     }
 
     async cancelAction({ type, id }) {
         if (type == TOKEN_WITHDRAWAL) {
-            await Game.dividends.cancelTokenWithdrawal(this._user.address, id);
+            await Game.dividends.cancelTokenWithdrawal(this._user.id, id);
         } else if (type == DIVS_WITHDRAWAL) {
-            const result = await Game.dividends.cancelDividendsWithdrawal(this._user.address, id);
+            const result = await Game.dividends.cancelDividendsWithdrawal(this._user.id, id);
             const claimedAmount = this._data.claimed[result.chain] ? BigInt(this._data.claimed[result.chain]) : BigInt(0)
             this._data.claimed[result.chain] = (claimedAmount + BigInt(result.amount)).toString()
         }
@@ -161,7 +161,7 @@ export class Dividends {
         }
 
         if (this._data.claimed[blockchainId] && BigInt(this._data.claimed[blockchainId]) > 0) {
-            args = await Game.dividends.initiateDividendsWithdrawal(this._user.address, to, blockchainId, this._data.claimed[blockchainId]);
+            args = await Game.dividends.initiateDividendsWithdrawal(this._user.id, to, blockchainId, this._data.claimed[blockchainId]);
             this._data.claimed[blockchainId] = "0";
         }
 
