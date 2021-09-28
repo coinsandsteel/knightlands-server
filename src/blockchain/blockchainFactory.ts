@@ -31,7 +31,7 @@ export function createBlockchain(blockchainType, db) {
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
                     "ethereum",
-                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
+                    { firstBlock: 13314190, scanInterval: 15000, confirmations: 7 },
                     PaymentGateway,
                     Flesh,
                     PresaleCardsGate,
@@ -47,8 +47,8 @@ export function createBlockchain(blockchainType, db) {
                 const TokensDepositGateway = require("./artifacts/polygon/TokensDepositGateway.json");
                 const url = process.env.POLYGON_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
-                    "ethereum",
-                    { firstBlock: 5197870, scanInterval: 3000, confirmations: 50 },
+                    "matic-network",
+                    { firstBlock: 19610505, scanInterval: 3000, confirmations: 50 },
                     PaymentGateway,
                     Flesh,
                     PresaleCardsGate,

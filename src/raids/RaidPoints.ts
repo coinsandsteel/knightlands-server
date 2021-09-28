@@ -59,9 +59,13 @@ export class RaidPoints {
             const data = await Game.raidPoints.getSnapshotForPayout(this._data.lastClaimed);
 
             if (data) {
-                let dkt = this._data.shares / data.totalShares * FLESH_EMISSION;
+                let dkt = 0;
 
-                if (this._user.isFreeAccount) {
+                if (data.totalShares > 0) {
+                    this._data.shares / data.totalShares * FLESH_EMISSION
+                }
+
+                if (this._user.isFreeAccount && data.totalFreeShares > 0) {
                     dkt = this._data.shares / data.totalFreeShares * FREE_FLESH_EMISSION;
                 }
 

@@ -36,7 +36,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         this.Payment = Blockchain.Payment;
         this.PresaleCardDeposit = Blockchain.PresaleCardDeposit;
-        this.TransactionFailed = Blockchain.TransactionFailed;
         this.DividendTokenWithdrawal = Blockchain.DividendTokenWithdrawal;
         this.BurntTokenWithdrawal = Blockchain.BurntTokenWithdrawal;
         this.DividendWithdrawal = Blockchain.DividendWithdrawal;
@@ -48,9 +47,18 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this._signer = new ethers.Wallet(process.env.PK, this._provider);
 
         this._paymentContract = new ethers.Contract(PaymentGateway.address, PaymentGateway.abi, this._provider);
-        this._stakingToken = new ethers.Contract(Flesh.address, Flesh.abi, this._provider);
-        this._presaleGate = new ethers.Contract(PresaleCardsGate.address, PresaleCardsGate.abi, this._provider);
-        this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
+
+        if (PresaleCardsGate) {
+            this._presaleGate = new ethers.Contract(PresaleCardsGate.address, PresaleCardsGate.abi, this._provider);
+        }
+
+        if (Flesh) {
+            this._stakingToken = new ethers.Contract(Flesh.address, Flesh.abi, this._provider);
+        }
+
+        if (TokensDepositGateway) {
+            this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
+        }
     }
 
     getNativeCurrency() {
@@ -261,16 +269,6 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
                 token: event.emitter
             });
         }
-    }
-
-    _emitTransactionFailed(contractAddress, transaction, payload, userId, reason) {
-        this.emit(this.TransactionFailed, {
-            transactionId: transaction,
-            payload,
-            userId,
-            reason,
-            contractAddress
-        });
     }
 
     addressForSigning(address) {

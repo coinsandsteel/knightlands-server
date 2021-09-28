@@ -104,8 +104,8 @@ export class Dividends {
         await this.claimMinedDkt();
 
         const meta: DividendsMeta = await this._getMeta();
-        const price = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor);
-
+        const fiatPrice = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor);
+        const price = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, fiatPrice);
         if (this._user.dkt >= price) {
             this._data.miningLevel++;
             await this._user.inventory.modifyCurrency(CurrencyType.Dkt, -price);
