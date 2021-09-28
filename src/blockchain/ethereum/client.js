@@ -248,7 +248,8 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             paymentId: event.args.paymentId,
             transactionHash: event.transactionHash,
             blockNumber: event.blockNumber,
-            divs: event.args.divs
+            price: event.args.price,
+            nonce: event.args.nonce
         });
     }
 
