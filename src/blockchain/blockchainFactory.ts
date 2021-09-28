@@ -10,17 +10,11 @@ export function createBlockchain(blockchainType) {
         case Blockchains.Ethereum:
             if (isProd) {
                 const PaymentGateway = require("./artifacts/ethereum/PaymentGateway.json");
-                const Flesh = require("./artifacts/ethereum/Flesh.json");
-                const PresaleCardsGate = require('./artifacts/ethereum/PresaleCardsGate.json');
-                const TokensDepositGateway = require("./artifacts/ethereum/TokensDepositGateway.json");
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
                     "ethereum",
                     { firstBlock: 5197870, scanInterval: 3000, confirmations: 1 },
                     PaymentGateway,
-                    Flesh,
-                    PresaleCardsGate,
-                    TokensDepositGateway,
                     url
                 );
             } else {
@@ -42,17 +36,13 @@ export function createBlockchain(blockchainType) {
         case Blockchains.Polygon:
             {
                 const PaymentGateway = require("./artifacts/polygon/PaymentGateway.json");
-                const Flesh = require("./artifacts/polygon/Flesh.json");
                 const PresaleCardsGate = require('./artifacts/polygon/PresaleCardsGate.json');
-                const TokensDepositGateway = require("./artifacts/polygon/TokensDepositGateway.json");
                 const url = process.env.POLYGON_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
                     "matic-network",
                     { firstBlock: 19610505, scanInterval: 3000, confirmations: 50 },
                     PaymentGateway,
-                    Flesh,
                     PresaleCardsGate,
-                    TokensDepositGateway,
                     url
                 );
             }
