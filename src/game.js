@@ -18,6 +18,7 @@ import { ActivityHistory } from './blockchain/ActivityHistory';
 import { RaidPointsManager } from './raids/RaidPointsManager';
 import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
 import { PresaleCardsService } from "./shop/PresaleCards";
+import { QuestZones } from "./QuestZones";
 
 class Game extends EventEmitter {
     constructor() {
@@ -62,10 +63,12 @@ class Game extends EventEmitter {
         this.raidPoints = new RaidPointsManager();
         this.prizePool = new PrizePoolManager();
         this.founderSale = new PresaleCardsService(blockchain);
+        this.questZones = new QuestZones();
 
         this._players = {};
         this._playersById = {};
 
+        await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();
         await this._dividends.init();
@@ -194,11 +197,11 @@ class Game extends EventEmitter {
             army
         };
     }
-    
+
     /**
      * @deprecated since 2021-09-27
      */
-     async loadUser(address) {
+    async loadUser(address) {
         let expTable = await this._getExpTable();
         let meta = await this._getMeta();
         let user = new User(address, this._db, expTable, meta);
@@ -237,7 +240,7 @@ class Game extends EventEmitter {
     /**
      * @deprecated since 2021-09-27
      */
-     async getUser(address) {
+    async getUser(address) {
         await this._lock.acquire("get-user");
 
         let user;

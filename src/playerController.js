@@ -421,10 +421,7 @@ class PlayerController extends IPaymentListener {
             throw "missin quest index";
         }
 
-        const zones = this._db.collection(Collections.Zones);
-        let zone = await zones.findOne({
-            _id: data.zone
-        });
+        let zone = Game.questZones.getZone(data.zone);
 
         if (!zone) {
             throw "incorrect zone";
@@ -447,15 +444,12 @@ class PlayerController extends IPaymentListener {
             throw "incorrect stage";
         }
 
-        let totalZones = await zones.find({}).count();
-        if (+data.stage * totalZones + data.zone > user.level) {
+        if (+data.stage * Game.questZones.totalZones + data.zone > user.level) {
             throw Errors.IncorrectArguments;
         }
 
         // check if previous zone was completed on the same stage
-        let previousZone = await zones.findOne({
-            _id: data.zone - 1
-        });
+        let previousZone = Game.questZones.getZone(data.zone - 1);
 
         if (previousZone && !user.isZoneCompleted(previousZone._id, data.stage)) {
             throw "complete previous zone";
