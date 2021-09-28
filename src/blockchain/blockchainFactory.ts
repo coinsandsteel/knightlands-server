@@ -12,6 +12,7 @@ export function createBlockchain(blockchainType) {
                 const PaymentGateway = require("./artifacts/ethereum/PaymentGateway.json");
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
+                    Blockchains.Ethereum,
                     "ethereum",
                     { firstBlock: 5197870, scanInterval: 3000, confirmations: 7 },
                     { PaymentGateway },
@@ -24,6 +25,7 @@ export function createBlockchain(blockchainType) {
                 const TokensDepositGateway = require("./artifacts/goerli/TokensDepositGateway.json");
                 const url = process.env.ETHEREUM_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
+                    Blockchains.Ethereum,
                     "ethereum",
                     { firstBlock: 13314190, scanInterval: 15000, confirmations: 1 },
                     {
@@ -41,6 +43,7 @@ export function createBlockchain(blockchainType) {
                 const PresaleCardsGate = require('./artifacts/polygon/PresaleCardsGate.json');
                 const url = process.env.POLYGON_URL || "http://127.0.0.1:8545";
                 return new EthereumClient(
+                    Blockchains.Polygon,
                     "matic-network",
                     { firstBlock: 19610505, scanInterval: 3000, confirmations: 50 },
                     {
