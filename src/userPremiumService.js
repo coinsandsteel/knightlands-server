@@ -4,6 +4,9 @@ const Events = require("./knightlands-shared/events");
 import Errors from "./knightlands-shared/errors";
 import TrialType from "./knightlands-shared/trial_type";
 
+/**
+ * @deprecated since 2021-09-28
+ */
 class UserPremiumService {
     constructor(db) {
         this._db = db;
@@ -83,9 +86,6 @@ class UserPremiumService {
         });
     }
 
-    /**
-     * @deprecated since 2021-09-27
-     */
      async requireGoldExchangeBoost(userId, count) {
         if (!Number.isInteger(count) || count < 1) {
             throw Errors.IncorrectArguments;
@@ -219,9 +219,6 @@ class UserPremiumService {
         };
     }
     
-    /**
-     * @deprecated since 2021-09-27
-     */
      async getBeastBoostPurchaseStatus(userId) {
         return await Game.paymentProcessor.fetchPaymentStatus(userId, this.BeastBoostPurchaseTag, {
             "context.user": userId
@@ -271,9 +268,6 @@ class UserPremiumService {
         }
     }
     
-    /**
-     * @deprecated since 2021-09-27
-     */
      async getTimerRefillStatus(userId, stat) {
         return await Game.paymentProcessor.fetchPaymentStatus(userId, this.UserPaymentTag, {
             "context.user": userId,

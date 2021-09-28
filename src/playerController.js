@@ -892,15 +892,6 @@ class PlayerController extends IPaymentListener {
         respond(null, timeRefillInfo);
     }
 
-    async _acceptPayment(data, respond) {
-        try {
-            await Game.paymentProcessor.acceptPayment(this.address, data.paymentId, data.signedTransaction);
-            respond(null);
-        } catch (exc) {
-            respond(exc);
-        }
-    }
-
     async _changeAvatar(user, data) {
         if (!isNumber(data.id) || data.id < 1) {
             throw Errors.IncorrectArguments;
@@ -1180,7 +1171,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _cancelPayment(user, data) {
-        return Game.paymentProcessor.cancelPayment(this.address, data.id);
+        return Game.paymentProcessor.cancelPayment(this.id, data.id);
     }
 
     // Tower
@@ -1487,7 +1478,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getDividendsStatus(user) {
-        return Game.dividends.getStatus(user.address);
+        return Game.dividends.getStatus(user.id);
     }
 
     async _withdrawDividendToken(user, data) {
@@ -1519,7 +1510,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _getWithdrawTokensStatus(user, data) {
-        return Game.activityHistory.getHistory(user.address);
+        return Game.activityHistory.getHistory(user.id);
     }
 
     async _stakeDivs(user, data) {
@@ -1716,18 +1707,18 @@ class PlayerController extends IPaymentListener {
     // Shop
     async _purchase(user, data) {
         if (exist(data.iap)) {
-            return Game.shop.purchase(user.address, data.iap, data.address, data.chain);
+            return Game.shop.purchase(user.id, data.iap, data.address, data.chain);
         } else if (exist(data.goldIndex)) {
-            return Game.shop.purchaseGold(user.address, +data.goldIndex);
+            return Game.shop.purchaseGold(user.id, +data.goldIndex);
         } else if (exist(data.packId)) {
-            return Game.shop.purchasePack(user.address, data.address, data.chain, +data.packId);
+            return Game.shop.purchasePack(user.id, data.address, data.chain, +data.packId);
         }
 
-        return Game.shop.purchaseSubscription(user.address, data.address, data.chain, +data.cardId);
+        return Game.shop.purchaseSubscription(user.id, data.address, data.chain, +data.cardId);
     }
 
     async _purchaseStatus(user, data) {
-        return Game.shop.paymentStatus(user.address);
+        return Game.shop.paymentStatus(user.id);
     }
 
     async _purchaseDailyItem(user, data) {

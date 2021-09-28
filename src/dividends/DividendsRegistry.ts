@@ -309,6 +309,9 @@ export class DividendsRegistry {
         })
     }
 
+    /*
+    * @deprecated since 2021-09-28
+    */
     async initiateDividendsWithdrawal(userId: string, to: string, blockchainId: string, amount: string) {
         await this._lock.acquire("divs");
         try {
@@ -357,6 +360,9 @@ export class DividendsRegistry {
         }
     }
 
+    /*
+    * @deprecated since 2021-09-28
+    */
     async getPendingTransactions(userId: string, chain: string, tokens: boolean) {
         return Game.activityHistory.getRecords(
             userId,
@@ -369,6 +375,9 @@ export class DividendsRegistry {
         )
     }
 
+    /*
+    * @deprecated since 2021-09-28
+    */
     async _getCancellableTxs(userId: string, type: string, id: string) {
         const records = await Game.activityHistory.getRecords(
             userId,
@@ -433,6 +442,9 @@ export class DividendsRegistry {
         }
     }
 
+    /*
+    * @deprecated since 2021-09-28
+    */
     async getStatus(userId: string) {
         return {
             ...await this.getInfo(),
@@ -440,6 +452,9 @@ export class DividendsRegistry {
         };
     }
 
+    /*
+    * @deprecated since 2021-09-28
+    */
     private async _createWithdrawal(db: Db, userId: string, type: string, chain: string, data: Withdrawal): Promise<string> {
         const inserted = await Game.activityHistory.save(db, userId, type, chain, data);
         return inserted.insertedId.toHexString();

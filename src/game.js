@@ -289,17 +289,17 @@ class Game extends EventEmitter {
         let controller = new PlayerController(socket);
 
         socket.on("authenticate", async() => {
-            if (!controller.address) {
+            if (!controller.id) {
                 return;
             }
 
             // if there is previous controller registered - disconnect it and remove
-            let connectedController = this._players[controller.address];
+            let connectedController = this._players[controller.id];
             if (connectedController) {
                 connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
             }
 
-            this._paymentProcessor.registerAsPaymentListener(controller.address, controller);
+            this._paymentProcessor.registerAsPaymentListener(controller.id, controller);
             this._players[controller.address] = controller;
             this._playersById[controller.id] = controller;
 
@@ -324,8 +324,8 @@ class Game extends EventEmitter {
     }
 
     _deletePlayerController(controller) {
-        if (controller.address) {
-            this._paymentProcessor.unregister(controller.address, controller);
+        if (controller.id) {
+            this._paymentProcessor.unregister(controller.id, controller);
             delete this._players[controller.address];
             delete this._playersById[controller.id];
         }

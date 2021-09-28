@@ -4,6 +4,9 @@ const Events = require("../knightlands-shared/events");
 import PaymentStatus from "../knightlands-shared/payment_status";
 import Errors from "../knightlands-shared/errors";
 
+/**
+ * @deprecated since 2021-09-28
+ */
 class CraftingQueue {
     constructor(db) {
         this._db = db;
@@ -55,9 +58,6 @@ class CraftingQueue {
         return await user.crafting.craftPayedRecipe(recipeId, amount);
     }
     
-    /**
-     * @deprecated since 2021-09-27
-     */
      async requestCraftingPayment(userId, recipe, amount) {
         let iapContext = {
             user: userId,
@@ -133,9 +133,6 @@ class CraftingQueue {
         });
     }
 
-    /**
-     * @deprecated since 2021-09-27
-     */
      async isEnchantingInProcess(userId, itemId) {
         let status = await Game.craftingQueue.getEnchantingStatus(userId, itemId);
         return (status || {}).status == PaymentStatus.Pending || (status || {}).status == PaymentStatus.WaitingForTx;

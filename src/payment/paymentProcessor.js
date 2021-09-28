@@ -264,49 +264,6 @@ class PaymentProcessor extends EventEmitter {
         console.log("Track pending iaps finished.");
     }
 
-    async acceptPayment(userId, paymentId, signedTransaction) {
-        console.log("acceptPayment...")
-
-        // send tx on behalf of player
-        let requestNonce = new ObjectId(paymentId);
-
-        let request = await this._db.collection(Collections.PaymentRequests).findOne({
-            _id: requestNonce
-        });
-
-        if (!request) {
-            throw "unknown payment request";
-        }
-
-        if (request.status !== PaymentStatus.WaitingForTx) {
-            throw "already payed";
-        }
-
-        try {
-            console.log("sending transaction...");
-            let transactionId = await this._blockchain.getBlockchain(blockchains.Tron).sendTransaction(this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress, paymentId, userId, signedTransaction);
-            if (transactionId) {
-                await this._db.collection(Collections.PaymentRequests).updateOne({ _id: requestNonce }, {
-                    $set: {
-                        transactionId,
-                        status: PaymentStatus.Pending
-                    }
-                });
-
-                this.emit(this.PaymentSent, request.tag, request.context);
-            }
-        } catch (exc) {
-            await this._logError(paymentId, PaymentErrorCodes.TxSendFailed, {
-                paymentId: paymentId,
-                userId: userId,
-                signedTransaction,
-                reason: exc
-            });
-
-            throw exc;
-        }
-    }
-
     async _handleBlockchainPayment(id, paymentRecipe) {
         console.log('handle payment', id, paymentRecipe)
             // first update status in database
@@ -347,41 +304,6 @@ class PaymentProcessor extends EventEmitter {
             }
         } catch (exc) {
             console.error(`PaymentProcessor _handleBlockchainPayment failed with exception ${exc}`);
-        }
-    }
-
-    async _handlePaymentFailed(id, args) {
-        const { transactionId, payload, userId, contractAddress, reason } = args;
-
-        if (contractAddress != this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress) {
-            return;
-        }
-
-        let paymentObjectId = new ObjectId(payload);
-
-        await this._db.collection(Collections.PaymentRequests).updateOne({
-            _id: paymentObjectId
-        }, {
-            $set: {
-                userId,
-                tx: transactionId,
-                status: PaymentStatus.Failed,
-                reason: reason
-            }
-        });
-
-        let payment = await this._db.collection(Collections.PaymentRequests).findOne({
-            _id: paymentObjectId
-        });
-
-        this.emit(this.PaymentFailed, payment.tag, payment.context);
-
-        let listener = this._getListeners(userId)[0];
-        if (listener) {
-            console.log("notify client payment failed. Reason: ", JSON.stringify(reason, null, 2));
-
-            // let listener know that payment failed
-            await listener.onPaymentFailed(payment.iap, this._iapExecutor.getEventByIAP(payment.iap), args.reason, payment.context);
         }
     }
 

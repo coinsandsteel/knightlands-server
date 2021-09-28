@@ -11,24 +11,24 @@ export class ActivityHistory {
 
     }
 
-    async hasHistory(db: Db, user: string) {
-        return (await db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).count()) > 0;
+    async hasHistory(db: Db, userId: ObjectId) {
+      return (await db.collection(Collections.ActivityHistory).find({ userId, date: { $gte: Game.now - HistoryLength } }).count()) > 0;
+    }
+    
+    async getHistory(userId: ObjectId) {
+        return Game.db.collection(Collections.ActivityHistory).find({ userId, date: { $gte: Game.now - HistoryLength } }).toArray();
     }
 
-    async getHistory(user: string) {
-        return Game.db.collection(Collections.ActivityHistory).find({ user, date: { $gte: Game.now - HistoryLength } }).toArray();
+    async getRecords(userId: ObjectId, filter: any) {
+        return Game.db.collection(Collections.ActivityHistory).find({ userId, ...filter }).toArray();
     }
 
-    async getRecords(user: string, filter: any) {
-        return Game.db.collection(Collections.ActivityHistory).find({ user, ...filter }).toArray();
+    async hasRecord(userId: ObjectId, filter: any) {
+        return (await Game.db.collection(Collections.ActivityHistory).find({ userId, ...filter }).count()) > 0;
     }
 
-    async hasRecord(user: string, filter: any) {
-        return (await Game.db.collection(Collections.ActivityHistory).find({ user, ...filter }).count()) > 0;
-    }
-
-    async save(db: Db, user: string, type: string, chain: string, data: any) {
-        return db.collection(Collections.ActivityHistory).insertOne({ user, date: Game.now, type, data, chain, cancelled: false });
+    async save(db: Db, userId: ObjectId, type: string, chain: string, data: any) {
+        return db.collection(Collections.ActivityHistory).insertOne({ userId, date: Game.now, type, data, chain, cancelled: false });
     }
 
     async delete(db: Db, id: ObjectId) {
