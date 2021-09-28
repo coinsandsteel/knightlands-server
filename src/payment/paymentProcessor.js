@@ -270,7 +270,8 @@ class PaymentProcessor extends EventEmitter {
         try {
             let requestNonce = new ObjectId(paymentRecipe.paymentId);
             let request = await this._db.collection(Collections.PaymentRequests).findOne({
-                _id: requestNonce
+                _id: requestNonce,
+                chain: id
             });
 
             if (!request) {
