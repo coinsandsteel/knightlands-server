@@ -297,7 +297,7 @@ class Game extends EventEmitter {
             }
 
             // if there is previous controller registered - disconnect it and remove
-            let connectedController = this._players[controller.id];
+            let connectedController = this._playersById[controller.id];
             if (connectedController) {
                 connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
             }

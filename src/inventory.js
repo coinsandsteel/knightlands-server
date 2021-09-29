@@ -611,7 +611,7 @@ class Inventory {
             await this.unequipItem(equippedItems[itemSlot].id, holderId != -1);
         }
 
-        item = await this.unequipItem(item.id, holderId != -1);
+        item = await this.unequipItem(item.id);
 
         if (item.count > 1) {
             // split stack and create new item
