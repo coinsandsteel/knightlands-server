@@ -290,7 +290,7 @@ class Crafting {
         }
 
         let enchantCost = stepData.soft;
-        if (currency == CurrencyType.Hard) {
+        if (stepData.hard > 0) {
             currency = CurrencyType.Dkt;
             enchantCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, stepData.hard);
         }
@@ -305,11 +305,7 @@ class Crafting {
         this._inventory.consumeIngridients(stepData.ingridients);
 
         // roll success 
-        if (currency == CurrencyType.Soft && Random.range(0, 100, true) > stepData.successRate) {
-            if (item.enchant > ROLLBACK_LEVEL) {
-                item.enchant--;
-                this._inventory.setItemUpdated(item);
-            }
+        if (Random.range(0, 100, true) > stepData.successRate) {
             return false;
         }
 
