@@ -81,7 +81,7 @@ export class Shop {
             }
 
             await user.addHardCurrency(-pack.price);
-            return this._claimPack(pack, user.address);
+            return this._claimPack(pack, user.id);
         }
 
         return this.purchase(user.id, pack.iap, address, chain);
