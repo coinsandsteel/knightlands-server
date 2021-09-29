@@ -598,13 +598,11 @@ export class ArmyManager {
                 reserveDelta[key] = {
                     template: unit.template,
                     promotions: unit.promotions,
-                    count: reserve[key] ? reserve[key].count : 1
+                    count: reserve[key] ? reserve[key].count : 0
                 };
             }
 
-            if (reserve[key]) {
-                reserveDelta[key].count++;
-            }
+            reserveDelta[key].count++;
         }
 
 
