@@ -92,7 +92,8 @@ export class Dividends {
             throw errors.IncorrectArguments;
         }
 
-        const price = meta.dropRate[this._data.dropRateLevel].price;
+        const fiatPrice = meta.dropRate[this._data.dropRateLevel].price * 100;
+        const price = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, fiatPrice);
 
         if (this._user.dkt >= price) {
             this._data.dropRateLevel++;
@@ -104,7 +105,7 @@ export class Dividends {
         await this.claimMinedDkt();
 
         const meta: DividendsMeta = await this._getMeta();
-        const fiatPrice = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor);
+        const fiatPrice = Math.pow(meta.mining.price.base * (this._data.miningLevel + 1), meta.mining.price.factor) * 100;
         const price = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, fiatPrice);
         if (this._user.dkt >= price) {
             this._data.miningLevel++;
