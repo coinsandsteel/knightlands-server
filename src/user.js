@@ -1090,7 +1090,7 @@ class User {
                 if (count > 10) {
                     throw Errors.IncorrectArguments;
                 }
-                actionResult = await Game._armyManager.summonRandomUnit(this.address, count, actionData.value, actionData.summonType);
+                actionResult = await Game._armyManager.summonRandomUnit(this, count, actionData.value, actionData.summonType);
                 break;
 
             case ItemActions.AddPrizePoints:
@@ -1101,7 +1101,7 @@ class User {
                 break;
 
             case ItemActions.AddArmySlots:
-                await Game.armyManager.expandSlots(this.address, actionValue)
+                await Game.armyManager.expandSlots(this, actionValue)
                 break;
 
             default:

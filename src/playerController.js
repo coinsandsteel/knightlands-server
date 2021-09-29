@@ -400,6 +400,7 @@ class PlayerController extends IPaymentListener {
 
                     respond(null, { response });
                 } catch (error) {
+                    console.error(error)
                     respond(error);
                 }
             } finally {
