@@ -187,15 +187,17 @@ export class Shop {
             soft: 0
         };
 
-        if (card.initialHard) {
-            result.hard = card.initialHard + card.dailyHard;
-            await user.addHardCurrency(result.hard);
-        }
+        await user.autoCommitChanges(async () => {
+            if (card.initialHard) {
+                result.hard = card.initialHard + card.dailyHard;
+                await user.addHardCurrency(result.hard);
+            }
 
-        if (card.initialSoft) {
-            result.soft = card.initialSoft + card.dailySoft;
-            await user.addSoftCurrency(result.soft);
-        }
+            if (card.initialSoft) {
+                result.soft = card.initialSoft + card.dailySoft;
+                await user.addSoftCurrency(result.soft);
+            }
+        });
 
         return result;
     }
@@ -275,9 +277,14 @@ export class Shop {
             user.dailyShop.setPurchased(iap);
         }
 
-        await user.inventory.autoCommitChanges(async () => {
+        await user.autoCommitChanges(async () => {
+            if (!user.dailyShop.isPurchasedOnce(iap)) {
+                amount *= (1 + meta.firstPurchaseBonus);
+                user.dailyShop.setPurchased(iap);
+            }
             await user.inventory.addItemTemplate(meta.raidTicket, amount);
         });
+
 
         return {
             item: meta.raidTicket,
