@@ -31,9 +31,9 @@ import { Shop } from "./shop/Shop";
 import { DatabaseClient } from "./database/Client";
 
 process.on("unhandledRejection", (error) => {
-    if (process.env.ENV == 'dev') {
-        console.error(error); // This prints error with stack included (as for normal errors)
-    }
+    // if (process.env.ENV == 'dev') {
+    console.error(error); // This prints error with stack included (as for normal errors)
+    // }
 });
 
 class Worker extends SCWorker {
