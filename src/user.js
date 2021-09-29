@@ -2086,6 +2086,12 @@ class User {
             await this._inventory.addItemTemplate(airdrop.item, airdrop.count);
             this._data.airdrops[airdrop.id] = 1;
         }
+
+        const tester = await Game.db.collection("testers").findOne({ _id: this.address });
+        if (tester && !tester.claimed) {
+            await Game.db.collection("testers").updateOne({ _id: this.address }, { $set: { claimed: 1 } });
+            await this._inventory.addItemTemplate(tester.itemId, 1);
+        }
     }
 
     finishTutorial(stepId) {
