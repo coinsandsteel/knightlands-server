@@ -21,7 +21,7 @@ export class RaidPoints {
     private _data: RaidPointsData;
 
     constructor(data: RaidPointsData, user: any) {
-        if (!data) {
+        if (!data.lastClaimed) {
             data.lastClaimed = this.getCurrentPayout();
             data.pointsPool = data.sharesPool = CURVATURE;
             data.score = data.shares = 0;
