@@ -44,6 +44,10 @@ export class RaidPoints {
     async addPoints(amount: number) {
         await this.tryClaimDkt();
 
+        if (isNaN(amount)) {
+            return;
+        }
+
         const shares = toShares(amount, this._data.pointsPool, this._data.sharesPool);
 
         this._data.pointsPool += amount;
