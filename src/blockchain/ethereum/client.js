@@ -172,7 +172,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
     }
 
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
-        if (Game.shutdownInProgress) {
+        if (Game.isShutdownInProgress) {
           return;
         }
 
