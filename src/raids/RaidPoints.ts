@@ -66,7 +66,7 @@ export class RaidPoints {
                 let dkt = 0;
 
                 if (data.totalShares > 0) {
-                    this._data.shares / data.totalShares * FLESH_EMISSION
+                    dkt = this._data.shares / data.totalShares * FLESH_EMISSION
                 }
 
                 if (this._user.isFreeAccount && data.totalFreeShares > 0) {
