@@ -27,6 +27,7 @@ import Game from "./game";
 
 import Rankings from "./rankings/Rankings";
 import { Blockchain } from "./blockchain/Blockchain";
+import Blockchains from "./knightlands-shared/blockchains";
 import { Shop } from "./shop/Shop";
 import { DatabaseClient } from "./database/Client";
 
@@ -35,6 +36,28 @@ process.on("unhandledRejection", (error) => {
     console.error(error); // This prints error with stack included (as for normal errors)
     // }
 });
+
+process.on('SIGINT', async function() {
+  console.log('Application shutdown has started...');
+  try {
+    // Shutdown connections
+    await Game.shutdown();
+    console.log('Existed connections closed.');
+
+    // Shutdown Ethereum blockchain
+    let ethereumBlockchain = Game.blockchain.getBlockchain(Blockchains.Ethereum);
+    let result = await ethereumBlockchain.shutdown();
+    console.log('Blockchain stopped.');
+
+  } catch (err){
+    console.log(err);
+    process.exit(1);
+
+  } finally {
+    console.log('Application stopped successfully!');
+    process.exit(0);
+  }
+})
 
 class Worker extends SCWorker {
     async run() {

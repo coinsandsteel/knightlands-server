@@ -44,6 +44,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         this.BurntTokenWithdrawal = Blockchain.BurntTokenWithdrawal;
         this.DividendWithdrawal = Blockchain.DividendWithdrawal;
 
+        this._activeWatchersCount = 0;
         this._eventsReceived = 0;
         this._eventWatchers = {};
 
@@ -150,11 +151,32 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return ethers.utils.isAddress(addr)
     }
 
+    shutdown(){
+      let self = this;
+      console.log('Shutting down blockchain...');
+      return new Promise(resolve => {
+        const interval = setInterval(() => {
+          console.log('Checking for semaphore...');
+          if (self._activeWatchersCount === 0) {
+            resolve(true);
+            clearInterval(interval);
+          };
+        }, 75);
+      }).catch((err) => {
+        console.log(err);
+      });
+    }
+
     _watchEvent(eventName, eventFilter, contract, handler) {
         this._eventWatchers = setTimeout(this._scanEventsFor.bind(this, eventName, eventFilter, contract, handler), 3000);
     }
 
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
+        if (Game.shutdownInProgress) {
+          return;
+        }
+
+        this._activeWatchersCount++;
         try {
             let eventsScanned = await Game.dbClient.db.collection(Collections.Services).findOne({
                 chain: this.id,
@@ -195,6 +217,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         } catch (exc) {
             console.error(exc)
         } finally {
+            this._activeWatchersCount--;
             this._watchEvent(eventName, eventFilter, contract, handler);
         }
     }

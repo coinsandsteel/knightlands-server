@@ -79,6 +79,7 @@ class Game extends EventEmitter {
         await this.founderSale.init();
 
         this._lock = new Lock();
+        this._shutdownInProgress = false;
     }
 
     get armyManager() {
@@ -143,6 +144,10 @@ class Game extends EventEmitter {
 
     get nowSec() {
         return Math.floor(this.now / 1000);
+    }
+
+    isShutdownInProgress() {
+        return this._shutdownInProgress === true;
     }
 
     async _getExpTable() {
@@ -284,11 +289,32 @@ class Game extends EventEmitter {
         this.emit(userId, event, args);
     }
 
+    async shutdown(){
+      // Set shutdown flag
+      this._shutdownInProgress = true;
+
+      // Close existed connections
+      for (let id in this._playersById) {
+        if (this._playersById.hasOwnProperty(id)) {
+          await this._playersById[id].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
+        }
+      }
+      for (let email in this._players) {
+        if (this._players.hasOwnProperty(email)) {
+          await this._players[email].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
+        }
+      }
+    }
+
     getTotalOnline() {
         return Object.keys(this._playersById).length;
     }
 
     handleIncomingConnection(socket) {
+        if (this._shutdownInProgress) {
+          return
+        }
+
         let controller = new PlayerController(socket);
 
         socket.on("authenticate", async() => {
