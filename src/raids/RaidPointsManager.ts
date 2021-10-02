@@ -7,7 +7,7 @@ const PAYOUT_PERIOD = 86400;
 const STATE_RECORD_ID = "raid_points_state";
 
 export class RaidPointsManager {
-    private _lastPayout: number;
+    private _currentPayout: number;
     private _totalPoints: number;
     private _totalShares: number;
     private _totalFreePoints: number;
@@ -17,7 +17,7 @@ export class RaidPointsManager {
     constructor() {
         this._totalPoints = this._totalShares = 0;
         this._totalFreePoints = this._totalFreeShares = 0;
-        this._lastPayout = 0;
+        this._currentPayout = 0;
         this._lock = new Lock()
     }
 
@@ -28,21 +28,25 @@ export class RaidPointsManager {
             this._totalPoints = state.totalPoints;
             this._totalFreeShares = state.totalFreeShares || 0;
             this._totalFreePoints = state.totalFreePoints || 0;
-            this._lastPayout = state.lastPayout;
+            this._currentPayout = state.lastPayout;
         }
 
-        await this.commitPayoutDay(Game.dbClient.db);
+        await Game.dbClient.withTransaction(async db => {
+            await this.commitPayoutDay(db);
+        })
         this._schedulePayoutCommit();
     }
 
     _schedulePayoutCommit() {
         setTimeout(async () => {
             try {
-                await this.commitPayoutDay(Game.dbClient.db);
+                await Game.dbClient.withTransaction(async db => {
+                    await this.commitPayoutDay(db);
+                })
             } finally {
                 this._schedulePayoutCommit();
             }
-        }, PAYOUT_PERIOD / 2);
+        }, 1000);
     }
 
     getPayoutPeriod() {
@@ -54,9 +58,9 @@ export class RaidPointsManager {
     }
 
     async commitPayoutDay(db) {
-        if (this._lastPayout != this.getCurrentPayout()) {
+        if (this._currentPayout != this.getCurrentPayout()) {
             await db.collection(Collections.RaidPointsPayouts).updateOne(
-                { _id: this._lastPayout },
+                { _id: this._currentPayout },
                 { $set: { totalPoints: this._totalPoints, totalShares: this._totalShares, totalFreePoints: this._totalFreePoints, totalFreeShares: this._totalFreeShares } },
                 { upsert: true }
             );
@@ -65,11 +69,11 @@ export class RaidPointsManager {
             this._totalShares = 0;
             this._totalFreePoints = 0;
             this._totalFreeShares = 0;
-            this._lastPayout = this.getCurrentPayout();
+            this._currentPayout = this.getCurrentPayout();
 
             await db.collection(Collections.DivTokenState).updateOne(
                 { _id: STATE_RECORD_ID },
-                { $set: { lastPayout: this._lastPayout, totalPoints: 0, totalShares: 0, totalFreePoints: 0, totalFreeShares: 0 } },
+                { $set: { lastPayout: this._currentPayout, totalPoints: 0, totalShares: 0, totalFreePoints: 0, totalFreeShares: 0 } },
                 { upsert: true }
             );
         }
