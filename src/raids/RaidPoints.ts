@@ -73,6 +73,8 @@ export class RaidPoints {
                     dkt = 0;
                 }
 
+                const before = this._user.dkt;
+
                 await this._user.addDkt(dkt);
 
                 // before reset - save it to the external collection for the debuggin purposes
@@ -82,6 +84,7 @@ export class RaidPoints {
                     sharesPool: this._data.sharesPool,
                     shares: this._data.shares,
                     score: this._data.score,
+                    beforeDkt: before,
                     dkt: this._user.dkt
                 })
 
