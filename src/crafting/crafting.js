@@ -918,6 +918,7 @@ class Crafting {
         item.rarity = nextRarity;
         item.breakLimit = 0;
         item.template = nextTemplate;
+        item.enchant = 0;
 
         await this._inventory.autoCommitChanges(async inv => {
             inv.setItemUpdated(item);

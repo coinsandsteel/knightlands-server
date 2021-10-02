@@ -311,7 +311,8 @@ class RaidManager {
     async activeRaidsCount(userId) {
         let matchQuery = {
             finished: false,
-            [`participants.${userId}`]: { $exists: true }
+            [`participants.${userId}`]: { $exists: true },
+            [`loot.${userId}`]: false
         };
 
         return await this._db.collection(Collections.Raids).count(matchQuery);
