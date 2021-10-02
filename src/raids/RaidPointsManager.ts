@@ -42,7 +42,11 @@ export class RaidPointsManager {
             } finally {
                 this._schedulePayoutCommit();
             }
-        }, PAYOUT_PERIOD - Game.now % PAYOUT_PERIOD);
+        }, PAYOUT_PERIOD / 2);
+    }
+
+    getPayoutPeriod() {
+        return PAYOUT_PERIOD;
     }
 
     getCurrentPayout() {

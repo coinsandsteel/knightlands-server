@@ -74,9 +74,9 @@ export class RaidPoints {
                 }
 
                 await this._user.addDkt(dkt);
-            }
 
-            this.reset();
+                this.reset();
+            }
         }
     }
 
