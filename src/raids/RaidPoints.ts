@@ -81,7 +81,8 @@ export class RaidPoints {
                     pointsPool: this._data.pointsPool,
                     sharesPool: this._data.sharesPool,
                     shares: this._data.shares,
-                    score: this._data.score
+                    score: this._data.score,
+                    dkt: this._user.dkt
                 })
 
                 this.reset();
