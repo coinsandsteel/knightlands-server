@@ -75,6 +75,15 @@ export class RaidPoints {
 
                 await this._user.addDkt(dkt);
 
+                // before reset - save it to the external collection for the debuggin purposes
+                await Game.db.collection(`user_raid_points_${this._data.lastClaimed}`).insertOne({
+                    user: this._user.id,
+                    pointsPool: this._data.pointsPool,
+                    sharesPool: this._data.sharesPool,
+                    shares: this._data.shares,
+                    score: this._data.score
+                })
+
                 this.reset();
             }
         }
