@@ -289,21 +289,25 @@ class Game extends EventEmitter {
         this.emit(userId, event, args);
     }
 
-    async shutdown(){
-      // Set shutdown flag
-      this._shutdownInProgress = true;
+    async shutdown() {
+        // Set shutdown flag
+        this._shutdownInProgress = true;
 
-      // Close existed connections
-      for (let id in this._playersById) {
-        if (this._playersById.hasOwnProperty(id)) {
-          await this._playersById[id].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
+        // Close existed connections
+        for (let id in this._playersById) {
+            if (this._playersById.hasOwnProperty(id)) {
+                await this._playersById[id].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
+            }
         }
-      }
-      for (let email in this._players) {
-        if (this._players.hasOwnProperty(email)) {
-          await this._players[email].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
-        }
-      }
+
+        await new Promise(resolve => {
+            const invetrvalId = setInterval(() => {
+                if (this.getTotalOnline() == 0) {
+                    clearInterval(invetrvalId);
+                    resolve();
+                }
+            }, 100);
+        })
     }
 
     getTotalOnline() {
@@ -312,7 +316,7 @@ class Game extends EventEmitter {
 
     handleIncomingConnection(socket) {
         if (this._shutdownInProgress) {
-          return
+            return
         }
 
         let controller = new PlayerController(socket);

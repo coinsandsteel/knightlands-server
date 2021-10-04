@@ -136,9 +136,6 @@ class Worker extends SCWorker {
                     // Shutdown Ethereum blockchain
                     let ethereumBlockchain = Game.blockchain.getBlockchain(Blockchains.Ethereum);
                     await ethereumBlockchain.shutdown();
-                    await new Promise(r => {
-                        setTimeout(r, 10000)
-                    })
                     console.log('Blockchain stopped.');
 
                 } catch (err) {
