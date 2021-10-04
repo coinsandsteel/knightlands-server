@@ -37,28 +37,6 @@ process.on("unhandledRejection", (error) => {
     // }
 });
 
-process.on('SIGINT', async function() {
-  console.log('Application shutdown has started...');
-  try {
-    // Shutdown connections
-    await Game.shutdown();
-    console.log('Existed connections closed.');
-
-    // Shutdown Ethereum blockchain
-    let ethereumBlockchain = Game.blockchain.getBlockchain(Blockchains.Ethereum);
-    let result = await ethereumBlockchain.shutdown();
-    console.log('Blockchain stopped.');
-
-  } catch (err){
-    console.log(err);
-    process.exit(1);
-
-  } finally {
-    console.log('Application stopped successfully!');
-    process.exit(0);
-  }
-})
-
 class Worker extends SCWorker {
     async run() {
         console.log('   >> Worker PID:', process.pid);
@@ -146,6 +124,33 @@ class Worker extends SCWorker {
         scServer.on("connection", socket => {
             Game.handleIncomingConnection(socket);
         });
+
+        this.on('masterMessage', async(msg, respond) => {
+            if (msg == 'terminate') {
+                console.log('Application shutdown has started...');
+                try {
+                    // Shutdown connections
+                    await Game.shutdown();
+                    console.log('Existed connections closed.');
+
+                    // Shutdown Ethereum blockchain
+                    let ethereumBlockchain = Game.blockchain.getBlockchain(Blockchains.Ethereum);
+                    await ethereumBlockchain.shutdown();
+                    await new Promise(r => {
+                        setTimeout(r, 10000)
+                    })
+                    console.log('Blockchain stopped.');
+
+                } catch (err) {
+                    console.log(err);
+
+                } finally {
+                    console.log('Application stopped successfully!');
+                }
+            }
+
+            respond(null, 'terminated');
+        })
     }
 
     setupMiddleware() {

@@ -53,7 +53,7 @@ var options = {
     clusterStateServerReconnectRandomness: Number(process.env.SCC_STATE_SERVER_RECONNECT_RANDOMNESS) || null,
     crashWorkerOnError: argv['auto-reboot'] != false,
     // If using nodemon, set this to true, and make sure that environment is 'dev'.
-    killMasterOnSignal: false,
+    killMasterOnSignal: true,
     environment: environment,
     logLevel: Number(process.env.LOG_LEVEL) || 2
 };
@@ -91,6 +91,16 @@ var start = function() {
     socketCluster.on(socketCluster.EVENT_WORKER_CLUSTER_START, function(workerClusterInfo) {
         console.log('   >> WorkerCluster PID:', workerClusterInfo.pid);
     });
+
+    process.on('message', function(msg) {
+        if (msg == 'shutdown') {
+            console.log('Closing all connections...')
+            socketCluster.sendToWorker(0, 'terminate', (err, response) => {
+                socketCluster.destroy();
+                process.exit(0);
+            });
+        }
+    })
 
     // if (socketCluster.options.environment === 'dev' || socketCluster.options.environment === 'local') {
     //   // This will cause SC workers to reboot when code changes anywhere in the app directory.
