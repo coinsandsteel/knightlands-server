@@ -136,15 +136,7 @@ class RaidManager {
             throw Errors.NoRecipeIngridients;
         }
 
-        return this._summonRaid(summoner.address, raidTemplateId, free, isPublic);
-    }
-
-    async _summonRaid(summonerId, raidTemplateId, isFree, isPublic) {
-        // consume crafting resources
-        let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
-        const data = isFree ? raidTemplate.soloData : raidTemplate.data;
-
-        let user = await Game.getUser(summonerId);
+        let user = await Game.getUserById(summoner.id);
         await user.inventory.autoCommitChanges(async inventory => {
             // consume crafting materials
             let craftingRecipe = await this._loadSummonRecipe(data.summonRecipe);
@@ -152,10 +144,10 @@ class RaidManager {
         });
 
         const raid = new Raid(this._db);
-        await raid.create(user.id, raidTemplateId, isFree, isPublic);
+        await raid.create(user.id, raidTemplateId, free, isPublic);
         this._addRaid(raid);
 
-        if (!isFree) {
+        if (!free) {
             await user.dailyQuests.onPaidRaidJoin();
 
             if (isPublic) {
@@ -310,9 +302,8 @@ class RaidManager {
 
     async activeRaidsCount(userId) {
         let matchQuery = {
-            finished: false,
             [`participants.${userId}`]: { $exists: true },
-            [`loot.${userId}`]: false
+            [`loot.${userId}`]: { $ne: true }
         };
 
         return await this._db.collection(Collections.Raids).count(matchQuery);

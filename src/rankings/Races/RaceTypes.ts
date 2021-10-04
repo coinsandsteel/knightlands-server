@@ -29,6 +29,7 @@ interface RaceReward {
     item: number;
     quantity: number;
     price: number;
+    max: number;
 }
 
 export interface RaceShopConfiguration {

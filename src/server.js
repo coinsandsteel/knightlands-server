@@ -58,13 +58,7 @@ var options = {
     logLevel: Number(process.env.LOG_LEVEL) || 2
 };
 
-if (process.env.SAPPAO) {
-    options.protocol = "https";
-    options.protocolOptions = {
-        key: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/privkey.pem"),
-        cert: fs.readFileSync("/etc/letsencrypt/live/sappao.knightlands.com/fullchain.pem")
-    };
-} else if (environment == "prod") {
+if (environment == "prod" || process.env.SAPPAO) {
     options.protocol = "https";
     options.protocolOptions = {
         key: fs.readFileSync(process.env.SSL_KEY),
@@ -112,6 +106,13 @@ var start = function() {
     //     ignored: ['public', 'node_modules', 'README.md', 'Dockerfile', 'server.js', 'broker.js', /[\/\\]\./, '*.log']
     //   });
     // }
+
+    // process.on('SIGINT', function() {
+    //     socketCluster.sendToWorker(0, {}, function(err, data) {
+    //         console.log('received!', data)
+    //         process.exit(0)
+    //     })
+    // })
 };
 
 var bootCheckInterval = Number(process.env.SOCKETCLUSTER_BOOT_CHECK_INTERVAL) || 200;

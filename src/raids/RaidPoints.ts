@@ -21,7 +21,7 @@ export class RaidPoints {
     private _data: RaidPointsData;
 
     constructor(data: RaidPointsData, user: any) {
-        if (!data) {
+        if (!data.lastClaimed) {
             data.lastClaimed = this.getCurrentPayout();
             data.pointsPool = data.sharesPool = CURVATURE;
             data.score = data.shares = 0;
@@ -44,6 +44,10 @@ export class RaidPoints {
     async addPoints(amount: number) {
         await this.tryClaimDkt();
 
+        if (isNaN(amount)) {
+            return;
+        }
+
         const shares = toShares(amount, this._data.pointsPool, this._data.sharesPool);
 
         this._data.pointsPool += amount;
@@ -62,7 +66,7 @@ export class RaidPoints {
                 let dkt = 0;
 
                 if (data.totalShares > 0) {
-                    this._data.shares / data.totalShares * FLESH_EMISSION
+                    dkt = this._data.shares / data.totalShares * FLESH_EMISSION
                 }
 
                 if (this._user.isFreeAccount && data.totalFreeShares > 0) {

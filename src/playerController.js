@@ -458,7 +458,7 @@ class PlayerController extends IPaymentListener {
 
         if (data.stage > 0) {
             // check if previous zones finished
-            if (!user.isZoneCompleted(totalZones, data.stage - 1)) {
+            if (!user.isZoneCompleted(Game.questZones.totalZones, data.stage - 1)) {
                 throw "complete previous difficulty";
             }
         }
@@ -1589,7 +1589,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseFromRaceShop(user, data) {
-        return Game.rankings.races.purchaseFromRaceShop(user, data.lotId);
+        return user.raceShop.purchase(data.lotId);
     }
 
     // Leaderboards
