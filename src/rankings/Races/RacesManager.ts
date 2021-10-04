@@ -38,8 +38,8 @@ class RacesManager implements IRankingTypeHandler {
         await this._launchNewRaces();
     }
 
-    async purchaseFromRaceShop(user: any, lotId: number) {
-        await this._shop.purchaseItem(user, lotId);
+    get shop() {
+        return this._shop;
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {

@@ -28,6 +28,7 @@ import { PresaleCards } from "./shop/PresaleCards";
 import { isNumber } from "./validation";
 import { ObjectId } from "mongodb";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
+import { RaceShopUser } from "./rankings/Races/RaceShopUser";
 
 const {
     EquipmentSlots,
@@ -631,6 +632,7 @@ class User {
         this._dailyShop = new DailyShop(this._data.dailyShop, this);
         this.raidPoints = new RaidPoints(this._data.raidPoints, this);
         this.founderSale = new PresaleCards(this._data.pCards, this);
+        this.raceShop = new RaceShopUser(this._data.raceShop, this);
 
         this._advanceTimers();
 
@@ -1250,6 +1252,10 @@ class User {
     }
 
     _validateUser(user) {
+        if (!user.raceShop) {
+            user.raceShop = {};
+        }
+
         if (!user.character) {
             let character = {
                 level: 1,
@@ -1807,6 +1813,7 @@ class User {
         }
 
         this._data.sRaidAttempts = {};
+        this.raceShop.reset();
     }
 
     getSoloRaidAttempts(raidId) {

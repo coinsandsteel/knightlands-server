@@ -1589,7 +1589,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _purchaseFromRaceShop(user, data) {
-        return Game.rankings.races.purchaseFromRaceShop(user, data.lotId);
+        return user.raceShop.purchase(data.lotId);
     }
 
     // Leaderboards
