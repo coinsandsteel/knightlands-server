@@ -100,7 +100,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.CraftItem, this._gameHandler(this._craftItem.bind(this)));
         this._socket.on(Operations.EnchantItem, this._gameHandler(this._enchantItem.bind(this)));
         this._socket.on(Operations.DisenchantItems, this._gameHandler(this._disenchantItems.bind(this)));
-        this._socket.on(Operations.DisenchantConvert, this._gameHandler(this._disenchantConvert.bind(this)));
+        this._socket.on(Operations.Convert, this._gameHandler(this._convert.bind(this)));
         this._socket.on(Operations.CreateWeapon, this._gameHandler(this._createWeapon.bind(this)));
         this._socket.on(Operations.Evolve, this._gameHandler(this._evolveItem.bind(this)));
         this._socket.on(Operations.CraftAccessory, this._gameHandler(this._craftAccessory.bind(this)));
@@ -1078,8 +1078,8 @@ class PlayerController extends IPaymentListener {
         return user.crafting.disenchantItems(data.items);
     }
 
-    async _disenchantConvert(user, data) {
-        return user.crafting.disenchantConvert(data.conversions);
+    async _convert(user, data) {
+        return user.crafting.convert(data.conversions, data.entity);
     }
 
     async _createWeapon(user, data) {
