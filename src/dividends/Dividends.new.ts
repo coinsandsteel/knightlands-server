@@ -6,6 +6,8 @@ import { Collections } from "../database/database";
 import errors from "../knightlands-shared/errors";
 import { isNumber } from "../validation";
 
+const MAX_PASSED_TIME = 86400 * 3;
+
 export class Dividends {
     private _data: DividendsData;
     private _user: any;
@@ -116,7 +118,7 @@ export class Dividends {
     async claimMinedDkt() {
         let mined = 0;
         if (this._data.miningLevel > 0) {
-            const timePassed = Game.nowSec - this._data.lastMiningUpdate;
+            const timePassed = Math.min(Game.nowSec - this._data.lastMiningUpdate, MAX_PASSED_TIME);
             if (timePassed > 0) {
                 const meta = await this._getMeta();
                 const rate = Math.pow(meta.mining.rate.base * this._data.miningLevel, meta.mining.rate.factor) / 86400; // rate is per 1 day
