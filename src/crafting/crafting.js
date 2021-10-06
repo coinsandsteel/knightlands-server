@@ -248,10 +248,6 @@ class Crafting {
             throw Errors.NoItem;
         }
 
-        if (item.locked) {
-            throw Errors.ItemLocked;
-        }
-
         let itemTemplate = await Game.itemTemplates.getTemplate(item.template);
         if (!itemTemplate) {
             throw Errors.NoTemplate;
@@ -800,10 +796,6 @@ class Crafting {
             throw Errors.ItemEquipped;
         }
 
-        if (item.locked) {
-            throw Errors.ItemLocked;
-        }
-
         if (!item.element || item.element != Elements.Physical || !this._inventory.isMaxLevel(item)) {
             throw Errors.IncorrectArguments;
         }
@@ -837,10 +829,6 @@ class Crafting {
         const item = this._inventory.getItemById(itemId);
         if (!item) {
             throw Errors.NoItem;
-        }
-
-        if (item.locked) {
-            throw Errors.ItemLocked;
         }
 
         const template = await Game.itemTemplates.getTemplate(item.template);
