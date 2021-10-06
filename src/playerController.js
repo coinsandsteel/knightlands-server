@@ -1527,7 +1527,7 @@ class PlayerController extends IPaymentListener {
         }
 
         await user.inventory.addItemTemplates(rewards);
-        await user.addDkt(rewards.tokens);
+        await user.addDkt(rewards.tokens, true);
 
         return rewards;
     }

@@ -330,12 +330,12 @@ class User {
         return value;
     }
 
-    async addDkt(value) {
+    async addDkt(value, noRankings = fase) {
         value = Math.floor(value * DividendsRegistry.DktDecimals) / DividendsRegistry.DktDecimals;
 
         // if payout day is shifted, commit previous days balance
         await this.dividends.tryCommitPayout();
-        await this.inventory.modifyCurrency(CurrencyType.Dkt, value);
+        await this.inventory.modifyCurrency(CurrencyType.Dkt, value, noRankings);
     }
 
     getChests() {
