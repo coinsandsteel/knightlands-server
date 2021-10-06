@@ -68,14 +68,14 @@ export class ArmyUnits {
         await this._collection.updateOne({ "_id": userId }, { $push: { "units": { $each: units } }, $set, $inc: { "occupiedSlots": units.length } }, { upsert: true });
     }
 
-    async removeUnits(user: User, ids: number[]) {
+    async removeUnits(userId: ObjectId, ids: number[]) {
         await this._collection.updateOne(
-            { "_id": user.id },
+            { "_id": userId },
             { $pull: { "units": { "id": { $in: ids } } }, $inc: { "occupiedSlots": -ids.length } }
         );
 
-        Game.emitPlayerEvent(user.address, Events.UnitsRemoved, ids);
-        this.resetCache(user.id);
+        Game.emitPlayerEvent(userId, Events.UnitsRemoved, ids);
+        this.resetCache(userId);
     }
 
     async updateReservedUnits(user: User, reserve: ArmyReserve) {

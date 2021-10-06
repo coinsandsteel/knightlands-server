@@ -438,6 +438,10 @@ export class ArmyManager {
 
             const targetUnits = await this._units.getUserUnits(user.id, unitsForFusion);
 
+            if (!targetUnits) {
+                throw Errors.IncorrectArguments;
+            }
+
             for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
 
@@ -529,7 +533,7 @@ export class ArmyManager {
             resourcesUsed.souls += unit.souls * this._meta.refund.souls;
 
             const template = this._unitTemplates[unit.template];
-            resourcesUsed.souls += this._meta.soulsFromBanishment[unit.promotions + template.stars];
+            resourcesUsed.souls += this._meta.soulsFromBanishment[unit.promotions + template.stars - 1];
 
             if (unit.troop) {
                 resourcesUsed.troopEssence += unit.essence;
@@ -545,7 +549,7 @@ export class ArmyManager {
         resourcesUsed.generalEssence *= this._meta.refund.generalEssence;
 
         // remove units
-        await this._units.removeUnits(user, unitIds);
+        await this._units.removeUnits(user.id, unitIds);
         // refund
         const cachedUser = await Game.getUser(user.address);
         await cachedUser.addSoftCurrency(Math.floor(resourcesUsed.gold));
@@ -608,7 +612,7 @@ export class ArmyManager {
 
         await this._units.updateReservedUnits(user, reserveDelta);
         await this._removeEquipmentFromUnits(user, unitRecords);
-        await this._units.removeUnits(user, unitIds);
+        await this._units.removeUnits(user.id, unitIds);
     }
 
     async createCombatLegion(user: User, legionIndex: number) {
