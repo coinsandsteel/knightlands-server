@@ -146,7 +146,7 @@ class Game extends EventEmitter {
         return Math.floor(this.now / 1000);
     }
 
-    isShutdownInProgress() {
+    get isShutdownInProgress() {
         return this._shutdownInProgress === true;
     }
 
