@@ -450,10 +450,6 @@ class User {
             this._advanceTimer(stat);
             timer.value += value;
 
-            if (timer.value + value > this.getMaxStatValue(stat)) {
-                value = 0;
-            }
-
             if (stat == CharacterStat.Energy && value < 0) {
                 await Game.rankings.updateRank(this.id, {
                     type: RankingType.EnergySpent
