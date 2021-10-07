@@ -330,7 +330,7 @@ class User {
         return value;
     }
 
-    async addDkt(value, noRankings = fase) {
+    async addDkt(value, noRankings = false) {
         value = Math.floor(value * DividendsRegistry.DktDecimals) / DividendsRegistry.DktDecimals;
 
         // if payout day is shifted, commit previous days balance
