@@ -158,6 +158,7 @@ class Crafting {
         while (amount-- > 0) {
             const item = this._inventory.createItemByTemplate(baseTemplate);
             item.rerolls = 1;
+            item.unique = true;
             item.properties = this._generateAccessoryOptions(meta.options[rarity], recipe.optionsCount);
             items[amount] = this._inventory.addItem(item, true);
         }
