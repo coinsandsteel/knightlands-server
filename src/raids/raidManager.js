@@ -91,20 +91,23 @@ class RaidManager {
         }
 
         let recipe;
-        if (!user.isFreeAccount) {
+        if (user.isFreeAccount) {
+            // use free raid recipe
+
+            recipe = await this._loadSummonRecipe(raitTemplate.soloData.summonRecipe);
+        } else {
             recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
         }
 
-        if (recipe) {
-            if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
-                throw Errors.NoRecipeIngridients;
-            }
-
-            await user.inventory.autoCommitChanges(async inventory => {
-                // consume crafting materials
-                await inventory.consumeItemsFromCraftingRecipe(recipe);
-            });
+        if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
+            throw Errors.NoRecipeIngridients;
         }
+
+        await user.inventory.autoCommitChanges(async inventory => {
+            // consume crafting materials
+            await inventory.consumeItemsFromCraftingRecipe(recipe);
+        });
+
 
         await user.dailyQuests.onPaidRaidJoin();
         await raid.join(user.id.toHexString());
