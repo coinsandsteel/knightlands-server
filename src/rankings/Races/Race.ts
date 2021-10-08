@@ -118,7 +118,6 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
                 this._state.winners.push(userId)
 
                 userRank = <RankingRecord>await this.getUserRank(userId);
-                // TODO Probably, that's a "user.address", not "user"
                 Game.emitPlayerEvent(userId, Events.RaceFinished, { rank: userRank.rank, race: this.id });
             }
 

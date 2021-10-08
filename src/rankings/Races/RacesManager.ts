@@ -442,11 +442,23 @@ class RacesManager implements IRankingTypeHandler {
 
     private async _getRace(raceId: string) {
         let obj = new ObjectId(raceId);
-        const race = this._races.find(x => x.id.equals(obj));
+        let race = this._races.find(x => x.id.equals(obj));
+        let raceFromDb = null;
+        let raceInstance = null;
+
         if (!race) {
+          raceFromDb = <RaceRecord>await this._db.collection(Collections.Races).findOne({
+            _id: obj
+          });
+          raceInstance = new Race(this._db);
+          await raceInstance.loadFromState(raceFromDb);
+        }
+
+        if (!race && !raceInstance) {
             throw Errors.NoSuchRace;
         }
-        return race;
+
+        return raceInstance || race;
     }
 
     async _handleRaceFinished(raceId: ObjectId) {
