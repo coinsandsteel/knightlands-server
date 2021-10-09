@@ -640,23 +640,25 @@ class Crafting {
     async convert(conversions, entity) {
         let metaId = null;
         switch (entity) {
-          case 'dust':{
-            metaId = "disenchanting_meta";
-            break;
-          }
-          case 'shard':{
-            metaId = "shards_meta";
-            break;
-          }
+            case 'dust':
+                {
+                    metaId = "disenchanting_meta";
+                    break;
+                }
+            case 'shard':
+                {
+                    metaId = "acc_shards_meta";
+                    break;
+                }
         }
 
         if (!metaId) {
-          throw Errors.IncorrectArguments;
+            throw Errors.IncorrectArguments;
         }
-        meta = await this._getConvertMeta(metaId);
+        const meta = await this._getConvertMeta(metaId);
 
         const itemIds = Object.keys(conversions);
-        const inventoryItems = await this._user.inventory.getItemById(itemIds);
+        const inventoryItems = this._user.inventory.getItemById(itemIds);
         const templates = await Game.itemTemplates.getTemplates(inventoryItems.map(x => x.template), true);
 
         const materials = {};
