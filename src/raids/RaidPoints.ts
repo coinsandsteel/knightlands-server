@@ -35,6 +35,11 @@ export class RaidPoints {
         return Game.raidPoints.getCurrentPayout();
     }
 
+    async rollbackRP() {
+        await Game.raidPoints.increaseTotalPoints(this._data.score, this._data.shares, this._user.isFreeAccount);
+        this.reset();
+    }
+
     reset() {
         this._data.lastClaimed = this.getCurrentPayout();
         this._data.pointsPool = this._data.sharesPool = CURVATURE;

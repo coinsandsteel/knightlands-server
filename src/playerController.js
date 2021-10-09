@@ -88,7 +88,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BuyStat, this._gameHandler(this._buyStat.bind(this)));
         this._socket.on(Operations.RefillTimer, this._gameHandler(this._refillTimer.bind(this)));
         this._socket.on(Operations.Tutorial, this._gameHandler(this._handleTutorial.bind(this)));
-        this._socket.on(Operations.UpgradeAccount, this._gameHandler(this._upgradeAccount.bind(this)));
+        this._socket.on(Operations.UpgradeAccount, this._gameHandler(this._toggleAccountType.bind(this)));
 
         // Founder sale
         this._socket.on(Operations.FetchFounderPresale, this._gameHandler(this._fetchFounderPresale.bind(this)));
@@ -711,8 +711,8 @@ class PlayerController extends IPaymentListener {
         return null;
     }
 
-    async _upgradeAccount(user, data) {
-        await user.upgradeAccount();
+    async _toggleAccountType(user, data) {
+        await user.toggleAccountType();
     }
 
     // Founder sale

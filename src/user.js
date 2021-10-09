@@ -240,14 +240,14 @@ class User {
     }
 
 
-    async upgradeAccount() {
+    async toggleAccountType() {
         let activeRaidsCount = await Game.raidManager.activeRaidsCount(this.id);
         if (activeRaidsCount) {
             return;
         }
 
+        await this.raidPoints.rollbackRP();
         this._data.accountType = !this._data.accountType;
-        this.raidPoints.reset();
     }
 
     async getMeta(id) {
