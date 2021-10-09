@@ -637,8 +637,23 @@ class Crafting {
         return item.id;
     }
 
-    async disenchantConvert(conversions) {
-        const disMeta = await this._getDisenchantingMeta();
+    async convert(conversions, entity) {
+        let metaId = null;
+        switch (entity) {
+          case 'dust':{
+            metaId = "disenchanting_meta";
+            break;
+          }
+          case 'shard':{
+            metaId = "shards_meta";
+            break;
+          }
+        }
+
+        if (!metaId) {
+          throw Errors.IncorrectArguments;
+        }
+        meta = await this._getConvertMeta(metaId);
 
         const itemIds = Object.keys(conversions);
         const inventoryItems = await this._user.inventory.getItemById(itemIds);
@@ -655,19 +670,16 @@ class Crafting {
             if (item.equipped) {
                 throw Errors.ItemEquipped;
             }
-
             if (item.locked) {
                 throw Errors.ItemLocked;
             }
 
             const template = templates[item.template];
-
-            const disRarityMeta = disMeta[template.rarity];
-            if (!disRarityMeta) {
+            const rarityMeta = meta[template.rarity];
+            if (!rarityMeta) {
                 throw Errors.IncorrectArguments;
             }
-
-            if (item.template != disRarityMeta.dustItem) {
+            if (item.template != rarityMeta.itemId) {
                 throw Errors.IncorrectArguments;
             }
 
@@ -680,7 +692,7 @@ class Crafting {
                 item,
                 count: 0
             };
-            itemsToRemove[item.id].count += toConvert * disRarityMeta.upgradeCost;
+            itemsToRemove[item.id].count += toConvert * rarityMeta.upgradeCost;
 
             let nextRarity = Rarity.Rare;
             switch (template.rarity) {
@@ -691,19 +703,23 @@ class Crafting {
                 case Rarity.Epic:
                     nextRarity = Rarity.Legendary;
                     break;
+
+                case Rarity.Legendary:
+                    nextRarity = Rarity.Mythical;
+                    break;
             }
 
-            const nextDisRarityMeta = disMeta[nextRarity];
-            if (!nextDisRarityMeta) {
+            const nextRarityMeta = meta[nextRarity];
+            if (!nextRarityMeta) {
                 throw Errors.IncorrectArguments;
             }
 
-            materials[nextDisRarityMeta.dustItem] = materials[nextDisRarityMeta.dustItem] || {
-                item: nextDisRarityMeta.dustItem,
+            materials[nextRarityMeta.itemId] = materials[nextRarityMeta.itemId] || {
+                item: nextRarityMeta.itemId,
                 quantity: 0
             };
 
-            materials[nextDisRarityMeta.dustItem].quantity += toConvert;
+            materials[nextRarityMeta.itemId].quantity += toConvert;
         }
 
         const materialItems = Object.values(materials);
@@ -758,18 +774,18 @@ class Crafting {
                 throw Errors.IncorrectArguments;
             }
 
-            const disRarityMeta = disMeta[template.rarity];
-            if (!disRarityMeta) {
+            const rarityMeta = disMeta[template.rarity];
+            if (!rarityMeta) {
                 throw Errors.IncorrectArguments;
             }
 
-            materials[disRarityMeta.dustItem] = materials[disRarityMeta.dustItem] || {
-                item: disRarityMeta.dustItem,
+            materials[rarityMeta.itemId] = materials[rarityMeta.itemId] || {
+                item: rarityMeta.itemId,
                 rarity: template.rarity,
                 quantity: 0
             };
 
-            materials[disRarityMeta.dustItem].quantity += disRarityMeta.dropAmountMin * itemsToDisenchant;
+            materials[rarityMeta.itemId].quantity += rarityMeta.dropAmountMin * itemsToDisenchant;
         }
 
         const materialItems = Object.values(materials);
@@ -946,10 +962,8 @@ class Crafting {
         });
     }
 
-    async _getDisenchantingMeta() {
-        return await Game.db.collection(Collections.Meta).findOne({
-            _id: "disenchanting_meta"
-        });
+    async _getConvertMeta(_id) {
+        return await Game.db.collection(Collections.Meta).findOne({ _id });
     }
 
     async _getMeta() {
