@@ -149,7 +149,7 @@ class RaidManager {
                 throw Errors.NoRecipeIngridients;
             }
 
-            await inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
+            await summoner.inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
         }
 
         await summoner.modifyTimerValue(CharacterStat.Stamina, -data.summonPrice);
