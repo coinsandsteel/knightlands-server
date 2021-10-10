@@ -142,7 +142,7 @@ class RaidManager {
 
         let summonRecipe;
 
-        if (!summoner.isFreeAccount) {
+        if (free || !summoner.isFreeAccount) {
             summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
 
             if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
