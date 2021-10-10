@@ -140,16 +140,14 @@ class RaidManager {
             throw Errors.IncorrectArguments;
         }
 
-        let summonRecipe;
-
         if (!free && !summoner.isFreeAccount) {
-            summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
+            const summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
 
             if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
                 throw Errors.NoRecipeIngridients;
             }
 
-            await summoner.inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
+            await summoner.inventory.consumeItemsFromCraftingRecipe(summonRecipe);
         }
 
         await summoner.modifyTimerValue(CharacterStat.Stamina, -data.summonPrice);
