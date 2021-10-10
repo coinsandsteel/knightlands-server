@@ -962,6 +962,12 @@ class Crafting {
         });
     }
 
+    async _getDisenchantingMeta() {
+        return await Game.db.collection(Collections.Meta).findOne({
+            _id: "disenchanting_meta"
+        });
+    }
+
     async _getAccessoryMeta() {
         return await Game.db.collection(Collections.Meta).findOne({ _id: "craft_accessories" });
     }
