@@ -11,7 +11,7 @@ import Game from "../game";
 import { ObjectId } from "mongodb";
 import Errors from "../knightlands-shared/errors";
 import random from "../random";
-import { TokenRateTimeseries } from "./TokenRateTimeseries";
+import CharacterStat from "../knightlands-shared/character_stat";
 import { isNumber } from "../validation";
 
 const WeaknessRotationCycle = 86400000 * 7; // 7 days
@@ -36,6 +36,7 @@ class RaidManager {
 
     async init() {
         let settings = await this._db.collection(Collections.RaidsDktMeta).find({}).toArray();
+        let meta = await this._db.collection(Collections.RaidsDktMeta).find({}).toArray();
 
         this._factorSettings = {};
         settings.forEach(setting => {
@@ -90,23 +91,28 @@ class RaidManager {
             throw Errors.NotEnoughLevel;
         }
 
+        if (user.getTimerValue(CharacterStat.Stamina) < raid.template.summonPrice) {
+            throw Errors.IncorrectArguments;
+        }
+
         let recipe;
-        if (user.isFreeAccount) {
-            // use free raid recipe
-            recipe = await this._loadSummonRecipe(raitTemplate.soloData.summonRecipe);
-        } else {
+
+        if (!user.isFreeAccount) {
             recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
         }
 
-        if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
-            throw Errors.NoRecipeIngridients;
+        if (recipe) {
+            if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
+                throw Errors.NoRecipeIngridients;
+            }
+
+            await user.inventory.autoCommitChanges(async inventory => {
+                // consume crafting materials
+                await inventory.consumeItemsFromCraftingRecipe(recipe);
+            });
         }
 
-        await user.inventory.autoCommitChanges(async inventory => {
-            // consume crafting materials
-            await inventory.consumeItemsFromCraftingRecipe(recipe);
-        });
-
+        await user.modifyTimerValue(CharacterStat.Stamina, -raid.template.summonPrice);
 
         await user.dailyQuests.onPaidRaidJoin();
         await raid.join(user.id.toHexString());
@@ -129,25 +135,31 @@ class RaidManager {
 
         // check if there is enough crafting materials
         let data = (free || summoner.isFreeAccount) ? raitTemplate.soloData : raitTemplate.data;
-        let summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
 
-        if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
-            throw Errors.NoRecipeIngridients;
+        if (summoner.getTimerValue(CharacterStat.Stamina) < data.summonPrice) {
+            throw Errors.IncorrectArguments;
         }
 
-        let user = await Game.getUserById(summoner.id);
-        await user.inventory.autoCommitChanges(async inventory => {
-            // consume crafting materials
-            let craftingRecipe = await this._loadSummonRecipe(data.summonRecipe);
+        let summonRecipe;
+
+        if (!summoner.isFreeAccount) {
+            summonRecipe = await this._loadSummonRecipe(data.summonRecipe);
+
+            if (!(await summoner.inventory.hasEnoughIngridients(summonRecipe.ingridients))) {
+                throw Errors.NoRecipeIngridients;
+            }
+
             await inventory.consumeItemsFromCraftingRecipe(craftingRecipe);
-        });
+        }
+
+        await summoner.modifyTimerValue(CharacterStat.Stamina, -data.summonPrice);
 
         const raid = new Raid(this._db);
-        await raid.create(user.id, raidTemplateId, free, isPublic);
+        await raid.create(summoner.id, raidTemplateId, free, isPublic);
         this._addRaid(raid);
 
         if (!free) {
-            await user.dailyQuests.onPaidRaidJoin();
+            await summoner.dailyQuests.onPaidRaidJoin();
 
             if (isPublic) {
                 Game.publishToChannel("public_raids", { raid: raid.getInfo() });

@@ -947,16 +947,28 @@ class PlayerController extends IPaymentListener {
     }
 
     async _summonRaid(user, data) {
+        if (!isNumber(data.raid)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        const raidId = +data.raid;
+        const meta = await Game.db.collection(Collections.RaidsMeta).findOne({ _id: "meta" });
+
         if (data.free) {
-            const meta = await Game.db.collection(Collections.RaidsMeta).findOne({ _id: "meta" });
-            if (user.getSoloRaidAttempts(data.raid) == meta.dailySoloLimit) {
+            if (user.getSoloRaidAttempts(raidId) == meta.dailySoloLimit) {
                 throw Errors.ExhaustedSoloRaidAttempts;
+            }
+        } else {
+            if (Game.nowSec - user.getLastRaidSummon(raidId) < meta.groupRaidSummonCooldown) {
+                throw Errors.IncorrectArguments;
             }
         }
 
-        const result = await this._raidManager.summonRaid(user, +data.raid, data.free, data.options.public);
+        const result = await this._raidManager.summonRaid(user, raidId, data.free, data.options.public);
         if (data.free) {
-            user.increaseSoloRaidAttempts(data.raid);
+            user.increaseSoloRaidAttempts(raidId);
+        } else {
+            user.setRaidSummoned(raidId);
         }
 
         return result;

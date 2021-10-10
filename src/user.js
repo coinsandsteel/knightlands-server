@@ -1418,6 +1418,10 @@ class User {
             user.sRaidAttempts = {};
         }
 
+        if (!user.gRaidSummon) {
+            user.gRaidSummon = {};
+        }
+
         if (!user.pCards) {
             user.pCards = {};
         }
@@ -1810,6 +1814,14 @@ class User {
 
         this._data.sRaidAttempts = {};
         this.raceShop.reset();
+    }
+
+    getLastRaidSummon(raidId) {
+        return (this._data.gRaidSummon[raidId] || 0);
+    }
+
+    setRaidSummoned(raidId) {
+        this._data.gRaidSummon[raidId] = Game.nowSec;
     }
 
     getSoloRaidAttempts(raidId) {
