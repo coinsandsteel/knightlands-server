@@ -122,6 +122,23 @@ class RaidManager {
         }
     }
 
+    async leaveRaid(userId, raidId) {
+        let raid = this.getRaid(raidId);
+        if (!raid) {
+            throw Errors.InvalidRaid;
+        }
+
+        const user = await Game.getUserById(userId);
+        await raid.leave(user.id.toHexString());
+
+        if (raid.isEmpty) {
+          this._handleRaidTerminate(raid);
+          if (raid.isPublic) {
+            Game.publishToChannel("public_raids", { terminated: raid.getInfo() });
+          }
+        }
+    }
+
     async summonRaid(summoner, raidTemplateId, free, isPublic, allowFreePlayers) {
         let raitTemplate = await this._loadRaidTemplate(raidTemplateId);
 
@@ -344,11 +361,11 @@ class RaidManager {
     _addRaid(raid) {
         this._raids[raid.id] = raid;
 
-        raid.on(raid.TimeRanOut, this._handleRaidTimeout.bind(this));
+        raid.on(raid.TimeRanOut, this._handleRaidTerminate.bind(this));
         raid.on(raid.Defeat, this._handleRaidDefeat.bind(this));
     }
 
-    async _handleRaidTimeout(raid) {
+    async _handleRaidTerminate(raid) {
         // fix dkt rate
         await raid.finish(0);
         this._removeRaid(raid.id);

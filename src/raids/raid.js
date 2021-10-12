@@ -42,7 +42,7 @@ class Raid extends EventEmitter {
     }
 
     get finished() {
-        return !this._bossUnit.isAlive || this._data.timeLeft < 1;
+        return !this._bossUnit.isAlive || this._data.timeLeft < 1 || !this._data.busySlots;
     }
 
     get free() {
@@ -128,6 +128,10 @@ class Raid extends EventEmitter {
         }
 
         return this._data.busySlots >= this.template.maxSlots;
+    }
+
+    get isEmpty() {
+        return !this._data.busySlots;
     }
 
     async init(data) {
@@ -250,6 +254,28 @@ class Raid extends EventEmitter {
                 participants: this._data.participants,
                 [`loot.${userId}`]: false,
                 busySlots: this._data.busySlots
+            }
+        });
+    }
+
+    async leave(userId) {
+        if (this._data.participants[userId] === undefined) {
+            throw Errors.NoParticipant;
+        }
+
+        if (this._data.finished && this._data.loot[userId] === false) {
+          throw Errors.RaidLootWasNotClaimed;
+        }
+        
+        delete this._data.participants[userId];
+        delete this._data.loot[userId];
+        this._data.busySlots--;
+
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
+          $set: {
+              participants: this._data.participants,
+              loot: this._data.loot,
+              busySlots: this._data.busySlots
             }
         });
     }
