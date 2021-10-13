@@ -29,6 +29,7 @@ import { isNumber } from "./validation";
 import { ObjectId } from "mongodb";
 import { DividendsRegistry } from "./dividends/DividendsRegistry";
 import { RaceShopUser } from "./rankings/Races/RaceShopUser";
+import { Lock } from "./utils/lock";
 
 const {
     EquipmentSlots,
@@ -74,6 +75,7 @@ class User {
         this._recalculateStats = false;
         this._combatUnit = null;
         this._buffsResolver = new Buffs();
+        this._lock = new Lock();
     }
 
     dispose() {
@@ -1192,57 +1194,70 @@ class User {
         return await this._crafting.unbindItem(itemId, items);
     }
 
-    async commitChanges() {
-        await this._calculateFinalStats();
+    async commitChanges(lock = true) {
+        if (lock) {
+            await this._lock.acquire("commit");
+        }
 
-        await Game.dbClient.withTransaction(async db => {
-            let users = db.collection(Collections.Users);
-            let {
-                updateQuery,
-                removeQuery,
-                changes,
-                removals
-            } = buildUpdateQuery(this._originalData, this._data);
+        try {
+            await this._calculateFinalStats();
 
-            if (updateQuery || removeQuery) {
-                let finalQuery = {};
+            await Game.dbClient.withTransaction(async db => {
+                let users = db.collection(Collections.Users);
+                let {
+                    updateQuery,
+                    removeQuery,
+                    changes,
+                    removals
+                } = buildUpdateQuery(this._originalData, this._data);
 
-                if (updateQuery) {
-                    finalQuery.$set = updateQuery;
+                if (updateQuery || removeQuery) {
+                    let finalQuery = {};
+
+                    if (updateQuery) {
+                        finalQuery.$set = updateQuery;
+                    }
+
+                    if (removeQuery) {
+                        finalQuery.$unset = removeQuery;
+                    }
+
+                    await users.updateOne({
+                        address: this.address
+                    }, finalQuery, { upsert: true });
+
+                    this._originalData = cloneDeep(this._data);
                 }
 
-                if (removeQuery) {
-                    finalQuery.$unset = removeQuery;
-                }
+                await this._inventory.commitChanges(db);
 
-                await users.updateOne({
-                    address: this.address
-                }, finalQuery, { upsert: true });
-
-                this._originalData = cloneDeep(this._data);
-            }
-
-            await this._inventory.commitChanges(db);
-
-            Game.emitPlayerEvent(this.id, Events.CommitChanges, {
-                changes,
-                removals
-            });
-        })
+                Game.emitPlayerEvent(this.id, Events.CommitChanges, {
+                    changes,
+                    removals
+                });
+            })
+        } finally {
+            await this._lock.release("commit");
+        }
     }
 
     async autoCommitChanges(changeCallback) {
         let response;
+        await this._lock.acquire("commit");
 
-        if (changeCallback) {
-            try {
-                response = await changeCallback(this);
-            } catch (exc) {
-                console.error(exc);
+        try {
+            if (changeCallback) {
+                try {
+                    response = await changeCallback(this);
+                } catch (exc) {
+                    console.error(exc);
+                }
             }
-        }
 
-        await this.commitChanges();
+            await this.commitChanges(false);
+        } finally {
+            await this._lock.release("commit");
+        }
 
         return response;
     }

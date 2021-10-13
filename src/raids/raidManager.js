@@ -106,7 +106,7 @@ class RaidManager {
                 throw Errors.NoRecipeIngridients;
             }
 
-            await user.inventory.autoCommitChanges(async inventory => {
+            await user.autoCommitChanges(async inventory => {
                 // consume crafting materials
                 await inventory.consumeItemsFromCraftingRecipe(recipe);
             });

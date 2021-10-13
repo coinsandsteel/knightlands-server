@@ -14,7 +14,7 @@ export class Lock {
         return new Promise(resolve => {
             if (!this._locked[key]) {
                 this._locked[key] = true;
-                return resolve();
+                return resolve(true);
             }
 
             const tryAcquire = value => {

@@ -261,7 +261,7 @@ export class ArmyManager {
                     throw Errors.NoEnoughItems;
                 }
 
-                await inventory.autoCommitChanges(() => {
+                await user.autoCommitChanges(() => {
                     inventory.removeItem(ticketItem.id, count);
                 })
             }
@@ -644,7 +644,8 @@ export class ArmyManager {
     }
 
     private async _checkFreeSlots(armyProfile: any, requiredSlots: number) {
-        if (armyProfile.maxSlots - armyProfile.occupiedSlots < requiredSlots) {
+        const totalUnits = await this._armiesCollection.count({ _id: armyProfile._id });
+        if (armyProfile.maxSlots - totalUnits < requiredSlots) {
             throw Errors.NotEnoughArmySlots;
         }
     }
