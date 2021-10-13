@@ -13,6 +13,7 @@ import Errors from "../knightlands-shared/errors";
 import random from "../random";
 import CharacterStat from "../knightlands-shared/character_stat";
 import { isNumber } from "../validation";
+import { Lock } from "../utils/lock";
 
 const WeaknessRotationCycle = 86400000 * 7; // 7 days
 const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
@@ -28,7 +29,7 @@ class RaidManager {
     constructor(db, paymentProcessor) {
         this.SummonPaymentTag = "raid_summon";
         this.JoinPaymentTag = "raid_join";
-
+        this._lock = new Lock();
         this._db = db;
         this._factors = {};
         this._paymentProcessor = paymentProcessor;
@@ -75,68 +76,82 @@ class RaidManager {
     }
 
     async joinRaid(userId, raidId) {
-        let raid = this.getRaid(raidId);
-        if (!raid || raid.free) {
-            throw Errors.InvalidRaid;
-        }
+        await this._lock.acquire("raid#" + raidId);
+        try {
+          let raid = this.getRaid(raidId);
+          if (!raid || raid.free) {
+              throw Errors.InvalidRaid;
+          }
 
-        if (raid.isFull) {
-            throw Errors.RaidIsFull;
-        }
+          if (raid.isFull) {
+              throw Errors.RaidIsFull;
+          }
 
-        const user = await Game.getUserById(userId);
-        const raitTemplate = await this._loadRaidTemplate(raid.templateId);
+          const user = await Game.getUserById(userId);
+          const raitTemplate = await this._loadRaidTemplate(raid.templateId);
 
-        if (user.level < raitTemplate.level) {
-            throw Errors.NotEnoughLevel;
-        }
+          if (user.level < raitTemplate.level) {
+              throw Errors.NotEnoughLevel;
+          }
 
-        if (user.getTimerValue(CharacterStat.Stamina) < raid.template.summonPrice) {
-            throw Errors.IncorrectArguments;
-        }
+          if (user.getTimerValue(CharacterStat.Stamina) < raid.template.summonPrice) {
+              throw Errors.IncorrectArguments;
+          }
 
-        let recipe;
+          let recipe;
 
-        if (!user.isFreeAccount) {
-            recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
-        }
+          if (!user.isFreeAccount) {
+              recipe = await this._loadSummonRecipe(raid.template.joinRecipe);
+          }
 
-        if (recipe) {
-            if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
-                throw Errors.NoRecipeIngridients;
-            }
+          if (recipe) {
+              if (!(await user.inventory.hasEnoughIngridients(recipe.ingridients))) {
+                  throw Errors.NoRecipeIngridients;
+              }
 
-            await user.inventory.autoCommitChanges(async inventory => {
-                // consume crafting materials
-                await inventory.consumeItemsFromCraftingRecipe(recipe);
-            });
-        }
+              await user.inventory.autoCommitChanges(async inventory => {
+                  // consume crafting materials
+                  await inventory.consumeItemsFromCraftingRecipe(recipe);
+              });
+          }
 
-        await user.modifyTimerValue(CharacterStat.Stamina, -raid.template.summonPrice);
+          await user.modifyTimerValue(CharacterStat.Stamina, -raid.template.summonPrice);
 
-        await user.dailyQuests.onPaidRaidJoin();
-        await raid.join(user.id.toHexString());
+          await user.dailyQuests.onPaidRaidJoin();
+          await raid.join(user.id.toHexString());
 
-        if (raid.isFull) {
-            Game.publishToChannel("public_raids", { full: raid.id });
+          if (raid.isFull) {
+              Game.publishToChannel("public_raids", { full: raid.id });
+          }
+
+          Game.publishToChannel(`raid/${this.raidId}/participants`, { joined: user.id.toHexString() });
+        } finally {
+            await this._lock.release("raid#" + raidId);
         }
     }
 
     async leaveRaid(userId, raidId) {
-        let raid = this.getRaid(raidId);
-        if (!raid) {
-            throw Errors.InvalidRaid;
-        }
+        await this._lock.acquire("raid#" + raidId);
+        try {
+            let raid = this.getRaid(raidId);
+            if (!raid) {
+                throw Errors.InvalidRaid;
+            }
 
-        const user = await Game.getUserById(userId);
-        await raid.leave(user.id.toHexString());
+            const user = await Game.getUserById(userId);
+            await raid.leave(user.id.toHexString());
 
-        if (raid.isEmpty) {
-          this._handleRaidTerminate(raid);
-          if (raid.isPublic) {
-            Game.publishToChannel("public_raids", { terminated: raid.getInfo() });
-          }
-        }
+            if (raid.isEmpty) {
+                this._handleRaidTerminate(raid);
+                if (raid.isPublic) {
+                    Game.publishToChannel("public_raids", { terminated: raid.getInfo() });
+                }
+            }
+
+            Game.publishToChannel(`raid/${this.raidId}/participants`, { left: user.id.toHexString() });
+        } finally {
+          await this._lock.release("raid#" + raidId);
+      }
     }
 
     async summonRaid(summoner, raidTemplateId, free, isPublic, allowFreePlayers) {
