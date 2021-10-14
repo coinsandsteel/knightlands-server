@@ -58,11 +58,15 @@ class DailyQuests {
     }
 
     async onFreeRaidFinished() {
-        await this._advanceTask(DailyQuestType.DailyFreeRaid, 1);
+        await this._user.autoCommitChanges(async() => {
+            await this._advanceTask(DailyQuestType.DailyFreeRaid, 1);
+        });
     }
 
     async onPaidRaidJoin() {
-        await this._advanceTask(DailyQuestType.DailyPaidRaid, 1);
+        await this._user.autoCommitChanges(async() => {
+            await this._advanceTask(DailyQuestType.DailyPaidRaid, 1);
+        });
     }
 
     async onItemDisenchant(count = 1) {
@@ -209,14 +213,6 @@ class DailyQuests {
                     type: taskType
                 });
             }
-        }
-
-        // corner case, raid is emitting event, which breaks await chain
-        switch (taskType) {
-            case DailyQuestType.DailyFreeRaid:
-            case DailyQuestType.DailyPaidRaid:
-                await this._user.autoCommitChanges();
-                break;
         }
     }
 }

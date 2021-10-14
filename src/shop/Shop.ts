@@ -159,28 +159,6 @@ export class Shop {
 
     private async _claimSubscription(card: SubscriptionMeta, userId: ObjectId) {
         const user = await Game.getUserById(userId);
-        const cards = user.cards;
-
-        if (!cards[card.id]) {
-            cards[card.id] = {
-                end: 0
-            };
-
-            // when bought first time - add attempts immediately
-            user.applyBonusRefills(
-                card.towerAttempts,
-                card.armourTrialAttempts,
-                card.weaponTrialAttempts,
-                card.accessoryTrialAttempts
-            );
-        }
-
-        if (cards[card.id].end < Game.nowSec) {
-            cards[card.id].end = Game.nowSec;
-            user.subscriptions.lastClaimCycle = user.getDailyRewardCycle();
-        }
-
-        cards[card.id].end += card.duration;
 
         const result = {
             hard: 0,
@@ -188,6 +166,31 @@ export class Shop {
         };
 
         await user.autoCommitChanges(async () => {
+            const cards = user.cards;
+
+            if (!cards[card.id]) {
+                cards[card.id] = {
+                    end: 0
+                };
+
+                // when bought first time - add attempts immediately
+                user.applyBonusRefills(
+                    card.towerAttempts,
+                    card.armourTrialAttempts,
+                    card.weaponTrialAttempts,
+                    card.accessoryTrialAttempts
+                );
+            }
+
+            if (cards[card.id].end < Game.nowSec) {
+                cards[card.id].end = Game.nowSec;
+                user.subscriptions.lastClaimCycle = user.getDailyRewardCycle();
+            }
+
+            cards[card.id].end += card.duration;
+
+
+
             if (card.initialHard) {
                 result.hard = card.initialHard + card.dailyHard;
                 await user.addHardCurrency(result.hard);
@@ -247,21 +250,21 @@ export class Shop {
 
     private async _claimPack(pack: PackMeta, userId: ObjectId) {
         const user = await Game.getUserById(userId);
-
-        if (pack.max) {
-            user.dailyShop.setPurchased(pack.id);
-        }
-
-        if (pack.dailyMax) {
-            user.dailyShop.incPurchase(pack.id, true);
-        }
-
-        if (pack.weeklyMax) {
-            user.dailyShop.incPurchase(pack.id, false);
-        }
-
         const items = await Game.lootGenerator.getLootFromTable(pack.loot);
+
         await user.autoCommitChanges(async () => {
+            if (pack.max) {
+                user.dailyShop.setPurchased(pack.id);
+            }
+
+            if (pack.dailyMax) {
+                user.dailyShop.incPurchase(pack.id, true);
+            }
+
+            if (pack.weeklyMax) {
+                user.dailyShop.incPurchase(pack.id, false);
+            }
+
             await user.inventory.addItemTemplates(items);
         });
 
@@ -272,12 +275,12 @@ export class Shop {
         const user = await Game.getUserById(userId);
         const meta = await this._getTopUpMeta();
 
-        if (!user.dailyShop.isPurchasedOnce(iap)) {
-            amount *= (1 + meta.firstPurchaseBonus);
-            user.dailyShop.setPurchased(iap);
-        }
-
         await user.autoCommitChanges(async () => {
+            if (!user.dailyShop.isPurchasedOnce(iap)) {
+                amount *= (1 + meta.firstPurchaseBonus);
+                user.dailyShop.setPurchased(iap);
+            }
+
             if (!user.dailyShop.isPurchasedOnce(iap)) {
                 amount *= (1 + meta.firstPurchaseBonus);
                 user.dailyShop.setPurchased(iap);
@@ -295,13 +298,13 @@ export class Shop {
     private async _topUpShines(iap: string, userId: ObjectId, amount: number) {
         const user = await Game.getUserById(userId);
 
-        if (!user.dailyShop.isPurchasedOnce(iap)) {
-            const meta = await this._getTopUpMeta();
-            amount *= (1 + meta.firstPurchaseBonus);
-            user.dailyShop.setPurchased(iap);
-        }
-
         await user.autoCommitChanges(async () => {
+            if (!user.dailyShop.isPurchasedOnce(iap)) {
+                const meta = await this._getTopUpMeta();
+                amount *= (1 + meta.firstPurchaseBonus);
+                user.dailyShop.setPurchased(iap);
+            }
+
             await user.addHardCurrency(amount);
         });
 
