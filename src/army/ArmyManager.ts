@@ -255,7 +255,7 @@ export class ArmyManager {
                 lastSummon[summonType] = Game.nowSec;
             } else {
                 // check if user has enough tickets
-                const inventory = await Game.loadInventoryById(user.id);
+                const inventory = user.inventory;
                 const ticketItem = inventory.getItemByTemplate(summonMeta.ticketItem);
                 if (!ticketItem) {
                     throw Errors.NoEnoughItems;
