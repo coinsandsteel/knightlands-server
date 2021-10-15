@@ -6,7 +6,7 @@ import { Collections } from "../database/database";
 import errors from "../knightlands-shared/errors";
 import { isNumber } from "../validation";
 
-const MAX_PASSED_TIME = 86400 * 3;
+const MAX_PASSED_TIME = 86400 * 7;
 
 export class Dividends {
     private _data: DividendsData;
