@@ -269,26 +269,21 @@ class RaidManager {
     _getActiveRaidsQuery(userId) {
         let lootQuery = {};
         lootQuery[`loot.${userId}`] = { $ne: true };
-
-        let matchQuery = {
-            $match: {
-                $or: [{
-                        $and: [lootQuery, { defeat: true }]
-                    },
-                    {
-                        finished: false
-                    }
-                ],
-                [`participants.${userId}`]: { $exists: true }
-            }
+        return {
+            $or: [{
+                    $and: [lootQuery, { defeat: true }]
+                },
+                {
+                    finished: false
+                }
+            ],
+            [`participants.${userId}`]: { $exists: true }
         };
-
-        return matchQuery;
     }
 
     async getCurrentRaids(userId) {
         return await this._db.collection(Collections.Raids).aggregate([
-            this._getActiveRaidsQuery(userId),
+            { $match: this._getActiveRaidsQuery(userId) },
             {
                 "$addFields": {
                     "id": { "$toString": "$_id" }
