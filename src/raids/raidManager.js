@@ -266,7 +266,7 @@ class RaidManager {
         return info;
     }
 
-    async getCurrentRaids(userId) {
+    _getActiveRaidsQuery(userId) {
         let lootQuery = {};
         lootQuery[`loot.${userId}`] = { $ne: true };
 
@@ -278,15 +278,17 @@ class RaidManager {
                     {
                         finished: false
                     }
-                ]
+                ],
+                [`participants.${userId}`]: { $exists: true }
             }
         };
 
-        let participantId = `participants.${userId}`;
-        matchQuery.$match[participantId] = { $exists: true };
+        return matchQuery;
+    }
 
+    async getCurrentRaids(userId) {
         return await this._db.collection(Collections.Raids).aggregate([
-            matchQuery,
+            this._getActiveRaidsQuery(userId),
             {
                 "$addFields": {
                     "id": { "$toString": "$_id" }
@@ -310,12 +312,7 @@ class RaidManager {
     }
 
     async activeRaidsCount(userId) {
-        let matchQuery = {
-            [`participants.${userId}`]: { $exists: true },
-            [`loot.${userId}`]: { $ne: true }
-        };
-
-        return await this._db.collection(Collections.Raids).count(matchQuery);
+        return await this._db.collection(Collections.Raids).count(this._getActiveRaidsQuery(userId));
     }
 
     async _loadRaidTemplate(raidTemplateId) {
