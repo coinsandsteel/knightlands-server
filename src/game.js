@@ -19,6 +19,7 @@ import { RaidPointsManager } from './raids/RaidPointsManager';
 import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
 import { PresaleCardsService } from "./shop/PresaleCards";
 import { QuestZones } from "./QuestZones";
+import { DungeonManager } from "./simple-dungeon/DungeonManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -64,10 +65,12 @@ class Game extends EventEmitter {
         this.prizePool = new PrizePoolManager();
         this.founderSale = new PresaleCardsService(blockchain);
         this.questZones = new QuestZones();
+        this.dungeonManager = new DungeonManager();
 
         this._players = {};
         this._playersById = {};
 
+        await this.dungeonManager.init();
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();

@@ -79,7 +79,9 @@ module.exports = {
         Depositors: "depositors",
         ActivityHistory: "activity_history",
         TokenDepositErrors: "token_deposit_errors",
-        PresaleCardDeposits: "presale_card_deposits"
+        PresaleCardDeposits: "presale_card_deposits",
+        HalloweenUsers: "halloween_users",
+        HalloweenFloors: "halloween_floors"
     },
 
 
