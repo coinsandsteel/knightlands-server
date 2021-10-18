@@ -644,8 +644,7 @@ export class ArmyManager {
     }
 
     private async _checkFreeSlots(armyProfile: any, requiredSlots: number) {
-        const totalUnits = await this._armiesCollection.count({ _id: armyProfile._id });
-        if (armyProfile.maxSlots - totalUnits < requiredSlots) {
+        if (armyProfile.maxSlots - armyProfile.occupiedSlots < requiredSlots) {
             throw Errors.NotEnoughArmySlots;
         }
     }
