@@ -124,7 +124,7 @@ class RaidManager {
               Game.publishToChannel("public_raids", { full: raid.id });
           }
 
-          Game.publishToChannel(`raid/${this.raidId}/participants`, { joined: user.id.toHexString() });
+          Game.publishToChannel(`raid/${raidId}/participants`, { joined: user.id.toHexString() });
         } finally {
             await this._lock.release("raid#" + raidId);
         }
@@ -148,7 +148,7 @@ class RaidManager {
                 }
             }
 
-            Game.publishToChannel(`raid/${this.raidId}/participants`, { left: user.id.toHexString() });
+            Game.publishToChannel(`raid/${raidId}/participants`, { left: user.id.toHexString() });
         } finally {
           await this._lock.release("raid#" + raidId);
       }
