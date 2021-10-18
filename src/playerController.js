@@ -24,6 +24,7 @@ import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
 import { exist, isNumber, isString } from "./validation";
+import { DungeonController } from "./simple-dungeon/DungeonController";
 
 const TowerFloorPageSize = 20;
 
@@ -232,6 +233,9 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.PurchaseDailyItem, this._gameHandler(this._purchaseDailyItem.bind(this)));
         this._socket.on(Operations.RefreshDailyShop, this._gameHandler(this._refreshDailyShop.bind(this)));
 
+        // Simple dungeon
+        this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -355,6 +359,9 @@ class PlayerController extends IPaymentListener {
             if (!this._user) {
                 this._user = await Game.loadUser(address || this.address);
                 this.id = this._user.id.toString();
+
+                this.simpleDungeon = new DungeonController(this._user);
+                await this.simpleDungeon.init();
             }
         } finally {
             await this._lock.release("get-user");
@@ -515,8 +522,6 @@ class PlayerController extends IPaymentListener {
             }
 
             let playerUnit = user.getCombatUnit();
-
-
 
             while (user.enoughHp && bossUnit.isAlive && hits > 0) {
                 // exp and gold are calculated based on damage inflicted
@@ -1737,6 +1742,11 @@ class PlayerController extends IPaymentListener {
 
     async _refreshDailyShop(user, data) {
         return user.dailyShop.refresh();
+    }
+
+    // Simple Dungeon
+    async _sDungeonGenerate(user, data) {
+        return this.simpleDungeon.generateNewFloor();
     }
 }
 

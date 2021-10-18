@@ -37,7 +37,8 @@ export class DungeonController {
             state: {
                 energy: meta.mode.maxEnergy,
                 floor,
-                revealed: [dungeonData.start]
+                revealed: [dungeonData.start],
+                cycle: this._user.getDailyRewardCycle()
             },
             data: dungeonData
         }

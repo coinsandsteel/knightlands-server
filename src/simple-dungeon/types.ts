@@ -51,6 +51,7 @@ export interface DungeonClientState {
     revealed: Cell[];
     energy: number;
     floor: number;
+    cycle: number;
 }
 
 export interface DungeonSaveData {
