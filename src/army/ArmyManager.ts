@@ -203,7 +203,7 @@ export class ArmyManager {
     async summonRandomUnit(user: User, count: number, stars: number, summonType: number) {
         const armyProfile = await this._loadArmyProfile(user.id);
 
-        await this._checkFreeSlots(armyProfile, 1);
+        await this._checkFreeSlots(armyProfile, count);
 
         let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summonWithStars(count, stars, summonType);
