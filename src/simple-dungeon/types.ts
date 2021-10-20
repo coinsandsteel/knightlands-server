@@ -4,17 +4,9 @@ export interface DungeonLootTile {
     loot: number;
 }
 
-export interface DungeonLootConfig {
-    ordered: DungeonLootTile[];
-}
-
 export interface DungeonEnemiesCompact {
     difficulty: number;
     count: number;
-}
-
-export interface DungeonEnemiesConfig {
-    ordered: DungeonEnemiesCompact[];
 }
 
 export interface DungeonFloorConfig {
@@ -22,8 +14,8 @@ export interface DungeonFloorConfig {
     height: number;
     extraPassageChance: number;
     missedPassageChanceInc: number;
-    enemies: DungeonEnemiesConfig;
-    loot: DungeonLootConfig;
+    enemies: DungeonEnemiesCompact[];
+    loot: DungeonLootTile[];
 }
 
 export interface CellEnemy {
@@ -45,6 +37,7 @@ export interface Cell {
 export interface DungeonFloorData {
     start: Cell;
     cells: Cell[];
+    width: number;
 }
 
 export interface DungeonClientState {

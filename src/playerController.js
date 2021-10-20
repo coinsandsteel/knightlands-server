@@ -235,6 +235,8 @@ class PlayerController extends IPaymentListener {
 
         // Simple dungeon
         this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
+        this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
+        this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1747,6 +1749,18 @@ class PlayerController extends IPaymentListener {
     // Simple Dungeon
     async _sDungeonGenerate(user, data) {
         return this.simpleDungeon.generateNewFloor();
+    }
+
+    async _sDungeonReveal(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.reveal(+data.cellId);
+    }
+
+    async _sDungeonUseCell(_, data) {
+        return this.simpleDungeon.useCell(+data.cellId);
     }
 }
 

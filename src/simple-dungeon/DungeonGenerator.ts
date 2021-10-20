@@ -2,6 +2,10 @@ import random from "../random";
 import Game from "../game";
 import { Cell, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData } from "./types";
 
+export function cellToIndex(cell: Cell, width: number) {
+    return cell.y * width + cell.x;
+}
+
 export class DungeonGenerator {
     private _config: DungeonFloorConfig;
 
@@ -14,10 +18,10 @@ export class DungeonGenerator {
     }
 
     cellToIndex(cell: Cell) {
-        return cell.y * this._config.width + cell.x;
+        return cellToIndex(cell, this._config.width);
     }
 
-    shuffle(cells: number[]) {
+    shuffle(cells: any[]) {
         for (let i = cells.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [cells[i], cells[j]] = [cells[j], cells[i]];
@@ -27,7 +31,7 @@ export class DungeonGenerator {
     }
 
     randomNeighbours(cell: Cell, filter: (cell: Cell) => boolean) {
-        const cells = [];
+        const cells: Cell[] = [];
         // left
         if (cell.x > 0) {
             const nc = { x: cell.x - 1, y: cell.y, c: [] };
@@ -92,7 +96,7 @@ export class DungeonGenerator {
         // according to the list's order and quantity
         // this will let players compete in a random dungeon
         // with similar difficulty
-        const enemyList = this.expandEnemyConfig(this._config.enemies.ordered);
+        const enemyList = this.expandEnemyConfig(this._config.enemies);
         console.log("enemies to place", enemyList.length);
 
         const maxDistanceBetweenEnemies = Math.round((cells.length - 1) / enemyList.length);
@@ -142,9 +146,9 @@ export class DungeonGenerator {
 
     placeLoot(cellsForLoot: Cell[]) {
         // uniformly distibute loot
-        const cellsBetweenLoot = Math.floor((cellsForLoot.length - 1) / this._config.loot.ordered.length);
+        const cellsBetweenLoot = Math.floor((cellsForLoot.length - 1) / this._config.loot.length);
         let rewardIndex = cellsBetweenLoot;
-        for (const loot of this._config.loot.ordered) {
+        for (const loot of this._config.loot) {
             const cell = cellsForLoot[rewardIndex];
             rewardIndex += cellsBetweenLoot;
             cell.loot = loot;
@@ -176,9 +180,9 @@ export class DungeonGenerator {
                 continue;
             }
 
-            const nbCellIdx = neighbours[0];
+            const nbCell = neighbours[0];
+            const nbCellIdx = this.cellToIndex(nbCell);
             if (!cells[nbCellIdx]) {
-                const nbCell = cells[nbCellIdx];
                 cells[nbCellIdx] = nbCell;
                 stack.push(nbCell);
                 this.connect(currentCell, nbCell);
@@ -190,9 +194,9 @@ export class DungeonGenerator {
         for (const cell of cells) {
             if (cell.c.length < 4) {
                 const neighbours = this.randomNotConnected(cell);
-                for (const nbCellIdx of neighbours) {
+                for (const nbCell of neighbours) {
                     if (this.range(1, 100) <= openChance) {
-                        this.connect(cells[nbCellIdx], cell);
+                        this.connect(cells[this.cellToIndex(nbCell)], cell);
                         openChance = this._config.missedPassageChanceInc;
                     } else {
                         openChance += this._config.extraPassageChance;
@@ -207,6 +211,7 @@ export class DungeonGenerator {
 
         const dungeon: DungeonFloorData = {
             cells,
+            width: this._config.width,
             start: startCell
         }
 
