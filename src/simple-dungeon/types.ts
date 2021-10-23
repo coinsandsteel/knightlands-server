@@ -9,15 +9,6 @@ export interface DungeonEnemiesCompact {
     count: number;
 }
 
-export interface DungeonFloorConfig {
-    width: number;
-    height: number;
-    extraPassageChance: number;
-    missedPassageChanceInc: number;
-    enemies: DungeonEnemiesCompact[];
-    loot: DungeonLootTile[];
-}
-
 export interface CellEnemy {
     id: number;
 }
@@ -38,9 +29,12 @@ export interface DungeonFloorData {
     start: Cell;
     cells: Cell[];
     width: number;
+    height: number;
 }
 
 export interface DungeonClientState {
+    width: number;
+    height: number;
     revealed: Cell[];
     energy: number;
     floor: number;
@@ -71,15 +65,16 @@ export interface LootData {
 }
 
 export interface DungeonFloorSettings {
-    depth: number;
     width: number;
     height: number;
+    extraPassageChance: number;
+    missedPassageChanceInc: number;
     enemies: EnemyGroupData[];
     loot: LootData[];
 }
 
 export interface DungeonData {
-    floors: DungeonFloorSettings;
+    floors: DungeonFloorSettings[];
 }
 
 export interface EnemyMoveSet {
@@ -90,7 +85,7 @@ export interface EnemyMoveSet {
 export interface EnemyData {
     id: number;
     difficulty: number;
-    moves: EnemyMoveSet[];
+    //moves: EnemyMoveSet[];
 }
 
 export interface EnemiesData {

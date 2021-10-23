@@ -1,15 +1,16 @@
+import _ from "lodash";
 import random from "../random";
 import Game from "../game";
-import { Cell, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData } from "./types";
+import { Cell, DungeonEnemiesCompact, DungeonFloorData, DungeonFloorSettings } from "./types";
 
 export function cellToIndex(cell: Cell, width: number) {
     return cell.y * width + cell.x;
 }
 
 export class DungeonGenerator {
-    private _config: DungeonFloorConfig;
+    private _config: DungeonFloorSettings;
 
-    constructor(config: DungeonFloorConfig) {
+    constructor(config: DungeonFloorSettings) {
         this._config = config;
     }
 
@@ -73,10 +74,13 @@ export class DungeonGenerator {
 
     expandEnemyConfig(enemiesConfig: DungeonEnemiesCompact[]) {
         const enemyList = [];
+        const enemiesMeta = Game.dungeonManager.getMeta().enemies;
         for (let k = enemiesConfig.length - 1; k >= 0; --k) {
             const config = enemiesConfig[k];
             for (let i = 0; i < config.count; ++i) {
-                enemyList.push(config.difficulty);
+                enemyList.push(
+                  _.sample(enemiesMeta.enemiesByDifficulty[config.difficulty])
+                );
             }
         }
 
@@ -84,14 +88,13 @@ export class DungeonGenerator {
     }
 
     async placeEnemies(start: Cell, cells: Cell[]) {
-        const enemiesMeta = Game.dungeonManager.getMeta();
-
         // first, place main enemies, in an order
         // we guarantee that player will able to reach out every enemy in the list
         // according to the list's order and quantity
         // this will let players compete in a random dungeon
         // with similar difficulty
         const enemyList = this.expandEnemyConfig(this._config.enemies);
+        const enemiesMeta = Game.dungeonManager.getMeta().enemies;
         console.log("enemies to place", enemyList.length);
 
         const maxDistanceBetweenEnemies = cells.length / enemyList.length;
@@ -126,9 +129,7 @@ export class DungeonGenerator {
                     accumulatedDistance -= maxDistanceBetweenEnemies;
                     // place random enemy from difficulty
                     const difficulty = enemyList.pop();
-                    const enemy = {
-                        id: random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty])
-                    };
+                    const enemy = _.sample(enemiesMeta.enemiesByDifficulty[difficulty]);
                     currentCell.enemy = enemy;
                 } else if (enemyStack.length != 0) {
                     cellsForLoot.push(currentCell);
@@ -144,13 +145,19 @@ export class DungeonGenerator {
     }
 
     placeLoot(cellsForLoot: Cell[]) {
+        if (!cellsForLoot.length) {
+          return;
+        }
         // uniformly distibute loot
-        const cellsBetweenLoot = Math.floor((cellsForLoot.length - 1) / this._config.loot.length);
+        const cellsBetweenLoot = Math.abs(Math.floor((cellsForLoot.length - 1) / this._config.loot.length));
         let rewardIndex = cellsBetweenLoot;
         for (const loot of this._config.loot) {
             const cell = cellsForLoot[rewardIndex];
             rewardIndex += cellsBetweenLoot;
-            cell.loot = loot;
+            let randomLoot = _.sample(this._config.loot);
+            if (randomLoot) {
+              cell.loot = randomLoot.items;
+            }
         }
     }
 
@@ -211,6 +218,7 @@ export class DungeonGenerator {
         const dungeon: DungeonFloorData = {
             cells,
             width: this._config.width,
+            height: this._config.height,
             start: startCell
         }
 

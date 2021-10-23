@@ -21,18 +21,19 @@ export class DungeonController {
     async init() {
         const saveData = await this._saveCollection.findOne({ _id: this._user.id });
         if (saveData) {
-            this._saveData = saveData as DungeonSaveData;
-            const width = this._saveData.data.width;
+          this._saveData = saveData as DungeonSaveData;
+        } else {
+          await this.generateNewFloor();
+        }
 
-            for (const cell of this._saveData.state.revealed) {
-                this._revealedLookUp[cellToIndex(cell, width)] = true;
-            }
+        const width = this._saveData.data.width;
+        for (const cell of this._saveData.state.revealed) {
+            this._revealedLookUp[cellToIndex(cell, width)] = true;
         }
     }
 
     async generateNewFloor() {
         let floor = 1;
-
         if (this._saveData) {
             floor = this._saveData.state.floor;
         }
@@ -43,6 +44,8 @@ export class DungeonController {
 
         this._saveData = {
             state: {
+                width: dungeonData.width,
+                height: dungeonData.height,
                 energy: meta.mode.maxEnergy,
                 floor,
                 revealed: [dungeonData.start],
@@ -52,8 +55,6 @@ export class DungeonController {
         }
 
         await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
-
-        return this.getState();
     }
 
     getState(): DungeonClientState {

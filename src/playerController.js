@@ -234,9 +234,9 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.RefreshDailyShop, this._gameHandler(this._refreshDailyShop.bind(this)));
 
         // Simple dungeon
-        this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
-        this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
-        this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
+        this._socket.on(Operations.SDungeonGet, this._gameHandler(this._sDungeonGet.bind(this)));
+        this._socket.on(Operations.SDungeonRevealTile, this._gameHandler(this._sDungeonReveal.bind(this)));
+        this._socket.on(Operations.SDungeonUseTile, this._gameHandler(this._sDungeonUseCell.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -402,7 +402,6 @@ class PlayerController extends IPaymentListener {
                 }
 
                 let user = await this.getUser(this.address);
-
                 try {
                     let response = await handler(user, data);
                     await user.commitChanges();
@@ -1747,8 +1746,8 @@ class PlayerController extends IPaymentListener {
     }
 
     // Simple Dungeon
-    async _sDungeonGenerate(user, data) {
-        return this.simpleDungeon.generateNewFloor();
+    async _sDungeonGet(user, data) {
+        return this.simpleDungeon.getState();
     }
 
     async _sDungeonReveal(_, data) {
