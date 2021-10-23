@@ -19,7 +19,7 @@ export interface DungeonFloorConfig {
 }
 
 export interface CellEnemy {
-    difficulty: number;
+    id: number;
 }
 
 export interface CellLoot {

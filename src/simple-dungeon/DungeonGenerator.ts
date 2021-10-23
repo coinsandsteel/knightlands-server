@@ -22,12 +22,7 @@ export class DungeonGenerator {
     }
 
     shuffle(cells: any[]) {
-        for (let i = cells.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [cells[i], cells[j]] = [cells[j], cells[i]];
-        }
-
-        return cells;
+        return random.shuffle(cells);
     }
 
     randomNeighbours(cell: Cell, filter: (cell: Cell) => boolean) {
@@ -81,7 +76,7 @@ export class DungeonGenerator {
         for (let k = enemiesConfig.length - 1; k >= 0; --k) {
             const config = enemiesConfig[k];
             for (let i = 0; i < config.count; ++i) {
-                enemyList.push({ difficulty: config.difficulty });
+                enemyList.push(config.difficulty);
             }
         }
 
@@ -99,8 +94,7 @@ export class DungeonGenerator {
         const enemyList = this.expandEnemyConfig(this._config.enemies);
         console.log("enemies to place", enemyList.length);
 
-        const maxDistanceBetweenEnemies = Math.round((cells.length - 1) / enemyList.length);
-        console.log("maxDistanceBetweenEnemies", maxDistanceBetweenEnemies);
+        const maxDistanceBetweenEnemies = cells.length / enemyList.length;
 
         const cellsForLoot: Cell[] = [];
 
@@ -110,32 +104,37 @@ export class DungeonGenerator {
             [this.cellToIndex(start)]: 0
         };
 
+        let accumulatedDistance = 0;
         // move along the way, choosing random direction at the conjunction
         while (enemyList.length != 0 && cellStack.length != 0) {
             let currentCell = cellStack.pop();
-            let accumulatedDistance = visited[this.cellToIndex(currentCell)];
 
-            const neighbours = this.shuffle(currentCell.c);
+            const neighbours = this.shuffle(currentCell.c).filter(x => !visited[x]);
 
             if (neighbours.length == 0) {
                 continue;
             }
 
-            for (const index of neighbours) {
-                if (visited[index]) {
-                    continue;
-                }
+            cellStack.push(currentCell);
 
+            for (const index of neighbours) {
                 currentCell = cells[index];
                 visited[index] = ++accumulatedDistance;
                 cellStack.push(currentCell);
 
-                if (accumulatedDistance % maxDistanceBetweenEnemies == 0) {
-                    // place enemy
-                    currentCell.enemy = enemyList.pop();
+                if (accumulatedDistance >= maxDistanceBetweenEnemies) {
+                    accumulatedDistance -= maxDistanceBetweenEnemies;
+                    // place random enemy from difficulty
+                    const difficulty = enemyList.pop();
+                    const enemy = {
+                        id: random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty])
+                    };
+                    currentCell.enemy = enemy;
                 } else if (enemyStack.length != 0) {
                     cellsForLoot.push(currentCell);
                 }
+
+                break;
             }
         }
 
@@ -189,6 +188,10 @@ export class DungeonGenerator {
             }
         }
 
+        // place enemies
+        const cellsForLoot = await this.placeEnemies(startCell, cells);
+        this.placeLoot(cellsForLoot);
+
         // randomly open extra passsages
         let openChance = this._config.extraPassageChance;
         for (const cell of cells) {
@@ -204,10 +207,6 @@ export class DungeonGenerator {
                 }
             }
         }
-
-        // place enemies
-        const cellsForLoot = await this.placeEnemies(startCell, cells);
-        this.placeLoot(cellsForLoot);
 
         const dungeon: DungeonFloorData = {
             cells,
