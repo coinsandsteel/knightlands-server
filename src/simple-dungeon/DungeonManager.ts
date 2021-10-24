@@ -11,8 +11,7 @@ export class DungeonManager {
     }
 
     async init() {
-        //this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "simple_dungeon_meta" });
-        this._meta = meta;
+        this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "simple_dungeon_meta" });
     }
 
     getMeta() {
