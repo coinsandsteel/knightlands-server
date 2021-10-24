@@ -298,8 +298,9 @@ class Game extends EventEmitter {
 
         // Close existed connections
         for (let id in this._playersById) {
-            if (this._playersById.hasOwnProperty(id)) {
-                await this._playersById[id].socket.disconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
+            const controller = this._playersById[id];
+            if (controller) {
+                await controller.forceDisconnect(DisconnectCodes.ServerShutdown, "Server shutdown");
             }
         }
 
@@ -332,7 +333,7 @@ class Game extends EventEmitter {
             // if there is previous controller registered - disconnect it and remove
             let connectedController = this._playersById[controller.id];
             if (connectedController) {
-                connectedController.socket.disconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
+                await connectedController.forceDisconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
             }
 
             this._paymentProcessor.registerAsPaymentListener(controller.id, controller);

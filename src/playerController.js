@@ -237,6 +237,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
         this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
         this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
+        this._socket.on(Operations.SDungeonLoad, this._gameHandler(this._sDungeonLoad.bind(this)));
+        this._socket.on(Operations.SDunegonCombatAction, this._gameHandler(this._sDungeonCombatAction.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -245,7 +247,17 @@ class PlayerController extends IPaymentListener {
         return this._socket;
     }
 
-    onDisconnect() {
+    async forceDisconnect(code, reason) {
+        this._closed = true;
+        await this.onDisconnect(true);
+        this.socket.disconnect(code, reason);
+    }
+
+    async onDisconnect(forced = false) {
+        if (this._closed && !forced) {
+            return;
+        }
+
         Game.off(this.address, this._handleEventBind);
         Game.off(this.id, this._handleEventBind);
 
@@ -254,6 +266,11 @@ class PlayerController extends IPaymentListener {
         }
 
         this.address = null;
+
+        if (this.simpleDungeon) {
+            this.simpleDungeon.dispose();
+            this.simpleDungeon = null
+        }
     }
 
     onAuthenticated() {
@@ -1761,6 +1778,18 @@ class PlayerController extends IPaymentListener {
 
     async _sDungeonUseCell(_, data) {
         return this.simpleDungeon.useCell(+data.cellId);
+    }
+
+    async _sDungeonLoad() {
+        return this.simpleDungeon.load();
+    }
+
+    async _sDungeonCombatAction(_, data) {
+        if (!isNumber(data.action)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.load(data.action, data.data);
     }
 }
 

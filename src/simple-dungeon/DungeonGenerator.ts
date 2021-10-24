@@ -1,6 +1,6 @@
 import random from "../random";
 import Game from "../game";
-import { Cell, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData } from "./types";
+import { Cell, CompactedConfig, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData } from "./types";
 
 export function cellToIndex(cell: Cell, width: number) {
     return cell.y * width + cell.x;
@@ -71,19 +71,21 @@ export class DungeonGenerator {
         return this.randomNeighbours(cell, c => !cells[this.cellToIndex(c)]);
     }
 
-    expandEnemyConfig(enemiesConfig: DungeonEnemiesCompact[]) {
-        const enemyList = [];
-        for (let k = enemiesConfig.length - 1; k >= 0; --k) {
-            const config = enemiesConfig[k];
+    expandConfig<T extends CompactedConfig>(configs: T[]): T[] {
+        const list = [];
+        for (let k = configs.length - 1; k >= 0; --k) {
+            const config = configs[k];
             for (let i = 0; i < config.count; ++i) {
-                enemyList.push(config.difficulty);
+                list.push(config);
             }
         }
 
-        return enemyList;
+        return list;
     }
 
     async placeEnemies(start: Cell, cells: Cell[]) {
+        return [...cells];
+
         const enemiesMeta = Game.dungeonManager.getMeta();
 
         // first, place main enemies, in an order
@@ -91,14 +93,15 @@ export class DungeonGenerator {
         // according to the list's order and quantity
         // this will let players compete in a random dungeon
         // with similar difficulty
-        const enemyList = this.expandEnemyConfig(this._config.enemies);
+        const enemyList = this.expandConfig(this._config.enemies);
         console.log("enemies to place", enemyList.length);
 
         const maxDistanceBetweenEnemies = cells.length / enemyList.length;
 
-        const cellsForLoot: Cell[] = [];
+        const freeCells: Cell[] = [];
 
         const enemyStack: Cell[] = [];
+        const startCellIndex = this.cellToIndex(start);
         let cellStack = [start];
         const visited = {
             [this.cellToIndex(start)]: 0
@@ -122,16 +125,15 @@ export class DungeonGenerator {
                 visited[index] = ++accumulatedDistance;
                 cellStack.push(currentCell);
 
-                if (accumulatedDistance >= maxDistanceBetweenEnemies) {
+                if (index != startCellIndex && accumulatedDistance >= maxDistanceBetweenEnemies) {
                     accumulatedDistance -= maxDistanceBetweenEnemies;
                     // place random enemy from difficulty
-                    const difficulty = enemyList.pop();
-                    const enemy = {
-                        id: random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty])
+                    const { difficulty } = enemyList.pop();
+                    currentCell.enemy = {
+                        ...random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty])
                     };
-                    currentCell.enemy = enemy;
-                } else if (enemyStack.length != 0) {
-                    cellsForLoot.push(currentCell);
+                } else {
+                    freeCells.push(currentCell);
                 }
 
                 break;
@@ -140,18 +142,66 @@ export class DungeonGenerator {
 
         console.log('total enemies', enemyStack.length)
 
-        return cellsForLoot;
+        return freeCells;
     }
 
-    placeLoot(cellsForLoot: Cell[]) {
-        // uniformly distibute loot
-        const cellsBetweenLoot = Math.floor((cellsForLoot.length - 1) / this._config.loot.length);
-        let rewardIndex = cellsBetweenLoot;
-        for (const loot of this._config.loot) {
-            const cell = cellsForLoot[rewardIndex];
-            rewardIndex += cellsBetweenLoot;
-            cell.loot = loot;
+    placeTraps(freeCells: Cell[]) {
+        if (freeCells.length == 0) {
+            return freeCells;
         }
+
+        const altars = this.expandConfig(this._config.traps);
+
+        for (const altar of altars) {
+            const cellIndex = random.intRange(0, freeCells.length - 1);
+            const cell = freeCells[cellIndex];
+            cell.altar = {
+                id: altar.id
+            };
+
+            freeCells[cellIndex] = freeCells[freeCells.length - 1];
+            freeCells.pop();
+        }
+
+        return freeCells;
+    }
+
+    placeAltars(freeCells: Cell[]) {
+        if (freeCells.length == 0) {
+            return freeCells;
+        }
+
+        const altars = this.expandConfig(this._config.altars);
+
+        for (const altar of altars) {
+            const cellIndex = random.intRange(0, freeCells.length - 1);
+            const cell = freeCells[cellIndex];
+            cell.altar = {
+                id: altar.id
+            };
+
+            freeCells[cellIndex] = freeCells[freeCells.length - 1];
+            freeCells.pop();
+        }
+
+        return freeCells;
+    }
+
+    placeLoot(freeCells: Cell[]) {
+        if (freeCells.length == 0) {
+            return freeCells;
+        }
+
+        for (const loot of this._config.loot) {
+            const cellIndex = random.intRange(0, freeCells.length - 1);
+            const cell = freeCells[cellIndex];
+            cell.loot = loot;
+
+            freeCells[cellIndex] = freeCells[freeCells.length - 1];
+            freeCells.pop();
+        }
+
+        return freeCells;
     }
 
     connect(cell1, cell2) {
@@ -189,8 +239,10 @@ export class DungeonGenerator {
         }
 
         // place enemies
-        const cellsForLoot = await this.placeEnemies(startCell, cells);
-        this.placeLoot(cellsForLoot);
+        let freeCells = await this.placeEnemies(startCell, cells);
+        // freeCells = this.placeLoot(freeCells);
+        // freeCells = this.placeAltars(freeCells);
+        // freeCells = this.placeTraps(freeCells);
 
         // randomly open extra passsages
         let openChance = this._config.extraPassageChance;

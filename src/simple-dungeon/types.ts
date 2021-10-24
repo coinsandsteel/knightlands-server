@@ -1,12 +1,35 @@
-import DungeonEnemyMoveType from "../knightlands-shared/dungeon_enemy_move_type";
+import { MoveType, AltarType, TrapType } from "../knightlands-shared/dungeon_types";
+
+export interface CompactedConfig {
+    count: number;
+}
 
 export interface DungeonLootTile {
     loot: number;
 }
 
-export interface DungeonEnemiesCompact {
+export interface HasId {
+    id: number;
+}
+
+export interface DungeonAltarTile extends HasId {
+
+}
+
+export interface DungeonTrapTile extends HasId {
+
+}
+
+export interface DungeonEnemiesCompact extends CompactedConfig {
     difficulty: number;
-    count: number;
+}
+
+export interface DungeonAltarsCompact extends CompactedConfig, HasId {
+
+}
+
+export interface DungeonTrapsCompact extends CompactedConfig, HasId {
+
 }
 
 export interface DungeonFloorConfig {
@@ -16,14 +39,12 @@ export interface DungeonFloorConfig {
     missedPassageChanceInc: number;
     enemies: DungeonEnemiesCompact[];
     loot: DungeonLootTile[];
+    altars: DungeonAltarsCompact[];
+    traps: DungeonTrapsCompact[];
 }
 
 export interface CellEnemy {
     id: number;
-}
-
-export interface CellLoot {
-    loot: number;
 }
 
 export interface Cell {
@@ -31,7 +52,9 @@ export interface Cell {
     y: number;
     c?: number[];
     enemy?: CellEnemy;
-    loot?: CellLoot;
+    loot?: DungeonLootTile;
+    altar?: DungeonAltarTile;
+    trap?: DungeonTrapTile;
 }
 
 export interface DungeonFloorData {
@@ -40,11 +63,30 @@ export interface DungeonFloorData {
     width: number;
 }
 
+export interface DungeonUserState {
+    level: number;
+    cell: number;
+    energy: number;
+}
+
+export interface CombatState {
+    turn: number;
+    playerHealth: number;
+    enemyHealth: number;
+    enemyId: number;
+}
+
 export interface DungeonClientState {
     revealed: Cell[];
-    energy: number;
     floor: number;
     cycle: number;
+    user: DungeonUserState;
+    combat?: CombatState;
+}
+
+export interface DungeonClientData extends DungeonClientState {
+    width: number;
+    height: number;
 }
 
 export interface DungeonSaveData {
@@ -56,9 +98,7 @@ export interface ModeSettings {
     duration: number;
     maxFloor: number;
     floorsPerDay: number;
-    maxEnergy: number;
-    refillsPerDay: number;
-    energyRefillCost: number;
+    dailyEnergy: number;
 }
 
 export interface EnemyGroupData {
@@ -70,27 +110,22 @@ export interface LootData {
     items: any; // legacy data type, used in all loot generation process
 }
 
-export interface DungeonFloorSettings {
-    depth: number;
-    width: number;
-    height: number;
-    enemies: EnemyGroupData[];
-    loot: LootData[];
-}
-
 export interface DungeonData {
-    floors: DungeonFloorSettings;
+    floors: DungeonFloorConfig;
 }
 
 export interface EnemyMoveSet {
     weight: number;
-    sequence: typeof DungeonEnemyMoveType[];
+    sequence: number[];
 }
 
 export interface EnemyData {
     id: number;
     difficulty: number;
+    health: number;
+    attack: number;
     moves: EnemyMoveSet[];
+    isAgressive: boolean;
 }
 
 export interface EnemiesData {
@@ -98,9 +133,44 @@ export interface EnemiesData {
     enemiesByDifficulty?: { [key: number]: EnemyData[] };
 }
 
+export interface EnergyCostSettings {
+    move: number;
+    chest: number;
+    trap: number;
+    altar: number;
+}
+
+export interface AltarData {
+    id: number;
+    type: number;
+    restoreValue: number;
+}
+
+export interface AltarsData {
+    altars: { [key: number]: AltarData };
+}
+
+export interface TrapData {
+    id: number;
+    type: number;
+    damage: number;
+}
+
+export interface JammingChanceData {
+    hidden: number;
+    revealed: number;
+}
+
+export interface TrapsData {
+    traps: { [key: number]: TrapData };
+    jammingChance: JammingChanceData[];
+}
+
 export interface DungeonMeta {
+    costs: EnergyCostSettings;
     mode: ModeSettings;
     dungeons: DungeonData;
     enemies: EnemiesData;
+    altars: AltarsData;
+    traps: TrapsData;
 }
-
