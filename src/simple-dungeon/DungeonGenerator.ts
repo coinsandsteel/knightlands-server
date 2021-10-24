@@ -84,8 +84,6 @@ export class DungeonGenerator {
     }
 
     async placeEnemies(start: Cell, cells: Cell[]) {
-        return [...cells];
-
         const enemiesMeta = Game.dungeonManager.getMeta();
 
         // first, place main enemies, in an order
@@ -240,9 +238,9 @@ export class DungeonGenerator {
 
         // place enemies
         let freeCells = await this.placeEnemies(startCell, cells);
-        // freeCells = this.placeLoot(freeCells);
-        // freeCells = this.placeAltars(freeCells);
-        // freeCells = this.placeTraps(freeCells);
+        freeCells = this.placeLoot(freeCells);
+        freeCells = this.placeAltars(freeCells);
+        freeCells = this.placeTraps(freeCells);
 
         // randomly open extra passsages
         let openChance = this._config.extraPassageChance;

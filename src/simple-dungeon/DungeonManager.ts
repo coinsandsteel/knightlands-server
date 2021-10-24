@@ -1,7 +1,6 @@
 import { Collections } from "../database/database";
 import Game from "../game";
 import { DungeonMeta } from "./types";
-import meta from "./meta";
 
 export class DungeonManager {
     private _meta: DungeonMeta;
