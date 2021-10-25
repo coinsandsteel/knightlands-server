@@ -37,7 +37,7 @@ export class DungeonController {
             await this.generateNewFloor();
         }
 
-        this._dungeonUser = new DungeonUser(this._saveData.state.user);
+        this._dungeonUser = new DungeonUser(this._saveData.state.user, this._events);
         this._combat = new DungeonCombat(this._dungeonUser, this._events);
 
         if (this._saveData.state.combat) {
@@ -62,7 +62,9 @@ export class DungeonController {
             level: 1,
             energy: meta.mode.dailyEnergy,
             cell: 0,
-            health: 1000
+            health: 1000,
+            lastHpRegen: Game.nowSec,
+            lastEnergyRegen: Game.nowSec
         }
 
         if (this._saveData) {
