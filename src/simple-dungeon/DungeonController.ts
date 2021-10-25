@@ -6,6 +6,7 @@ import errors from "../knightlands-shared/errors";
 import events from "../knightlands-shared/events";
 import User from "../user";
 import { DungeonCombat } from "./DungeonCombat";
+import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
 import { DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile } from "./types";
@@ -17,10 +18,10 @@ export class DungeonController {
     private _saveCollection: Collection;
     private _revealedLookUp: { [key: number]: true };
     private _combat: DungeonCombat;
-    private _eventObject: any;
+    private _events: DungeonEvents;
 
     constructor(user: User) {
-        this._eventObject = {};
+        this._events = new DungeonEvents(user.id);
         this._user = user;
         this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
         this._revealedLookUp = {};
@@ -37,16 +38,11 @@ export class DungeonController {
         }
 
         this._dungeonUser = new DungeonUser(this._saveData.state.user);
-        this._combat = new DungeonCombat(this._dungeonUser);
+        this._combat = new DungeonCombat(this._dungeonUser, this._events);
 
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
         }
-    }
-
-    flushEvents() {
-        Game.emitPlayerEvent(this._user.id, events.SDungeonUpdate, this._eventObject);
-        this._eventObject = {};
     }
 
     async dispose() {
@@ -65,7 +61,8 @@ export class DungeonController {
         let userState = {
             level: 1,
             energy: meta.mode.dailyEnergy,
-            cell: 0
+            cell: 0,
+            health: 1000
         }
 
         if (this._saveData) {
@@ -143,9 +140,9 @@ export class DungeonController {
             }
         }
 
-        this._eventObject.cell = targetCell;
+        this._events.cellRevealed(targetCell);
 
-        this.flushEvents();
+        this._events.flush();
     }
 
     /**
@@ -177,7 +174,7 @@ export class DungeonController {
             this.moveToCell(cellId);
         }
 
-        this.flushEvents();
+        this._events.flush();
     }
 
     async combatAction(action, data) {
@@ -191,7 +188,7 @@ export class DungeonController {
                 break;
         }
 
-        this.flushEvents();
+        this._events.flush();
     }
 
     private async assertNotInCombat() {
@@ -216,14 +213,13 @@ export class DungeonController {
         }
 
         this._dungeonUser.moveTo(cellId);
-        this._eventObject.moveTo = cellId;
     }
 
     private useAltar(altarTile: DungeonAltarTile) {
         const meta = Game.dungeonManager.getMeta();
         const altarData = meta.altars.altars[altarTile.id];
 
-        this._dungeonUser.useAltar(altarData);
+        this._dungeonUser.applyAltar(altarData);
     }
 
     private indexRevealedCells() {

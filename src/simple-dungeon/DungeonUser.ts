@@ -1,10 +1,13 @@
+import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState } from "./types";
 
 export class DungeonUser {
     private _state: DungeonUserState;
+    private _events: DungeonEvents;
 
-    constructor(state: DungeonUserState) {
+    constructor(state: DungeonUserState, events: DungeonEvents) {
         this._state = state;
+        this._events = events;
     }
 
     get position() {
@@ -12,14 +15,31 @@ export class DungeonUser {
     }
 
     get health() {
-        return 100;
+        return 10000;
+    }
+
+    get defense() {
+        return 200;
+    }
+
+    get attack() {
+        return 10;
     }
 
     moveTo(cellId: number) {
         this._state.cell = cellId;
+        this._events.playerMoved(cellId);
     }
 
-    useAltar(altar: AltarData) {
+    applyAltar(altar: AltarData) {
 
+    }
+
+    applyDamage(damage: number) {
+        this._state.health -= damage;
+
+        if (this._state.health < 0) {
+            this._state.health = 0;
+        }
     }
 }

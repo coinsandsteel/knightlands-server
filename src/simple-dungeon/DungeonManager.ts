@@ -11,6 +11,17 @@ export class DungeonManager {
 
     async init() {
         this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "simple_dungeon_meta" });
+
+        // preprocess some data
+        for (const enemyId in this._meta.enemies.enemiesById) {
+            const enemy = this._meta.enemies.enemiesById[enemyId];
+
+            let index = 0;
+            for (const set of enemy.moves) {
+                set.index = index;
+                index++;
+            }
+        }
     }
 
     getMeta() {

@@ -67,13 +67,17 @@ export interface DungeonUserState {
     level: number;
     cell: number;
     energy: number;
+    health: number,
+    lastHpRegen: number;
+    lastEnergyRegen: number;
 }
 
 export interface CombatState {
     turn: number;
-    playerHealth: number;
     enemyHealth: number;
     enemyId: number;
+    moveSetId: number;
+    moveIndex: number;
 }
 
 export interface DungeonClientState {
@@ -117,12 +121,16 @@ export interface DungeonData {
 export interface EnemyMoveSet {
     weight: number;
     sequence: number[];
+    minHealth: number;
+    maxHealth: number;
+    index: number;
 }
 
 export interface EnemyData {
     id: number;
     difficulty: number;
     health: number;
+    defense: number;
     attack: number;
     moves: EnemyMoveSet[];
     isAgressive: boolean;
