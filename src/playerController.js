@@ -239,6 +239,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
         this._socket.on(Operations.SDungeonLoad, this._gameHandler(this._sDungeonLoad.bind(this)));
         this._socket.on(Operations.SDunegonCombatAction, this._gameHandler(this._sDungeonCombatAction.bind(this)));
+        this._socket.on(Operations.SDungeonMove, this._gameHandler(this._sDungeonMove.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1790,6 +1791,14 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.load(data.action, data.data);
+    }
+
+    async _sDungeonMove(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.moveTo(data.cellId);
     }
 }
 

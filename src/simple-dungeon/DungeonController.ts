@@ -82,7 +82,8 @@ export class DungeonController {
                 floor,
                 revealed: [dungeonData.start],
                 cycle: this._user.getDailyRewardCycle(),
-                user: userState
+                user: userState,
+                defuseFails: 0
             },
             data: dungeonData
         }
@@ -131,18 +132,29 @@ export class DungeonController {
         this._saveData.state.revealed.push(targetCell);
         this._revealedLookUp[cellId] = true;
 
-        if (!targetCell.enemy && !targetCell.altar) {
-            // anything than enemy and altar does not block the player from moving
-            this.moveToCell(cellId);
+        this.moveToCell(cellId);
 
-            if (targetCell.trap) {
-                this.setOnTrap(targetCell.trap);
-            } else if (targetCell.loot) {
-                await this.collectLoot(targetCell.loot);
-            }
+        if (targetCell.trap) {
+            this.setOnTrap(targetCell.trap);
+        } else if (targetCell.loot) {
+            await this.collectLoot(targetCell.loot);
         }
 
         this._events.cellRevealed(targetCell);
+
+        this._events.flush();
+    }
+
+    async moveTo(cellId: number) {
+        await this.assertNotInCombat();
+
+        const targetCell = this._saveData.data.cells[cellId];
+
+        if (!targetCell || !this._revealedLookUp[cellId]) {
+            throw errors.IncorrectArguments;
+        }
+
+        this.moveToCell(cellId);
 
         this._events.flush();
     }
@@ -171,9 +183,9 @@ export class DungeonController {
         } else if (targetCell.altar) {
             // use altar
             this.useAltar(targetCell.altar);
-        } else {
-            // nothing here - just move
-            this.moveToCell(cellId);
+        } else if (targetCell.trap) {
+            // try to difuse
+            this.defuseTrap(targetCell.trap);
         }
 
         this._events.flush();
@@ -215,6 +227,16 @@ export class DungeonController {
         }
 
         this._dungeonUser.moveTo(cellId);
+    }
+
+    private defuseTrap(trapTile: DungeonTrapTile) {
+        const meta = Game.dungeonManager.getMeta();
+        const trapData = meta.traps.traps[trapTile.id];
+
+        // use item if have
+
+        // try your luck otherwise
+
     }
 
     private useAltar(altarTile: DungeonAltarTile) {

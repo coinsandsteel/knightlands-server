@@ -84,6 +84,7 @@ export interface DungeonClientState {
     revealed: Cell[];
     floor: number;
     cycle: number;
+    defuseFails: number;
     user: DungeonUserState;
     combat?: CombatState;
 }
