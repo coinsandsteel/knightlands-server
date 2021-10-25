@@ -445,9 +445,16 @@ export class ArmyManager {
             for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
 
+                if (targetUnit.legion != NO_LEGION) {
+                    throw Errors.IncorrectArguments;
+                }
+
                 if (usedUnits[targetUnit.id]) {
                     throw Errors.IncorrectArguments;
                 }
+
+                usedUnits[targetUnit.id] = targetUnit;
+
                 const targetUnitTemplate = this._unitTemplates[targetUnit.template];
 
                 if (ingridient.copy) {
@@ -481,6 +488,8 @@ export class ArmyManager {
         if (price > inventory.getCurrency(CurrencyType.Dkt)) {
             throw Errors.NotEnoughCurrency;
         }
+
+        await this._removeEquipmentFromUnits(user, usedUnits);
 
         inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.souls);
         await inventory.modifyCurrency(CurrencyType.Dkt, -price)
