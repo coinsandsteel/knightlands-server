@@ -5,7 +5,7 @@ import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
 import errors from "../knightlands-shared/errors";
 import events from "../knightlands-shared/events";
 import User from "../user";
-import { DungeonCombat } from "./DungeonCombat";
+import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
@@ -34,6 +34,11 @@ export class DungeonController {
 
             this.indexRevealedCells();
         } else {
+            await this.generateNewFloor();
+        }
+
+        // if day is finished - generate new dungeon
+        if (this._saveData.state.cycle != this._user.getDailyRewardCycle()) {
             await this.generateNewFloor();
         }
 
@@ -107,8 +112,7 @@ export class DungeonController {
     async reveal(cellId: number) {
         await this.assertNotInCombat();
 
-        const targetCell = this._saveData.data.cells[cellId];
-
+        const targetCell = this.getCell(cellId);
         if (!targetCell || this._revealedLookUp[cellId]) {
             throw errors.IncorrectArguments;
         }
@@ -127,12 +131,15 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
+        const meta = Game.dungeonManager.getMeta();
+        this.consumeEnergy(meta.costs.reveal);
+
         this._saveData.state.revealed.push(targetCell);
         this._revealedLookUp[cellId] = true;
 
+        this.tryTriggerTrap();
         this.moveToCell(cellId);
 
-        const meta = Game.dungeonManager.getMeta();
         if (targetCell.enemy) {
             const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
             if (enemyData.isAgressive) {
@@ -142,19 +149,22 @@ export class DungeonController {
         }
 
         this._events.cellRevealed(targetCell);
-
         this._events.flush();
     }
 
     async moveTo(cellId: number) {
         await this.assertNotInCombat();
 
-        const targetCell = this._saveData.data.cells[cellId];
+        const targetCell = this.getRevealedCell(cellId);
 
-        if (!targetCell || !this._revealedLookUp[cellId]) {
+        if (!targetCell) {
             throw errors.IncorrectArguments;
         }
 
+        const meta = Game.dungeonManager.getMeta();
+        this.consumeEnergy(meta.costs.move);
+
+        this.tryTriggerTrap();
         this.moveToCell(cellId);
 
         this._events.flush();
@@ -170,22 +180,21 @@ export class DungeonController {
     async useCell(cellId: number) {
         await this.assertNotInCombat();
 
-        const targetCell = this._saveData.data.cells[cellId];
-
-        if (!targetCell || !this._revealedLookUp[cellId]) {
+        const targetCell = this.getRevealedCell(cellId);
+        if (!targetCell) {
             throw errors.IncorrectArguments;
         }
 
         const meta = Game.dungeonManager.getMeta();
 
         if (targetCell.enemy) {
-            // enter combat
-            this.startCombat(meta.enemies.enemiesById[targetCell.enemy.id]);
+            this.consumeEnergy(meta.costs.enemy);
+            this.startCombat(Game.dungeonManager.getEnemyData(targetCell.enemy.id));
         } else if (targetCell.altar) {
-            // use altar
+            this.consumeEnergy(meta.costs.altar);
             this.useAltar(targetCell.altar);
         } else if (targetCell.trap) {
-            // try to difuse
+            this.consumeEnergy(meta.costs.trap);
             this.defuseTrap(targetCell.trap);
         }
 
@@ -195,7 +204,10 @@ export class DungeonController {
     async combatAction(action, data) {
         switch (action) {
             case CombatAction.Attack:
-                this._combat.resolveOutcome(data.move);
+                const outcome = this._combat.resolveOutcome(data.move);
+                if (outcome == CombatOutcome.EnemyWon) {
+                    this.killPlayer(this._combat.enemyId);
+                }
                 break;
 
             case CombatAction.SwapEquipment:
@@ -204,6 +216,37 @@ export class DungeonController {
         }
 
         this._events.flush();
+    }
+
+    private killPlayer(enemyId: number) {
+        // reset player position
+        this._dungeonUser.moveTo(cellToIndex(this._saveData.data.start, this._saveData.data.width));
+        // refill his health
+        this._dungeonUser.resetHealth();
+
+        const enemyData = Game.dungeonManager.getEnemyData(enemyId);
+        if (enemyData.isAgressive) {
+            // reset enemy hp
+            const cell = this.getRevealedCell(this._dungeonUser.position);
+            cell.enemy.health = enemyData.health;
+        }
+    }
+
+    private getCell(cellId: number) {
+        return this._saveData.data.cells[cellId];
+    }
+
+    private getRevealedCell(cellId: number) {
+        const cell = this.getCell(cellId);
+        return this._revealedLookUp[cellId] ? cell : undefined;
+    }
+
+    private consumeEnergy(energyNeed: number) {
+        if (this._dungeonUser.energy < energyNeed) {
+            throw errors.NoEnergy;
+        }
+
+        this._dungeonUser.modifyEnergy(-energyNeed);
     }
 
     private startCombat(enemy: EnemyData) {
@@ -217,18 +260,28 @@ export class DungeonController {
         }
     }
 
+    private tryTriggerTrap() {
+        // if user stands on a trap - trigger it
+        const targetCell = this._saveData.data.cells[this._dungeonUser.position];
+        if (targetCell.trap) {
+            this.triggerTrap(targetCell.trap);
+        }
+    }
+
     private async collectLoot(loot: DungeonLootTile) {
 
     }
 
-    private setOnTrap(trap: DungeonTrapTile) {
-
+    private triggerTrap(trap: DungeonTrapTile) {
+        const meta = Game.dungeonManager.getMeta();
+        const trapData = meta.traps.traps[trap.id];
+        this._dungeonUser.modifyEnergy(-trapData.damage);
     }
 
     private moveToCell(cellId: number) {
-        const targetCell = this._saveData.data.cells[cellId];
+        const targetCell = this.getRevealedCell(cellId);
 
-        if (!targetCell || !this._revealedLookUp[cellId]) {
+        if (!targetCell) {
             throw errors.IncorrectArguments;
         }
 

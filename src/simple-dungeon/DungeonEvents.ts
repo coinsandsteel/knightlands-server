@@ -22,15 +22,19 @@ export class DungeonEvents {
         this._events.cell = cell;
     }
 
+    energyChanged(value: number) {
+        this._events.energy = value;
+    }
+
     combatStarted(combat: CombatState) {
         this._events.combat = combat;
     }
 
-    enemyDamaged(newHealth: number) {
+    enemyHealth(newHealth: number) {
         this._events.enemyHealth = newHealth;
     }
 
-    playerDamaged(newHealth: number) {
+    playerHealth(newHealth: number) {
         this._events.playerHealth = newHealth;
     }
 

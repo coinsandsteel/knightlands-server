@@ -1,6 +1,6 @@
 import random from "../random";
 import Game from "../game";
-import { Cell, CompactedConfig, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData } from "./types";
+import { Cell, CompactedConfig, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData, EnemyData } from "./types";
 
 export function cellToIndex(cell: Cell, width: number) {
     return cell.y * width + cell.x;
@@ -127,8 +127,10 @@ export class DungeonGenerator {
                     accumulatedDistance -= maxDistanceBetweenEnemies;
                     // place random enemy from difficulty
                     const { difficulty } = enemyList.pop();
+                    const enemyData = random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty]) as EnemyData;
                     currentCell.enemy = {
-                        ...random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty])
+                        id: enemyData.id,
+                        health: enemyData.health
                     };
                 } else {
                     freeCells.push(currentCell);

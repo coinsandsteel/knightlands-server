@@ -5,6 +5,12 @@ import random from "../random";
 import Game from "../game";
 import { DungeonEvents } from "./DungeonEvents";
 
+export const CombatOutcome = {
+    EnemyWon: -1,
+    PlayerWon: 1,
+    NobodyWon: 0
+}
+
 export class DungeonCombat {
     private _user: DungeonUser;
     private _state: CombatState;
@@ -13,6 +19,10 @@ export class DungeonCombat {
     constructor(user: DungeonUser, events: DungeonEvents) {
         this._user = user;
         this._events = events;
+    }
+
+    get enemyId() {
+        return this._state.enemyId;
     }
 
     start(enemy: EnemyData) {
@@ -31,10 +41,9 @@ export class DungeonCombat {
         this._state = state;
     }
 
-    async resolveOutcome(playerMove: number) {
+    resolveOutcome(playerMove: number) {
         // rotate enemy move
-        const meta = Game.dungeonManager.getMeta();
-        const enemyData = meta.enemies.enemiesById[this._state.enemyId];
+        const enemyData = Game.dungeonManager.getEnemyData(this._state.enemyId);
 
         if (this._state.moveSetId == 0) {
             // roll a new move set
@@ -56,14 +65,22 @@ export class DungeonCombat {
         if (MoveWinTable[playerMove] == enemyMove) {
             // player win
             this._state.enemyHealth -= this.getFinalDamage(this._user.attack, enemyData.defense);
-            this._events.enemyDamaged(this._state.enemyHealth);
+            this._events.enemyHealth(this._state.enemyHealth);
         } else if (MoveWinTable[enemyMove] == playerMove) {
             // enemy win
             this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense));
-            this._events.playerDamaged(this._user.health);
+            this._events.playerHealth(this._user.health);
         }
 
-        return this._user.health == 0;
+        if (this._user.health <= 0) {
+            return CombatOutcome.EnemyWon;
+        }
+
+        if (this._state.enemyHealth <= 0) {
+            return CombatOutcome.PlayerWon;
+        }
+
+        return CombatOutcome.NobodyWon;
     }
 
     private getFinalDamage(attack: number, defense: number) {

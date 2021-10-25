@@ -45,6 +45,7 @@ export interface DungeonFloorConfig {
 
 export interface CellEnemy {
     id: number;
+    health: number;
 }
 
 export interface Cell {
@@ -144,9 +145,11 @@ export interface EnemiesData {
 
 export interface EnergyCostSettings {
     move: number;
+    reveal: number;
     chest: number;
     trap: number;
     altar: number;
+    enemy: number;
 }
 
 export interface AltarData {

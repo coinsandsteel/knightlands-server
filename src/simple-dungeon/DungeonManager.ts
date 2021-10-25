@@ -27,4 +27,8 @@ export class DungeonManager {
     getMeta() {
         return this._meta;
     }
+
+    getEnemyData(enemyId: number) {
+        return this.getMeta().enemies.enemiesById[enemyId];
+    }
 }

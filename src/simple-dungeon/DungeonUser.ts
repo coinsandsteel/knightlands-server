@@ -26,6 +26,22 @@ export class DungeonUser {
         return 10;
     }
 
+    get energy() {
+        return this._state.energy;
+    }
+
+    resetHealth() {
+        this._state.health = 1000;
+    }
+
+    modifyEnergy(value: number) {
+        this._state.energy -= value;
+        if (this._state.energy < 0) {
+            this._state.energy = 0;
+        }
+        this._events.energyChanged(this._state.energy);
+    }
+
     moveTo(cellId: number) {
         this._state.cell = cellId;
         this._events.playerMoved(cellId);
