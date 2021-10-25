@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import game from "../game";
 import events from "../knightlands-shared/events";
-import { Cell } from "./types";
+import { Cell, CombatState } from "./types";
 
 export class DungeonEvents {
     private _events: any;
@@ -20,6 +20,10 @@ export class DungeonEvents {
     // EVENTS
     cellRevealed(cell: Cell) {
         this._events.cell = cell;
+    }
+
+    combatStarted(combat: CombatState) {
+        this._events.combat = combat;
     }
 
     enemyDamaged(newHealth: number) {

@@ -9,7 +9,7 @@ import { DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
-import { DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile } from "./types";
+import { DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
 
 export class DungeonController {
     private _user: User;
@@ -127,17 +127,18 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        await this._saveCollection.updateOne({ _id: this._user.id }, { $push: { "state.revealed": targetCell } });
-
         this._saveData.state.revealed.push(targetCell);
         this._revealedLookUp[cellId] = true;
 
         this.moveToCell(cellId);
 
-        if (targetCell.trap) {
-            this.setOnTrap(targetCell.trap);
-        } else if (targetCell.loot) {
-            await this.collectLoot(targetCell.loot);
+        const meta = Game.dungeonManager.getMeta();
+        if (targetCell.enemy) {
+            const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
+            if (enemyData.isAgressive) {
+                // throw into combat right away
+                this.startCombat(enemyData);
+            }
         }
 
         this._events.cellRevealed(targetCell);
@@ -179,7 +180,7 @@ export class DungeonController {
 
         if (targetCell.enemy) {
             // enter combat
-            this._saveData.state.combat = this._combat.start(meta.enemies.enemiesById[targetCell.enemy.id]);
+            this.startCombat(meta.enemies.enemiesById[targetCell.enemy.id]);
         } else if (targetCell.altar) {
             // use altar
             this.useAltar(targetCell.altar);
@@ -203,6 +204,11 @@ export class DungeonController {
         }
 
         this._events.flush();
+    }
+
+    private startCombat(enemy: EnemyData) {
+        this._saveData.state.combat = this._combat.start(enemy);
+        this._events.combatStarted(this._saveData.state.combat);
     }
 
     private async assertNotInCombat() {
