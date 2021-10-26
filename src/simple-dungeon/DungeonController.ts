@@ -169,7 +169,7 @@ export class DungeonController {
 
         if (targetCell.enemy) {
             const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
-            if (enemyData.isAgressive) {
+            if (enemyData.isAggressive) {
                 // throw into combat right away
                 this.startCombat(targetCell.enemy);
             }
@@ -249,7 +249,7 @@ export class DungeonController {
 
                 if (outcome == CombatOutcome.EnemyWon) {
                     // save enemy health if enemy is non-agressive
-                    if (!enemyData.isAgressive) {
+                    if (!enemyData.isAggressive) {
                         cell.enemy.health = this._combat.enemyHealth;
                     }
 
@@ -282,7 +282,7 @@ export class DungeonController {
         this._dungeonUser.resetHealth();
 
         const enemyData = Game.dungeonManager.getEnemyData(enemyId);
-        if (enemyData.isAgressive) {
+        if (enemyData.isAggressive) {
             // reset enemy hp
             const cell = this.getRevealedCell(this._dungeonUser.position);
             cell.enemy.health = enemyData.health;
