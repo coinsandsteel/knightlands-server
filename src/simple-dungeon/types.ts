@@ -154,7 +154,7 @@ export interface EnemyData {
     defense: number;
     attack: number;
     moves: EnemyMoveSet[];
-    isAgressive: boolean;
+    isAggressive: boolean;
 }
 
 export interface EnemiesData {
