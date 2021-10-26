@@ -167,7 +167,8 @@ export class DungeonController {
 
     // reveal and move 
     async reveal(cellId: number) {
-        await this.assertNotLocked();
+        this.assertNotInCombat();
+        this.assertNotInTrap();
 
         const targetCell = this.getCell(cellId);
         if (!targetCell || this._revealedLookUp[cellId]) {
@@ -213,7 +214,8 @@ export class DungeonController {
     }
 
     async useItem(itemType: string) {
-        await this.assertNotLocked();
+        this.assertNotInCombat();
+        this.assertNotInTrap();
 
         if (itemType == "scroll") {
             // reveal neighbour cells
@@ -232,7 +234,8 @@ export class DungeonController {
     }
 
     async moveTo(cellId: number) {
-        await this.assertNotLocked();
+        this.assertNotInCombat();
+        this.assertNotInTrap();
 
         const targetCell = this.getRevealedCell(cellId);
 
@@ -264,7 +267,7 @@ export class DungeonController {
      * 
      */
     async useCell(cellId: number) {
-        await this.assertNotLocked();
+        this.assertNotInCombat();
 
         const targetCell = this.getRevealedCell(cellId);
 
@@ -381,11 +384,13 @@ export class DungeonController {
         this._events.combatStarted(this._saveData.state.combat);
     }
 
-    private async assertNotLocked() {
+    private async assertNotInCombat() {
         if (this._saveData.state.combat) {
             throw errors.SDungeonInCombat;
         }
+    }
 
+    private assertNotInTrap() {
         if (!this._dungeonUser.isInvisible) {
             const currentCell = this.getRevealedCell(this._dungeonUser.position);
             if (currentCell.trap) {
@@ -478,6 +483,7 @@ export class DungeonController {
         // use item if any
         this._dungeonUser.defuseTrap(trapData);
         this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
+        delete cell.trap;
     }
 
     private useAltar(cell: Cell) {
