@@ -22,6 +22,7 @@ export interface DungeonTrapTile extends HasId {
 
 export interface DungeonEnemiesCompact extends CompactedConfig {
     difficulty: number;
+    isAgressive: boolean;
 }
 
 export interface DungeonAltarsCompact extends CompactedConfig, HasId {
@@ -160,7 +161,8 @@ export interface EnemyData {
 
 export interface EnemiesData {
     enemiesById: { [key: number]: EnemyData };
-    enemiesByDifficulty?: { [key: number]: EnemyData[] };
+    enemiesByDifficultyAgro: { [key: number]: EnemyData[] };
+    enemiesByDifficultyNoAgro: { [key: number]: EnemyData[] };
     difficultyExperience: number[];
 }
 

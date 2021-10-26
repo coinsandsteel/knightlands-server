@@ -126,8 +126,17 @@ export class DungeonGenerator {
                 if (index != startCellIndex && accumulatedDistance >= maxDistanceBetweenEnemies) {
                     accumulatedDistance -= maxDistanceBetweenEnemies;
                     // place random enemy from difficulty
-                    const { difficulty } = enemyList.pop();
-                    const enemyData = random.pick(enemiesMeta.enemies.enemiesByDifficulty[difficulty]) as EnemyData;
+                    const { difficulty, isAgressive } = enemyList.pop();
+
+                    let enemies = enemiesMeta.enemies.enemiesByDifficultyNoAgro[difficulty];
+                    if (isAgressive) {
+                        const agroEnemies = enemiesMeta.enemies.enemiesByDifficultyAgro[difficulty];
+                        if (agroEnemies.length != 0) {
+                            enemies = agroEnemies;
+                        }
+                    }
+
+                    const enemyData = random.pick(enemies) as EnemyData;
                     currentCell.enemy = {
                         id: enemyData.id,
                         health: enemyData.health
