@@ -74,6 +74,7 @@ export interface DungeonUserState {
     scroll: number;
     key: number;
     potion: number;
+    exp: number;
     stats: {
         str: number,
         dex: number,
@@ -160,6 +161,7 @@ export interface EnemyData {
 export interface EnemiesData {
     enemiesById: { [key: number]: EnemyData };
     enemiesByDifficulty?: { [key: number]: EnemyData[] };
+    difficultyExperience: number[];
 }
 
 export interface EnergyCostSettings {

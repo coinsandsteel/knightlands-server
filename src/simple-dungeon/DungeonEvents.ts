@@ -58,4 +58,12 @@ export class DungeonEvents {
     }
 
     lootAcquired() { }
+
+    playerLevel(level: number) {
+        this._events.level = level;
+    }
+
+    playerExp(exp: number) {
+        this._events.exp = exp;
+    }
 }

@@ -72,6 +72,7 @@ export class DungeonController {
             key: 0,
             potion: 0,
             scroll: 0,
+            exp: 0,
             stats: {
                 str: 0,
                 dex: 0,
@@ -244,9 +245,10 @@ export class DungeonController {
             case CombatAction.Attack:
                 const outcome = this._combat.resolveOutcome(data.move);
                 const cell = this.getRevealedCell(this._dungeonUser.position);
+                const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
+
                 if (outcome == CombatOutcome.EnemyWon) {
                     // save enemy health if enemy is non-agressive
-                    const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
                     if (!enemyData.isAgressive) {
                         cell.enemy.health = this._combat.enemyHealth;
                     }
@@ -256,6 +258,7 @@ export class DungeonController {
                     // delete enemy
                     delete cell.enemy;
                     // get rewards
+                    this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
                 }
 
                 if (outcome != CombatOutcome.NobodyWon) {

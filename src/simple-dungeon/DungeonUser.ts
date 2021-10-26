@@ -17,12 +17,12 @@ export class DungeonUser {
         return this._state.cell;
     }
 
-    get maxHealth() { // Base Heath + (1,4 * значение параметра Слиа)+(1,15 * значение параметра Выносливость);
-        return Math.ceil(this._progression.baseHealth + (1.4 * this._state.stats.str) + (1.15 * this._state.stats.sta));
-    }
-
     get health() {
         return this._state.health;
+    }
+
+    get maxHealth() { // Base Heath + (1,4 * значение параметра Слиа)+(1,15 * значение параметра Выносливость);
+        return Math.ceil(this._progression.baseHealth + (1.4 * this._state.stats.str) + (1.15 * this._state.stats.sta));
     }
 
     get defense() { // Base Defense+(1,5 * значение параметра Ловкость)+(1,25 * значение параметра Выносливость). 
@@ -47,6 +47,18 @@ export class DungeonUser {
 
     resetHealth() {
         this._state.health = this.maxHealth;
+    }
+
+    addExp(exp: number) {
+        this._state.exp += exp;
+        let nextLevelExp = this._progression.experience[this._state.level - 1];
+        while (nextLevelExp >= this._state.exp) {
+            this._state.exp -= nextLevelExp;
+            this._state.level++;
+            this._events.playerLevel(this._state.level);
+        }
+
+        this._events.playerExp(this._state.exp);
     }
 
     modifyEnergy(value: number) {
