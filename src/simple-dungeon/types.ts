@@ -139,6 +139,7 @@ export interface LootData {
 
 export interface DungeonData {
     floors: DungeonFloorConfig;
+    extraEquipmentItem: any;
 }
 
 export interface EnemyMoveSet {
