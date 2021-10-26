@@ -112,6 +112,8 @@ export class DungeonController {
                     sta: 0
                 }
             }
+
+            this._dungeonUser = null;
         }
 
         userState.cell = cellToIndex(dungeonData.start, dungeonData.width);
@@ -119,7 +121,7 @@ export class DungeonController {
         this._saveData = {
             state: {
                 floor,
-                revealed: [cellToIndex(dungeonData.start, dungeonData.width)],
+                revealed: [userState.cell],
                 cycle: this._user.getDailyRewardCycle(),
                 user: userState,
                 defRevealed: 0,
