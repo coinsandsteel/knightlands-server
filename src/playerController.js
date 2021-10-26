@@ -1767,7 +1767,7 @@ class PlayerController extends IPaymentListener {
 
     // Simple Dungeon
     async _sDungeonGenerate(user, data) {
-        return this.simpleDungeon.generateNewFloor();
+        return this.simpleDungeon.generateNewFloor(true);
     }
 
     async _sDungeonReveal(_, data) {

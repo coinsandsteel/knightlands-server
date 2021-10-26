@@ -58,7 +58,7 @@ export class DungeonController {
         return this.getState();
     }
 
-    async generateNewFloor() {
+    async generateNewFloor(force: boolean = false) {
         await Game.dungeonManager.init();
 
         const meta = Game.dungeonManager.getMeta();
@@ -91,6 +91,28 @@ export class DungeonController {
 
         const dungeon = new DungeonGenerator(meta.dungeons.floors[floor - 1]);
         const dungeonData = await dungeon.generate();
+
+        if (force) {
+            userState = {
+                level: 1,
+                energy: meta.mode.dailyEnergy,
+                cell: 0,
+                health: 1000,
+                lastHpRegen: Game.nowSec,
+                lastEnergyRegen: Game.nowSec,
+                key: 0,
+                potion: 0,
+                scroll: 0,
+                exp: 0,
+                equip: [],
+                stats: {
+                    str: 0,
+                    dex: 0,
+                    int: 0,
+                    sta: 0
+                }
+            }
+        }
 
         userState.cell = cellToIndex(dungeonData.start, dungeonData.width);
 
