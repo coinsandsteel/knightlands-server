@@ -72,6 +72,8 @@ export class DungeonCombat {
             this._events.playerHealth(this._user.health);
         }
 
+        this._state.moveIndex++;
+
         if (this._user.health <= 0) {
             return CombatOutcome.EnemyWon;
         }
