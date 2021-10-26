@@ -458,9 +458,8 @@ export class DungeonController {
                 this._saveData.state.defHidden = 0;
             }
             this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
+            delete cell.trap;
         }
-
-        delete cell.trap;
     }
 
     private moveToCell(cellId: number) {
