@@ -285,6 +285,7 @@ export class DungeonController {
                     delete cell.enemy;
                     // get rewards
                     this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
+                    this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
                 }
 
                 if (outcome != CombatOutcome.NobodyWon) {
