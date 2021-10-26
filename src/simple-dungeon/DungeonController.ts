@@ -375,11 +375,9 @@ export class DungeonController {
                         ...await Game.lootGenerator.getLootFromTable(meta.dungeons.extraEquipmentItem)
                     )
                 } else {
-                    this._dungeonUser.addEquip(id);
+                    lootData.equip = this._dungeonUser.addEquip(id);
                 }
             }
-
-            lootData.equip = loot.equipment;
         }
 
         if (loot.key) {

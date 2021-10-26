@@ -72,6 +72,7 @@ export class DungeonUser {
 
     addEquip(id: number) {
         this._state.equip.push(id);
+        return this._state.equip;
     }
 
     addKey(count: number) {
