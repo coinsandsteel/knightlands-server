@@ -203,7 +203,7 @@ export class DungeonGenerator {
             return freeCells;
         }
 
-        const altars = this.expandConfig(this._config.altars);
+        const altars = this.shuffle(this.expandConfig(this._config.altars));
         let altarsPlaced = 0;
 
         for (const altar of altars) {
@@ -238,9 +238,8 @@ export class DungeonGenerator {
             if (accumulatedDistance >= distanceInBeetween) {
                 accumulatedDistance -= distanceInBeetween;
 
-                cell.loot = this._config.loot[lootIndex];
                 lootIndex++;
-
+                cell.loot = lootIndex;
                 freeCells[i] = null;
             }
 

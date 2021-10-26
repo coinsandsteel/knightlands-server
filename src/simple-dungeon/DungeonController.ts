@@ -1,9 +1,8 @@
-import { Collection, ObjectId } from "mongodb";
+import { Collection } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
-import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
+import { CombatAction } from "../knightlands-shared/dungeon_types";
 import errors from "../knightlands-shared/errors";
-import events from "../knightlands-shared/events";
 import random from "../random";
 import User from "../user";
 import { AStar } from "./AStar";
@@ -11,7 +10,7 @@ import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
-import { Cell, CellEnemy, DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
+import { Cell, CellEnemy, DungeonClientData, DungeonSaveData } from "./types";
 
 export class DungeonController {
     private _user: User;
@@ -76,6 +75,7 @@ export class DungeonController {
             potion: 0,
             scroll: 0,
             exp: 0,
+            equip: [],
             stats: {
                 str: 0,
                 dex: 0,
@@ -97,7 +97,6 @@ export class DungeonController {
         this._saveData = {
             state: {
                 floor,
-                mapRevealed: false,
                 revealed: [cellToIndex(dungeonData.start, dungeonData.width)],
                 cycle: this._user.getDailyRewardCycle(),
                 user: userState,
@@ -166,8 +165,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        this._revealedLookUp[cellId] = this._saveData.state.revealed.push(cellId) - 1;
-        this._aStar.add(cellId, targetCell);
+        this.revealCell(targetCell, false);
 
         this.moveToCell(cellId);
 
@@ -183,7 +181,23 @@ export class DungeonController {
             this.triggerTrap(targetCell);
         }
 
-        this._events.cellRevealed(targetCell);
+
+        this._events.flush();
+    }
+
+    async useItem(itemType: string) {
+        await this.assertNotInCombat();
+
+        if (itemType == "scroll") {
+            // reveal neighbour cells
+            const currentCell = this.getRevealedCell(this._dungeonUser.position);
+            for (const cellIdx of currentCell.c) {
+                this.revealCell(this.getCell(cellIdx), true);
+            }
+        } else if (itemType == "potion") {
+            // invisibility for 3 steps
+        }
+
         this._events.flush();
     }
 
@@ -228,6 +242,7 @@ export class DungeonController {
         }
 
         const meta = Game.dungeonManager.getMeta();
+        let response = null;
 
         if (targetCell.enemy) {
             this.consumeEnergy(meta.costs.enemy);
@@ -238,9 +253,13 @@ export class DungeonController {
         } else if (targetCell.trap) {
             this.consumeEnergy(meta.costs.trap);
             this.defuseTrap(targetCell);
+        } else if (targetCell.loot) {
+            this.consumeEnergy(meta.costs.chest);
+            response = this.collectLoot(targetCell);
         }
 
         this._events.flush();
+        return response;
     }
 
     async combatAction(action, data) {
@@ -296,6 +315,16 @@ export class DungeonController {
         }
     }
 
+    private revealCell(cell: Cell, forced: boolean) {
+        if (forced) {
+            cell.r = true;
+        }
+        const cellId = this.cellToIndex(cell);
+        this._revealedLookUp[cellId] = this._saveData.state.revealed.push(cellId) - 1;
+        this._aStar.add(cellId, cell);
+        this._events.cellRevealed(cell);
+    }
+
     private getCell(cellId: number) {
         return this._saveData.data.cells[cellId];
     }
@@ -324,15 +353,60 @@ export class DungeonController {
         }
     }
 
-    private async collectLoot(loot: DungeonLootTile) {
+    private async collectLoot(cell: Cell) {
+        const meta = Game.dungeonManager.getMeta();
+        const config = meta.dungeons.floors[this._saveData.state.floor - 1];
+        const loot = config.loot[cell.loot - 1];
 
+
+        let lootData: any = {};
+        if (loot.mainGameLoot) {
+            lootData.items = await Game.lootGenerator.getLootFromTable(loot.mainGameLoot);
+
+        }
+
+        if (loot.equipment) {
+            for (const id of loot.equipment) {
+                if (this._dungeonUser.hasEquip(id)) {
+                    lootData.items.push(
+                        ...await Game.lootGenerator.getLootFromTable(meta.dungeons.extraEquipmentItem)
+                    )
+                } else {
+                    this._dungeonUser.addEquip(id);
+                }
+            }
+
+            lootData.equip = loot.equipment;
+        }
+
+        if (loot.key) {
+            lootData.key = this._dungeonUser.addKey(loot.key);
+        }
+
+        if (loot.potion) {
+            lootData.potion = this._dungeonUser.addPotion(loot.potion);
+        }
+
+        if (loot.scroll) {
+            lootData.scroll = this._dungeonUser.addScroll(loot.scroll);
+        }
+
+        if (lootData.items) {
+            await this._user.inventory.addItemTemplates(lootData.items);
+        }
+
+        this._events.lootAcquired(this._revealedLookUp[this.cellToIndex(cell)]);
+
+        delete cell.loot;
+
+        return lootData;
     }
 
     private triggerTrap(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
 
         // determine jamming chance
-        const mapRevealed = this._saveData.state.mapRevealed;
+        const mapRevealed = cell.r;
         const chanceIndex = mapRevealed ? this._saveData.state.defRevealed : this._saveData.state.defHidden;
         const jamminChance = meta.traps.jammingChance;
         const chances = jamminChance[Math.min(jamminChance.length - 1, chanceIndex)];

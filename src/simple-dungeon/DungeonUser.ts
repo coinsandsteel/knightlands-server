@@ -11,6 +11,23 @@ export class DungeonUser {
         this._state = state;
         this._events = events;
         this._progression = progression;
+
+        if (!this._state.equip) {
+            this._state.equip = [];
+        }
+
+        if (!this._state.stats) {
+            this._state.stats = {
+                str: 0,
+                dex: 0,
+                int: 0,
+                sta: 0
+            }
+        }
+
+        if (!this._state.exp) {
+            this._state.exp = 0;
+        }
     }
 
     get position() {
@@ -41,6 +58,10 @@ export class DungeonUser {
         return this._state.energy;
     }
 
+    hasEquip(id: number) {
+        return this._state.equip.find(x => x == id) !== undefined;
+    }
+
     resetEnergy() {
         this._state.energy = this.maxEnergy;
     }
@@ -49,13 +70,33 @@ export class DungeonUser {
         this._state.health = this.maxHealth;
     }
 
+    addEquip(id: number) {
+        this._state.equip.push(id);
+    }
+
+    addKey(count: number) {
+        this._state.key = (this._state.key || 0) + count;
+        return this._state.key;
+    }
+
+    addPotion(count: number) {
+        this._state.potion = (this._state.potion || 0) + count;
+        return this._state.potion;
+    }
+
+    addScroll(count: number) {
+        this._state.scroll = (this._state.scroll || 0) + count;
+        return this._state.scroll;
+    }
+
     addExp(exp: number) {
-        this._state.exp += exp;
+        this._state.exp = (this._state.exp || 0) + exp;
         let nextLevelExp = this._progression.experience[this._state.level - 1];
-        while (nextLevelExp >= this._state.exp) {
+        while (nextLevelExp <= this._state.exp) {
             this._state.exp -= nextLevelExp;
             this._state.level++;
             this._events.playerLevel(this._state.level);
+            nextLevelExp = this._progression.experience[this._state.level - 1];
         }
 
         this._events.playerExp(this._state.exp);

@@ -4,10 +4,6 @@ export interface CompactedConfig {
     count: number;
 }
 
-export interface DungeonLootTile {
-    loot: number;
-}
-
 export interface HasId {
     id: number;
 }
@@ -33,13 +29,21 @@ export interface DungeonTrapsCompact extends CompactedConfig, HasId {
 
 }
 
+export interface DungeonLootData {
+    mainGameLoot: any;
+    equipment: number[];
+    scroll: number;
+    potion: number;
+    key: number;
+}
+
 export interface DungeonFloorConfig {
     width: number;
     height: number;
     extraPassageChance: number;
     missedPassageChanceInc: number;
     enemies: DungeonEnemiesCompact[];
-    loot: DungeonLootTile[];
+    loot: DungeonLootData[];
     altars: DungeonAltarsCompact[];
     traps: DungeonTrapsCompact[];
 }
@@ -53,8 +57,9 @@ export interface Cell {
     x: number;
     y: number;
     c?: number[];
+    r?: boolean;
     enemy?: CellEnemy;
-    loot?: DungeonLootTile;
+    loot?: number;
     altar?: DungeonAltarTile;
     trap?: DungeonTrapTile;
 }
@@ -76,6 +81,7 @@ export interface DungeonUserState {
     key: number;
     potion: number;
     exp: number;
+    equip: number[];
     stats: {
         str: number,
         dex: number,
@@ -96,7 +102,6 @@ export interface DungeonClientState {
     revealed: number[];
     floor: number;
     cycle: number;
-    mapRevealed: boolean;
     defRevealed: number;
     defHidden: number;
     user: DungeonUserState;
@@ -138,7 +143,7 @@ export interface LootData {
 }
 
 export interface DungeonData {
-    floors: DungeonFloorConfig;
+    floors: DungeonFloorConfig[];
     extraEquipmentItem: any;
 }
 

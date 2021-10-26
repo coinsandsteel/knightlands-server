@@ -19,7 +19,10 @@ export class DungeonEvents {
 
     // EVENTS
     cellRevealed(cell: Cell) {
-        this._events.cell = cell;
+        if (!this._events.cell) {
+            this._events.cell = [];
+        }
+        this._events.cell.push(cell);
     }
 
     energyChanged(value: number) {
@@ -57,7 +60,9 @@ export class DungeonEvents {
         this._events.trap = cellId;
     }
 
-    lootAcquired() { }
+    lootAcquired(cellId: number) {
+        this._events.loot = cellId;
+    }
 
     playerLevel(level: number) {
         this._events.level = level;
