@@ -75,6 +75,7 @@ export class DungeonController {
             potion: 0,
             scroll: 0,
             exp: 0,
+            invis: 0,
             equip: [],
             stats: {
                 str: 0,
@@ -104,6 +105,7 @@ export class DungeonController {
                 potion: 0,
                 scroll: 0,
                 exp: 0,
+                invis: 0,
                 equip: [],
                 stats: {
                     str: 0,
@@ -165,7 +167,7 @@ export class DungeonController {
 
     // reveal and move 
     async reveal(cellId: number) {
-        await this.assertNotInCombat();
+        await this.assertNotLocked();
 
         const targetCell = this.getCell(cellId);
         if (!targetCell || this._revealedLookUp[cellId]) {
@@ -193,7 +195,7 @@ export class DungeonController {
 
         this.moveToCell(cellId);
 
-        if (targetCell.enemy) {
+        if (targetCell.enemy && !this._dungeonUser.isInvisible) {
             const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
             if (enemyData.isAggressive) {
                 // throw into combat right away
@@ -201,16 +203,17 @@ export class DungeonController {
             }
         }
 
-        if (targetCell.trap) {
+        if (targetCell.trap && !this._dungeonUser.isInvisible) {
             this.triggerTrap(targetCell);
         }
 
+        this._dungeonUser.updateInvisibility();
 
         this._events.flush();
     }
 
     async useItem(itemType: string) {
-        await this.assertNotInCombat();
+        await this.assertNotLocked();
 
         if (itemType == "scroll") {
             // reveal neighbour cells
@@ -218,15 +221,18 @@ export class DungeonController {
             for (const cellIdx of currentCell.c) {
                 this.revealCell(this.getCell(cellIdx), true);
             }
+            this._dungeonUser.addScroll(-1);
         } else if (itemType == "potion") {
-            // invisibility for 3 steps
+            // invisibility for 9 steps
+            this._dungeonUser.addInvisibility(10);
+            this._dungeonUser.addPotion(-1);
         }
 
         this._events.flush();
     }
 
     async moveTo(cellId: number) {
-        await this.assertNotInCombat();
+        await this.assertNotLocked();
 
         const targetCell = this.getRevealedCell(cellId);
 
@@ -245,6 +251,7 @@ export class DungeonController {
         }
 
         this.moveToCell(cellId);
+        this._dungeonUser.updateInvisibility();
 
         this._events.flush();
     }
@@ -257,7 +264,7 @@ export class DungeonController {
      * 
      */
     async useCell(cellId: number) {
-        await this.assertNotInCombat();
+        await this.assertNotLocked();
 
         const targetCell = this.getRevealedCell(cellId);
 
@@ -281,7 +288,7 @@ export class DungeonController {
             this.consumeEnergy(meta.costs.chest);
             response = this.collectLoot(targetCell);
         }
-
+        this._dungeonUser.updateInvisibility();
         this._events.flush();
         return response;
     }
@@ -374,9 +381,14 @@ export class DungeonController {
         this._events.combatStarted(this._saveData.state.combat);
     }
 
-    private async assertNotInCombat() {
+    private async assertNotLocked() {
         if (this._saveData.state.combat) {
             throw errors.SDungeonInCombat;
+        }
+
+        const currentCell = this.getRevealedCell(this._dungeonUser.position);
+        if (currentCell.trap) {
+            throw errors.SDungeonInTrap;
         }
     }
 

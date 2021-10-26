@@ -51,15 +51,25 @@ export class DungeonUser {
     }
 
     get maxEnergy() { // Base Energy +(1,01 * значение параметра Выносливость)+(1,05 * значение параметра Интеллект);
-        return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
+        return 1000;//Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
     }
 
     get energy() {
         return this._state.energy;
     }
 
+    get isInvisible() {
+        return !!this._state.invis;
+    }
+
     hasEquip(id: number) {
         return this._state.equip.find(x => x == id) !== undefined;
+    }
+
+    updateInvisibility() {
+        if (this._state.invis > 0) {
+            this._state.invis--;
+        }
     }
 
     resetEnergy() {
@@ -68,6 +78,10 @@ export class DungeonUser {
 
     resetHealth() {
         this._state.health = this.maxHealth;
+    }
+
+    addInvisibility(steps: number) {
+        this._state.invis = (this._state.invis || 0) + steps;
     }
 
     addEquip(id: number) {

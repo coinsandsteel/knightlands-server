@@ -82,6 +82,7 @@ export interface DungeonUserState {
     potion: number;
     exp: number;
     equip: number[];
+    invis: number;
     stats: {
         str: number,
         dex: number,
