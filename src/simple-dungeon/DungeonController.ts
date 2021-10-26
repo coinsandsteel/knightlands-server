@@ -386,9 +386,11 @@ export class DungeonController {
             throw errors.SDungeonInCombat;
         }
 
-        const currentCell = this.getRevealedCell(this._dungeonUser.position);
-        if (currentCell.trap) {
-            throw errors.SDungeonInTrap;
+        if (!this._dungeonUser.isInvisible) {
+            const currentCell = this.getRevealedCell(this._dungeonUser.position);
+            if (currentCell.trap) {
+                throw errors.SDungeonInTrap;
+            }
         }
     }
 
