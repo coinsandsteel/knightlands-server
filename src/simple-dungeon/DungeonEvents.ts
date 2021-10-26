@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import game from "../game";
 import events from "../knightlands-shared/events";
-import { Cell, CombatState } from "./types";
+import { Cell, CombatState, DungeonTrapTile } from "./types";
 
 export class DungeonEvents {
     private _events: any;
@@ -46,7 +46,9 @@ export class DungeonEvents {
 
     trapActivated() { }
 
-    trapJammed() { }
+    trapJammed() {
+        this._events.jammed = true;
+    }
 
     lootAcquired() { }
 }

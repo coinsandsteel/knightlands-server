@@ -4,12 +4,13 @@ import Game from "../game";
 import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
 import errors from "../knightlands-shared/errors";
 import events from "../knightlands-shared/events";
+import random from "../random";
 import User from "../user";
 import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
-import { DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
+import { Cell, DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
 
 export class DungeonController {
     private _user: User;
@@ -85,10 +86,12 @@ export class DungeonController {
         this._saveData = {
             state: {
                 floor,
+                mapRevealed: false,
                 revealed: [dungeonData.start],
                 cycle: this._user.getDailyRewardCycle(),
                 user: userState,
-                defuseFails: 0
+                defRevealed: 0,
+                defHidden: 0
             },
             data: dungeonData
         }
@@ -181,6 +184,7 @@ export class DungeonController {
         await this.assertNotInCombat();
 
         const targetCell = this.getRevealedCell(cellId);
+
         if (!targetCell) {
             throw errors.IncorrectArguments;
         }
@@ -192,10 +196,10 @@ export class DungeonController {
             this.startCombat(Game.dungeonManager.getEnemyData(targetCell.enemy.id));
         } else if (targetCell.altar) {
             this.consumeEnergy(meta.costs.altar);
-            this.useAltar(targetCell.altar);
+            this.useAltar(targetCell);
         } else if (targetCell.trap) {
             this.consumeEnergy(meta.costs.trap);
-            this.defuseTrap(targetCell.trap);
+            this.defuseTrap(targetCell);
         }
 
         this._events.flush();
@@ -208,6 +212,9 @@ export class DungeonController {
                 if (outcome == CombatOutcome.EnemyWon) {
                     this.killPlayer(this._combat.enemyId);
                 }
+
+                // reset combat
+                this._saveData.state.combat = null;
                 break;
 
             case CombatAction.SwapEquipment:
@@ -264,7 +271,7 @@ export class DungeonController {
         // if user stands on a trap - trigger it
         const targetCell = this._saveData.data.cells[this._dungeonUser.position];
         if (targetCell.trap) {
-            this.triggerTrap(targetCell.trap);
+            this.triggerTrap(targetCell);
         }
     }
 
@@ -272,10 +279,29 @@ export class DungeonController {
 
     }
 
-    private triggerTrap(trap: DungeonTrapTile) {
+    private triggerTrap(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
-        const trapData = meta.traps.traps[trap.id];
-        this._dungeonUser.modifyEnergy(-trapData.damage);
+        const trapData = meta.traps.traps[cell.trap.id];
+
+        // determine jamming chance
+        const mapRevealed = this._saveData.state.mapRevealed;
+        const chanceIndex = mapRevealed ? this._saveData.state.defRevealed : this._saveData.state.defHidden;
+        const jamminChance = meta.traps.jammingChance;
+        const chances = jamminChance[Math.min(jamminChance.length - 1, chanceIndex)];
+        const chance = mapRevealed ? chances.revealed : chances.hidden;
+        if (random.intRange(1, 100) <= chance) {
+            // jammed, reset jamming counter
+            if (mapRevealed) {
+                this._saveData.state.defRevealed = 0;
+            } else {
+                this._saveData.state.defHidden = 0;
+            }
+            this._events.trapJammed();
+        } else {
+            this._dungeonUser.modifyEnergy(-trapData.damage);
+        }
+
+        delete cell.trap;
     }
 
     private moveToCell(cellId: number) {
@@ -288,19 +314,18 @@ export class DungeonController {
         this._dungeonUser.moveTo(cellId);
     }
 
-    private defuseTrap(trapTile: DungeonTrapTile) {
+    private defuseTrap(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
-        const trapData = meta.traps.traps[trapTile.id];
-
-        // use item if have
+        const trapData = meta.traps.traps[cell.trap.id];
+        // use item if any
 
         // try your luck otherwise
-
+        this.triggerTrap(cell);
     }
 
-    private useAltar(altarTile: DungeonAltarTile) {
+    private useAltar(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
-        const altarData = meta.altars.altars[altarTile.id];
+        const altarData = meta.altars.altars[cell.altar.id];
 
         this._dungeonUser.applyAltar(altarData);
     }

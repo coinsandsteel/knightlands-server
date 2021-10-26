@@ -85,7 +85,9 @@ export interface DungeonClientState {
     revealed: Cell[];
     floor: number;
     cycle: number;
-    defuseFails: number;
+    mapRevealed: boolean;
+    defRevealed: number;
+    defHidden: number;
     user: DungeonUserState;
     combat?: CombatState;
 }
@@ -105,6 +107,7 @@ export interface ModeSettings {
     maxFloor: number;
     floorsPerDay: number;
     dailyEnergy: number;
+    energyPerLoot: number;
 }
 
 export interface EnemyGroupData {
