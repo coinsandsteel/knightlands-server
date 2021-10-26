@@ -17,7 +17,7 @@ export class DungeonController {
     private _dungeonUser: DungeonUser;
     private _saveData: DungeonSaveData;
     private _saveCollection: Collection;
-    private _revealedLookUp: { [key: number]: Cell };
+    private _revealedLookUp: { [key: number]: number };
     private _combat: DungeonCombat;
     private _events: DungeonEvents;
 
@@ -116,10 +116,12 @@ export class DungeonController {
     }
 
     getState(): DungeonClientData {
+        const revealed = Object.keys(this._revealedLookUp).map(x => this.getCell(x as unknown as number));
+
         const state: DungeonClientData = {
             floor: this._saveData.state.floor,
             user: this._saveData.state.user,
-            revealed: Object.values(this._revealedLookUp),
+            revealed,
             width: this._saveData.data.width,
             height: Math.round(this._saveData.data.cells.length / this._saveData.data.width)
         };
@@ -160,8 +162,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        this._saveData.state.revealed.push(cellId);
-        this._revealedLookUp[cellId] = targetCell;
+        this._revealedLookUp[cellId] = this._saveData.state.revealed.push(cellId) - 1;
 
         this.moveToCell(cellId);
 
@@ -273,7 +274,7 @@ export class DungeonController {
 
     private killPlayer(enemyId: number) {
         // reset player position
-        this._dungeonUser.moveTo(cellToIndex(this._saveData.data.start, this._saveData.data.width));
+        this._dungeonUser.moveTo(this.cellToIndex(this._saveData.data.start));
         // refill his health
         this._dungeonUser.resetHealth();
 
@@ -290,7 +291,8 @@ export class DungeonController {
     }
 
     private getRevealedCell(cellId: number) {
-        return this._revealedLookUp[cellId];
+        const cell = this.getCell(cellId);
+        return this._revealedLookUp[cellId] !== undefined ? cell : undefined;
     }
 
     private consumeEnergy(energyNeed: number) {
@@ -332,7 +334,7 @@ export class DungeonController {
             } else {
                 this._saveData.state.defHidden = 0;
             }
-            this._events.trapJammed();
+            this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
         }
 
         delete cell.trap;
@@ -353,6 +355,7 @@ export class DungeonController {
         const trapData = meta.traps.traps[cell.trap.id];
         // use item if any
         this._dungeonUser.defuseTrap(trapData);
+        this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
     }
 
     private useAltar(cell: Cell) {
@@ -360,14 +363,22 @@ export class DungeonController {
         const altarData = meta.altars.altars[cell.altar.id];
 
         this._dungeonUser.applyAltar(altarData);
+        delete cell.altar;
+        this._events.altarApplied(this._revealedLookUp[this.cellToIndex(cell)]);
     }
 
     private indexRevealedCells() {
         this._revealedLookUp = {};
 
-        for (const cell of this._saveData.state.revealed) {
-            this._revealedLookUp[cell] = this.getCell(cell);
+        let index = 0;
+        for (const cellId of this._saveData.state.revealed) {
+            this._revealedLookUp[cellId] = index;
+            index++;
         }
+    }
+
+    private cellToIndex(cell: Cell) {
+        return cellToIndex(cell, this._saveData.data.width);
     }
 
     private initPlayer() {

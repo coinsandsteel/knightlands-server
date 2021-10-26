@@ -1,3 +1,4 @@
+import { AltarType } from "../knightlands-shared/dungeon_types";
 import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState, ProgressionData, TrapData } from "./types";
 
@@ -56,6 +57,18 @@ export class DungeonUser {
         this._events.energyChanged(this._state.energy);
     }
 
+    modifyHealth(value: number) {
+        this._state.health += value;
+
+        if (this._state.health < 0) {
+            this._state.health = 0;
+        } else if (this._state.health > this.maxHealth) {
+            this._state.health = this.maxHealth;
+        }
+
+        this._events.playerHealth(this.health);
+    }
+
     defuseTrap(trapData: TrapData) {
         if (this._state.key > 0) {
             this._state.key--;
@@ -70,14 +83,14 @@ export class DungeonUser {
     }
 
     applyAltar(altar: AltarData) {
-
+        if (altar.type == AltarType.Health) {
+            this.modifyHealth(altar.restoreValue);
+        } else if (altar.type == AltarType.Energy) {
+            this.modifyEnergy(altar.restoreValue);
+        }
     }
 
     applyDamage(damage: number) {
-        this._state.health -= damage;
-
-        if (this._state.health < 0) {
-            this._state.health = 0;
-        }
+        this.modifyHealth(-damage);
     }
 }

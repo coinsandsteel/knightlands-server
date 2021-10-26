@@ -74,7 +74,6 @@ export class DungeonCombat {
         } else if (MoveWinTable[enemyMove] == playerMove) {
             // enemy win
             this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense));
-            this._events.playerHealth(this._user.health);
         }
 
         this._events.combatStep(playerMove, enemyMove);

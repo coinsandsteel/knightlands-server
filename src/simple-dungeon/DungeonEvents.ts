@@ -49,10 +49,12 @@ export class DungeonEvents {
         this._events.cStep = { player, enemy };
     }
 
-    altarApplied() { }
+    altarApplied(cellId: number) {
+        this._events.altar = cellId;
+    }
 
-    trapJammed() {
-        this._events.jammed = true;
+    trapJammed(cellId: number) {
+        this._events.trap = cellId;
     }
 
     lootAcquired() { }
