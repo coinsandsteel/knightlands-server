@@ -6,6 +6,7 @@ import errors from "../knightlands-shared/errors";
 import events from "../knightlands-shared/events";
 import random from "../random";
 import User from "../user";
+import { AStar } from "./AStar";
 import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
@@ -20,12 +21,14 @@ export class DungeonController {
     private _revealedLookUp: { [key: number]: number };
     private _combat: DungeonCombat;
     private _events: DungeonEvents;
+    private _aStar: AStar;
 
     constructor(user: User) {
         this._events = new DungeonEvents(user.id);
         this._user = user;
         this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
         this._revealedLookUp = {};
+        this._aStar = new AStar();
     }
 
     async init() {
@@ -164,6 +167,7 @@ export class DungeonController {
         this.consumeEnergy(meta.costs.reveal);
 
         this._revealedLookUp[cellId] = this._saveData.state.revealed.push(cellId) - 1;
+        this._aStar.add(cellId, targetCell);
 
         this.moveToCell(cellId);
 
@@ -193,7 +197,10 @@ export class DungeonController {
         }
 
         const meta = Game.dungeonManager.getMeta();
-        this.consumeEnergy(meta.costs.move);
+
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+
+        this.consumeEnergy(meta.costs.move * path.length);
 
         if (targetCell.trap) {
             this.triggerTrap(targetCell);
@@ -377,10 +384,12 @@ export class DungeonController {
         for (const cellId of this._saveData.state.revealed) {
             this._revealedLookUp[cellId] = index;
             index++;
+
+            this._aStar.add(cellId, this.getCell(cellId));
         }
     }
 
-    private cellToIndex(cell: Cell) {
+    cellToIndex(cell: Cell) {
         return cellToIndex(cell, this._saveData.data.width);
     }
 
