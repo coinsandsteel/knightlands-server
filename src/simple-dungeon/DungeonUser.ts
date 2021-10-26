@@ -35,7 +35,7 @@ export class DungeonUser {
     }
 
     modifyEnergy(value: number) {
-        this._state.energy -= value;
+        this._state.energy += value;
         if (this._state.energy < 0) {
             this._state.energy = 0;
         }
