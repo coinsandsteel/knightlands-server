@@ -27,7 +27,10 @@ export class DungeonEvents {
     }
 
     combatStarted(combat: CombatState) {
-        this._events.combat = combat;
+        this._events.combat = {
+            enemyHealth: combat.enemyHealth,
+            enemyId: combat.enemyId
+        };
     }
 
     enemyHealth(newHealth: number) {
@@ -42,9 +45,11 @@ export class DungeonEvents {
         this._events.moveTo = cellId;
     }
 
-    altarApplied() { }
+    combatStep(player: number, enemy: number) {
+        this._events.cStep = { player, enemy };
+    }
 
-    trapActivated() { }
+    altarApplied() { }
 
     trapJammed() {
         this._events.jammed = true;

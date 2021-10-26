@@ -1790,7 +1790,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return this.simpleDungeon.load(data.action, data.data);
+        return this.simpleDungeon.combatAction(data.action, data.data);
     }
 
     async _sDungeonMove(_, data) {

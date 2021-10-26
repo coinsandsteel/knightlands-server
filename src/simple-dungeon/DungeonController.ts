@@ -1,4 +1,4 @@
-import { Collection } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
@@ -10,14 +10,14 @@ import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
-import { Cell, DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
+import { Cell, CellEnemy, DungeonAltarTile, DungeonClientData, DungeonLootTile, DungeonSaveData, DungeonTrapTile, EnemyData } from "./types";
 
 export class DungeonController {
     private _user: User;
     private _dungeonUser: DungeonUser;
     private _saveData: DungeonSaveData;
     private _saveCollection: Collection;
-    private _revealedLookUp: { [key: number]: true };
+    private _revealedLookUp: { [key: number]: Cell };
     private _combat: DungeonCombat;
     private _events: DungeonEvents;
 
@@ -34,17 +34,13 @@ export class DungeonController {
             this._saveData = saveData as DungeonSaveData;
 
             this.indexRevealedCells();
-        } else {
-            await this.generateNewFloor();
+            this.initPlayer();
         }
 
         // if day is finished - generate new dungeon
-        if (this._saveData.state.cycle != this._user.getDailyRewardCycle()) {
+        if (!this._saveData || this._saveData.state.cycle != this._user.getDailyRewardCycle()) {
             await this.generateNewFloor();
         }
-
-        this._dungeonUser = new DungeonUser(this._saveData.state.user, this._events);
-        this._combat = new DungeonCombat(this._dungeonUser, this._events);
 
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
@@ -61,6 +57,8 @@ export class DungeonController {
     }
 
     async generateNewFloor() {
+        await Game.dungeonManager.init();
+
         const meta = Game.dungeonManager.getMeta();
 
         let floor = 1;
@@ -70,7 +68,16 @@ export class DungeonController {
             cell: 0,
             health: 1000,
             lastHpRegen: Game.nowSec,
-            lastEnergyRegen: Game.nowSec
+            lastEnergyRegen: Game.nowSec,
+            key: 0,
+            potion: 0,
+            scroll: 0,
+            stats: {
+                str: 0,
+                dex: 0,
+                int: 0,
+                sta: 0
+            }
         }
 
         if (this._saveData) {
@@ -87,7 +94,7 @@ export class DungeonController {
             state: {
                 floor,
                 mapRevealed: false,
-                revealed: [dungeonData.start],
+                revealed: [cellToIndex(dungeonData.start, dungeonData.width)],
                 cycle: this._user.getDailyRewardCycle(),
                 user: userState,
                 defRevealed: 0,
@@ -100,15 +107,31 @@ export class DungeonController {
 
         this.indexRevealedCells();
 
+        this.initPlayer();
+
+        this._dungeonUser.resetHealth();
+        this._dungeonUser.resetEnergy();
+
         return this.getState();
     }
 
     getState(): DungeonClientData {
-        return {
-            ...this._saveData.state,
+        const state: DungeonClientData = {
+            floor: this._saveData.state.floor,
+            user: this._saveData.state.user,
+            revealed: Object.values(this._revealedLookUp),
             width: this._saveData.data.width,
             height: Math.round(this._saveData.data.cells.length / this._saveData.data.width)
         };
+
+        if (this._saveData.state.combat) {
+            state.combat = {
+                enemyHealth: this._saveData.state.combat.enemyHealth,
+                enemyId: this._saveData.state.combat.enemyId
+            };
+        }
+
+        return state;
     }
 
     // reveal and move 
@@ -137,18 +160,21 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        this._saveData.state.revealed.push(targetCell);
-        this._revealedLookUp[cellId] = true;
+        this._saveData.state.revealed.push(cellId);
+        this._revealedLookUp[cellId] = targetCell;
 
-        this.tryTriggerTrap();
         this.moveToCell(cellId);
 
         if (targetCell.enemy) {
             const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
             if (enemyData.isAgressive) {
                 // throw into combat right away
-                this.startCombat(enemyData);
+                this.startCombat(targetCell.enemy);
             }
+        }
+
+        if (targetCell.trap) {
+            this.triggerTrap(targetCell);
         }
 
         this._events.cellRevealed(targetCell);
@@ -167,7 +193,10 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.move);
 
-        this.tryTriggerTrap();
+        if (targetCell.trap) {
+            this.triggerTrap(targetCell);
+        }
+
         this.moveToCell(cellId);
 
         this._events.flush();
@@ -193,7 +222,7 @@ export class DungeonController {
 
         if (targetCell.enemy) {
             this.consumeEnergy(meta.costs.enemy);
-            this.startCombat(Game.dungeonManager.getEnemyData(targetCell.enemy.id));
+            this.startCombat(targetCell.enemy);
         } else if (targetCell.altar) {
             this.consumeEnergy(meta.costs.altar);
             this.useAltar(targetCell);
@@ -206,15 +235,32 @@ export class DungeonController {
     }
 
     async combatAction(action, data) {
+        if (!this._saveData.state.combat) {
+            throw errors.IncorrectArguments;
+        }
+
         switch (action) {
             case CombatAction.Attack:
                 const outcome = this._combat.resolveOutcome(data.move);
+                const cell = this.getRevealedCell(this._dungeonUser.position);
                 if (outcome == CombatOutcome.EnemyWon) {
+                    // save enemy health if enemy is non-agressive
+                    const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
+                    if (!enemyData.isAgressive) {
+                        cell.enemy.health = this._combat.enemyHealth;
+                    }
+
                     this.killPlayer(this._combat.enemyId);
+                } else if (outcome == CombatOutcome.PlayerWon) {
+                    // delete enemy
+                    delete cell.enemy;
+                    // get rewards
                 }
 
-                // reset combat
-                this._saveData.state.combat = null;
+                if (outcome != CombatOutcome.NobodyWon) {
+                    // reset combat
+                    this._saveData.state.combat = null;
+                }
                 break;
 
             case CombatAction.SwapEquipment:
@@ -244,8 +290,7 @@ export class DungeonController {
     }
 
     private getRevealedCell(cellId: number) {
-        const cell = this.getCell(cellId);
-        return this._revealedLookUp[cellId] ? cell : undefined;
+        return this._revealedLookUp[cellId];
     }
 
     private consumeEnergy(energyNeed: number) {
@@ -256,8 +301,8 @@ export class DungeonController {
         this._dungeonUser.modifyEnergy(-energyNeed);
     }
 
-    private startCombat(enemy: EnemyData) {
-        this._saveData.state.combat = this._combat.start(enemy);
+    private startCombat(enemy: CellEnemy) {
+        this._saveData.state.combat = this._combat.start(enemy.id, enemy.health);
         this._events.combatStarted(this._saveData.state.combat);
     }
 
@@ -267,21 +312,12 @@ export class DungeonController {
         }
     }
 
-    private tryTriggerTrap() {
-        // if user stands on a trap - trigger it
-        const targetCell = this._saveData.data.cells[this._dungeonUser.position];
-        if (targetCell.trap) {
-            this.triggerTrap(targetCell);
-        }
-    }
-
     private async collectLoot(loot: DungeonLootTile) {
 
     }
 
     private triggerTrap(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
-        const trapData = meta.traps.traps[cell.trap.id];
 
         // determine jamming chance
         const mapRevealed = this._saveData.state.mapRevealed;
@@ -297,8 +333,6 @@ export class DungeonController {
                 this._saveData.state.defHidden = 0;
             }
             this._events.trapJammed();
-        } else {
-            this._dungeonUser.modifyEnergy(-trapData.damage);
         }
 
         delete cell.trap;
@@ -318,9 +352,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         const trapData = meta.traps.traps[cell.trap.id];
         // use item if any
-
-        // try your luck otherwise
-        this.triggerTrap(cell);
+        this._dungeonUser.defuseTrap(trapData);
     }
 
     private useAltar(cell: Cell) {
@@ -331,12 +363,17 @@ export class DungeonController {
     }
 
     private indexRevealedCells() {
-        const width = this._saveData.data.width;
-
         this._revealedLookUp = {};
 
         for (const cell of this._saveData.state.revealed) {
-            this._revealedLookUp[cellToIndex(cell, width)] = true;
+            this._revealedLookUp[cell] = this.getCell(cell);
+        }
+    }
+
+    private initPlayer() {
+        if (!this._dungeonUser) {
+            this._dungeonUser = new DungeonUser(this._saveData.state.user, this._events, Game.dungeonManager.getMeta().progression);
+            this._combat = new DungeonCombat(this._dungeonUser, this._events);
         }
     }
 }

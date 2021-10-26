@@ -71,6 +71,15 @@ export interface DungeonUserState {
     health: number,
     lastHpRegen: number;
     lastEnergyRegen: number;
+    scroll: number;
+    key: number;
+    potion: number;
+    stats: {
+        str: number,
+        dex: number,
+        int: number,
+        sta: number
+    }
 }
 
 export interface CombatState {
@@ -82,7 +91,7 @@ export interface CombatState {
 }
 
 export interface DungeonClientState {
-    revealed: Cell[];
+    revealed: number[];
     floor: number;
     cycle: number;
     mapRevealed: boolean;
@@ -92,9 +101,16 @@ export interface DungeonClientState {
     combat?: CombatState;
 }
 
-export interface DungeonClientData extends DungeonClientState {
+export interface DungeonClientData {
+    revealed: Cell[];
     width: number;
     height: number;
+    user: DungeonUserState;
+    combat?: {
+        enemyHealth: number;
+        enemyId: number;
+    };
+    floor: number;
 }
 
 export interface DungeonSaveData {
@@ -181,6 +197,14 @@ export interface TrapsData {
     jammingChance: JammingChanceData[];
 }
 
+export interface ProgressionData {
+    baseHealth: number;
+    baseAttack: number;
+    baseDefense: number;
+    baseEnergy: number;
+    experience: number[];
+}
+
 export interface DungeonMeta {
     costs: EnergyCostSettings;
     mode: ModeSettings;
@@ -188,4 +212,5 @@ export interface DungeonMeta {
     enemies: EnemiesData;
     altars: AltarsData;
     traps: TrapsData;
+    progression: ProgressionData;
 }

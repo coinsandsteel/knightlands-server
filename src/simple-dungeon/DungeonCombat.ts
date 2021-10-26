@@ -25,11 +25,15 @@ export class DungeonCombat {
         return this._state.enemyId;
     }
 
-    start(enemy: EnemyData) {
+    get enemyHealth() {
+        return this._state.enemyHealth;
+    }
+
+    start(id: number, health: number) {
         this._state = {
             turn: 0,
-            enemyHealth: enemy.health,
-            enemyId: enemy.id,
+            enemyHealth: health,
+            enemyId: id,
             moveSetId: 0,
             moveIndex: 0
         }
@@ -55,6 +59,7 @@ export class DungeonCombat {
 
         const moveSet = enemyData.moves[this._state.moveSetId];
         const enemyMove = moveSet.sequence[this._state.moveIndex];
+        this._state.moveIndex++;
 
         if (this._state.moveIndex == moveSet.sequence.length) {
             // end of sequence, roll new one next time
@@ -72,6 +77,8 @@ export class DungeonCombat {
             this._events.playerHealth(this._user.health);
         }
 
+        this._events.combatStep(playerMove, enemyMove);
+
         if (this._user.health <= 0) {
             return CombatOutcome.EnemyWon;
         }
@@ -84,6 +91,6 @@ export class DungeonCombat {
     }
 
     private getFinalDamage(attack: number, defense: number) {
-        return attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense)));
+        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))));
     }
 }
