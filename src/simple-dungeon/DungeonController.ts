@@ -279,7 +279,7 @@ export class DungeonController {
                         cell.enemy.health = this._combat.enemyHealth;
                     }
 
-                    this._events.enemyNotDefeated(cell.enemy.health);
+                    this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
 
                     this.killPlayer(this._combat.enemyId);
                 } else if (outcome == CombatOutcome.PlayerWon) {
