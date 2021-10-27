@@ -56,7 +56,7 @@ export class DungeonCombat {
 
         if (this._state.moveSetId == 0) {
             // roll a new move set
-            const enemyHealthRelative = this._state.enemyHealth / enemyData.health;
+            const enemyHealthRelative = this._state.enemyHealth / enemyData.health * 100;
             const moves = enemyData.moves.filter(x => x.minHealth <= enemyHealthRelative && x.maxHealth >= enemyHealthRelative);
             const moveSet = random.sampleWeighted(moves, 1)[0];
             this._state.moveSetId = moveSet.index;
@@ -84,11 +84,11 @@ export class DungeonCombat {
         this._events.combatStep(playerMove, enemyMove);
 
         if (this._user.health <= 0) {
-          this._state.outcome = CombatOutcome.EnemyWon;
+            this._state.outcome = CombatOutcome.EnemyWon;
         }
 
         if (this._state.enemyHealth <= 0) {
-          this._state.outcome = CombatOutcome.PlayerWon;
+            this._state.outcome = CombatOutcome.PlayerWon;
         }
     }
 
