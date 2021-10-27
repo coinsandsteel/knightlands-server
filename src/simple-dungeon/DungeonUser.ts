@@ -29,6 +29,8 @@ export class DungeonUser {
         if (!this._state.exp) {
             this._state.exp = 0;
         }
+
+        this.updateHealthAndEnergy();
     }
 
     get position() {
@@ -73,10 +75,35 @@ export class DungeonUser {
     }
 
     updateHealthAndEnergy() {
-        const lastRegen = this._state.lastHpRegen;
-        const timeElapsed = game.nowSec - lastRegen;
+        const regenEvent: any = {};
 
-        const hpRegened = Math.floor(timeElapsed * this.healthRegen);
+        {
+            const lastRegen = this._state.lastHpRegen;
+            const timeElapsed = game.nowSec - lastRegen;
+
+            const hpRegened = Math.floor(timeElapsed / this.healthRegen);
+            if (hpRegened > 0) {
+                this._state.lastHpRegen += Math.floor(hpRegened * this.healthRegen);
+                this.modifyHealth(hpRegened);
+                regenEvent.hp = this._state.lastHpRegen;
+            }
+        }
+
+        {
+            const lastRegen = this._state.lastEnergyRegen;
+            const timeElapsed = game.nowSec - lastRegen;
+
+            const energyRegened = Math.floor(timeElapsed / this.energyRegen);
+            if (energyRegened > 0) {
+                this._state.lastEnergyRegen += Math.floor(energyRegened * this.energyRegen);
+                this.modifyEnergy(energyRegened);
+                regenEvent.energy = this._state.lastEnergyRegen;
+            }
+        }
+
+        if (Object.keys(regenEvent).length != 0) {
+            this._events.regenUpdate(regenEvent);
+        }
     }
 
     hasEquip(id: number) {
@@ -139,6 +166,7 @@ export class DungeonUser {
     }
 
     modifyEnergy(value: number) {
+        this.updateHealthAndEnergy();
         this._state.energy += value;
         if (this._state.energy < 0) {
             this._state.energy = 0;
@@ -147,6 +175,7 @@ export class DungeonUser {
     }
 
     modifyHealth(value: number) {
+        this.updateHealthAndEnergy();
         this._state.health += value;
 
         if (this._state.health < 0) {

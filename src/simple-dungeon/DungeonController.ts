@@ -145,7 +145,10 @@ export class DungeonController {
     }
 
     getState(): DungeonClientData {
-        const revealed = Object.keys(this._revealedLookUp).map(x => this.getCell(x as unknown as number));
+        const revealed = new Array(this._saveData.state.revealed.length);
+        for (let i = 0, l = revealed.length; i < l; ++i) {
+            revealed[i] = this.getCell(this._saveData.state.revealed[i]);
+        }
 
         const state: DungeonClientData = {
             floor: this._saveData.state.floor,

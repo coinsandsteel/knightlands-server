@@ -39,8 +39,8 @@ export class DungeonEvents {
 
     combatFinished(combat: CombatState) {
         this._events.combat = {
-          outcome: combat.outcome
-      }
+            outcome: combat.outcome
+        }
     }
 
     enemyHealth(newHealth: number) {
@@ -88,5 +88,9 @@ export class DungeonEvents {
 
     playerExp(exp: number) {
         this._events.exp = exp;
+    }
+
+    regenUpdate(data) {
+        this._events.regen = data;
     }
 }
