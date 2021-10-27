@@ -465,6 +465,12 @@ export class DungeonController {
             }
             this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
             delete cell.trap;
+        } else {
+            if (mapRevealed) {
+                this._saveData.state.defRevealed++;
+            } else {
+                this._saveData.state.defHidden++;
+            }
         }
     }
 
