@@ -1,3 +1,4 @@
+import game from "../game";
 import { AltarType } from "../knightlands-shared/dungeon_types";
 import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState, ProgressionData, TrapData } from "./types";
@@ -51,7 +52,16 @@ export class DungeonUser {
     }
 
     get maxEnergy() { // Base Energy +(1,01 * значение параметра Выносливость)+(1,05 * значение параметра Интеллект);
-        return 1000;//Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
+        // return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
+        return 1000;
+    }
+
+    get energyRegen() { // (86400/(10+(1,01 * значение параметра Выносливость)+(1,01 * значение параметра Интеллект))/ Текущий максимум энергии (Energy));
+        return (86400 / (10 + (1.01 * this._state.stats.sta) + (1.01 * this._state.stats.int)) / this.maxEnergy)
+    }
+
+    get healthRegen() { // ((86400/(20+(1,01 * зачение параметра Ловкость)+(1,01 * значение параметра Выносливость)+(1,01 * значение параметра Сила))/ Текущий максимум здоровья(Heath));
+        return (86400 / (20 + (1.01 * this._state.stats.dex) + (1.01 * this._state.stats.sta) + (1.01 * this._state.stats.str)) / this.maxHealth)
     }
 
     get energy() {
@@ -60,6 +70,13 @@ export class DungeonUser {
 
     get isInvisible() {
         return !!this._state.invis;
+    }
+
+    updateHealthAndEnergy() {
+        const lastRegen = this._state.lastHpRegen;
+        const timeElapsed = game.nowSec - lastRegen;
+
+        const hpRegened = Math.floor(timeElapsed * this.healthRegen);
     }
 
     hasEquip(id: number) {
@@ -74,10 +91,14 @@ export class DungeonUser {
 
     resetEnergy() {
         this._state.energy = this.maxEnergy;
+        this.updateHealthAndEnergy();
+        this._events.energyChanged(this._state.energy);
     }
 
     resetHealth() {
         this._state.health = this.maxHealth;
+        this.updateHealthAndEnergy();
+        this._events.playerHealth(this.health);
     }
 
     addInvisibility(steps: number) {
