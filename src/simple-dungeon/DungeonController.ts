@@ -157,6 +157,7 @@ export class DungeonController {
 
         if (this._saveData.state.combat) {
             state.combat = {
+                outcome: this._saveData.state.combat.outcome,
                 enemyHealth: this._saveData.state.combat.enemyHealth,
                 enemyId: this._saveData.state.combat.enemyId
             };
@@ -303,11 +304,11 @@ export class DungeonController {
 
         switch (action) {
             case CombatAction.Attack:
-                const outcome = this._combat.resolveOutcome(data.move);
+                this._combat.resolveOutcome(data.move);
                 const cell = this.getRevealedCell(this._dungeonUser.position);
                 const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
 
-                if (outcome == CombatOutcome.EnemyWon) {
+                if (this._combat.outcome == CombatOutcome.EnemyWon) {
                     // save enemy health if enemy is non-agressive
                     if (!enemyData.isAggressive) {
                         cell.enemy.health = this._combat.enemyHealth;
@@ -315,7 +316,7 @@ export class DungeonController {
 
                     this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
                     this.killPlayer(this._combat.enemyId);
-                } else if (outcome == CombatOutcome.PlayerWon) {
+                } else if (this._combat.outcome == CombatOutcome.PlayerWon) {
                     // delete enemy
                     delete cell.enemy;
                     // get rewards
@@ -323,10 +324,10 @@ export class DungeonController {
                     this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
                 }
 
-                if (outcome != CombatOutcome.NobodyWon) {
+                if (this._combat.outcome != CombatOutcome.NobodyWon) {
                     // reset combat
+                    this._events.combatFinished(this._saveData.state.combat);
                     this._saveData.state.combat = null;
-                    this._events.combatFinished();
                 }
                 break;
 

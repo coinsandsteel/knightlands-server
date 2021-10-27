@@ -29,8 +29,13 @@ export class DungeonCombat {
         return this._state.enemyHealth;
     }
 
+    get outcome() {
+        return this._state.outcome;
+    }
+
     start(id: number, health: number) {
         this._state = {
+            outcome: CombatOutcome.NobodyWon,
             turn: 0,
             enemyHealth: health,
             enemyId: id,
@@ -79,14 +84,12 @@ export class DungeonCombat {
         this._events.combatStep(playerMove, enemyMove);
 
         if (this._user.health <= 0) {
-            return CombatOutcome.EnemyWon;
+          this._state.outcome = CombatOutcome.EnemyWon;
         }
 
         if (this._state.enemyHealth <= 0) {
-            return CombatOutcome.PlayerWon;
+          this._state.outcome = CombatOutcome.PlayerWon;
         }
-
-        return CombatOutcome.NobodyWon;
     }
 
     private getFinalDamage(attack: number, defense: number) {

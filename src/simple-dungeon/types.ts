@@ -92,6 +92,7 @@ export interface DungeonUserState {
 }
 
 export interface CombatState {
+    outcome: number;
     turn: number;
     enemyHealth: number;
     enemyId: number;
@@ -115,6 +116,7 @@ export interface DungeonClientData {
     height: number;
     user: DungeonUserState;
     combat?: {
+        outcome: number;
         enemyHealth: number;
         enemyId: number;
     };
