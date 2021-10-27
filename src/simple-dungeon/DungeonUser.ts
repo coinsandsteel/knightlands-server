@@ -96,7 +96,7 @@ export class DungeonUser {
             const energyRegened = Math.floor(timeElapsed / this.energyRegen);
             if (energyRegened > 0) {
                 this._state.lastEnergyRegen += Math.floor(energyRegened * this.energyRegen);
-                this.modifyEnergy(energyRegened);
+                this.modifyEnergy(energyRegened, true);
                 regenEvent.energy = this._state.lastEnergyRegen;
             }
         }
@@ -165,11 +165,13 @@ export class DungeonUser {
         this._events.playerExp(this._state.exp);
     }
 
-    modifyEnergy(value: number) {
+    modifyEnergy(value: number, checkMax: boolean = false) {
         this.updateHealthAndEnergy();
         this._state.energy += value;
         if (this._state.energy < 0) {
             this._state.energy = 0;
+        } if (checkMax && this._state.energy > this.maxEnergy) {
+            this._state.energy = this.maxEnergy;
         }
         this._events.energyChanged(this._state.energy);
     }
