@@ -180,10 +180,9 @@ export class DungeonController {
         }
 
         let correctReveal = false;
-        // check if this cell has connection to the cell where player currently is standing
-        const currentCellIndex = this._dungeonUser.position;
+        // check if this cell has connection to any revealed cell
         for (const cellIdx of targetCell.c) {
-            if (cellIdx == currentCellIndex) {
+            if (this._revealedLookUp[cellIdx]) {
                 correctReveal = true;
                 break;
             }
@@ -197,6 +196,9 @@ export class DungeonController {
         this.consumeEnergy(meta.costs.reveal);
 
         this.revealCell(targetCell, false);
+
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+        this.consumeEnergy(meta.costs.move * (path.length) - 1);// do not count newly revealed cell cost
 
         this.moveToCell(cellId);
 
