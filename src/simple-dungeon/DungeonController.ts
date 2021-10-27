@@ -314,7 +314,6 @@ export class DungeonController {
                     }
 
                     this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
-
                     this.killPlayer(this._combat.enemyId);
                 } else if (outcome == CombatOutcome.PlayerWon) {
                     // delete enemy
@@ -327,6 +326,7 @@ export class DungeonController {
                 if (outcome != CombatOutcome.NobodyWon) {
                     // reset combat
                     this._saveData.state.combat = null;
+                    this._events.combatFinished();
                 }
                 break;
 

@@ -36,6 +36,10 @@ export class DungeonEvents {
         };
     }
 
+    combatFinished() {
+        this._events.combat = null;
+    }
+
     enemyHealth(newHealth: number) {
         this._events.enemyHealth = newHealth;
     }
