@@ -107,6 +107,6 @@ export class DungeonCombat {
     }
 
     private getFinalDamage(attack: number, defense: number, weaponBonus: number) {
-        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))) * weaponBonus);
+        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))) * (1 + weaponBonus));
     }
 }
