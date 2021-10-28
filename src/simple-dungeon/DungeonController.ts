@@ -455,7 +455,7 @@ export class DungeonController {
         this._events.combatStarted(this._saveData.state.combat);
     }
 
-    private async assertNotInCombat() {
+    private assertNotInCombat() {
         if (this._saveData.state.combat) {
             throw errors.SDungeonInCombat;
         }
