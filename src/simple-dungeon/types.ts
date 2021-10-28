@@ -84,6 +84,8 @@ export interface DungeonUserState {
     potion: number;
     exp: number;
     equip: number[];
+    mHand: number;
+    oHand: number;
     invis: number;
     stats: {
         str: number,
@@ -221,6 +223,12 @@ export interface ProgressionData {
     experience: number[];
 }
 
+export interface ItemData {
+    defensive: boolean;
+    move: number;
+    modifier: number;
+}
+
 export interface DungeonMeta {
     costs: EnergyCostSettings;
     mode: ModeSettings;
@@ -229,4 +237,5 @@ export interface DungeonMeta {
     altars: AltarsData;
     traps: TrapsData;
     progression: ProgressionData;
+    items: { [key: number]: ItemData };
 }

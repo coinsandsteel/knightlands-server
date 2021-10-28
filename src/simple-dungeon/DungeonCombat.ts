@@ -71,14 +71,28 @@ export class DungeonCombat {
             this._state.moveSetId = 0;
             this._state.moveIndex = 0;
         }
+        const meta = Game.dungeonManager.getMeta();
+        let bonus = 0;
 
         if (MoveWinTable[playerMove] == enemyMove) {
+            if (this._user.mainHand) {
+                if (meta.items[this._user.mainHand].move == playerMove) {
+                    bonus = meta.items[this._user.mainHand].modifier;
+                }
+            }
+
             // player win
-            this._state.enemyHealth -= this.getFinalDamage(this._user.attack, enemyData.defense);
+            this._state.enemyHealth -= this.getFinalDamage(this._user.attack, enemyData.defense, bonus);
             this._events.enemyHealth(this._state.enemyHealth);
-        } else if (MoveWinTable[enemyMove] == playerMove) {
+        } else if (MoveWinTable[enemyMove] == playerMove || playerMove === -1) {
+            if (this._user.offHand) {
+                if (meta.items[this._user.offHand].move == enemyMove) {
+                    bonus = meta.items[this._user.offHand].modifier;
+                }
+            }
+
             // enemy win
-            this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense));
+            this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense, bonus));
         }
 
         this._events.combatStep(playerMove, enemyMove);
@@ -92,7 +106,7 @@ export class DungeonCombat {
         }
     }
 
-    private getFinalDamage(attack: number, defense: number) {
-        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))));
+    private getFinalDamage(attack: number, defense: number, weaponBonus: number) {
+        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))) * weaponBonus);
     }
 }

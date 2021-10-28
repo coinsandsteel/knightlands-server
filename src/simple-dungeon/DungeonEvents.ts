@@ -93,4 +93,11 @@ export class DungeonEvents {
     regenUpdate(data) {
         this._events.regen = data;
     }
+
+    playerEquip({ mHand, oHand }) {
+        this._events.equip = {
+            mHand,
+            oHand
+        }
+    }
 }

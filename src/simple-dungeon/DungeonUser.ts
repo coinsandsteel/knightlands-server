@@ -1,5 +1,6 @@
 import game from "../game";
 import { AltarType } from "../knightlands-shared/dungeon_types";
+import errors from "../knightlands-shared/errors";
 import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState, ProgressionData, TrapData } from "./types";
 
@@ -73,7 +74,15 @@ export class DungeonUser {
         return !!this._state.invis;
     }
 
-    updateHealthAndEnergy() {
+    get mainHand() {
+        return this._state.mHand;
+    }
+
+    get offHand() {
+        return this._state.oHand;
+    }
+
+    updateHealthAndEnergy(resetTimers: boolean = false) {
         const regenEvent: any = {};
 
         {
@@ -83,7 +92,11 @@ export class DungeonUser {
             const hpRegened = Math.floor(timeElapsed / this.healthRegen);
             if (hpRegened > 0) {
                 this._state.lastHpRegen += Math.floor(hpRegened * this.healthRegen);
-                this.modifyHealth(hpRegened);
+
+                if (!resetTimers) {
+                    this.modifyHealth(hpRegened);
+                }
+
                 regenEvent.hp = this._state.lastHpRegen;
             }
         }
@@ -95,7 +108,11 @@ export class DungeonUser {
             const energyRegened = Math.floor(timeElapsed / this.energyRegen);
             if (energyRegened > 0) {
                 this._state.lastEnergyRegen += Math.floor(energyRegened * this.energyRegen);
-                this.modifyEnergy(energyRegened, true);
+
+                if (!resetTimers) {
+                    this.modifyEnergy(energyRegened, true);
+                }
+
                 regenEvent.energy = this._state.lastEnergyRegen;
             }
         }
@@ -165,7 +182,6 @@ export class DungeonUser {
     }
 
     modifyEnergy(value: number, checkMax: boolean = false) {
-        this.updateHealthAndEnergy();
         this._state.energy += value;
         if (this._state.energy < 0) {
             this._state.energy = 0;
@@ -176,7 +192,6 @@ export class DungeonUser {
     }
 
     modifyHealth(value: number) {
-        this.updateHealthAndEnergy();
         this._state.health += value;
 
         if (this._state.health < 0) {
@@ -211,5 +226,11 @@ export class DungeonUser {
 
     applyDamage(damage: number) {
         this.modifyHealth(-damage);
+    }
+
+    equip(mHand: number, oHand: number) {
+        this._state.mHand = mHand;
+        this._state.oHand = oHand;
+        this._events.playerEquip({ mHand, oHand });
     }
 }

@@ -1,4 +1,5 @@
 import { Collection } from "mongodb";
+import { isNumber } from "../validation";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { CombatAction } from "../knightlands-shared/dungeon_types";
@@ -78,6 +79,8 @@ export class DungeonController {
             key: 0,
             potion: 0,
             scroll: 0,
+            mHand: 0,
+            oHand: 0,
             exp: 0,
             invis: 0,
             equip: [],
@@ -110,6 +113,8 @@ export class DungeonController {
                 lastHpRegen: Game.nowSec,
                 lastEnergyRegen: Game.nowSec,
                 key: 0,
+                mHand: 0,
+                oHand: 0,
                 potion: 0,
                 scroll: 0,
                 exp: 0,
@@ -192,6 +197,8 @@ export class DungeonController {
         this.assertNotInCombat();
         this.assertNotInTrap();
 
+        this._dungeonUser.updateHealthAndEnergy();
+
         const targetCell = this.getCell(cellId);
         if (!targetCell || this._revealedLookUp[cellId]) {
             throw errors.IncorrectArguments;
@@ -241,6 +248,8 @@ export class DungeonController {
         this.assertNotInCombat();
         this.assertNotInTrap();
 
+        this._dungeonUser.updateHealthAndEnergy();
+
         if (itemType == "scroll") {
             // reveal neighbour cells
             const currentCell = this.getRevealedCell(this._dungeonUser.position);
@@ -260,6 +269,8 @@ export class DungeonController {
     async moveTo(cellId: number) {
         this.assertNotInCombat();
         this.assertNotInTrap();
+
+        this._dungeonUser.updateHealthAndEnergy();
 
         const targetCell = this.getRevealedCell(cellId);
 
@@ -293,6 +304,8 @@ export class DungeonController {
     async useCell(cellId: number) {
         this.assertNotInCombat();
 
+        this._dungeonUser.updateHealthAndEnergy();
+
         const targetCell = this.getRevealedCell(cellId);
 
         if (!targetCell) {
@@ -319,6 +332,33 @@ export class DungeonController {
         this._dungeonUser.updateInvisibility();
         this._events.flush();
         return response;
+    }
+
+    async equip(mHand: number, oHand: number) {
+        if (!isNumber(mHand) || !isNumber(oHand)) {
+            throw errors.IncorrectArguments;
+        }
+
+        if (!this._dungeonUser.hasEquip(mHand) || !this._dungeonUser.hasEquip(oHand)) {
+            throw errors.IncorrectArguments;
+        }
+
+        const meta = Game.dungeonManager.getMeta();
+        if (meta.items[mHand].defensive) {
+            throw errors.IncorrectArguments;
+        }
+
+        if (!meta.items[oHand].defensive) {
+            throw errors.IncorrectArguments;
+        }
+
+        this._dungeonUser.equip(mHand, oHand);
+
+        if (this._saveData.state.combat) {
+            this._combat.resolveOutcome(-1); // auto damage 
+        }
+
+        this._events.flush();
     }
 
     async combatAction(action, data) {
@@ -354,10 +394,6 @@ export class DungeonController {
                     this._events.combatFinished(this._saveData.state.combat);
                     this._saveData.state.combat = null;
                 }
-                break;
-
-            case CombatAction.SwapEquipment:
-
                 break;
         }
 
