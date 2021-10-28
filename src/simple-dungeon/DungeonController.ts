@@ -366,38 +366,36 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        switch (action) {
-            case CombatAction.Attack:
-                this._combat.resolveOutcome(data.move);
-                const cell = this.getRevealedCell(this._dungeonUser.position);
-                const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
+        const outcomes = this._combat.resolveOutcome(data.move);
+        const cell = this.getRevealedCell(this._dungeonUser.position);
+        const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
 
-                if (this._combat.outcome == CombatOutcome.EnemyWon) {
-                    // save enemy health if enemy is non-agressive
-                    if (!enemyData.isAggressive) {
-                        cell.enemy.health = this._combat.enemyHealth;
-                    }
+        if (this._combat.outcome == CombatOutcome.EnemyWon) {
+            // save enemy health if enemy is non-agressive
+            if (!enemyData.isAggressive) {
+                cell.enemy.health = this._combat.enemyHealth;
+            }
 
-                    this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
-                    this.killPlayer(this._combat.enemyId);
-                } else if (this._combat.outcome == CombatOutcome.PlayerWon) {
-                    // delete enemy
-                    delete cell.enemy;
-                    // get rewards
-                    this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
-                    this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
-                    this._saveData.data.enemiesLeft--;
-                }
+            this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
+            this.killPlayer(this._combat.enemyId);
+        } else if (this._combat.outcome == CombatOutcome.PlayerWon) {
+            // delete enemy
+            delete cell.enemy;
+            // get rewards
+            this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
+            this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
+            this._saveData.data.enemiesLeft--;
+        }
 
-                if (this._combat.outcome != CombatOutcome.NobodyWon) {
-                    // reset combat
-                    this._events.combatFinished(this._saveData.state.combat);
-                    this._saveData.state.combat = null;
-                }
-                break;
+        if (this._combat.outcome != CombatOutcome.NobodyWon) {
+            // reset combat
+            this._events.combatFinished(this._saveData.state.combat);
+            this._saveData.state.combat = null;
         }
 
         this._events.flush();
+
+        return outcomes;
     }
 
     testAction(action: string) {

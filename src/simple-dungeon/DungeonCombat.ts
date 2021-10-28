@@ -104,6 +104,10 @@ export class DungeonCombat {
         if (this._state.enemyHealth <= 0) {
             this._state.outcome = CombatOutcome.PlayerWon;
         }
+
+        return {
+            playerMove, enemyMove
+        }
     }
 
     private getFinalDamage(attack: number, defense: number, weaponBonus: number) {
