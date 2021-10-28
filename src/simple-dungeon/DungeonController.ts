@@ -220,10 +220,10 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        this.revealCell(targetCell, false);
-
         const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
         this.consumeEnergy(meta.costs.move * (path.length) - 1);// do not count newly revealed cell cost
+
+        this.revealCell(targetCell, false);
 
         this.moveToCell(cellId);
 
