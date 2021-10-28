@@ -156,7 +156,10 @@ export class DungeonGenerator {
         console.log('total enemies', totalEnemies);
         console.log('free cells', freeCells.length, cells.length - totalEnemies);
 
-        return freeCells;
+        return {
+            freeCells,
+            totalEnemies
+        };
     }
 
     placeTraps(freeCells: Cell[]) {
@@ -263,7 +266,7 @@ export class DungeonGenerator {
         // pick random point as a start
         const startCell: Cell = {
             x: this.range(0, this._config.width - 1),
-            y: this.range(0, this._config.height - 1),
+            y: this.range(0, 5),
             c: []
         };
         let stack: Cell[] = [startCell];
@@ -292,7 +295,7 @@ export class DungeonGenerator {
         }
 
         // place enemies
-        let freeCells = await this.placeEnemies(startCell, cells);
+        let { freeCells, totalEnemies } = await this.placeEnemies(startCell, cells);
         freeCells = this.placeLoot(freeCells);
         freeCells = this.placeTraps(freeCells);
         freeCells = this.placeAltars(freeCells);
@@ -314,6 +317,7 @@ export class DungeonGenerator {
         }
 
         const dungeon: DungeonFloorData = {
+            enemiesLeft: totalEnemies,
             cells,
             width: this._config.width,
             start: startCell

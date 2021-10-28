@@ -68,6 +68,7 @@ export interface DungeonFloorData {
     start: Cell;
     cells: Cell[];
     width: number;
+    enemiesLeft: number;
 }
 
 export interface DungeonUserState {
@@ -121,6 +122,7 @@ export interface DungeonClientData {
         enemyId: number;
     };
     floor: number;
+    enemiesLeft: number;
 }
 
 export interface DungeonSaveData {

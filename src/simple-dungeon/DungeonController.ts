@@ -49,6 +49,10 @@ export class DungeonController {
         }
     }
 
+    get isComplete() {
+        return this._saveData.data.enemiesLeft <= 0;
+    }
+
     async dispose() {
         // flush data
         await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
@@ -88,6 +92,10 @@ export class DungeonController {
         if (this._saveData) {
             floor = this._saveData.state.floor;
             userState = this._saveData.state.user;
+        }
+
+        if (meta.dungeons.floors.length <= floor) {
+            floor = meta.dungeons.floors.length - 1;
         }
 
         const dungeon = new DungeonGenerator(meta.dungeons.floors[floor - 1]);
@@ -155,7 +163,8 @@ export class DungeonController {
             user: this._saveData.state.user,
             revealed,
             width: this._saveData.data.width,
-            height: Math.round(this._saveData.data.cells.length / this._saveData.data.width)
+            height: Math.round(this._saveData.data.cells.length / this._saveData.data.width),
+            enemiesLeft: this._saveData.data.enemiesLeft
         };
 
         if (this._saveData.state.combat) {
@@ -167,6 +176,15 @@ export class DungeonController {
         }
 
         return state;
+    }
+
+    async nextFloor() {
+        if (!this.isComplete) {
+            throw errors.IncorrectArguments;
+        }
+
+        this._saveData.state.floor++;
+        return this.generateNewFloor();
     }
 
     // reveal and move 
@@ -182,7 +200,7 @@ export class DungeonController {
         let correctReveal = false;
         // check if this cell has connection to any revealed cell
         for (const cellIdx of targetCell.c) {
-            if (this._revealedLookUp[cellIdx]) {
+            if (this._revealedLookUp[cellIdx] !== undefined) {
                 correctReveal = true;
                 break;
             }
@@ -327,6 +345,7 @@ export class DungeonController {
                     // get rewards
                     this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
                     this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
+                    this._saveData.data.enemiesLeft--;
                 }
 
                 if (this._combat.outcome != CombatOutcome.NobodyWon) {
