@@ -313,6 +313,8 @@ export class DungeonController {
         } else if (targetCell.loot) {
             this.consumeEnergy(meta.costs.chest);
             response = this.collectLoot(targetCell);
+        } else if (targetCell.exit) {
+            response = await this.nextFloor();
         }
         this._dungeonUser.updateInvisibility();
         this._events.flush();
@@ -473,6 +475,8 @@ export class DungeonController {
         if (lootData.items) {
             await this._user.inventory.addItemTemplates(lootData.items);
         }
+
+        this._dungeonUser.modifyEnergy(meta.mode.energyPerLoot);
 
         this._events.lootAcquired(this._revealedLookUp[this.cellToIndex(cell)]);
 

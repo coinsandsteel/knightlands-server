@@ -62,6 +62,7 @@ export interface Cell {
     loot?: number;
     altar?: DungeonAltarTile;
     trap?: DungeonTrapTile;
+    exit?: boolean;
 }
 
 export interface DungeonFloorData {

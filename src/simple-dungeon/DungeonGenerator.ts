@@ -262,7 +262,7 @@ export class DungeonGenerator {
     }
 
     async generate(): Promise<DungeonFloorData> {
-        let cells = new Array(this._config.width * this._config.height);
+        let cells: Cell[] = new Array(this._config.width * this._config.height);
         // pick random point as a start
         const startCell: Cell = {
             x: this.range(0, this._config.width - 1),
@@ -293,6 +293,8 @@ export class DungeonGenerator {
                 this.connect(currentCell, nbCell);
             }
         }
+
+        cells[this.range(cells.length - 20, cells.length - 1)].exit = true;
 
         // place enemies
         let { freeCells, totalEnemies } = await this.placeEnemies(startCell, cells);
