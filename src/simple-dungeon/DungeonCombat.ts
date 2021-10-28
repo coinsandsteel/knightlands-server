@@ -82,7 +82,7 @@ export class DungeonCombat {
             }
 
             // player win
-            this._state.enemyHealth -= this.getFinalDamage(this._user.attack, enemyData.defense, bonus);
+            this._state.enemyHealth -= this.getFinalDamage(this._user.attack, enemyData.defense, 1 + bonus);
             this._events.enemyHealth(this._state.enemyHealth);
         } else if (MoveWinTable[enemyMove] == playerMove || playerMove === -1) {
             if (this._user.offHand) {
@@ -92,7 +92,7 @@ export class DungeonCombat {
             }
 
             // enemy win
-            this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense, bonus));
+            this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense, 1 - bonus));
         }
 
         this._events.combatStep(playerMove, enemyMove);
@@ -107,6 +107,6 @@ export class DungeonCombat {
     }
 
     private getFinalDamage(attack: number, defense: number, weaponBonus: number) {
-        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))) * (1 + weaponBonus));
+        return Math.ceil(attack * (1 - ((0.01 * defense) / (1 + 0.01 * defense))) * weaponBonus);
     }
 }
