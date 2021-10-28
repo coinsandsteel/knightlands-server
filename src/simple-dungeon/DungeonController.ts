@@ -363,6 +363,14 @@ export class DungeonController {
         this._events.flush();
     }
 
+    testAction(action: string) {
+        if (action == "energy") {
+            this._dungeonUser.modifyEnergy(10);
+        }
+
+        this._events.flush();
+    }
+
     private killPlayer(enemyId: number) {
         // reset player position
         this._dungeonUser.moveTo(this.cellToIndex(this._saveData.data.start));

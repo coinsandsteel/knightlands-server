@@ -54,8 +54,7 @@ export class DungeonUser {
     }
 
     get maxEnergy() { // Base Energy +(1,01 * значение параметра Выносливость)+(1,05 * значение параметра Интеллект);
-        // return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
-        return 1000;
+        return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
     }
 
     get energyRegen() { // (86400/(10+(1,01 * значение параметра Выносливость)+(1,01 * значение параметра Интеллект))/ Текущий максимум энергии (Energy));
