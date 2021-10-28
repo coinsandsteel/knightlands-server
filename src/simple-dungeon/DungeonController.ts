@@ -303,7 +303,6 @@ export class DungeonController {
         let response = null;
 
         if (targetCell.enemy) {
-            this.consumeEnergy(meta.costs.enemy);
             this.startCombat(targetCell.enemy);
         } else if (targetCell.altar) {
             this.consumeEnergy(meta.costs.altar);
@@ -413,6 +412,9 @@ export class DungeonController {
     }
 
     private startCombat(enemy: CellEnemy) {
+        const enemyData = Game.dungeonManager.getEnemyData(enemy.id);
+        this.consumeEnergy(enemyData.difficulty);
+
         this._saveData.state.combat = this._combat.start(enemy.id, enemy.health);
         this._events.combatStarted(this._saveData.state.combat);
     }
