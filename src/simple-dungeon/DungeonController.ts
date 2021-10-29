@@ -259,6 +259,8 @@ export class DungeonController {
             // invisibility for 9 steps
             this._dungeonUser.addInvisibility(10);
             this._dungeonUser.addPotion(-1);
+        } else if (itemType == "key") {
+            this.defuseTrap(this.getRevealedCell(this._dungeonUser.position), true);
         }
 
         this._events.flush();
@@ -321,7 +323,7 @@ export class DungeonController {
                 this.useAltar(targetCell);
             } else if (targetCell.trap) {
                 this.consumeEnergy(meta.costs.trap);
-                this.defuseTrap(targetCell);
+                this.defuseTrap(targetCell, true);
             } else if (targetCell.loot) {
                 this.consumeEnergy(meta.costs.chest);
                 response = this.collectLoot(targetCell);
@@ -380,7 +382,7 @@ export class DungeonController {
                 cell.enemy.health = this._combat.enemyHealth;
             }
 
-            this._events.enemyNotDefeated(this._dungeonUser.position, cell.enemy.health);
+            this._events.enemyNotDefeated(this._revealedLookUp[this._dungeonUser.position], cell.enemy.health);
             this.killPlayer(this._combat.enemyId);
         } else if (this._combat.outcome == CombatOutcome.PlayerWon) {
             // delete enemy
@@ -486,7 +488,8 @@ export class DungeonController {
 
     private startCombat(enemy: CellEnemy) {
         const enemyData = Game.dungeonManager.getEnemyData(enemy.id);
-        this.consumeEnergy(enemyData.difficulty);
+        const meta = Game.dungeonManager.getMeta();
+        this.consumeEnergy(enemyData.difficulty * meta.costs.enemy);
 
         this._saveData.state.combat = this._combat.start(enemy.id, enemy.health);
         this._events.combatStarted(this._saveData.state.combat);
@@ -593,11 +596,15 @@ export class DungeonController {
         this._dungeonUser.moveTo(cellId);
     }
 
-    private defuseTrap(cell: Cell) {
+    private defuseTrap(cell: Cell, useEnergy: boolean) {
+        if (!cell.trap) {
+            return;
+        }
+
         const meta = Game.dungeonManager.getMeta();
         const trapData = meta.traps.traps[cell.trap.id];
         // use item if any
-        this._dungeonUser.defuseTrap(trapData);
+        this._dungeonUser.defuseTrap(trapData, useEnergy);
         this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
         delete cell.trap;
     }

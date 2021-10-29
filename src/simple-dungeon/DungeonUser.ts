@@ -55,7 +55,7 @@ export class DungeonUser {
     }
 
     get maxEnergy() { // Base Energy +(1,01 * значение параметра Выносливость)+(1,05 * значение параметра Интеллект);
-        return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 + this._state.stats.int));
+        return Math.ceil(this._progression.baseEnergy + (1.01 * this._state.stats.sta) + (1.05 * this._state.stats.int));
     }
 
     get energyRegen() { // (86400/(10+(1,01 * значение параметра Выносливость)+(1,01 * значение параметра Интеллект))/ Текущий максимум энергии (Energy));
@@ -203,8 +203,8 @@ export class DungeonUser {
         this._events.playerHealth(this.health);
     }
 
-    defuseTrap(trapData: TrapData) {
-        if (this._state.key > 0) {
+    defuseTrap(trapData: TrapData, useEnergy: boolean) {
+        if (!useEnergy && this._state.key > 0) {
             this._state.key--;
         } else {
             this.modifyEnergy(-trapData.damage);
