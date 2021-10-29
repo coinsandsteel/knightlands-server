@@ -82,6 +82,15 @@ export class DungeonUser {
         return this._state.oHand;
     }
 
+    revive() {
+        if (this._state.died) {
+            this._state.died = false;
+            return true;
+        }
+
+        return false;
+    }
+
     updateHealthAndEnergy(resetTimers: boolean = false) {
         const regenEvent: any = {};
 
@@ -120,6 +129,12 @@ export class DungeonUser {
         if (Object.keys(regenEvent).length != 0) {
             this._events.regenUpdate(regenEvent);
         }
+    }
+
+    die(newPosition: number) {
+        this._state.died = true;
+        this.moveTo(newPosition);
+        this.resetHealth();
     }
 
     hasEquip(id: number) {

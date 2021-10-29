@@ -83,6 +83,7 @@ export class DungeonController {
             oHand: 0,
             exp: 0,
             invis: 0,
+            died: false,
             equip: [],
             stats: {
                 str: 0,
@@ -119,6 +120,7 @@ export class DungeonController {
                 scroll: 0,
                 exp: 0,
                 invis: 0,
+                died: false,
                 equip: [],
                 stats: {
                     str: 0,
@@ -218,8 +220,10 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-        this.consumeEnergy(meta.costs.move * (path.length) - 1);// do not count newly revealed cell cost
+        if (!this._dungeonUser.revive()) {
+            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+            this.consumeEnergy(meta.costs.move * (path.length) - 1);// do not count newly revealed cell cost
+        }
 
         this.revealCell(targetCell, false);
 
@@ -280,9 +284,10 @@ export class DungeonController {
 
         const meta = Game.dungeonManager.getMeta();
 
-        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-
-        this.consumeEnergy(meta.costs.move * path.length);
+        if (!this._dungeonUser.revive()) {
+            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+            this.consumeEnergy(meta.costs.move * path.length);
+        }
 
         if (targetCell.trap) {
             this.triggerTrap(targetCell);
@@ -405,11 +410,12 @@ export class DungeonController {
     }
 
     estimateEnergy(cellId: number) {
-        const targetCell = this.getCell(cellId);
+        let targetCell = this.getRevealedCell(cellId);
 
         const meta = Game.dungeonManager.getMeta();
         let energyRequired = 0;
         if (!targetCell) {
+            targetCell = this.getCell(cellId);
             this.checkCorrectReveal(targetCell);
 
             energyRequired += meta.costs.reveal;
@@ -446,10 +452,7 @@ export class DungeonController {
     }
 
     private killPlayer(enemyId: number) {
-        // reset player position
-        this._dungeonUser.moveTo(this.cellToIndex(this._saveData.data.start));
-        // refill his health
-        this._dungeonUser.resetHealth();
+        this._dungeonUser.die(this.cellToIndex(this._saveData.data.start));
 
         const enemyData = Game.dungeonManager.getEnemyData(enemyId);
         if (enemyData.isAggressive) {
@@ -465,7 +468,6 @@ export class DungeonController {
         }
         const cellId = this.cellToIndex(cell);
         this._revealedLookUp[cellId] = this._saveData.state.revealed.push(cellId) - 1;
-        this._aStar.add(cellId, cell);
         this._events.cellRevealed(cell);
     }
 
@@ -625,9 +627,9 @@ export class DungeonController {
         for (const cellId of this._saveData.state.revealed) {
             this._revealedLookUp[cellId] = index;
             index++;
-
-            this._aStar.add(cellId, this.getCell(cellId));
         }
+
+        this._aStar.cache(this._saveData.data.cells);
     }
 
     cellToIndex(cell: Cell) {

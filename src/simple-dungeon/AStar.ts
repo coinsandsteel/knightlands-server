@@ -52,8 +52,10 @@ export class AStar {
         this._nodes = {};
     }
 
-    add(index: number, cell: Cell) {
-        this._nodes[index] = new GNode(cell);
+    cache(cells: Cell[]) {
+        for (let i = 0, l = cells.length; i < l; ++i) {
+            this._nodes[i] = new GNode(cells[i]);
+        }
     }
 
     /**

@@ -80,6 +80,7 @@ export interface DungeonUserState {
     scroll: number;
     key: number;
     potion: number;
+    died: boolean;
     exp: number;
     equip: number[];
     mHand: number;
