@@ -126,6 +126,7 @@ export interface DungeonClientData {
     };
     floor: number;
     enemiesLeft: number;
+    startTime: number;
 }
 
 export interface DungeonSaveData {
@@ -230,6 +231,7 @@ export interface ItemData {
 }
 
 export interface DungeonMeta {
+    startTime: number;
     costs: EnergyCostSettings;
     mode: ModeSettings;
     dungeons: DungeonData;

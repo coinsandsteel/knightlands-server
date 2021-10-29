@@ -163,7 +163,10 @@ export class DungeonController {
             revealed[i] = this.getCell(this._saveData.state.revealed[i]);
         }
 
+        const meta = Game.dungeonManager.getMeta();
+
         const state: DungeonClientData = {
+            startTime: meta.startTime,
             floor: this._saveData.state.floor,
             user: this._saveData.state.user,
             revealed,
@@ -185,6 +188,12 @@ export class DungeonController {
 
     async nextFloor() {
         if (!this.isComplete) {
+            throw errors.IncorrectArguments;
+        }
+
+        const meta = Game.dungeonManager.getMeta();
+        const totalFloorsAllowed = Math.ceil((Game.now - meta.startTime) / 86400);
+        if (totalFloorsAllowed <= this._saveData.state.floor) {
             throw errors.IncorrectArguments;
         }
 
@@ -361,12 +370,12 @@ export class DungeonController {
         this._events.flush();
     }
 
-    async combatAction(action, data) {
+    async combatAction(move: number) {
         if (!this._saveData.state.combat) {
             throw errors.IncorrectArguments;
         }
 
-        const outcomes = this._combat.resolveOutcome(data.move);
+        const outcomes = this._combat.resolveOutcome(move);
         const cell = this.getRevealedCell(this._dungeonUser.position);
         const enemyData = Game.dungeonManager.getEnemyData(cell.enemy.id);
 

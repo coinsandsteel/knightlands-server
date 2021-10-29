@@ -1790,11 +1790,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _sDungeonCombatAction(_, data) {
-        if (!isNumber(data.action)) {
+        if (!isNumber(data.data.move)) {
             throw Errors.IncorrectArguments;
         }
 
-        return this.simpleDungeon.combatAction(data.action, data.data);
+        return this.simpleDungeon.combatAction(data.data.move);
     }
 
     async _sDungeonMove(_, data) {
