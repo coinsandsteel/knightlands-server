@@ -40,8 +40,6 @@ export interface DungeonLootData {
 export interface DungeonFloorConfig {
     width: number;
     height: number;
-    extraPassageChance: number;
-    missedPassageChanceInc: number;
     enemies: DungeonEnemiesCompact[];
     loot: DungeonLootData[];
     altars: DungeonAltarsCompact[];
@@ -154,6 +152,8 @@ export interface LootData {
 export interface DungeonData {
     floors: DungeonFloorConfig[];
     extraEquipmentItem: any;
+    extraPassageChance: number;
+    extraPassageExtraChance: number;
 }
 
 export interface EnemyMoveSet {

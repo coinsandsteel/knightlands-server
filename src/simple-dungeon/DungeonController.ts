@@ -213,18 +213,7 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        let correctReveal = false;
-        // check if this cell has connection to any revealed cell
-        for (const cellIdx of targetCell.c) {
-            if (this._revealedLookUp[cellIdx] !== undefined) {
-                correctReveal = true;
-                break;
-            }
-        }
-
-        if (!correctReveal) {
-            throw errors.IncorrectArguments;
-        }
+        this.checkCorrectReveal(targetCell);
 
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
@@ -311,36 +300,42 @@ export class DungeonController {
      * 
      */
     async useCell(cellId: number) {
-        this.assertNotInCombat();
+        try {
+            this.assertNotInCombat();
 
-        this._dungeonUser.updateHealthAndEnergy();
+            this._dungeonUser.updateHealthAndEnergy();
 
-        const targetCell = this.getRevealedCell(cellId);
+            const targetCell = this.getRevealedCell(cellId);
 
-        if (!targetCell) {
-            throw errors.IncorrectArguments;
+            if (!targetCell) {
+                throw errors.IncorrectArguments;
+            }
+
+            const meta = Game.dungeonManager.getMeta();
+            let response = null;
+
+            if (targetCell.enemy) {
+                this.startCombat(targetCell.enemy);
+            } else if (targetCell.altar) {
+                this.consumeEnergy(meta.costs.altar);
+                this.useAltar(targetCell);
+            } else if (targetCell.trap) {
+                this.consumeEnergy(meta.costs.trap);
+                this.defuseTrap(targetCell);
+            } else if (targetCell.loot) {
+                this.consumeEnergy(meta.costs.chest);
+                response = this.collectLoot(targetCell);
+            } else if (targetCell.exit) {
+                response = await this.nextFloor();
+            }
+            this._dungeonUser.updateInvisibility();
+
+            return response;
+        } catch (exc) {
+            throw exc;
+        } finally {
+            this._events.flush();
         }
-
-        const meta = Game.dungeonManager.getMeta();
-        let response = null;
-
-        if (targetCell.enemy) {
-            this.startCombat(targetCell.enemy);
-        } else if (targetCell.altar) {
-            this.consumeEnergy(meta.costs.altar);
-            this.useAltar(targetCell);
-        } else if (targetCell.trap) {
-            this.consumeEnergy(meta.costs.trap);
-            this.defuseTrap(targetCell);
-        } else if (targetCell.loot) {
-            this.consumeEnergy(meta.costs.chest);
-            response = this.collectLoot(targetCell);
-        } else if (targetCell.exit) {
-            response = await this.nextFloor();
-        }
-        this._dungeonUser.updateInvisibility();
-        this._events.flush();
-        return response;
     }
 
     async equip(mHand: number, oHand: number) {
@@ -407,12 +402,45 @@ export class DungeonController {
         return outcomes;
     }
 
+    estimateEnergy(cellId: number) {
+        const targetCell = this.getCell(cellId);
+
+        const meta = Game.dungeonManager.getMeta();
+        let energyRequired = 0;
+        if (!targetCell) {
+            this.checkCorrectReveal(targetCell);
+
+            energyRequired += meta.costs.reveal;
+            energyRequired -= meta.costs.move;
+        }
+
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+
+        energyRequired += path.length * meta.costs.move;
+        return energyRequired;
+    }
+
     testAction(action: string) {
         if (action == "energy") {
             this._dungeonUser.modifyEnergy(10);
         }
 
         this._events.flush();
+    }
+
+    private checkCorrectReveal(targetCell: Cell) {
+        let correctReveal = false;
+        // check if this cell has connection to any revealed cell
+        for (const cellIdx of targetCell.c) {
+            if (this._revealedLookUp[cellIdx] !== undefined) {
+                correctReveal = true;
+                break;
+            }
+        }
+
+        if (!correctReveal) {
+            throw errors.IncorrectArguments;
+        }
     }
 
     private killPlayer(enemyId: number) {

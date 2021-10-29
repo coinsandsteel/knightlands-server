@@ -302,19 +302,28 @@ export class DungeonGenerator {
 
         freeCells[freeCells.length - 1].exit = true;
 
+        const meta = Game.dungeonManager.getMeta();
+
         // randomly open extra passsages
-        let openChance = this._config.extraPassageChance;
+        const { extraPassageChance, extraPassageExtraChance } = meta.dungeons;
+
+        let openChance = extraPassageChance;
         for (const cell of cells) {
+            let opened = false;
             if (cell.c.length < 4) {
                 const neighbours = this.randomNotConnected(cell);
                 for (const nbCell of neighbours) {
                     if (this.range(1, 100) <= openChance) {
                         this.connect(cells[this.cellToIndex(nbCell)], cell);
-                        openChance = this._config.missedPassageChanceInc;
-                    } else {
-                        openChance += this._config.extraPassageChance;
+                        opened = true;
                     }
+
+                    openChance += extraPassageExtraChance;
                 }
+            }
+
+            if (opened) {
+                openChance = extraPassageChance;
             }
         }
 

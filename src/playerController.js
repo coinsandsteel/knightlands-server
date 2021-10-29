@@ -244,6 +244,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonNextFloor, this._gameHandler(this._sDungeonNextFloor.bind(this)));
         this._socket.on(Operations.SDungeonTestAction, this._gameHandler(this._sDungeonTestAction.bind(this)));
         this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
+        this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1820,6 +1821,14 @@ class PlayerController extends IPaymentListener {
     async _sDungeonEquip(_, data) {
         const { mHand, oHand } = data;
         return this.simpleDungeon.equip(mHand, oHand);
+    }
+
+    async _sDungeonPath(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.estimateEnergy(data.cellId);
     }
 }
 
