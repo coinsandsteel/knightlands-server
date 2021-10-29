@@ -91,7 +91,7 @@ export class DungeonGenerator {
         // according to the list's order and quantity
         // this will let players compete in a random dungeon
         // with similar difficulty
-        const enemyList = [this.expandConfig(this._config.enemies)[0]];
+        const enemyList = this.expandConfig(this._config.enemies);
         console.log("enemies to place", enemyList.length);
 
         const maxDistanceBetweenEnemies = (cells.length / enemyList.length) * 0.95;
