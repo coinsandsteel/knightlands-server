@@ -1,4 +1,3 @@
-import { MoveType, AltarType, TrapType } from "../knightlands-shared/dungeon_types";
 
 export interface CompactedConfig {
     count: number;

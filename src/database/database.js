@@ -80,6 +80,7 @@ module.exports = {
         ActivityHistory: "activity_history",
         TokenDepositErrors: "token_deposit_errors",
         PresaleCardDeposits: "presale_card_deposits",
+        HalloweenRanks: "halloween_ranks",
         HalloweenUsers: "halloween_users",
         HalloweenFloors: "halloween_floors"
     },

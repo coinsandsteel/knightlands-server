@@ -2,7 +2,7 @@ import { Collection } from "mongodb";
 import { isNumber } from "../validation";
 import { Collections } from "../database/database";
 import Game from "../game";
-import { CombatAction } from "../knightlands-shared/dungeon_types";
+import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
 import errors from "../knightlands-shared/errors";
 import random from "../random";
 import User from "../user";
@@ -264,7 +264,7 @@ export class DungeonController {
             this._dungeonUser.addInvisibility(10);
             this._dungeonUser.addPotion(-1);
         } else if (itemType == "key") {
-            this.defuseTrap(this.getRevealedCell(this._dungeonUser.position), true);
+            await this.defuseTrap(this.getRevealedCell(this._dungeonUser.position), true);
         }
 
         this._events.flush();
@@ -325,10 +325,10 @@ export class DungeonController {
                 this.startCombat(targetCell.enemy);
             } else if (targetCell.altar) {
                 this.consumeEnergy(meta.costs.altar);
-                this.useAltar(targetCell);
+                await this.useAltar(targetCell);
             } else if (targetCell.trap) {
                 this.consumeEnergy(meta.costs.trap);
-                this.defuseTrap(targetCell, true);
+                await this.defuseTrap(targetCell, true);
             } else if (targetCell.loot) {
                 this.consumeEnergy(meta.costs.chest);
                 response = this.collectLoot(targetCell);
@@ -396,6 +396,7 @@ export class DungeonController {
             this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
             this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
             this._saveData.data.enemiesLeft--;
+            await this.increaseRank(enemyData.difficulty);
         }
 
         if (this._combat.outcome != CombatOutcome.NobodyWon) {
@@ -557,6 +558,8 @@ export class DungeonController {
 
         this._events.lootAcquired(this._revealedLookUp[this.cellToIndex(cell)]);
 
+        await this.increaseRank(1);
+
         delete cell.loot;
 
         return lootData;
@@ -599,7 +602,7 @@ export class DungeonController {
         this._dungeonUser.moveTo(cellId);
     }
 
-    private defuseTrap(cell: Cell, useEnergy: boolean) {
+    private async defuseTrap(cell: Cell, useEnergy: boolean) {
         if (!cell.trap) {
             return;
         }
@@ -610,15 +613,22 @@ export class DungeonController {
         this._dungeonUser.defuseTrap(trapData, useEnergy);
         this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
         delete cell.trap;
+        await this.increaseRank(3);
     }
 
-    private useAltar(cell: Cell) {
+    private async useAltar(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
         const altarData = meta.altars.altars[cell.altar.id];
 
         this._dungeonUser.applyAltar(altarData);
         delete cell.altar;
         this._events.altarApplied(this._revealedLookUp[this.cellToIndex(cell)]);
+
+        if (altarData.type == AltarType.Energy) {
+            await this.increaseRank(2);
+        } else {
+            await this.increaseRank(1);
+        }
     }
 
     private indexRevealedCells() {
@@ -642,5 +652,9 @@ export class DungeonController {
             this._dungeonUser = new DungeonUser(this._saveData.state.user, this._events, Game.dungeonManager.getMeta().progression);
             this._combat = new DungeonCombat(this._dungeonUser, this._events);
         }
+    }
+
+    private async increaseRank(points: number) {
+        await Game.dungeonManager.updateRank(this._user.id, points);
     }
 }

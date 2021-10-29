@@ -245,6 +245,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonTestAction, this._gameHandler(this._sDungeonTestAction.bind(this)));
         this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
         this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
+        this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1829,6 +1830,18 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.estimateEnergy(data.cellId);
+    }
+
+    async _sDungeonRank(user, data) {
+        if (data.personal) {
+            return Game.dungeonManager.getUserRank(user.id);
+        }
+
+        if (!isNumber(data.page)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return Game.dungeonManager.getRankings(data.page);
     }
 }
 
