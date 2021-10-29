@@ -419,12 +419,13 @@ export class DungeonController {
             this.checkCorrectReveal(targetCell);
 
             energyRequired += meta.costs.reveal;
-            energyRequired -= meta.costs.move;
         }
 
-        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-
-        energyRequired += path.length * meta.costs.move;
+        if (!this._dungeonUser.revive(true)) {
+            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+            energyRequired += (path.length * meta.costs.move - energyRequired);
+        }
+        
         return energyRequired;
     }
 

@@ -82,9 +82,12 @@ export class DungeonUser {
         return this._state.oHand;
     }
 
-    revive() {
+    revive(peek: boolean = false) {
         if (this._state.died) {
-            this._state.died = false;
+            if (!peek) {
+                this._state.died = false;
+            }
+            
             return true;
         }
 
