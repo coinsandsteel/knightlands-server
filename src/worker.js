@@ -105,7 +105,8 @@ class Worker extends SCWorker {
             this._userPremiumService,
             this._rankings,
             this._armyManager,
-            this._shop
+            this._shop,
+            this._iapExecutor
         );
 
         this._giveaway = new Giveaway(app);

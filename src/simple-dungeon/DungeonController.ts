@@ -13,6 +13,8 @@ import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
 import { Cell, CellEnemy, DungeonClientData, DungeonSaveData } from "./types";
 
+const IAP_TAG = "hallowen";
+
 export class DungeonController {
     private _user: User;
     private _dungeonUser: DungeonUser;
@@ -54,9 +56,45 @@ export class DungeonController {
         return this._saveData.data.enemiesLeft <= 0;
     }
 
+    async getEntranceStatus() {
+        const userId = this._user.id;
+        return Game.paymentProcessor.fetchPaymentStatus(userId, IAP_TAG, { "context.userId": userId });
+    }
+
+    async enter(allow: boolean, chain: string, address: string) {
+        if (allow) {
+            this._saveData.state.user.level = 1;
+            this._events.playerLevel(1);
+            await this._save();
+            this._events.flush();
+        } else {
+            if (this._saveData.state.user.level == 0) {
+                const { iap } = Game.dungeonManager.getMeta();
+                const userId = this._user.id;
+                let iapContext = {
+                    userId
+                };
+
+                let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, IAP_TAG);
+                if (hasPendingPayment) {
+                    return hasPendingPayment;
+                }
+
+                return Game.paymentProcessor.requestPayment( 
+                    userId,
+                    iap,
+                    IAP_TAG,
+                    iapContext,
+                    address,
+                    chain
+                );
+            }
+        }
+    }
+
     async dispose() {
         // flush data
-        await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
+        await this._save()
     }
 
     async load() {
@@ -64,13 +102,11 @@ export class DungeonController {
     }
 
     async generateNewFloor(force: boolean = false) {
-        await Game.dungeonManager.init();
-
         const meta = Game.dungeonManager.getMeta();
 
         let floor = 1;
         let userState = {
-            level: 1,
+            level: 0,
             energy: meta.mode.dailyEnergy,
             cell: 0,
             health: 1000,
@@ -107,7 +143,7 @@ export class DungeonController {
 
         if (force) {
             userState = {
-                level: 1,
+                level: 0,
                 energy: meta.mode.dailyEnergy,
                 cell: 0,
                 health: 1000,
@@ -205,6 +241,7 @@ export class DungeonController {
 
     // reveal and move 
     async reveal(cellId: number) {
+        this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
 
@@ -247,6 +284,7 @@ export class DungeonController {
     }
 
     async useItem(itemType: string) {
+        this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
 
@@ -271,6 +309,7 @@ export class DungeonController {
     }
 
     async moveTo(cellId: number) {
+        this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
 
@@ -307,6 +346,8 @@ export class DungeonController {
      * 
      */
     async useCell(cellId: number) {
+        this.assertAllowedToPlayer();
+
         try {
             this.assertNotInCombat();
 
@@ -346,6 +387,8 @@ export class DungeonController {
     }
 
     async equip(mHand: number, oHand: number) {
+        this.assertAllowedToPlayer();
+
         if (!isNumber(mHand) || !isNumber(oHand)) {
             throw errors.IncorrectArguments;
         }
@@ -373,6 +416,8 @@ export class DungeonController {
     }
 
     async combatAction(move: number) {
+        this.assertAllowedToPlayer();
+
         if (!this._saveData.state.combat) {
             throw errors.IncorrectArguments;
         }
@@ -656,5 +701,15 @@ export class DungeonController {
 
     private async increaseRank(points: number) {
         await Game.dungeonManager.updateRank(this._user.id, points);
+    }
+
+    private async _save() {
+        await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
+    }
+
+    private assertAllowedToPlayer() {
+        if (this._saveData.state.user.level == 0) {
+            throw errors.IncorrectArguments;
+        }
     }
 }

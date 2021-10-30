@@ -45,7 +45,7 @@ export class DividendsRegistry {
         this._season = season;
 
         this._blockchain = blockchain;
-        this._blockchain.on(Blockchain.Payment, this.handleRewards.bind(this));
+        // this._blockchain.on(Blockchain.Payment, this.handleRewards.bind(this));
         this._blockchain.on(Blockchain.DividendWithdrawal, this.handleDivsWithdawal.bind(this));
         this._blockchain.on(Blockchain.DividendTokenWithdrawal, this.handleTokenWithdawal.bind(this));
         this._blockchain.on(Blockchain.BurntTokenWithdrawal, this.handleTokenWithdawal.bind(this));

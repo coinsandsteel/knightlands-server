@@ -39,7 +39,8 @@ class Game extends EventEmitter {
         userPremiumService,
         rankings,
         armyManager,
-        shop
+        shop,
+        iapExecutor
     ) {
         this.dbClient = dbClient;
         this.shop = shop;
@@ -70,7 +71,7 @@ class Game extends EventEmitter {
         this._players = {};
         this._playersById = {};
 
-        await this.dungeonManager.init();
+        await this.dungeonManager.init(iapExecutor);
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();

@@ -4,8 +4,10 @@ import { ConnectionString, Collections } from "./database";
 export class DatabaseClient {
     private _client: MongoClient;
 
-    constructor() {
-        const uri = process.env.MONGO_URI ? process.env.MONGO_URI : ConnectionString;
+    constructor({
+        overrideUri = null
+    } = {}) {
+        const uri = overrideUri ? overrideUri : process.env.MONGO_URI ? process.env.MONGO_URI : ConnectionString;
         const client = new MongoClient(uri);
         this._client = client;
     }

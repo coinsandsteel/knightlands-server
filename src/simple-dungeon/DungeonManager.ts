@@ -2,6 +2,7 @@ import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { DungeonMeta } from "./types";
+import Events from "../knightlands-shared/events";
 
 const PAGE_SIZE = 50;
 
@@ -13,7 +14,7 @@ export class DungeonManager {
 
     }
 
-    async init() {
+    async init(iapExecutor) {
         this._collection = Game.db.collection(Collections.HalloweenRanks);
         this._collection.createIndex({ score: 1 });
         this._collection.createIndex({ order: 1 });
@@ -30,6 +31,12 @@ export class DungeonManager {
                 index++;
             }
         }
+
+        iapExecutor.registerAction(this._meta.iap, async context => {
+            return this._allowEntrance(context.iap, context.userId);
+        });
+
+        iapExecutor.mapIAPtoEvent(this._meta.iap, Events.PurchaseComplete);
     }
 
     getMeta() {
@@ -71,8 +78,12 @@ export class DungeonManager {
         };
     }
 
+    async totalPlayers() {
+        return this._collection.find({}).count();
+    }
+
     async getRankings(page: number) {
-        const total = await this._collection.find({}).count();
+        const total = await this.totalPlayers();
 
         const records = await this._collection.aggregate([
             { $sort: { score: -1, order: 1 } },
@@ -100,5 +111,10 @@ export class DungeonManager {
             records,
             finished: total <= page * PAGE_SIZE + PAGE_SIZE
         };
+    }
+
+    async _allowEntrance(iap: string, userId: ObjectId) {
+        const controller = await Game.getPlayerControllerById(userId);
+        await controller.enterHalloween();
     }
 }

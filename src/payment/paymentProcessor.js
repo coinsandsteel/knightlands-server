@@ -145,14 +145,8 @@ class PaymentProcessor extends EventEmitter {
     }
 
     async hasPendingRequestByContext(userId, context, tag) {
-        let request = await this._db.collection(Collections.PaymentRequests).findOne({
-            userId,
-            context,
-            tag,
-            status: PaymentStatus.Pending
-        });
-
-        return !!request;
+        const request = await this.fetchPendingPayments(userId, tag, context);
+        return request && request.length > 0;
     }
 
     async requestPayment(userId, iap, tag, context, address, chain) {
@@ -224,7 +218,6 @@ class PaymentProcessor extends EventEmitter {
 
     async start() {
         await this._proceedPayments();
-        await this._trackPendingPayments();
     }
 
     async _proceedPayments() {
@@ -244,24 +237,6 @@ class PaymentProcessor extends EventEmitter {
         }
 
         console.log("Proceeding iaps finished.");
-    }
-
-    async _trackPendingPayments() {
-        console.log("Track pending iaps...");
-
-        // get all unclaimed and finished payments
-        let requests = await this._db.collection(Collections.PaymentRequests).find({
-            status: PaymentStatus.Pending
-        }).toArray();
-
-        let i = 0;
-        const length = requests.length;
-        for (; i < length; ++i) {
-            let request = requests[i];
-            await this._blockchain.getBlockchain(blockchains.Tron).trackTransactionStatus(this._blockchain.getBlockchain(blockchains.Tron).PaymentGatewayAddress, request._id, request.userId, request.transactionId);
-        }
-
-        console.log("Track pending iaps finished.");
     }
 
     async _handleBlockchainPayment(id, paymentRecipe) {

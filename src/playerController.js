@@ -17,7 +17,8 @@ import CharacterStat from "./knightlands-shared/character_stat";
 const Config = require("./config");
 
 const {
-    Collections
+    Collections,
+    default: database
 } = require("./database/database");
 
 import Game from "./game";
@@ -246,6 +247,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
         this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
         this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
+        this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1841,7 +1843,23 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
+        if (data.total) {
+            return Game.dungeonManager.totalPlayers();
+        }
+
         return Game.dungeonManager.getRankings(data.page);
+    }
+
+    async _sDungeonEnter(_, data) {
+        if (data.status) {
+            return this.simpleDungeon.getEntranceStatus();
+        }
+
+        return this.simpleDungeon.enter(false, data.chain, data.address);
+    }
+
+    async enterHalloween() {
+        return this.simpleDungeon.enter(true);
     }
 }
 

@@ -45,7 +45,7 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     Blockchains.Polygon,
                     "matic-network",
-                    { firstBlock: 19610505, scanInterval: 3000, confirmations: 50 },
+                    { firstBlock: 19610505, scanInterval: 3000, confirmations: 100 },
                     {
                         PaymentGateway,
                         PresaleCardsGate

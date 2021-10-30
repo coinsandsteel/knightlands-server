@@ -231,6 +231,7 @@ export interface ItemData {
 }
 
 export interface DungeonMeta {
+    iap: string;
     startTime: number;
     costs: EnergyCostSettings;
     mode: ModeSettings;

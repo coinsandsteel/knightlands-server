@@ -83,11 +83,11 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
+        await this._lock.acquire("rank");
+
         if (this.finished) {
             return;
         }
-
-        await this._lock.acquire("rank");
 
         try {
             let userRank = <RankingRecord>await this.getUserRank(userId);
@@ -212,7 +212,6 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
 
     private async _handleRankUpdate() {
         let totalRewards = this.config.rewards.length;
-        const target = this.target;
         const players = await this._ranking.getParticipants(totalRewards);
         this.targetsHit = 0;
 
