@@ -199,6 +199,20 @@ export class DungeonUser {
         this._events.playerExp(this._state.exp);
     }
 
+    changeStats(stats: object) {
+        this._state.stats = { ...this._state.stats, ...stats };
+        this._events.statsChanged(this._state.stats);
+    }
+
+    canUpdateStats() {
+      let statsSum = 0;
+      Object
+        .values(this._state.stats)
+        .forEach(val => statsSum += val);
+
+      return statsSum < this._state.level - 1;
+    }
+
     modifyEnergy(value: number, checkMax: boolean = false) {
         this._state.energy += value;
         if (this._state.energy < 0) {

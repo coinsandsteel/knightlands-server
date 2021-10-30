@@ -248,6 +248,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
         this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
         this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
+        this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1856,6 +1857,20 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.enter(false, data.chain, data.address);
+    }
+
+    async _sDungeonCommitStats(_, data) {
+        if (!data.stats) {
+          throw Errors.IncorrectArguments;
+        }
+        
+        for (let key in data.stats) {
+            if (!isNumber(data.stats[key])) {
+                throw Errors.IncorrectArguments;
+            }
+        }
+
+        return this.simpleDungeon.commitStats(data.stats);
     }
 
     async enterHalloween() {
