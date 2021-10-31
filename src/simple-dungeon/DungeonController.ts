@@ -66,9 +66,9 @@ export class DungeonController {
         return Game.paymentProcessor.fetchPaymentStatus(userId, IAP_TAG, { "context.userId": userId });
     }
 
-    async enter(allow: boolean, isFree: boolean, chain: string, address: string) {
+    async enter(allow: boolean, isFree: boolean, chain: string = undefined, address: string = undefined) {
         if (allow) {
-            this._saveData.state.user.level = 1;
+            this._saveData.state.user.level = this._saveData.state.user.level || 1;
             this._saveData.state.isFree = isFree;
             
             await this._save();

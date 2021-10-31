@@ -3,6 +3,7 @@ import { Collections } from "../database/database";
 import Game from "../game";
 import { DungeonMeta } from "./types";
 import Events from "../knightlands-shared/events";
+import { DungeonController } from "./DungeonController";
 
 const PAGE_SIZE = 50;
 
@@ -114,7 +115,14 @@ export class DungeonManager {
     }
 
     async _allowEntrance(iap: string, userId: ObjectId) {
-        const controller = await Game.getPlayerControllerById(userId);
-        await controller.enterHalloween();
+        let controller = await Game.getPlayerControllerById(userId);
+        if (!controller) {
+            const dungeon = new DungeonController(await Game.getUserById(userId));
+            await dungeon.init();
+            await dungeon.enter(true, false);
+        } else {
+            await controller.enterHalloween();
+        }
+        
     }
 }
