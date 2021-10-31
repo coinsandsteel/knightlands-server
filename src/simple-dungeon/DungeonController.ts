@@ -307,9 +307,11 @@ export class DungeonController {
 
         this._dungeonUser.updateHealthAndEnergy();
 
+        let response = true;
+
         if (itemType == "scroll") {
             // reveal neighbour cells
-            this.revealClosestCells();
+            response = this.revealClosestCells();
         } else if (itemType == "potion") {
             // invisibility for 9 steps
             this._dungeonUser.addInvisibility(10);
@@ -319,6 +321,8 @@ export class DungeonController {
         }
 
         this._events.flush();
+
+        return response;
     }
 
     async moveTo(cellId: number) {
@@ -742,10 +746,19 @@ export class DungeonController {
     }
 
     private revealClosestCells() {
+        let revealed = false;
         const currentCell = this.getRevealedCell(this._dungeonUser.position);
         for (const cellIdx of currentCell.c) {
-            this.revealCell(this.getCell(cellIdx), true);
+            if (!this._revealedLookUp[cellIdx]) {
+                revealed = true;
+                this.revealCell(this.getCell(cellIdx), true);
+            }
         }
-        this._dungeonUser.addScroll(-1);
+
+        if (revealed) {
+            this._dungeonUser.addScroll(-1);
+        }
+        
+        return revealed;
     }
 }
