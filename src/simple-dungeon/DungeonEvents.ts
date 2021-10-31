@@ -100,4 +100,8 @@ export class DungeonEvents {
             oHand
         }
     }
+
+    statsChanged(stats) {
+        this._events.stats = stats;
+    }
 }

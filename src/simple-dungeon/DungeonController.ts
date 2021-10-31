@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { Collection } from "mongodb";
 import { isNumber } from "../validation";
 import { Collections } from "../database/database";
@@ -481,6 +482,16 @@ export class DungeonController {
             this._dungeonUser.modifyEnergy(10);
         }
 
+        this._events.flush();
+    }
+
+    commitStats(stats: object) {
+        if (!this._dungeonUser.canUpdateStats()) {
+          throw errors.IncorrectArguments;
+        }
+        
+        const passedStats = _.pick(stats, ['str','dex','int','sta']);
+        this._dungeonUser.changeStats(passedStats);
         this._events.flush();
     }
 
