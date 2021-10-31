@@ -53,6 +53,10 @@ export class DungeonController {
         }
     }
 
+    get isFree() {
+        return this._saveData.state.isFree;
+    }
+
     get isComplete() {
         return this._saveData.data.enemiesLeft <= 0;
     }
@@ -62,11 +66,15 @@ export class DungeonController {
         return Game.paymentProcessor.fetchPaymentStatus(userId, IAP_TAG, { "context.userId": userId });
     }
 
-    async enter(allow: boolean, chain: string, address: string) {
+    async enter(allow: boolean, isFree: boolean, chain: string, address: string) {
         if (allow) {
             this._saveData.state.user.level = 1;
-            this._events.playerLevel(1);
+            this._saveData.state.isFree = isFree;
+            
             await this._save();
+
+            this._events.playerLevel(1);
+            this._events.notFree();
             this._events.flush();
         } else {
             if (this._saveData.state.user.level == 0) {
@@ -106,6 +114,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
 
         let floor = 1;
+        let isFree = true;
         let userState = {
             level: 0,
             energy: meta.mode.dailyEnergy,
@@ -132,6 +141,7 @@ export class DungeonController {
 
         if (this._saveData) {
             floor = this._saveData.state.floor;
+            isFree = this._saveData.state.isFree;
             userState = this._saveData.state.user;
         }
 
@@ -174,6 +184,7 @@ export class DungeonController {
 
         this._saveData = {
             state: {
+                isFree,
                 floor,
                 revealed: [userState.cell],
                 cycle: this._user.getDailyRewardCycle(),
@@ -205,6 +216,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
 
         const state: DungeonClientData = {
+            isFree: this.isFree,
             startTime: meta.startTime,
             floor: this._saveData.state.floor,
             user: this._saveData.state.user,
@@ -394,17 +406,21 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        if (!this._dungeonUser.hasEquip(mHand) || !this._dungeonUser.hasEquip(oHand)) {
+        if ((mHand > 0 && !this._dungeonUser.hasEquip(mHand)) || (oHand > 0 && !this._dungeonUser.hasEquip(oHand))) {
             throw errors.IncorrectArguments;
         }
 
         const meta = Game.dungeonManager.getMeta();
-        if (meta.items[mHand].defensive) {
-            throw errors.IncorrectArguments;
+        if (mHand > 0) {
+            if (meta.items[mHand].defensive) {
+                throw errors.IncorrectArguments;
+            }
         }
-
-        if (!meta.items[oHand].defensive) {
-            throw errors.IncorrectArguments;
+        
+        if (oHand > 0) {
+            if (!meta.items[oHand].defensive) {
+                throw errors.IncorrectArguments;
+            }
         }
 
         this._dungeonUser.equip(mHand, oHand);
@@ -573,13 +589,11 @@ export class DungeonController {
     private async collectLoot(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
         const config = meta.dungeons.floors[this._saveData.state.floor - 1];
-        const loot = config.loot[cell.loot - 1];
-
+        const loot = this._saveData.state.isFree ? config.freeLoot[cell.loot - 1] : config.loot[cell.loot - 1];
 
         let lootData: any = {};
         if (loot.mainGameLoot) {
             lootData.items = await Game.lootGenerator.getLootFromTable(loot.mainGameLoot);
-
         }
 
         if (loot.equipment) {
@@ -711,6 +725,9 @@ export class DungeonController {
     }
 
     private async increaseRank(points: number) {
+        if (this.isFree) {
+            return;
+        }
         await Game.dungeonManager.updateRank(this._user.id, points);
     }
 

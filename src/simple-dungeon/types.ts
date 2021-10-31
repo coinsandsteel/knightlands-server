@@ -41,6 +41,7 @@ export interface DungeonFloorConfig {
     height: number;
     enemies: DungeonEnemiesCompact[];
     loot: DungeonLootData[];
+    freeLoot: DungeonLootData[];
     altars: DungeonAltarsCompact[];
     traps: DungeonTrapsCompact[];
 }
@@ -111,6 +112,7 @@ export interface DungeonClientState {
     defHidden: number;
     user: DungeonUserState;
     combat?: CombatState;
+    isFree: boolean;
 }
 
 export interface DungeonClientData {
@@ -123,6 +125,7 @@ export interface DungeonClientData {
         enemyHealth: number;
         enemyId: number;
     };
+    isFree: boolean;
     floor: number;
     enemiesLeft: number;
     totalEnemies: number;

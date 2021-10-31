@@ -1856,14 +1856,18 @@ class PlayerController extends IPaymentListener {
             return this.simpleDungeon.getEntranceStatus();
         }
 
-        return this.simpleDungeon.enter(false, data.chain, data.address);
+        if (data.free) {
+            this.simpleDungeon.enter(true, true);
+        }
+
+        return this.simpleDungeon.enter(false, false, data.chain, data.address);
     }
 
     async _sDungeonCommitStats(_, data) {
         if (!data.stats) {
-          throw Errors.IncorrectArguments;
+            throw Errors.IncorrectArguments;
         }
-        
+
         for (let key in data.stats) {
             if (!isNumber(data.stats[key])) {
                 throw Errors.IncorrectArguments;
@@ -1874,7 +1878,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async enterHalloween() {
-        return this.simpleDungeon.enter(true);
+        return this.simpleDungeon.enter(true, false);
     }
 }
 

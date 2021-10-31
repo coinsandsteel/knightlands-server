@@ -47,6 +47,10 @@ export class DungeonEvents {
         this._events.enemyHealth = newHealth;
     }
 
+    notFree() {
+        this._events.free = false;
+    }
+
     enemyNotDefeated(cellId: number, health: number) {
         this._events.enemy = {
             cell: cellId,
