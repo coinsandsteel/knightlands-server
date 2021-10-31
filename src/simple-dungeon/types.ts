@@ -67,6 +67,7 @@ export interface DungeonFloorData {
     cells: Cell[];
     width: number;
     enemiesLeft: number;
+    totalEnemies: number;
 }
 
 export interface DungeonUserState {
@@ -124,6 +125,7 @@ export interface DungeonClientData {
     };
     floor: number;
     enemiesLeft: number;
+    totalEnemies: number;
     startTime: number;
 }
 

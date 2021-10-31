@@ -328,6 +328,7 @@ export class DungeonGenerator {
         }
 
         const dungeon: DungeonFloorData = {
+            totalEnemies,
             enemiesLeft: totalEnemies,
             cells,
             width: this._config.width,

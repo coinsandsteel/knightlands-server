@@ -143,7 +143,7 @@ export class DungeonController {
 
         if (force) {
             userState = {
-                level: 0,
+                level: 1,
                 energy: meta.mode.dailyEnergy,
                 cell: 0,
                 health: 1000,
@@ -210,7 +210,8 @@ export class DungeonController {
             revealed,
             width: this._saveData.data.width,
             height: Math.round(this._saveData.data.cells.length / this._saveData.data.width),
-            enemiesLeft: this._saveData.data.enemiesLeft
+            enemiesLeft: this._saveData.data.enemiesLeft,
+            totalEnemies: this._saveData.data.totalEnemies
         };
 
         if (this._saveData.state.combat) {
@@ -372,7 +373,7 @@ export class DungeonController {
                 await this.defuseTrap(targetCell, true);
             } else if (targetCell.loot) {
                 this.consumeEnergy(meta.costs.chest);
-                response = this.collectLoot(targetCell);
+                response = await this.collectLoot(targetCell);
             } else if (targetCell.exit) {
                 response = await this.nextFloor();
             }
