@@ -58,7 +58,7 @@ export class DungeonController {
     }
 
     get isComplete() {
-        return this._saveData.data.enemiesLeft <= 0;
+        return this._saveData.data.enemiesLeft <= 0; 
     }
 
     async getEntranceStatus() {
@@ -76,28 +76,26 @@ export class DungeonController {
             this._events.playerLevel(1);
             this._events.notFree();
             this._events.flush();
-        } else {
-            if (this._saveData.state.user.level == 0) {
-                const { iap } = Game.dungeonManager.getMeta();
-                const userId = this._user.id;
-                let iapContext = {
-                    userId
-                };
+        } else if (this.isFree) {
+            const { iap } = Game.dungeonManager.getMeta();
+            const userId = this._user.id;
+            let iapContext = {
+                userId
+            };
 
-                let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, IAP_TAG);
-                if (hasPendingPayment) {
-                    return hasPendingPayment;
-                }
-
-                return Game.paymentProcessor.requestPayment( 
-                    userId,
-                    iap,
-                    IAP_TAG,
-                    iapContext,
-                    address,
-                    chain
-                );
+            let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, IAP_TAG);
+            if (hasPendingPayment) {
+                return hasPendingPayment;
             }
+
+            return Game.paymentProcessor.requestPayment( 
+                userId,
+                iap,
+                IAP_TAG,
+                iapContext,
+                address,
+                chain
+            );
         }
     }
 
@@ -224,15 +222,15 @@ export class DungeonController {
             width: this._saveData.data.width,
             height: Math.round(this._saveData.data.cells.length / this._saveData.data.width),
             enemiesLeft: this._saveData.data.enemiesLeft,
-            totalEnemies: this._saveData.data.totalEnemies
+            totalEnemies: this._saveData.data.totalEnemies 
         };
 
-        if (this._saveData.state.combat) {
+        if (this._saveData.state.combat) { 
             state.combat = {
                 outcome: this._saveData.state.combat.outcome,
                 enemyHealth: this._saveData.state.combat.enemyHealth,
                 enemyId: this._saveData.state.combat.enemyId
-            };
+            }; 
         }
 
         return state;
@@ -243,9 +241,10 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        const meta = Game.dungeonManager.getMeta();
-        const totalFloorsAllowed = Math.ceil((Game.now - meta.startTime) / 86400);
-        if (totalFloorsAllowed <= this._saveData.state.floor) {
+        const meta = Game.dungeonManager.getMeta(); 
+        const now = Game.nowSec;
+        const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400);
+        if (totalFloorsAllowed <= 0 || totalFloorsAllowed <= this._saveData.state.floor) {
             throw errors.IncorrectArguments;
         }
 
