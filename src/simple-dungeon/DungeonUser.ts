@@ -137,7 +137,7 @@ export class DungeonUser {
     die(newPosition: number) {
         this._state.died = true;
         this.moveTo(newPosition);
-        this.resetHealth();
+        this.modifyHealth(1);
     }
 
     hasEquip(id: number) {
