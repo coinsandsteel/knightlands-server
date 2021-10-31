@@ -254,7 +254,7 @@ class Crafting {
             throw Errors.NoTemplate;
         }
 
-        if (itemTemplate.type != ItemType.Equipment || itemTemplate.enchantable) {
+        if (itemTemplate.type != ItemType.Equipment || !itemTemplate.enchantable) {
             throw Errors.ItemNotEnchantable;
         }
 
