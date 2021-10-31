@@ -600,13 +600,15 @@ export class DungeonController {
         }
 
         if (loot.equipment) {
+            lootData.equip = [];
             for (const id of loot.equipment) {
                 if (this._dungeonUser.hasEquip(id)) {
                     lootData.items.push(
                         ...await Game.lootGenerator.getLootFromTable(meta.dungeons.extraEquipmentItem)
                     )
                 } else {
-                    lootData.equip = this._dungeonUser.addEquip(id);
+                    this._dungeonUser.addEquip(id);
+                    lootData.equip.push(id);
                 }
             }
         }

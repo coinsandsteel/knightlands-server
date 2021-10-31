@@ -235,7 +235,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.RefreshDailyShop, this._gameHandler(this._refreshDailyShop.bind(this)));
 
         // Simple dungeon
-        this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
+        // this._socket.on(Operations.SDungeonGenerateNew, this._gameHandler(this._sDungeonGenerate.bind(this)));
         this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
         this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
         this._socket.on(Operations.SDungeonLoad, this._gameHandler(this._sDungeonLoad.bind(this)));
@@ -243,7 +243,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonMove, this._gameHandler(this._sDungeonMove.bind(this)));
         this._socket.on(Operations.SDungeonUseItem, this._gameHandler(this._sDungeonUseItem.bind(this)));
         this._socket.on(Operations.SDungeonNextFloor, this._gameHandler(this._sDungeonNextFloor.bind(this)));
-        this._socket.on(Operations.SDungeonTestAction, this._gameHandler(this._sDungeonTestAction.bind(this)));
+        // this._socket.on(Operations.SDungeonTestAction, this._gameHandler(this._sDungeonTestAction.bind(this)));
         this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
         this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
         this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
