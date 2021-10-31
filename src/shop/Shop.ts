@@ -167,11 +167,14 @@ export class Shop {
 
         await user.autoCommitChanges(async () => {
             const cards = user.cards;
+            let cardData = cards[card.id];
 
-            if (!cards[card.id]) {
-                cards[card.id] = {
-                    end: 0
+            if (!cardData || cardData.end < Game.nowSec) {
+                cardData = {
+                    end: Game.nowSec
                 };
+
+                cards[card.id] = cardData;
 
                 // when bought first time - add attempts immediately
                 user.applyBonusRefills(
@@ -180,16 +183,11 @@ export class Shop {
                     card.weaponTrialAttempts,
                     card.accessoryTrialAttempts
                 );
-            }
 
-            if (cards[card.id].end < Game.nowSec) {
-                cards[card.id].end = Game.nowSec;
                 user.subscriptions.lastClaimCycle = user.getDailyRewardCycle();
             }
 
-            cards[card.id].end += card.duration;
-
-
+            cardData.end += card.duration;
 
             if (card.initialHard) {
                 result.hard = card.initialHard + card.dailyHard;

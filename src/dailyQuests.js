@@ -185,6 +185,8 @@ class DailyQuests {
     }
 
     async _advanceTask(taskType, count, countTowardsAll = true) {
+        this._checkCycle();
+
         // do not count towards task that wasn't claim yet
         if (this._data.completedTasks[taskType]) {
             return;

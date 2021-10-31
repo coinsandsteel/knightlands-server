@@ -365,12 +365,15 @@ class Crafting {
         } else {
             // check the balance
             let recipeCost = recipe.soft;
-            if (currency == CurrencyType.Hard) {
+            currency = CurrencyType.Soft;
+
+            if (recipe.hard) {
                 currency = CurrencyType.Dkt;
                 recipeCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, recipe.hard);
             }
 
-            if (currency == CurrencyType.Dkt) {
+            if (recipe.ashFee) {
+                currency = CurrencyType.Dkt;
                 recipeCost = Game.currencyConversionService.convertToNative(CurrencyType.Dkt, recipe.ashFee);
             }
 

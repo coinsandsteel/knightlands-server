@@ -203,7 +203,7 @@ export class ArmyManager {
     async summonRandomUnit(user: User, count: number, stars: number, summonType: number) {
         const armyProfile = await this._loadArmyProfile(user.id);
 
-        await this._checkFreeSlots(armyProfile, 1);
+        await this._checkFreeSlots(armyProfile, count);
 
         let lastUnitId = armyProfile.lastUnitId;
         const newUnits = await this._summoner.summonWithStars(count, stars, summonType);
@@ -445,9 +445,16 @@ export class ArmyManager {
             for (const unitId in targetUnits) {
                 const targetUnit = targetUnits[unitId];
 
+                if (targetUnit.legion != NO_LEGION) {
+                    throw Errors.IncorrectArguments;
+                }
+
                 if (usedUnits[targetUnit.id]) {
                     throw Errors.IncorrectArguments;
                 }
+
+                usedUnits[targetUnit.id] = targetUnit;
+
                 const targetUnitTemplate = this._unitTemplates[targetUnit.template];
 
                 if (ingridient.copy) {
@@ -481,6 +488,8 @@ export class ArmyManager {
         if (price > inventory.getCurrency(CurrencyType.Dkt)) {
             throw Errors.NotEnoughCurrency;
         }
+
+        await this._removeEquipmentFromUnits(user, usedUnits);
 
         inventory.removeItemByTemplate(this._meta.soulsItem, fusionTemplate.souls);
         await inventory.modifyCurrency(CurrencyType.Dkt, -price)
@@ -644,8 +653,7 @@ export class ArmyManager {
     }
 
     private async _checkFreeSlots(armyProfile: any, requiredSlots: number) {
-        const totalUnits = await this._armiesCollection.count({ _id: armyProfile._id });
-        if (armyProfile.maxSlots - totalUnits < requiredSlots) {
+        if (armyProfile.maxSlots - armyProfile.occupiedSlots < requiredSlots) {
             throw Errors.NotEnoughArmySlots;
         }
     }

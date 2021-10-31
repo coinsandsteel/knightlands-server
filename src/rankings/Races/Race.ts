@@ -80,6 +80,11 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         delete this._state.looted[userId];
         await this._db.collection(Collections.Races).updateOne({ _id: this.id }, { $set: { "looted": this._state.looted } });
         await this._ranking.removeRank(userId);
+
+        const winnerIdx = this._state.winners.findIndex(x => x.equals(userId));
+        if (winnerIdx != -1) {
+            this._state.winners.splice(winnerIdx, 1);
+        }
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
