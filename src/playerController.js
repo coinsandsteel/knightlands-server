@@ -1858,6 +1858,7 @@ class PlayerController extends IPaymentListener {
 
         if (data.free) {
             this.simpleDungeon.enter(true, true);
+            return;
         }
 
         return this.simpleDungeon.enter(false, false, data.chain, data.address);
