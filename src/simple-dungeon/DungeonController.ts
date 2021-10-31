@@ -509,6 +509,13 @@ export class DungeonController {
         }
         
         const passedStats = _.pick(stats, ['str','dex','int','sta']);
+        if (_.sum(Object.values(passedStats)) === 0) {
+          if (this._dungeonUser.energy < 40) {
+            throw errors.IncorrectArguments;
+          }
+          this._dungeonUser.modifyEnergy(-40);
+        }
+
         this._dungeonUser.changeStats(passedStats);
         this._events.flush();
     }
