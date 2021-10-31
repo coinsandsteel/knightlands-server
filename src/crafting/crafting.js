@@ -441,6 +441,10 @@ class Crafting {
             throw Errors.NoTemplate;
         }
 
+        if (!itemTemplate.unbindable) {
+            throw Errors.IncorrectArguments;
+        }
+
         let unbindLevels = 0;
         // check that items are valid as material
         for (let i in items) {
