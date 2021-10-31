@@ -74,8 +74,12 @@ export class DungeonEvents {
         this._events.altar = cellId;
     }
 
-    trapJammed(cellId: number) {
+    trapRemoved(cellId: number) {
         this._events.trap = cellId;
+    }
+
+    trapJammed(cellId: number) {
+        this._events.jammed = cellId;
     }
 
     lootAcquired(cellId: number) {

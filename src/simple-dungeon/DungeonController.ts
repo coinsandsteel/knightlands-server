@@ -288,17 +288,16 @@ export class DungeonController {
     async useItem(itemType: string) {
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
-        this.assertNotInTrap();
+
+        if (itemType != "key") {
+            this.assertNotInTrap();
+        }
 
         this._dungeonUser.updateHealthAndEnergy();
 
         if (itemType == "scroll") {
             // reveal neighbour cells
-            const currentCell = this.getRevealedCell(this._dungeonUser.position);
-            for (const cellIdx of currentCell.c) {
-                this.revealCell(this.getCell(cellIdx), true);
-            }
-            this._dungeonUser.addScroll(-1);
+            this.revealClosestCells();
         } else if (itemType == "potion") {
             // invisibility for 9 steps
             this._dungeonUser.addInvisibility(10);
@@ -668,7 +667,7 @@ export class DungeonController {
         const trapData = meta.traps.traps[cell.trap.id];
         // use item if any
         this._dungeonUser.defuseTrap(trapData, useEnergy);
-        this._events.trapJammed(this._revealedLookUp[this.cellToIndex(cell)]);
+        this._events.trapRemoved(this._revealedLookUp[this.cellToIndex(cell)]);
         delete cell.trap;
         await this.increaseRank(3);
     }
@@ -723,5 +722,13 @@ export class DungeonController {
         if (this._saveData.state.user.level == 0) {
             throw errors.IncorrectArguments;
         }
+    }
+
+    private revealClosestCells() {
+        const currentCell = this.getRevealedCell(this._dungeonUser.position);
+        for (const cellIdx of currentCell.c) {
+            this.revealCell(this.getCell(cellIdx), true);
+        }
+        this._dungeonUser.addScroll(-1);
     }
 }
