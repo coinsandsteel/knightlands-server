@@ -44,7 +44,7 @@ export class DungeonController {
         }
 
         // if day is finished - generate new dungeon
-        if (!this._saveData || this._saveData.state.cycle != this._user.getDailyRewardCycle()) {
+        if (!this._saveData) {
             await this.generateNewFloor();
         }
 
