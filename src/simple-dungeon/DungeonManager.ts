@@ -4,15 +4,19 @@ import Game from "../game";
 import { DungeonMeta } from "./types";
 import Events from "../knightlands-shared/events";
 import { DungeonController } from "./DungeonController";
+import { Lock } from "../utils/lock";
 
 const PAGE_SIZE = 50;
 
 export class DungeonManager {
     private _meta: DungeonMeta;
     private _collection: Collection;
+    private _saveCollection: Collection;
+    private _lock: Lock;
     
     constructor() {
-
+        this._lock = new Lock();
+        this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
     }
 
     async init(iapExecutor) {
@@ -38,6 +42,14 @@ export class DungeonManager {
         });
 
         iapExecutor.mapIAPtoEvent(this._meta.iap, Events.PurchaseComplete);
+    }
+
+    async loadProgress(userId: ObjectId) {
+        return this._saveCollection.findOne({ _id: userId })
+    }
+
+    async saveProgress(userId: ObjectId, saveData: any) {
+        return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
     }
 
     getMeta() {

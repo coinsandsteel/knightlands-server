@@ -1,9 +1,8 @@
 import _ from "lodash";
 import { Collection } from "mongodb";
 import { isNumber } from "../validation";
-import { Collections } from "../database/database";
 import Game from "../game";
-import { AltarType, CombatAction } from "../knightlands-shared/dungeon_types";
+import { AltarType } from "../knightlands-shared/dungeon_types";
 import errors from "../knightlands-shared/errors";
 import random from "../random";
 import User from "../user";
@@ -29,13 +28,12 @@ export class DungeonController {
     constructor(user: User) {
         this._events = new DungeonEvents(user.id);
         this._user = user;
-        this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
         this._revealedLookUp = {};
         this._aStar = new AStar();
     }
 
     async init() {
-        const saveData = await this._saveCollection.findOne({ _id: this._user.id });
+        const saveData = await Game.dungeonManager.loadProgress(this._user.id);
         if (saveData) {
             this._saveData = saveData as DungeonSaveData;
 
@@ -786,7 +784,7 @@ export class DungeonController {
     }
 
     private async _save() {
-        await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
+        await Game.dungeonManager.saveProgress(this._user.id, this._saveData);
     }
 
     private assertAllowedToPlayer() {

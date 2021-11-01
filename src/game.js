@@ -331,34 +331,40 @@ class Game extends EventEmitter {
                 return;
             }
 
-            // if there is previous controller registered - disconnect it and remove
-            let connectedController = this._playersById[controller.id];
-            if (connectedController) {
-                await connectedController.forceDisconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
+            await this._lock.acquire(controller.id);
+
+            try {
+                // if there is previous controller registered - disconnect it and remove
+                let connectedController = this._playersById[controller.id];
+                if (connectedController) {
+                    await connectedController.forceDisconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
+                }
+
+                this._paymentProcessor.registerAsPaymentListener(controller.id, controller);
+                this._players[controller.address] = controller;
+                this._playersById[controller.id] = controller;
+
+                controller.onAuthenticated();
+
+                this.publishToChannel("online", { online: this.getTotalOnline() });
+            } finally {
+                await this._lock.release(controller.id);
             }
-
-            this._paymentProcessor.registerAsPaymentListener(controller.id, controller);
-            this._players[controller.address] = controller;
-            this._playersById[controller.id] = controller;
-
-            controller.onAuthenticated();
-
-            this.publishToChannel("online", { online: this.getTotalOnline() });
         });
 
-        socket.on("deauthenticate", () => {
-            this._deletePlayerController(controller);
+        const disconnect = async() => {
+            await this._lock.acquire(controller.id);
+            try {
+                this._deletePlayerController(controller);
+                await controller.onDisconnect();
+                this.publishToChannel("online", { online: this.getTotalOnline() });
+            } finally {
+                await this._lock.release(controller.id)
+            }
+        }
 
-            controller.onDisconnect();
-        });
-
-        socket.on("close", () => {
-            this._deletePlayerController(controller);
-
-            controller.onDisconnect();
-
-            this.publishToChannel("online", { online: this.getTotalOnline() });
-        });
+        socket.on("deauthenticate", disconnect);
+        socket.on("close", disconnect);
     }
 
     _deletePlayerController(controller) {
