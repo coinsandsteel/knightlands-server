@@ -269,7 +269,7 @@ class PlayerController extends IPaymentListener {
 
     async onDisconnect(forced = false) {
         if (this._closed && !forced) {
-            return;
+            return false;
         }
 
         Game.off(this.address, this._handleEventBind);
@@ -282,17 +282,22 @@ class PlayerController extends IPaymentListener {
         this.address = null;
 
         if (this.simpleDungeon) {
-            this.simpleDungeon.dispose();
+            await this.simpleDungeon.dispose();
             this.simpleDungeon = null
         }
+
+        return true;
     }
 
-    onAuthenticated() {
+    async onAuthenticated() {
         Game.removeAllListeners(this.address)
         Game.on(this.address, this._handleEventBind);
 
         Game.removeAllListeners(this.id)
         Game.on(this.id, this._handleEventBind);
+
+        this.simpleDungeon = new DungeonController(await this.getUser());
+        await this.simpleDungeon.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -392,9 +397,6 @@ class PlayerController extends IPaymentListener {
             if (!this._user) {
                 this._user = await Game.loadUser(address || this.address);
                 this.id = this._user.id.toString();
-
-                this.simpleDungeon = new DungeonController(this._user);
-                await this.simpleDungeon.init();
             }
         } finally {
             await this._lock.release("get-user");

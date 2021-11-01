@@ -37,9 +37,9 @@ export class DungeonEvents {
         };
     }
 
-    combatFinished(combat: CombatState) {
+    combatFinished(outcome: number) {
         this._events.combat = {
-            outcome: combat.outcome
+            outcome
         }
     }
 

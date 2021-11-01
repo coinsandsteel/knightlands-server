@@ -61,15 +61,15 @@ export class DungeonManager {
     }
 
     async updateRank(userId: ObjectId, points: number) {
-        const total = await this._collection.find({}).count();
-
         await this._collection.updateOne(
             { _id: userId },
             {
                 $inc: {
                     score: points
                 },
-                $setOnInsert: { order: total + 1 }
+                $set: {
+                    order: Game.now
+                }
             },
             { upsert: true }
         );
