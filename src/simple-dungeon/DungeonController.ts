@@ -259,6 +259,10 @@ export class DungeonController {
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
+        
+        if (this._dungeonUser.revive(true)) {
+            throw errors.IncorrectArguments;
+        }
 
         this._dungeonUser.updateHealthAndEnergy();
 
@@ -272,16 +276,16 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         this.consumeEnergy(meta.costs.reveal);
 
-        if (!this._dungeonUser.revive()) {
-            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-            this.consumeEnergy(meta.costs.move * (path.length - 1));// do not count newly revealed cell cost
-        }
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+        this.consumeEnergy(meta.costs.move * (path.length - 1));// do not count newly revealed cell cost
+
+        const invisSteps = path.length;
 
         this.revealCell(targetCell, false);
 
         this.moveToCell(cellId);
 
-        if (targetCell.enemy && !this._dungeonUser.isInvisible) {
+        if (targetCell.enemy && !this._dungeonUser.isInvisible()) {
             const enemyData = meta.enemies.enemiesById[targetCell.enemy.id];
             if (enemyData.isAggressive) {
                 // throw into combat right away
@@ -289,11 +293,11 @@ export class DungeonController {
             }
         }
 
-        if (targetCell.trap && !this._dungeonUser.isInvisible) {
+        if (targetCell.trap && !this._dungeonUser.isInvisible()) {
             this.triggerTrap(targetCell);
         }
 
-        this._dungeonUser.updateInvisibility();
+        this._dungeonUser.updateInvisibility(invisSteps);
 
         this._events.flush();
     }
@@ -340,9 +344,13 @@ export class DungeonController {
         }
 
         const meta = Game.dungeonManager.getMeta();
+        let invisSteps = 1;
 
-        if (!this._dungeonUser.revive()) {
-            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+        if (this._dungeonUser.revive()) {
+            invisSteps += path.length;
+            this.consumeEnergy(meta.costs.move);
+        } else {
             this.consumeEnergy(meta.costs.move * path.length);
         }
 
@@ -351,7 +359,7 @@ export class DungeonController {
         }
 
         this.moveToCell(cellId);
-        this._dungeonUser.updateInvisibility();
+        this._dungeonUser.updateInvisibility(invisSteps);
 
         this._events.flush();
     }
@@ -483,6 +491,9 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
         let energyRequired = 0;
         if (!targetCell) {
+            if (this._dungeonUser.revive(true)) {
+                throw errors.IncorrectArguments;
+            }
             targetCell = this.getCell(cellId);
             this.checkCorrectReveal(targetCell);
 
@@ -491,18 +502,22 @@ export class DungeonController {
 
         const finalPath = [];
 
-        if (!this._dungeonUser.revive(true)) {
-            const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-            
-            for (let i = path.length - 1; i >= 0; --i) {
-                finalPath.push(this.cellToIndex(path[i]));
+        const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
+        let invisStep = 0;
+        for (let i = path.length - 1; i >= 0; --i) {
+            finalPath.push(this.cellToIndex(path[i]));
 
-                if (path[i].trap && !this._dungeonUser.isInvisible) {
-                    // trap has caught you
-                    break;
-                }
+            if (path[i].trap && !this._dungeonUser.isInvisible(invisStep)) {
+                // trap has caught you
+                break;
             }
 
+            invisStep++;
+        }
+
+        if (this._dungeonUser.revive(true)) {
+            energyRequired = meta.costs.move;
+        } else {
             energyRequired += (finalPath.length * meta.costs.move - energyRequired);
         }
         
@@ -607,7 +622,7 @@ export class DungeonController {
     }
 
     private assertNotInTrap() {
-        if (!this._dungeonUser.isInvisible) {
+        if (!this._dungeonUser.isInvisible()) {
             const currentCell = this.getRevealedCell(this._dungeonUser.position);
             if (currentCell.trap) {
                 throw errors.SDungeonInTrap;

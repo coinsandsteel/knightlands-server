@@ -70,8 +70,8 @@ export class DungeonUser {
         return this._state.energy;
     }
 
-    get isInvisible() {
-        return !!this._state.invis;
+    isInvisible(atStep: number = 0) {
+        return (this._state.invis - atStep) > 0;
     }
 
     get mainHand() {
@@ -144,10 +144,16 @@ export class DungeonUser {
         return this._state.equip.find(x => x == id) !== undefined;
     }
 
-    updateInvisibility() {
+    updateInvisibility(steps: number = 1) {
         if (this._state.invis > 0) {
-            this._state.invis--;
+            this._state.invis -= steps;
         }
+
+        if (this._state.invis < 0) {
+            this._state.invis = 0;
+        }
+
+        this._events.invisibility(this._state.invis);
     }
 
     resetEnergy() {

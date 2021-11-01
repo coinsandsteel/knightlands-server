@@ -112,4 +112,8 @@ export class DungeonEvents {
     statsChanged(stats) {
         this._events.stats = stats;
     }
+
+    invisibility(invis) {
+        this._events.invis = invis;
+    }
 }
