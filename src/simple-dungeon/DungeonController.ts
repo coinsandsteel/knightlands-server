@@ -68,9 +68,11 @@ export class DungeonController {
 
     async enter(allow: boolean, isFree: boolean, chain: string = undefined, address: string = undefined) {
         if (allow) {
-            this._saveData.state.user.level = this._saveData.state.user.level || 1;
+            this._saveData.state.floor = 1;
+            this._saveData.state.user.level = 1;
             this._saveData.state.isFree = isFree;
-            
+
+            await this.generateNewFloor(true);
             await this._save();
 
             this._events.playerLevel(1);
@@ -487,12 +489,27 @@ export class DungeonController {
             energyRequired += meta.costs.reveal;
         }
 
+        const finalPath = [];
+
         if (!this._dungeonUser.revive(true)) {
             const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-            energyRequired += (path.length * meta.costs.move - energyRequired);
+            
+            for (let i = path.length - 1; i >= 0; --i) {
+                finalPath.push(this.cellToIndex(path[i]));
+
+                if (path[i].trap && !this._dungeonUser.isInvisible) {
+                    // trap has caught you
+                    break;
+                }
+            }
+
+            energyRequired += (finalPath.length * meta.costs.move - energyRequired);
         }
         
-        return energyRequired;
+        return {
+            energyRequired,
+            path: finalPath
+        };
     }
 
     testAction(action: string) {
@@ -729,6 +746,10 @@ export class DungeonController {
 
     cellToIndex(cell: Cell) {
         return cellToIndex(cell, this._saveData.data.width);
+    }
+
+    isRevealed(cellId: number) {
+        return this._revealedLookUp[cellId] !== undefined;
     }
 
     private initPlayer() {

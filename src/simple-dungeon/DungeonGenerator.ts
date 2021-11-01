@@ -92,7 +92,6 @@ export class DungeonGenerator {
         // this will let players compete in a random dungeon
         // with similar difficulty
         const enemyList = this.expandConfig(this._config.enemies);
-        console.log("enemies to place", enemyList.length);
 
         const maxDistanceBetweenEnemies = (cells.length / enemyList.length) * 0.95;
 
@@ -153,9 +152,6 @@ export class DungeonGenerator {
             }
         }
 
-        console.log('total enemies', totalEnemies);
-        console.log('free cells', freeCells.length, cells.length - totalEnemies);
-
         return {
             freeCells,
             totalEnemies
@@ -196,8 +192,6 @@ export class DungeonGenerator {
             }
         }
 
-        console.log('traps place', trapIndex, traps.length)
-
         return freeCells.filter(x => !!x);
     }
 
@@ -220,8 +214,6 @@ export class DungeonGenerator {
             freeCells.pop();
             altarsPlaced++;
         }
-
-        console.log('altars place', altarsPlaced, altars.length)
 
         return freeCells;
     }
@@ -250,8 +242,6 @@ export class DungeonGenerator {
                 break;
             }
         }
-
-        console.log('loot placed', lootIndex, this._config.loot.length)
 
         return freeCells.filter(x => !!x);;
     }

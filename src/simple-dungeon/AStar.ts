@@ -2,11 +2,11 @@ import { BinaryHeap } from "../utils/BinaryHeap";
 import { DungeonController } from "./DungeonController";
 import { Cell } from "./types";
 
-function pathTo(node) {
+function pathTo(node: GNode) {
     var curr = node;
     var path = [];
     while (curr.parent) {
-        path.unshift(curr);
+        path.push(curr.cell);
         curr = curr.parent;
     }
     return path;
@@ -77,7 +77,6 @@ export class AStar {
         var closest = false;
 
         var openHeap = getHeap();
-        var closestNode = start; // set the start node to be the closest if required
 
         const startNode = this._nodes[graph.cellToIndex(start)];
         startNode.h = heuristic(start, end);
@@ -107,7 +106,7 @@ export class AStar {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-                var gScore = currentNode.g + 1;
+                var gScore = currentNode.g + (graph.isRevealed(cellId) ? 1 : 9999);
                 var beenVisited = neighbor.visited;
 
                 if (!beenVisited || gScore < neighbor.g) {
@@ -130,7 +129,7 @@ export class AStar {
         }
 
         if (closest) {
-            return pathTo(closestNode);
+            return pathTo(startNode);
         }
 
         // No result was found - empty array signifies failure to find path.
