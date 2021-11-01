@@ -220,12 +220,17 @@ export class DungeonUser {
     }
 
     modifyEnergy(value: number, checkMax: boolean = false) {
-        this._state.energy += value;
+        if (checkMax) {
+            if (this.maxEnergy > this._state.energy) {
+                this._state.energy += Math.min(this.maxEnergy - this._state.energy, this._state.energy + value);
+            }
+        } else {
+            this._state.energy += value;
+        }
+
         if (this._state.energy < 0) {
             this._state.energy = 0;
-        } if (checkMax && this._state.energy > this.maxEnergy) {
-            this._state.energy = this.maxEnergy;
-        }
+        } 
         this._events.energyChanged(this._state.energy);
     }
 
