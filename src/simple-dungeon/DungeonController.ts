@@ -197,14 +197,16 @@ export class DungeonController {
             data: dungeonData
         }
 
-        await this._saveCollection.updateOne({ _id: this._user.id }, { $set: this._saveData }, { upsert: true });
-
         this.indexRevealedCells();
-
         this.initPlayer();
 
         this._dungeonUser.resetHealth();
         this._dungeonUser.resetEnergy();
+        
+        this._saveData.state.user.energy = this._dungeonUser.energy;
+        this._saveData.state.user.health = this._dungeonUser.health;
+
+        await Game.dungeonManager.saveProgress(this._user.id, this._saveData);
 
         return this.getState();
     }
