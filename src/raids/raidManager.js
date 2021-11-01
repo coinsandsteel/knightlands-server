@@ -84,6 +84,10 @@ class RaidManager {
             throw Errors.RaidIsFull;
         }
 
+        if (raid.isParticipant(userId.toHexString())) {
+            throw Errors.InvalidRaid;
+        }
+
         const user = await Game.getUserById(userId);
         const raitTemplate = await this._loadRaidTemplate(raid.templateId);
 
