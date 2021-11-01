@@ -48,6 +48,10 @@ export class DungeonController {
             await this.generateNewFloor();
         }
 
+        if (this._saveData.state.user.level === -1) {
+            await this.enter(true, this._saveData.state.isFree);
+        }
+
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
         }
