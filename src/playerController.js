@@ -282,7 +282,9 @@ class PlayerController extends IPaymentListener {
         this.address = null;
 
         if (this.simpleDungeon) {
+            console.log('start dungeon dispose')
             await this.simpleDungeon.dispose();
+            console.log('finish dungeon dispose')
             this.simpleDungeon = null
         }
 

@@ -331,20 +331,24 @@ class Game extends EventEmitter {
                 return;
             }
 
+            console.log('start loading socket', controller.id);
             await this._lock.acquire(controller.id);
-
+            console.log('continue loading socket', controller.id);
+            console.dir(this._playersById);
             try {
                 // if there is previous controller registered - disconnect it and remove
                 let connectedController = this._playersById[controller.id];
                 if (connectedController) {
+                    console.log('found controller', connectedController.id, 'closing...')
                     await connectedController.forceDisconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
+                    this._paymentProcessor.unregister(connectedController.id, connectedController);
                 }
 
                 this._paymentProcessor.registerAsPaymentListener(controller.id, controller);
                 this._players[controller.address] = controller;
                 this._playersById[controller.id] = controller;
 
-                controller.onAuthenticated();
+                await controller.onAuthenticated();
 
                 this.publishToChannel("online", { online: this.getTotalOnline() });
             } finally {
@@ -353,11 +357,19 @@ class Game extends EventEmitter {
         });
 
         const disconnect = async() => {
+            console.log('start disconnect socket', controller.id);
             await this._lock.acquire(controller.id);
+            console.log('continue disconnect socket', controller.id);
+            console.dir(this._playersById);
             try {
-                this._deletePlayerController(controller);
-                await controller.onDisconnect();
-                this.publishToChannel("online", { online: this.getTotalOnline() });
+                // if forced happened due to reconnection, it will not happen here, since it's already closed
+                if (await controller.onDisconnect()) {
+                    console.log('dorcefully closed');
+                    console.dir(this._playersById);
+                    this._paymentProcessor.unregister(controller.id, controller);
+                    this._deletePlayerController(controller);
+                    this.publishToChannel("online", { online: this.getTotalOnline() });
+                }
             } finally {
                 await this._lock.release(controller.id)
             }
