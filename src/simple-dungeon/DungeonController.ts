@@ -272,7 +272,7 @@ export class DungeonController {
 
         if (!this._dungeonUser.revive()) {
             const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-            this.consumeEnergy(meta.costs.move * (path.length) - 1);// do not count newly revealed cell cost
+            this.consumeEnergy(meta.costs.move * (path.length - 1));// do not count newly revealed cell cost
         }
 
         this.revealCell(targetCell, false);
