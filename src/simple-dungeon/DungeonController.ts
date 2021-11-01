@@ -199,13 +199,17 @@ export class DungeonController {
 
         this.indexRevealedCells();
         this.initPlayer();
-
+        
         this._dungeonUser.resetHealth();
         this._dungeonUser.resetEnergy();
         
-        this._saveData.state.user.energy = this._dungeonUser.energy;
-        this._saveData.state.user.health = this._dungeonUser.health;
-
+        this._saveData.state.user = {
+            ...this._saveData.state.user,
+            energy: this._dungeonUser.energy,
+            health: this._dungeonUser.health,
+            lastHpRegen: Game.nowSec,
+            lastEnergyRegen: Game.nowSec
+        }
         await Game.dungeonManager.saveProgress(this._user.id, this._saveData);
 
         return this.getState();
