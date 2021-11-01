@@ -282,9 +282,9 @@ class PlayerController extends IPaymentListener {
         this.address = null;
 
         if (this.simpleDungeon) {
-            console.log('start dungeon dispose')
+            // console.log('start dungeon dispose')
             await this.simpleDungeon.dispose();
-            console.log('finish dungeon dispose')
+            // console.log('finish dungeon dispose')
             this.simpleDungeon = null
         }
 
@@ -299,7 +299,9 @@ class PlayerController extends IPaymentListener {
         Game.on(this.id, this._handleEventBind);
 
         this.simpleDungeon = new DungeonController(await this.getUser());
+        // console.log('start loading dungeon')
         await this.simpleDungeon.init();
+        // console.log('loaded dungeon')
     }
 
     async onPayment(iap, eventToTrigger, context) {
