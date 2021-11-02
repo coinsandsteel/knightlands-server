@@ -599,7 +599,7 @@ class Trials {
             return false;
         }
 
-        return stageState.cleared;
+        return stageState.firstTimeCleared;
     }
 
     _getTrialTypeState(trialType) {
