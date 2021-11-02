@@ -557,11 +557,13 @@ export class DungeonController {
         const passedStats = _.pick(stats, ['str','dex','int','sta']);
         const statsSum = _.sum(Object.values(passedStats));
         
-        if (!this._dungeonUser.canUpdateStats() && statsSum !== 0) {
-          throw errors.IncorrectArguments;
-        }
-        
-        if (statsSum === 0) {
+        // Regular update
+        if (statsSum !== 0) {
+          if (!this._dungeonUser.canUpdateStats(statsSum)) {
+            throw errors.IncorrectArguments;
+          }
+        // Rebalance
+        } else {
           if (this._dungeonUser.energy < 40) {
             throw errors.NoEnergy;
           }
