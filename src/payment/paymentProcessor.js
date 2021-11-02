@@ -37,6 +37,10 @@ class PaymentProcessor extends EventEmitter {
     }
 
     unregister(userId, listener) {
+        if (!userId) {
+            return;
+        }
+
         let listeners = this._getListeners(userId);
         let i = 0;
         const length = listeners.length;

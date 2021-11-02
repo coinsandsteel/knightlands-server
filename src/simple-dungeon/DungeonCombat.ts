@@ -66,7 +66,7 @@ export class DungeonCombat {
         const enemyMove = moveSet.sequence[this._state.moveIndex];
         this._state.moveIndex++;
 
-        if (this._state.moveIndex == moveSet.sequence.length) {
+        if (this._state.moveIndex >= moveSet.sequence.length) {
             // end of sequence, roll new one next time
             this._state.moveSetId = 0;
             this._state.moveIndex = 0;
