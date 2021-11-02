@@ -485,6 +485,7 @@ export class DungeonController {
                 // reset combat
                 this._events.combatFinished(this._saveData.state.combat.outcome);
                 this._saveData.state.combat = null;
+                this._dungeonUser.updateHealthAndEnergy(true);
             }
         } else {
             this._saveData.data.enemiesLeft--;
@@ -492,6 +493,7 @@ export class DungeonController {
             this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
             this._events.combatFinished(CombatOutcome.PlayerWon);
             this._saveData.state.combat = null;
+            this._dungeonUser.updateHealthAndEnergy(true);
             outcomes = { 
                 enemyMove: 0
             }
