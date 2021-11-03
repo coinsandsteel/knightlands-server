@@ -314,6 +314,10 @@ export class DungeonController {
             this.assertNotInTrap();
         }
 
+        if (!this._dungeonUser.hasItem(itemType)) {
+            throw errors.IncorrectArguments;
+        }
+
         this._dungeonUser.updateHealthAndEnergy();
 
         let response = true;

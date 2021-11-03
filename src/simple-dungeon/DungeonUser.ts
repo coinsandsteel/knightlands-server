@@ -177,6 +177,10 @@ export class DungeonUser {
         return this._state.equip;
     }
 
+    hasItem(item: string) {
+        return this._state[item] && this._state[item] > 0;
+    }
+
     addKey(count: number) {
         this._state.key = (this._state.key || 0) + count;
         return this._state.key;
