@@ -351,7 +351,7 @@ export class DungeonController {
         let invisSteps = 1;
 
         const path = this._aStar.search(this, this.getRevealedCell(this._dungeonUser.position), targetCell);
-        if (this._dungeonUser.revive()) {
+        if (this._dungeonUser.revive(true)) {
             invisSteps += path.length;
             this.consumeEnergy(meta.costs.move);
         } else {
@@ -364,6 +364,7 @@ export class DungeonController {
 
         this.moveToCell(cellId);
         this._dungeonUser.updateInvisibility(invisSteps);
+        this._dungeonUser.revive();
 
         this._events.flush();
     }
