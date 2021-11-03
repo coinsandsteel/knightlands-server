@@ -480,7 +480,7 @@ export class DungeonController {
                 // delete enemy
                 delete cell.enemy;
                 // get rewards
-                this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
+                this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty - 1]);
                 this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
                 this._saveData.data.enemiesLeft--;
                 await this.increaseRank(enemyData.difficulty);
@@ -494,7 +494,7 @@ export class DungeonController {
             }
         } else {
             this._saveData.data.enemiesLeft--;
-            this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty]);
+            this._dungeonUser.addExp(Game.dungeonManager.getMeta().enemies.difficultyExperience[enemyData.difficulty - 1]);
             this._events.enemyDefeated(this._revealedLookUp[this._dungeonUser.position]);
             this._events.combatFinished(CombatOutcome.PlayerWon);
             this._saveData.state.combat = null;
