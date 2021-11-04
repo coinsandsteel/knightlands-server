@@ -83,7 +83,7 @@ export class DungeonGenerator {
         return list;
     }
 
-    async placeEnemies(start: Cell, cells: Cell[]) {
+    async placeEnemies(start: Cell, cells: Cell[], powerScaling: number) {
         const enemiesMeta = Game.dungeonManager.getMeta();
 
         // first, place main enemies, in an order
@@ -140,7 +140,7 @@ export class DungeonGenerator {
                     const enemyData = random.pick(enemies) as EnemyData;
                     currentCell.enemy = {
                         id: enemyData.id,
-                        health: enemyData.health
+                        health: Math.round(enemyData.health * powerScaling)
                     };
                     totalEnemies++;
                 } else {
@@ -251,7 +251,7 @@ export class DungeonGenerator {
         cell2.c.push(this.cellToIndex(cell1));
     }
 
-    async generate(): Promise<DungeonFloorData> {
+    async generate(powerScaling: number): Promise<DungeonFloorData> {
         let cells: Cell[] = new Array(this._config.width * this._config.height);
         // pick random point as a start
         const startCell: Cell = {
@@ -285,7 +285,7 @@ export class DungeonGenerator {
         }
 
         // place enemies
-        let { freeCells, totalEnemies } = await this.placeEnemies(startCell, cells);
+        let { freeCells, totalEnemies } = await this.placeEnemies(startCell, cells, powerScaling);
         freeCells = this.placeLoot(freeCells);
         freeCells = this.placeTraps(freeCells);
         freeCells = this.placeAltars(freeCells);
@@ -322,7 +322,8 @@ export class DungeonGenerator {
             enemiesLeft: totalEnemies,
             cells,
             width: this._config.width,
-            start: startCell
+            start: startCell,
+            power: powerScaling
         }
 
         return dungeon;

@@ -69,6 +69,7 @@ export interface DungeonFloorData {
     width: number;
     enemiesLeft: number;
     totalEnemies: number;
+    power: number;
 }
 
 export interface DungeonUserState {
@@ -130,6 +131,7 @@ export interface DungeonClientData {
     enemiesLeft: number;
     totalEnemies: number;
     startTime: number;
+    power: number;
 }
 
 export interface DungeonSaveData {

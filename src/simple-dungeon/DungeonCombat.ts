@@ -50,13 +50,13 @@ export class DungeonCombat {
         this._state = state;
     }
 
-    resolveOutcome(playerMove: number) {
+    resolveOutcome(playerMove: number, powerScaling: number) {
         // rotate enemy move
         const enemyData = Game.dungeonManager.getEnemyData(this._state.enemyId);
 
         if (this._state.moveSetId == 0) {
             // roll a new move set
-            const enemyHealthRelative = this._state.enemyHealth / enemyData.health * 100;
+            const enemyHealthRelative = this._state.enemyHealth / Math.round(enemyData.health * powerScaling) * 100;
             const moves = enemyData.moves.filter(x => x.minHealth <= enemyHealthRelative && x.maxHealth >= enemyHealthRelative);
             const moveSet = random.sampleWeighted(moves, 1)[0];
             this._state.moveSetId = moveSet.index;
@@ -92,7 +92,7 @@ export class DungeonCombat {
             }
 
             // enemy win
-            this._user.applyDamage(this.getFinalDamage(enemyData.attack, this._user.defense, 1 - bonus));
+            this._user.applyDamage(Math.round(this.getFinalDamage(enemyData.attack, this._user.defense, 1 - bonus) * powerScaling));
         }
 
         this._events.combatStep(playerMove, enemyMove);

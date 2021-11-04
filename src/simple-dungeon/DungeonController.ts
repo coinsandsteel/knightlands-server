@@ -11,7 +11,7 @@ import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
-import { Cell, CellEnemy, DungeonClientData, DungeonSaveData } from "./types";
+import { Cell, CellEnemy, DungeonClientData, DungeonFloorConfig, DungeonSaveData } from "./types";
 
 const IAP_TAG = "hallowen";
 
@@ -147,12 +147,18 @@ export class DungeonController {
             userState = this._saveData.state.user;
         }
 
-        if (meta.dungeons.floors.length <= floor) {
-            floor = meta.dungeons.floors.length - 1;
+        let powerMultiplier = 1.0;
+        let config: DungeonFloorConfig;
+
+        if (meta.dungeons.floors.length < floor) {
+            powerMultiplier += 0.1 * (floor - meta.dungeons.floors.length);
+            config = meta.dungeons.floors[meta.dungeons.floors.length - 1];
+        } else {
+            config = meta.dungeons.floors[floor - 1];
         }
 
-        const dungeon = new DungeonGenerator(meta.dungeons.floors[floor - 1]);
-        const dungeonData = await dungeon.generate();
+        const dungeon = new DungeonGenerator(config);
+        const dungeonData = await dungeon.generate(powerMultiplier);
 
         if (force) {
             userState = {
@@ -220,6 +226,7 @@ export class DungeonController {
         const meta = Game.dungeonManager.getMeta();
 
         const state: DungeonClientData = {
+            power: this._saveData.data.power,
             isFree: this.isFree,
             startTime: meta.startTime,
             floor: this._saveData.state.floor,
@@ -448,7 +455,7 @@ export class DungeonController {
         this._dungeonUser.equip(mHand, oHand);
 
         if (this._saveData.state.combat) {
-            this._combat.resolveOutcome(-1); // auto damage 
+            this._combat.resolveOutcome(-1, this._saveData.data.power); // auto damage 
         }
 
         this._events.flush();
@@ -466,12 +473,12 @@ export class DungeonController {
         const enemyData = Game.dungeonManager.getEnemyData(this._saveData.state.combat.enemyId);
 
         if (this._combat.enemyHealth > 0) {
-            outcomes = this._combat.resolveOutcome(move);
+            outcomes = this._combat.resolveOutcome(move, this._saveData.data.power);
 
             if (this._combat.outcome == CombatOutcome.EnemyWon) {
                 // save enemy health if enemy is non-agressive
                 if (!enemyData.isAggressive) {
-                    cell.enemy.health = this._combat.enemyHealth;
+                    cell.enemy.health = Math.round(this._combat.enemyHealth * this._saveData.data.power);
                 }
 
                 this._events.enemyNotDefeated(this._revealedLookUp[this._dungeonUser.position], cell.enemy.health);
