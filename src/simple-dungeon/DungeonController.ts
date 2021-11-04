@@ -50,6 +50,10 @@ export class DungeonController {
             await this.enter(true, this._saveData.state.isFree);
         }
 
+        if (!this._saveData.data.power) {
+            this._saveData.data.power = 1;
+        }
+
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
         }
