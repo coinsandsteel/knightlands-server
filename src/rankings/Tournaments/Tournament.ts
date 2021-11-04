@@ -95,7 +95,7 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
     async load(id: ObjectId) {
         const state = <TournamentRecord>await this._db.collection(Collections.Tournaments).findOne({ _id: id })
         await this.loadFromState(state);
-        await this._launch();
+        this._launch();
     }
 
     async getUserRank(userId: string) {
@@ -111,6 +111,9 @@ export class Tournament extends EventEmitter implements IRankingTypeHandler {
         let startTime = this._state.startTime;
         let nextFinish = duration - (Game.nowSec - startTime);
         console.log(`Tournament Tier ${this._state.tier} is going to finish in ${nextFinish} seconds.`);
+        if (nextFinish <= 1) {
+            nextFinish = 1;
+        }
         lt.setTimeout(this._finish.bind(this), nextFinish * 1000);
     }
 
