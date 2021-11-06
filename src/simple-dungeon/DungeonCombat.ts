@@ -56,7 +56,7 @@ export class DungeonCombat {
 
         if (this._state.moveSetId == 0) {
             // roll a new move set
-            const enemyHealthRelative = this._state.enemyHealth / Math.round(enemyData.health * powerScaling) * 100;
+            const enemyHealthRelative = Math.min(this._state.enemyHealth / Math.round(enemyData.health * powerScaling) * 100, 1);
             const moves = enemyData.moves.filter(x => x.minHealth <= enemyHealthRelative && x.maxHealth >= enemyHealthRelative);
             const moveSet = random.sampleWeighted(moves, 1)[0];
             this._state.moveSetId = moveSet.index;

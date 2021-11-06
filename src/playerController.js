@@ -354,7 +354,7 @@ class PlayerController extends IPaymentListener {
             await this.getUser();
 
             this._socket.setAuthToken({
-                address: metadata.email,
+                address: this.address,
                 id: this.id
             });
 
