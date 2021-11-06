@@ -634,7 +634,7 @@ class PlayerController extends IPaymentListener {
         }
 
         await user.addSoftCurrency(resourcesGained.soft);
-        await user.addExperience(resourcesGained.exp);
+        await user.addExperience(resourcesGained.exp, false, "quest");
 
         let items = await this._lootGenerator.getQuestLoot(
             this.address,
@@ -1051,7 +1051,7 @@ class PlayerController extends IPaymentListener {
         }
 
         await user.addSoftCurrency(rewards.gold);
-        await user.addExperience(rewards.exp);
+        await user.addExperience(rewards.exp, false, "raid");
         await user.inventory.addItemTemplates(rewards.items);
         await user.addRP(rewards.rp, true);
         await user.addHardCurrency(rewards.hardCurrency);
@@ -1396,7 +1396,7 @@ class PlayerController extends IPaymentListener {
         const items = await Game.lootGenerator.getLootFromTable(loot);
 
         await this._user.addSoftCurrency(floorMeta.softCurrency, true);
-        await this._user.addExperience(floorMeta.exp, true);
+        await this._user.addExperience(floorMeta.exp, true, "tower");
         await this._user.inventory.addItemTemplates(items);
         await this._user.dailyQuests.onTowerComplete(1);
 

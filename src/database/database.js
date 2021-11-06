@@ -82,7 +82,8 @@ module.exports = {
         PresaleCardDeposits: "presale_card_deposits",
         HalloweenRanks: "halloween_ranks",
         HalloweenUsers: "halloween_users",
-        HalloweenFloors: "halloween_floors"
+        HalloweenFloors: "halloween_floors",
+        ActionsLogs: "actions_logs"
     },
 
 

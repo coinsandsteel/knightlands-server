@@ -348,7 +348,7 @@ class User {
         this._data.chests[chest] = Game.now;
     }
 
-    async addExperience(exp, ignoreBonus = false) {
+    async addExperience(exp, ignoreBonus = false, tag = "") {
         const maxLevels = this._expTable.length;
         const character = this._data.character;
 
@@ -397,6 +397,8 @@ class User {
             this._restoreTimers();
             await this._updateTimersRegen();
         }
+
+        await Game.db.collection(Collections.ActionsLogs).insertOne({ action: "exp", tag, user: this.id, value: totalExp });
 
         await Game.rankings.updateRank(this.id, {
             type: RankingType.ExpGained
@@ -1068,7 +1070,7 @@ class User {
                 break;
 
             case ItemActions.AddExperience:
-                await this.addExperience(actionValue, true);
+                await this.addExperience(actionValue, true, "item");
                 break;
 
             case ItemActions.OpenBox:

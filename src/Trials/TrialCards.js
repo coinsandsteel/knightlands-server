@@ -97,7 +97,7 @@ class TrialCards {
                 break;
 
             case TrialCardsEffect.GiveExp:
-                await this._user.addExperience(modValue);
+                await this._user.addExperience(modValue, false, "trial_card");
                 break;
 
             case TrialCardsEffect.DamageEnemy:

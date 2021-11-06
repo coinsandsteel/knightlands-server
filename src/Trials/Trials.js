@@ -270,7 +270,7 @@ class Trials {
             // reward soft and exp
             const fightMeta = this._getFightMeta(stageMeta, currentFight.index);
             await this._user.addSoftCurrency(fightMeta.soft, true);
-            await this._user.addExperience(fightMeta.exp, true);
+            await this._user.addExperience(fightMeta.exp, true, "trial");
 
             this._cards.mana += this._generalTrialsMeta.manaPerFight;
 
@@ -414,7 +414,7 @@ class Trials {
         await this._user.inventory.addItemTemplates(items);
 
         const softCollected = await this._user.addSoftCurrency(rewardPreset.soft, true);
-        const expCollected = await this._user.addExperience(rewardPreset.exp, true);
+        const expCollected = await this._user.addExperience(rewardPreset.exp, true, "trial_stage");
 
         stageState.collected = true;
 
