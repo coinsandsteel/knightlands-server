@@ -670,7 +670,13 @@ export class DungeonController {
 
     private async collectLoot(cell: Cell) {
         const meta = Game.dungeonManager.getMeta();
-        const config = meta.dungeons.floors[this._saveData.state.floor - 1];
+        let config: DungeonFloorConfig;
+        const floor = this._saveData.state.floor;
+        if (meta.dungeons.floors.length < floor) {
+            config = meta.dungeons.floors[meta.dungeons.floors.length - 1];
+        } else {
+            config = meta.dungeons.floors[floor - 1];
+        }
         const loot = this._saveData.state.isFree ? config.freeLoot[cell.loot - 1] : config.loot[cell.loot - 1];
 
         let lootData: any = {};
