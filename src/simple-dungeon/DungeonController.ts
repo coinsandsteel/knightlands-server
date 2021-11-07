@@ -482,7 +482,7 @@ export class DungeonController {
             if (this._combat.outcome == CombatOutcome.EnemyWon) {
                 // save enemy health if enemy is non-agressive
                 if (!enemyData.isAggressive) {
-                    cell.enemy.health = Math.round(enemyData.health * this._saveData.data.power);
+                    cell.enemy.health = this._combat.enemyHealth;
                 }
 
                 this._events.enemyNotDefeated(this._revealedLookUp[this._dungeonUser.position], cell.enemy.health);
