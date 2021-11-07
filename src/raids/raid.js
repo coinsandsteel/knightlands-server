@@ -373,7 +373,7 @@ class Raid extends EventEmitter {
 
             this._damageLog.push(damageLog);
 
-            attackLog.exp = await attacker.addExperience(attackLog.exp);
+            attackLog.exp = await attacker.addExperience(attackLog.exp, "raid_att");
             attackLog.soft = await attacker.addSoftCurrency(attackLog.soft);
 
             this._publishEvent({ event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
