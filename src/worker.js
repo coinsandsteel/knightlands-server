@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs')
 const Config = require("./config");
 const SCWorker = require("socketcluster/scworker");
 const express = require("express");
@@ -28,6 +29,7 @@ import Game from "./game";
 import Rankings from "./rankings/Rankings";
 import { Blockchain } from "./blockchain/Blockchain";
 import Blockchains from "./knightlands-shared/blockchains";
+import Events from "./knightlands-shared/events";
 import { Shop } from "./shop/Shop";
 import { DatabaseClient } from "./database/Client";
 
@@ -149,6 +151,33 @@ class Worker extends SCWorker {
 
             respond(null, 'terminated');
         })
+
+        if (environment === 'production') {
+          this.setupVersionWatcher()
+        }
+    }
+
+    setupVersionWatcher() {
+      let versionFilePath = '/tmp/__client_version';
+      setInterval(() => {
+        try {
+          if (!fs.existsSync(versionFilePath)) {
+            return;
+          }
+          fs.readFile(versionFilePath, 'utf8', (err, version) => {
+            if (!version) {
+              return;
+            }
+            if (!this.version || this.version !== version) {
+              console.log('[Version watcher] New/initial version detected! ', version);
+              Game.publishToChannel(Events.UpdateRecieved, { version });
+              this.version = version;
+            }
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }, 20000);
     }
 
     setupMiddleware() {
