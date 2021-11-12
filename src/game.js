@@ -139,6 +139,7 @@ class Game extends EventEmitter {
     }
 
     publishToChannel(name, data) {
+        console.log('[publishToChannel]', { name, data });
         this._server.exchange.publish(name, data);
     }
 
