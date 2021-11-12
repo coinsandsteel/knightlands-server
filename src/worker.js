@@ -43,6 +43,8 @@ class Worker extends SCWorker {
     async run() {
         console.log('   >> Worker PID:', process.pid);
         var environment = this.options.environment;
+        var watchVersion = process.env.WATCH_VERSION || false;
+        console.log('Watch version', watchVersion);
 
         var app = express();
 
@@ -152,22 +154,27 @@ class Worker extends SCWorker {
             respond(null, 'terminated');
         })
 
-        if (environment === 'production') {
-          this.setupVersionWatcher()
+        if (watchVersion) {
+          this.setupVersionWatcher();
+          console.log('Set up version watcher!');
         }
     }
 
     setupVersionWatcher() {
-      let versionFilePath = '/tmp/__client_version';
+      let versionFilePath = process.env.FRONTEND_VERSION_FILE || '/tmp/__client_version';
       setInterval(() => {
+        console.log('Checking new version in ', versionFilePath);
         try {
-          if (!fs.existsSync(versionFilePath)) {
+          if (fs.existsSync(versionFilePath + ".tmp")) {
+            console.log('Frontend build is in progress...');
+          } else if (!fs.existsSync(versionFilePath)) {
             return;
           }
           fs.readFile(versionFilePath, 'utf8', (err, version) => {
             if (!version) {
               return;
             }
+            console.log('Current version is ', version);
             if (!this.version || this.version !== version) {
               console.log('[Version watcher] New/initial version detected! ', version);
               Game.publishToChannel(Events.UpdateRecieved, { version });
