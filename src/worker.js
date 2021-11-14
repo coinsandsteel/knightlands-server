@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs')
 const Config = require("./config");
 const SCWorker = require("socketcluster/scworker");
 const express = require("express");
@@ -28,6 +29,7 @@ import Game from "./game";
 import Rankings from "./rankings/Rankings";
 import { Blockchain } from "./blockchain/Blockchain";
 import Blockchains from "./knightlands-shared/blockchains";
+import Events from "./knightlands-shared/events";
 import { Shop } from "./shop/Shop";
 import { DatabaseClient } from "./database/Client";
 
@@ -41,6 +43,7 @@ class Worker extends SCWorker {
     async run() {
         console.log('   >> Worker PID:', process.pid);
         var environment = this.options.environment;
+        var watchVersion = process.env.WATCH_VERSION || false;
 
         var app = express();
 
@@ -149,6 +152,36 @@ class Worker extends SCWorker {
 
             respond(null, 'terminated');
         })
+
+        if (watchVersion) {
+          this.setupVersionWatcher();
+          console.log('Version watcher was set up');
+        }
+    }
+
+    setupVersionWatcher() {
+      let versionFilePath = process.env.FRONTEND_VERSION_FILE || '/tmp/__client_version';
+      setInterval(() => {
+        try {
+          if (fs.existsSync(versionFilePath + ".tmp")) {
+            console.log('Frontend build is in progress...');
+          } else if (!fs.existsSync(versionFilePath)) {
+            return;
+          }
+          fs.readFile(versionFilePath, 'utf8', (err, version) => {
+            if (!version) {
+              return;
+            }
+            if (!this.version || this.version !== version) {
+              console.log('[Version watcher] New/initial version detected! ', version);
+              Game.publishToChannel(Events.UpdateRecieved, { version });
+              this.version = version;
+            }
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }, 20000);
     }
 
     setupMiddleware() {
