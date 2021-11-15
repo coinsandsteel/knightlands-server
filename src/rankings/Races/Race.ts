@@ -84,6 +84,13 @@ export class Race extends EventEmitter implements IRankingTypeHandler {
         const winnerIdx = this._state.winners.findIndex(x => x.equals(userId));
         if (winnerIdx != -1) {
             this._state.winners.splice(winnerIdx, 1);
+            await this._db.collection(Collections.Races).updateOne({ _id: this.id }, {
+                $pull: {
+                    winners: {
+                        $in: [userId]
+                    }
+                }
+            });
         }
     }
 
