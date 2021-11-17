@@ -130,8 +130,8 @@ class Raid extends EventEmitter {
         return this._data.busySlots >= this.template.maxSlots;
     }
 
-    async init(data) {
-        await this._initFromData(data);
+    async init(data, peek) {
+        await this._initFromData(data, peek);
     }
 
     async getPlayers() {
@@ -165,7 +165,7 @@ class Raid extends EventEmitter {
         return this._data.participants[userId] !== undefined;
     }
 
-    async _initFromData(data) {
+    async _initFromData(data, peek) {
         this._template = await this._loadRaidTemplate(data.raidTemplateId);
 
         this._data = data;
@@ -209,11 +209,17 @@ class Raid extends EventEmitter {
 
         this._bossUnit = new Unit(this._data.bossState, maxStats, 1);
 
-        this._timerInterval = setInterval(this._updateTimeLeft.bind(this), 1000);
-        this._scheduleCheckpoint();
+        if (!peek) {
+            this._timerInterval = setInterval(this._updateTimeLeft.bind(this), 1000);
+            this._scheduleCheckpoint();
+        }
     }
 
     _updateTimeLeft() {
+        if (this._data.timeLeft <= 0) {
+            return;
+        }
+
         this._data.timeLeft--;
         if (this._data.timeLeft <= 0) {
             Game.publishToChannel(this.channelName, { event: Events.RaidFinished, defeat: false });
