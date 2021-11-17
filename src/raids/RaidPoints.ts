@@ -36,7 +36,7 @@ export class RaidPoints {
     }
 
     async rollbackRP() {
-        await Game.raidPoints.increaseTotalPoints(this._data.score, this._data.shares, this._user.isFreeAccount);
+        await Game.raidPoints.increaseTotalPoints(-this._data.score, -this._data.shares, this._user.isFreeAccount);
         this.reset();
     }
 
