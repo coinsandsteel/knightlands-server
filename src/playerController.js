@@ -421,7 +421,7 @@ class PlayerController extends IPaymentListener {
         respond(null, zones);
     }
 
-    _gameHandler(handler, throttleId = "default", throttle = 0) {
+    _gameHandler(handler, throttleId = "default", throttle = 300) {
         return async(data, respond) => {
             await this._lock.acquire("game_handler");
 
