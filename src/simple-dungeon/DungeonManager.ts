@@ -1,10 +1,11 @@
-import { Collection, ObjectId } from "mongodb";
+import { Collection, Db, ObjectId } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { DungeonMeta } from "./types";
 import Events from "../knightlands-shared/events";
 import { DungeonController } from "./DungeonController";
 import { Lock } from "../utils/lock";
+import blockchains from "../knightlands-shared/blockchains";
 
 const PAGE_SIZE = 50;
 
@@ -50,6 +51,10 @@ export class DungeonManager {
 
     async saveProgress(userId: ObjectId, saveData: any) {
         return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
+    }
+
+    isFinished() {
+        return (this._meta.startTime + 18 * 86400) < Game.nowSec;
     }
 
     getMeta() {
@@ -136,5 +141,40 @@ export class DungeonManager {
             await controller.enterHalloween();
         }
         
+    }
+
+    async createOrGetWithdrawRequest(userId: ObjectId, to: string) {
+        let receipt = await Game.db.collection(Collections.HalloweenWithdrawals).findOne({ _id: userId });
+        if (!receipt) {
+            receipt = await Game.dbClient.withTransaction(async (db: Db) => {
+                const blockchainId = blockchains.Polygon;
+                const chain = Game.blockchain.getBlockchain(blockchainId);
+                const amount = 0;
+                const bigAmount = chain.getBigIntDivTokenAmount(amount);
+                let withdrawalId = (
+                    await Game.activityHistory.save(db, userId, "halloween", blockchainId, {
+                        user: userId,
+                        chain: blockchainId,
+                        currency: "usdc",
+                        date: Game.nowSec,
+                        pending: true,
+                        amount: bigAmount.toString(),
+                        to
+                    })
+                ).insertedId;
+
+                let signature = await chain.sign(chain.getPotAddress(), to, withdrawalId, bigAmount);
+
+                await Game.activityHistory.update(db, { _id: new ObjectId(withdrawalId) }, { signature });
+
+                return {
+                    withdrawalId,
+                    signature,
+                    amount: bigAmount.toString()
+                };
+            });
+        }
+
+        return receipt;
     }
 }

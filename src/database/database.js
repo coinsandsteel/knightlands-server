@@ -83,6 +83,7 @@ module.exports = {
         HalloweenRanks: "halloween_ranks",
         HalloweenUsers: "halloween_users",
         HalloweenFloors: "halloween_floors",
+        HalloweenWithdrawals: "halloween_withdrawals",
         ActionsLogs: "actions_logs"
     },
 
