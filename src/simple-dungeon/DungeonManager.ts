@@ -180,11 +180,11 @@ export class DungeonManager {
                 withdrawalId: record._id.toHexString(),
                 signature: record.data.signature,
                 amount: record.data.amount
-            };
+            }; 
         }
         if (!receipt) {
             receipt = await Game.dbClient.withTransaction(async (db: Db) => {
-                const blockchainId = blockchains.Ethereum;
+                const blockchainId = blockchains.Polygon;
                 const chain = Game.blockchain.getBlockchain(blockchainId);
                 const bigAmount = chain.getBigIntNativeAmount(reward, 6); //USDC token has 6 decimals
                 let withdrawalId = (
