@@ -23,6 +23,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             Flesh,
             PresaleCardsGate,
             TokensDepositGateway,
+            USDCPot
         },
         url
     ) {
@@ -37,12 +38,14 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         this.PaymentGateway = PaymentGateway;
         this.Flesh = Flesh;
+        this.USDCPot = USDCPot;
 
         this.Payment = Blockchain.Payment;
         this.PresaleCardDeposit = Blockchain.PresaleCardDeposit;
         this.DividendTokenWithdrawal = Blockchain.DividendTokenWithdrawal;
         this.BurntTokenWithdrawal = Blockchain.BurntTokenWithdrawal;
         this.DividendWithdrawal = Blockchain.DividendWithdrawal;
+        this.HalloweenWithdrawal = Blockchain.HalloweenWithdrawal;
 
         this._activeWatchersCount = 0;
         this._eventsReceived = 0;
@@ -63,6 +66,10 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
         if (TokensDepositGateway) {
             this._tokenGateway = new ethers.Contract(TokensDepositGateway.address, TokensDepositGateway.abi, this._provider);
+        }
+
+        if (USDCPot) {
+            this._usdcPot = new ethers.Contract(USDCPot.address, USDCPot.abi, this._provider);
         }
     }
 
@@ -88,6 +95,10 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             return this.Flesh.address;
         }
         return "0x0";
+    }
+
+    getPotAddress() {
+        return this.USDCPot.address;
     }
 
     convertTokenAmount(str, decimals = 6) {
@@ -151,20 +162,20 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         return ethers.utils.isAddress(addr)
     }
 
-    shutdown(){
-      let self = this;
-      console.log('Shutting down blockchain...');
-      return new Promise(resolve => {
-        const interval = setInterval(() => {
-          console.log('Checking for semaphore...');
-          if (self._activeWatchersCount === 0) {
-            resolve(true);
-            clearInterval(interval);
-          };
-        }, 75);
-      }).catch((err) => {
-        console.log(err);
-      });
+    shutdown() {
+        let self = this;
+        console.log('Shutting down blockchain...');
+        return new Promise(resolve => {
+            const interval = setInterval(() => {
+                console.log('Checking for semaphore...');
+                if (self._activeWatchersCount === 0) {
+                    resolve(true);
+                    clearInterval(interval);
+                };
+            }, 75);
+        }).catch((err) => {
+            console.log(err);
+        });
     }
 
     _watchEvent(eventName, eventFilter, contract, handler) {
@@ -173,7 +184,7 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
 
     async _scanEventsFor(eventName, eventFilter, contract, handler) {
         if (Game.isShutdownInProgress) {
-          return;
+            return;
         }
 
         this._activeWatchersCount++;
@@ -230,6 +241,10 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
         // this._watchEvent("Withdrawal", this._stakingToken.filters.Withdrawal(), this._stakingToken, this._emitWithdrawal(this.DividendTokenWithdrawal));
         if (this._presaleGate) {
             this._watchEvent("Deposit", this._presaleGate.filters.Deposit(), this._presaleGate, this._emitPresaleCardDeposit);
+        }
+
+        if (this._usdcPot) {
+            this._watchEvent("Withdraw", this._usdcPot.filters.Withdraw(), this._usdcPot, this._emitHalloweenWithdrawal);
         }
 
         // this._watchEvent("TokenDeposit", this._tokenGateway.filters.Deposit(), this._tokenGateway, this._emitDeposit);
@@ -295,6 +310,16 @@ class EthereumBlockchain extends ClassAggregation(IBlockchainListener, IBlockcha
             blockNumber: event.blockNumber,
             transactionHash: event.transactionHash
         });
+    }
+
+    _emitHalloweenWithdrawal(event) {
+        this.emit(this.HalloweenWithdrawal, {
+            withdrawalId: event.args.withdrawalId,
+            from: event.args.from,
+            amount: event.args.amount.toString(),
+            blockNumber: event.blockNumber,
+            transactionHash: event.transactionHash
+        })
     }
 
     _emitDeposit(event) {

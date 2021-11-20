@@ -248,4 +248,5 @@ export interface DungeonMeta {
     traps: TrapsData;
     progression: ProgressionData;
     items: { [key: number]: ItemData };
+    rewards: number[];
 }

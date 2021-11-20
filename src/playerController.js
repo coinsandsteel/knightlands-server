@@ -1848,7 +1848,7 @@ class PlayerController extends IPaymentListener {
 
     async _sDungeonRank(user, data) {
         if (data.personal) {
-            return Game.dungeonManager.getUserRank(user.id);
+            return this.simpleDungeon.getRank();
         }
 
         if (!isNumber(data.page)) {

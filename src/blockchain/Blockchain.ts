@@ -93,6 +93,10 @@ export class Blockchain {
         return "__presale_card_deposit__";
     }
 
+    public static get HalloweenWithdrawal() {
+        return "'__halloween__withdrawal__'"
+    }
+
     constructor() {
         this._blockchains = {};
         this._blockchains[Blockchains.Ethereum] = createBlockchain(Blockchains.Ethereum);

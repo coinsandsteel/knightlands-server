@@ -6,18 +6,28 @@ import Events from "../knightlands-shared/events";
 import { DungeonController } from "./DungeonController";
 import { Lock } from "../utils/lock";
 import blockchains from "../knightlands-shared/blockchains";
+import { Blockchain } from "../blockchain/Blockchain";
+import errors from "../knightlands-shared/errors";
 
 const PAGE_SIZE = 50;
+
+interface WithdrawalData {
+    withdrawalId: string;
+    from: string;
+    amount: string;
+    blockNumber: number;
+    transactionHash: string;
+}
 
 export class DungeonManager {
     private _meta: DungeonMeta;
     private _collection: Collection;
     private _saveCollection: Collection;
-    private _lock: Lock;
     
     constructor() {
-        this._lock = new Lock();
         this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
+
+        Game.blockchain.on(Blockchain.HalloweenWithdrawal, this.handleWithdawal.bind(this));
     }
 
     async init(iapExecutor) {
@@ -87,12 +97,13 @@ export class DungeonManager {
             return null;
         }
 
-        let rank = await this._collection.find({ score: { $gt: score } }).count() + 1;
+        let rank = await this._collection.find({ $or:[{ score: { $gt: score } }, { score, order: { $lt: userRecord.order } }] }).count() + 1;
         return {
             rank,
             id: userId.toString(),
             score: score.toString(),
-            b: userRecord.b
+            b: userRecord.b,
+            claimed: false
         };
     }
 
@@ -143,25 +154,50 @@ export class DungeonManager {
         
     }
 
+    async isClaimedReward(userId: ObjectId) {
+        const records = await Game.activityHistory.getRecords(userId, { "data.claimed": true, type: "halloween" });
+        return records && records.length > 0;
+    }
+
     async createOrGetWithdrawRequest(userId: ObjectId, to: string) {
-        let receipt = await Game.db.collection(Collections.HalloweenWithdrawals).findOne({ _id: userId });
+        const userRecord = await this.getUserRank(userId)
+        if (!userRecord || userRecord.claimed) {
+            throw errors.IncorrectArguments;
+        }
+
+        const rewardIndex = userRecord.rank - 1;
+        const rewards = this.getMeta().rewards;
+        const reward = rewardIndex >= rewards.length ? 0 : rewards[rewardIndex];
+        if (reward <= 0) {
+            throw errors.IncorrectArguments;
+        }
+
+        const records = await Game.activityHistory.getRecords(userId, { "data.claimed": { $exists: false }, type: "halloween" });
+        let receipt;
+        if (records && records.length > 0) {
+            const record = records[0]
+            receipt = {
+                withdrawalId: record._id.toHexString(),
+                signature: record.data.signature,
+                amount: record.data.amount
+            };
+        }
         if (!receipt) {
             receipt = await Game.dbClient.withTransaction(async (db: Db) => {
-                const blockchainId = blockchains.Polygon;
+                const blockchainId = blockchains.Ethereum;
                 const chain = Game.blockchain.getBlockchain(blockchainId);
-                const amount = 0;
-                const bigAmount = chain.getBigIntDivTokenAmount(amount);
+                const bigAmount = chain.getBigIntNativeAmount(reward);
                 let withdrawalId = (
                     await Game.activityHistory.save(db, userId, "halloween", blockchainId, {
                         user: userId,
-                        chain: blockchainId,
+                        chain: blockchainId, 
                         currency: "usdc",
                         date: Game.nowSec,
                         pending: true,
                         amount: bigAmount.toString(),
                         to
                     })
-                ).insertedId;
+                ).insertedId.toHexString();
 
                 let signature = await chain.sign(chain.getPotAddress(), to, withdrawalId, bigAmount);
 
@@ -176,5 +212,10 @@ export class DungeonManager {
         }
 
         return receipt;
+    }
+
+    async handleWithdawal(blockchainId: string, data: WithdrawalData) {
+        // mark as claimed
+        await Game.activityHistory.update(Game.db, { _id: new ObjectId(data.withdrawalId) }, { claimed: true, pending: false });
     }
 }

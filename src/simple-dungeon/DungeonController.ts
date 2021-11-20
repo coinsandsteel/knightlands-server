@@ -115,6 +115,15 @@ export class DungeonController {
         return this.getState();
     }
 
+    async getRank() {
+        const rank = await Game.dungeonManager.getUserRank(this._user.id)
+        if (await Game.dungeonManager.isClaimedReward(this._user.id)) {
+            rank.claimed = true
+        }
+
+        return rank;
+    }
+
     async generateNewFloor(force: boolean = false) {
         const meta = Game.dungeonManager.getMeta();
 
