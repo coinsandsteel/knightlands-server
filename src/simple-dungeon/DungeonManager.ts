@@ -186,7 +186,7 @@ export class DungeonManager {
             receipt = await Game.dbClient.withTransaction(async (db: Db) => {
                 const blockchainId = blockchains.Ethereum;
                 const chain = Game.blockchain.getBlockchain(blockchainId);
-                const bigAmount = chain.getBigIntNativeAmount(reward);
+                const bigAmount = chain.getBigIntNativeAmount(reward, 6); //USDC token has 6 decimals
                 let withdrawalId = (
                     await Game.activityHistory.save(db, userId, "halloween", blockchainId, {
                         user: userId,
