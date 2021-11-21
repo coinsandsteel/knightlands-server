@@ -161,7 +161,11 @@ export class DungeonManager {
 
     async createOrGetWithdrawRequest(userId: ObjectId, to: string) {
         const userRecord = await this.getUserRank(userId)
-        if (!userRecord || userRecord.claimed) {
+        if (!userRecord) {
+            throw errors.IncorrectArguments;
+        }
+
+        if (await this.isClaimedReward(userId)) {
             throw errors.IncorrectArguments;
         }
 
