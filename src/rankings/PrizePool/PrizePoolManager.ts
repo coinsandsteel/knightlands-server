@@ -19,6 +19,10 @@ export class PrizePoolManager implements IRankingTypeHandler {
     }
 
     async updateRank(userId: string, options: RankingOptions, value: number) {
+        if (Game.season.isFinished()) {
+            return;
+        }
+
         if (!this._collection) {
             return;
         }
