@@ -204,6 +204,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchPrizePool, this._gameHandler(this._fetchPrizePool.bind(this)));
         this._socket.on(Operations.GetPrizePoolRank, this._gameHandler(this._getPrizePoolRank.bind(this)));
         this._socket.on(Operations.GetPrizePoolRewards, this._gameHandler(this._getPrizePoolRewards.bind(this)));
+        this._socket.on(Operations.PrizePoolWithdraw, this._gameHandler(this._withdrawPrizePool.bind(this)));
 
         // Army
         this._socket.on(Operations.GetArmy, this._gameHandler(this._getArmy.bind(this)));
@@ -1669,6 +1670,14 @@ class PlayerController extends IPaymentListener {
 
     async _getPrizePoolRewards(user, data) {
         return Game.prizePool.getRewards();
+    }
+
+    async _withdrawPrizePool(user, data) {
+        if (typeof data.to !== 'string') {
+            throw Errors.IncorrectArguments;
+        }
+
+        return Game.prizePool.createOrGetWithdrawRequest(user.id, data.to);
     }
 
     // Armies
