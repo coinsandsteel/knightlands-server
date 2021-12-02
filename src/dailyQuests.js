@@ -118,6 +118,8 @@ class DailyQuests {
     }
 
     async claimRewards(taskType) {
+        await this._checkCycle();
+
         if (this._data.claimedTasks[taskType]) {
             throw Errors.CantClaimReward;
         }
