@@ -26,6 +26,7 @@ import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
 import { exist, isNumber, isString } from "./validation";
 import { DungeonController } from "./simple-dungeon/DungeonController";
+import { XmasController } from "./xmas/XmasController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -254,6 +255,25 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
         this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
 
+        // Xmas
+        if (!isProd) {
+            this._socket.on(Operations.XmasGenerateNew, this._gameHandler(this._xmasGenerate.bind(this)));
+            this._socket.on(Operations.XmasTestAction, this._gameHandler(this._xmasTestAction.bind(this)));
+        }
+
+        this._socket.on(Operations.XmasRevealCell, this._gameHandler(this._xmasReveal.bind(this)));
+        this._socket.on(Operations.XmasUseCell, this._gameHandler(this._xmasUseCell.bind(this)));
+        this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
+        this._socket.on(Operations.XmasCombatAction, this._gameHandler(this._xmasCombatAction.bind(this)));
+        this._socket.on(Operations.XmasMove, this._gameHandler(this._xmasMove.bind(this)));
+        this._socket.on(Operations.XmasUseItem, this._gameHandler(this._xmasUseItem.bind(this)));
+        this._socket.on(Operations.XmasNextFloor, this._gameHandler(this._xmasNextFloor.bind(this)));
+        this._socket.on(Operations.XmasEquip, this._gameHandler(this._xmasEquip.bind(this)));
+        this._socket.on(Operations.XmasPath, this._gameHandler(this._xmasPath.bind(this)));
+        this._socket.on(Operations.XmasRank, this._gameHandler(this._xmasRank.bind(this)));
+        this._socket.on(Operations.XmasEnter, this._gameHandler(this._xmasEnter.bind(this)));
+        this._socket.on(Operations.XmasCommitStats, this._gameHandler(this._xmasCommitStats.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -288,6 +308,13 @@ class PlayerController extends IPaymentListener {
             this.simpleDungeon = null
         }
 
+        if (this.xmas) {
+            console.log('start xmas dispose')
+            await this.xmas.dispose();
+            console.log('finish xmas dispose')
+            this.xmas = null
+        }
+
         return true;
     }
 
@@ -302,6 +329,11 @@ class PlayerController extends IPaymentListener {
         // console.log('start loading dungeon')
         await this.simpleDungeon.init();
         // console.log('loaded dungeon')
+        
+        this.xmas = new XmasController(await this.getUser());
+        console.log('start loading xmas')
+        await this.xmas.init();
+        console.log('loaded xmas')
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -1886,6 +1918,98 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.commitStats(data.stats);
+    }
+
+    // Xmas
+    async _xmasGenerate(user, data) {
+        return this.xmas.generateNewFloor(true);
+    }
+    async _xmasReveal(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.xmas.reveal(+data.cellId);
+    }
+    async _xmasUseCell(_, data) {
+        return this.xmas.useCell(+data.cellId);
+    }
+    async _xmasLoad() {
+        return this.xmas.load();
+    }
+    async _xmasCombatAction(_, data) {
+        if (!isNumber(data.data.move)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.xmas.combatAction(data.data.move);
+    }
+    async _xmasMove(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.xmas.moveTo(data.cellId);
+    }
+    async _xmasUseItem(_, data) {
+        return this.xmas.useItem(data.item);
+    }
+    async _xmasNextFloor(_, data) {
+        return this.xmas.nextFloor();
+    }
+    async _xmasTestAction(_, data) {
+        return this.xmas.testAction(data.action);
+    }
+    async _xmasEquip(_, data) {
+        const { mHand, oHand } = data;
+        return this.xmas.equip(mHand, oHand);
+    }
+    async _xmasPath(_, data) {
+        if (!isNumber(data.cellId)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.xmas.estimateEnergy(data.cellId);
+    }
+    async _xmasRank(user, data) {
+        if (data.personal) {
+            return Game.xmas.getUserRank(user.id);
+        }
+
+        if (!isNumber(data.page)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (data.total) {
+            return Game.xmas.totalPlayers();
+        }
+
+        return Game.xmas.getRankings(data.page);
+    }
+    async _xmasEnter(_, data) {
+        if (data.status) {
+            return this.xmas.getEntranceStatus();
+        }
+
+        if (data.free) {
+            this.xmas.enter(true, true);
+            return;
+        }
+
+        return this.xmas.enter(false, false, data.chain, data.address);
+    }
+    async _xmasCommitStats(_, data) {
+        if (!data.stats) {
+            throw Errors.IncorrectArguments;
+        }
+
+        for (let key in data.stats) {
+            if (!isNumber(data.stats[key])) {
+                throw Errors.IncorrectArguments;
+            }
+        }
+
+        return this.xmas.commitStats(data.stats);
     }
 
     async enterHalloween() {
