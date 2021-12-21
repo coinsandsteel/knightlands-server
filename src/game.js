@@ -74,7 +74,7 @@ class Game extends EventEmitter {
         this._playersById = {};
 
         await this.dungeonManager.init(iapExecutor);
-        await this.xmasManager.init(iapExecutor);
+        await this.xmasManager.init();
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();

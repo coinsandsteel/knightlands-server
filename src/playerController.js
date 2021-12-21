@@ -256,23 +256,11 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
 
         // Xmas
-        if (!isProd) {
-            this._socket.on(Operations.XmasGenerateNew, this._gameHandler(this._xmasGenerate.bind(this)));
-            this._socket.on(Operations.XmasTestAction, this._gameHandler(this._xmasTestAction.bind(this)));
-        }
-
-        this._socket.on(Operations.XmasRevealCell, this._gameHandler(this._xmasReveal.bind(this)));
-        this._socket.on(Operations.XmasUseCell, this._gameHandler(this._xmasUseCell.bind(this)));
         this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
-        this._socket.on(Operations.XmasCombatAction, this._gameHandler(this._xmasCombatAction.bind(this)));
-        this._socket.on(Operations.XmasMove, this._gameHandler(this._xmasMove.bind(this)));
-        this._socket.on(Operations.XmasUseItem, this._gameHandler(this._xmasUseItem.bind(this)));
-        this._socket.on(Operations.XmasNextFloor, this._gameHandler(this._xmasNextFloor.bind(this)));
-        this._socket.on(Operations.XmasEquip, this._gameHandler(this._xmasEquip.bind(this)));
-        this._socket.on(Operations.XmasPath, this._gameHandler(this._xmasPath.bind(this)));
-        this._socket.on(Operations.XmasRank, this._gameHandler(this._xmasRank.bind(this)));
-        this._socket.on(Operations.XmasEnter, this._gameHandler(this._xmasEnter.bind(this)));
-        this._socket.on(Operations.XmasCommitStats, this._gameHandler(this._xmasCommitStats.bind(this)));
+        this._socket.on(Operations.XmasFarmUpgrade, this._gameHandler(this._xmasFarmUpgrade.bind(this)));
+        this._socket.on(Operations.XmasHarvest, this._gameHandler(this._xmasHarvest.bind(this)));
+        this._socket.on(Operations.XmasCommitPerks, this._gameHandler(this._xmasCommitPerks.bind(this)));
+        this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1921,99 +1909,36 @@ class PlayerController extends IPaymentListener {
     }
 
     // Xmas
-    async _xmasGenerate(user, data) {
-        return this.xmas.generateNewFloor(true);
-    }
-    async _xmasReveal(_, data) {
-        if (!isNumber(data.cellId)) {
-            throw Errors.IncorrectArguments;
-        }
-
-        return this.xmas.reveal(+data.cellId);
-    }
-    async _xmasUseCell(_, data) {
-        return this.xmas.useCell(+data.cellId);
-    }
     async _xmasLoad() {
         return this.xmas.load();
     }
-    async _xmasCombatAction(_, data) {
-        if (!isNumber(data.data.move)) {
+
+    async _xmasFarmUpgrade(_, data) {
+        if (!isNumber(data.tier)) {
             throw Errors.IncorrectArguments;
         }
-
-        return this.xmas.combatAction(data.data.move);
+        return this.xmas.farmUpgrade(data.tier);
     }
-    async _xmasMove(_, data) {
-        if (!isNumber(data.cellId)) {
+    
+    async _xmasHarvest(_, data) {
+        if (!isNumber(data.tier)) {
             throw Errors.IncorrectArguments;
         }
+        return this.xmas.harvest(data.tier);
+    }
 
-        return this.xmas.moveTo(data.cellId);
-    }
-    async _xmasUseItem(_, data) {
-        return this.xmas.useItem(data.item);
-    }
-    async _xmasNextFloor(_, data) {
-        return this.xmas.nextFloor();
-    }
-    async _xmasTestAction(_, data) {
-        return this.xmas.testAction(data.action);
-    }
-    async _xmasEquip(_, data) {
-        const { mHand, oHand } = data;
-        return this.xmas.equip(mHand, oHand);
-    }
-    async _xmasPath(_, data) {
-        if (!isNumber(data.cellId)) {
+    async _xmasCommitPerks(_, data) {
+        if (!data.perks) {
             throw Errors.IncorrectArguments;
         }
-
-        return this.xmas.estimateEnergy(data.cellId);
+        return this.xmas.commitPerks(data.perks);
     }
-    async _xmasRank(user, data) {
-        if (data.personal) {
-            return Game.xmas.getUserRank(user.id);
-        }
-
-        if (!isNumber(data.page)) {
+  
+    async _xmasUpdateLevelGap(_, data) {
+        if (!isNumber(data.value)) {
             throw Errors.IncorrectArguments;
         }
-
-        if (data.total) {
-            return Game.xmas.totalPlayers();
-        }
-
-        return Game.xmas.getRankings(data.page);
-    }
-    async _xmasEnter(_, data) {
-        if (data.status) {
-            return this.xmas.getEntranceStatus();
-        }
-
-        if (data.free) {
-            this.xmas.enter(true, true);
-            return;
-        }
-
-        return this.xmas.enter(false, false, data.chain, data.address);
-    }
-    async _xmasCommitStats(_, data) {
-        if (!data.stats) {
-            throw Errors.IncorrectArguments;
-        }
-
-        for (let key in data.stats) {
-            if (!isNumber(data.stats[key])) {
-                throw Errors.IncorrectArguments;
-            }
-        }
-
-        return this.xmas.commitStats(data.stats);
-    }
-
-    async enterHalloween() {
-        return this.simpleDungeon.enter(true, false);
+        return this.xmas.updateLevelGap(data.value);
     }
 }
 

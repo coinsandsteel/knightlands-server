@@ -2,75 +2,338 @@ import game from "../game";
 import errors from "../knightlands-shared/errors";
 import { XmasEvents } from "./XmasEvents";
 import { XmasState } from "./types";
+import { 
+  initialSlotState,
+  perksTree,
+  getFarmTimeData,
+  getFarmIncomeData,
+  getFarmUpgradeData,
+  getTowerLevelBoundaries,
+  getMainTowerPerkValue,
+  farmConfig,
+  TOWER_PERK_AUTOCYCLES_COUNT,
+  CURRENCY_SANTABUCKS,
+  CURRENCY_GOLD,
+  CURRENCY_UNIT_ESSENCE,
+  CURRENCY_CHRISTMAS_POINTS,
+  CURRENCY_SHINIES,
+  TOWER_PERK_UPGRADE,
+  TOWER_PERK_INCOME,
+  TOWER_PERK_CYCLE_DURATION,
+  TOWER_PERK_SPEED,
+  TOWER_PERK_SUPER_SPEED,
+  TOWER_PERK_BOOST,
+  TOWER_PERK_SUPER_BOOST,
+  balance,
+  slots,
+  perksTree as perks
+} from "../knightlands-shared/xmas";
 
 export class XmasUser {
     private _state: XmasState;
     private _events: XmasEvents;
+    private towerLevelBoundaries = {};
+    private tierIntervals = {};
 
     constructor(state: XmasState, events: XmasEvents) {
         this._state = state;
         this._events = events;
+        this.towerLevelBoundaries = getTowerLevelBoundaries();
     }
 
-    /*updateHealthAndEnergy(resetTimers: boolean = false) {
-        const regenEvent: any = {};
-
-        {
-            const lastRegen = this._state.lastHpRegen;
-            const timeElapsed = game.nowSec - lastRegen;
-
-            const hpRegened = Math.floor(timeElapsed / this.healthRegen);
-            if (hpRegened > 0) {
-                this._state.lastHpRegen += Math.floor(hpRegened * this.healthRegen);
-
-                if (!resetTimers) {
-                    this.modifyHealth(hpRegened);
-                }
-
-                regenEvent.hp = this._state.lastHpRegen;
-            }
-        }
-
-        {
-            const lastRegen = this._state.lastEnergyRegen;
-            const timeElapsed = game.nowSec - lastRegen;
-
-            const energyRegened = Math.floor(timeElapsed / this.energyRegen);
-            if (energyRegened > 0) {
-                this._state.lastEnergyRegen += Math.floor(energyRegened * this.energyRegen);
-
-                if (!resetTimers) {
-                    this.modifyEnergy(energyRegened, true);
-                }
-
-                regenEvent.energy = this._state.lastEnergyRegen;
-            }
-        }
-
-        if (Object.keys(regenEvent).length != 0) {
-            this._events.regenUpdate(regenEvent);
-        }
-    }*/
-
-    /*addExp(exp: number) {
-        this._state.exp = (this._state.exp || 0) + exp;
-        let nextLevelExp = this._progression.experience[this._state.level - 1];
-        while (nextLevelExp <= this._state.exp) {
-            this._state.exp -= nextLevelExp;
-            this._state.level++;
-            this._events.playerLevel(this._state.level);
-            nextLevelExp = this._progression.experience[this._state.level - 1];
-        }
-
-        this._events.playerExp(this._state.exp);
-    }*/
-
-    /*changeStats(stats: object) {
-        this._state.stats = { ...this._state.stats, ...stats };
-        this._events.statsChanged(this._state.stats);
+    public getState(): XmasState {
+      return this._state;
     }
 
-    canUpdateStats(statsSum) {
-      return statsSum <= this._state.level - 1;
-    }*/
+    public static getInitialState(): XmasState {
+      const state: XmasState = {
+        levelGap: 1,
+        tower: {
+          level: 0,
+          percentage: 0,
+          exp: 0
+        },
+        slots,
+        perks,
+        balance
+      };
+
+      return state;
+    }
+
+    get sbBalance() {
+      return this._state.balance[CURRENCY_SANTABUCKS];
+    }
+
+    tier6IsNotReady() {
+      return true;
+    }
+
+    public upgradeIsAllowed(tier) {
+      if (tier == 1) {
+        return true;
+      }
+      return this._state.slots[tier - 1].level >= 50;
+    }
+
+    canAffordUpgrade(tier) {
+      return this._state.slots[tier].stats.upgrade.value <= this.sbBalance;
+    }
+
+    restartTimer(tier) {
+      if (this.tierIntervals[tier]) {
+        clearInterval(this.tierIntervals[tier]);
+      }
+
+      let slotData = this._state.slots[tier];
+      this.tierIntervals[tier] = setTimeout(() => {
+        let currentIncomeValue = slotData.stats.income.current;
+
+        if (!this.tier6IsNotReady) {
+          this._state.slots[tier].accumulated.currency += currentIncomeValue.currencyPerCycle;
+        }
+        this._state.slots[tier].accumulated.exp += currentIncomeValue.expPerCycle;
+
+        if (slotData.progress.autoCyclesLeft > 0) {
+          this.hookCycleFinished(tier);
+        } else {
+          this.hookEpochFinished(tier);
+        }
+        this._events.flush();
+      }, slotData.stats.cycleLength * 1000);
+    }
+
+    hookCycleFinished(tier) {
+      if (this._state.slots[tier].progress.autoCyclesLeft > 0) {
+        this._state.slots[tier].progress.autoCyclesLeft--;
+        this._state.slots[tier].progress.autoCyclesSpent++;
+      } else {
+        this._state.slots[tier].progress.autoCyclesSpent = 0;
+      }
+      this._events.cycleFinished(tier);
+      this.restartTimer(tier);
+    }
+
+    resetCounters(tier) {
+      let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
+      let autoCyclesLeft = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+      this._state.slots[tier].progress.autoCyclesLeft = autoCyclesLeft;
+      this._state.slots[tier].progress.autoCyclesSpent = 0;
+
+      this._events.progress(
+        tier,
+        {
+          autoCyclesLeft,
+          autoCyclesSpent: 0
+        }
+      );
+    }
+    
+    hookEpochFinished(tier) {
+      clearInterval(this.tierIntervals[tier]);
+      this._events.epochFinished(tier);
+      this.resetCounters(tier);
+    }
+    
+    reCalculateCycleLength(tier){
+      let cycleLength = this.getTierCycleLength(tier);
+      this._state.slots[tier].stats.cycleLength = cycleLength;
+      this._events.cycleLength(tier, cycleLength);
+    }
+
+    reCalculateUpgradeData(tier){
+      let upgradeData = this.getTierUpgradePrice(tier);
+      this._state.slots[tier].stats.upgrade = upgradeData;
+      this._events.upgrade(tier, upgradeData);
+    }
+
+    reCalculateIncomeValue(tier){
+      let incomeValue = this.getTierIncomeValue(tier);
+      this._state.slots[tier].stats.income.current = incomeValue.current;
+      this._state.slots[tier].stats.income.next = incomeValue.next;
+      this._events.income(tier, incomeValue.current, incomeValue.next);
+    }
+
+    reCalculateStats(tier){
+      this.reCalculateCycleLength(tier);
+      this.reCalculateUpgradeData(tier);
+      this.reCalculateIncomeValue(tier);
+    }
+
+    public updatePerkDependants(){
+      /*
+      let data = {};
+      let slotData = store.getters.slot(tier);
+
+      // Update autocycles counters
+      let perkData = store.getters.perkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
+      if (perkData) {
+        let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+        data.autoCyclesLeft = autoCyclesMax - slotData.autoCyclesSpent;
+      }
+
+      if (Object.keys(data).length) {
+        store.dispatch('updateSlot', {
+          tier,
+          data
+        });
+      }
+      */
+    }
+
+    public harvest(tier) {
+      // TODO calculate exp and currency amound depending on time passed and lastLaunch
+      this.addExpirience(this._state.slots[tier].accumulated.exp);
+      this.increaseBalance(
+        farmConfig[tier].currency, 
+        this._state.slots[tier].accumulated.currency
+      );
+
+      this.resetCounters(tier);
+      this.restartTimer(tier);
+    }
+
+    public upgradeSlot(tier){
+      this.decreaseBalance(
+        CURRENCY_SANTABUCKS,
+        this._state.slots[tier].stats.upgrade.value
+      );
+
+      this._state.slots[tier].level += this._state.levelGap;
+      this._events.level(tier, this._state.slots[tier].level);
+
+      this.reCalculateStats(tier);
+      this.resetCounters(tier);
+      this.restartTimer(tier);
+    }
+
+    // TODO
+    public commitPerks(perks) {
+      /*
+      store.commit('commitPerks', payload);
+      for (let tier = 1; tier <= 9; tier++) {
+        store.dispatch('updateTierPerks', tier);
+      }
+      */
+    }
+
+    async updateLevelGap(value) {
+      this._state.levelGap = value;
+      this._events.levelGap(value);
+
+      for (let tier = 1; tier <= 9; tier++) {
+        this.reCalculateUpgradeData(tier);
+        this.reCalculateIncomeValue(tier);
+      }
+    }
+
+    private addExpirience(value) {
+      this._state.tower.exp += value;
+
+      let currentExp = this._state.tower.exp;
+      let currentLevel = this._state.tower.level;
+      let newLevel = currentLevel + 1;
+      let currentLevelExpStart = this.towerLevelBoundaries[currentLevel];
+      let currentLevelExpEnd = this.towerLevelBoundaries[newLevel];
+
+      while (this.towerLevelBoundaries[newLevel] < this._state.tower.exp) {
+        currentLevelExpStart = this.towerLevelBoundaries[newLevel];
+        currentLevelExpEnd = this.towerLevelBoundaries[newLevel + 1];
+        newLevel++;
+      }
+
+      if (newLevel > currentLevel) {
+        this._state.tower.level = newLevel - 1;
+      }
+
+      let expGap = currentLevelExpEnd - currentLevelExpStart;
+      let currentGap = currentExp - currentLevelExpStart;
+
+      this._state.tower.percentage = Math.floor(
+        currentGap * 100 / expGap
+      );
+    }
+
+    private increaseBalance(currency, amount) {
+      this._state.balance[currency] += amount;
+      this._events.balance(currency, this._state.balance[currency]);
+    }
+    
+    private decreaseBalance(currency, amount) {
+      this._state.balance[currency] -= amount;
+      this._events.balance(currency, this._state.balance[currency]);
+    }
+    
+    private getPerkData(tier, perkName) {
+      let tierCurrency = farmConfig[tier].currency;
+      return this._state.perks[tierCurrency].tiers[
+        tierCurrency === CURRENCY_CHRISTMAS_POINTS ? tier : "all"
+      ][perkName];
+    }
+    
+    private getTierCycleLength(tier) {
+      let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
+      let stat = getFarmTimeData(tier, {
+        cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
+        [TOWER_PERK_SPEED]: false,
+        [TOWER_PERK_SUPER_SPEED]: false
+      });
+      return stat.cycleLength;
+    }
+
+    private getTierIncomeValue(tier) {
+      let level = this._state.slots[tier].level;
+      let incomePerkData = this.getPerkData(tier, TOWER_PERK_INCOME);
+      let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
+      let upgradeData = this.getTierUpgradePrice(tier);
+      let params = {
+        incomePerkLevel: incomePerkData ? incomePerkData.level : 0,
+        cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
+        [TOWER_PERK_BOOST]: false,
+        [TOWER_PERK_SUPER_BOOST]: false
+      };
+      let currentStat = getFarmIncomeData(tier, level, params);
+      let nextStat = getFarmIncomeData(tier, upgradeData.nextLevel, params);
+      return { current: currentStat, next: nextStat };
+    }
+    
+    private getTierUpgradePrice(tier) {
+      let levelGap = 1;
+      let level = this._state.slots[tier].level;
+      let showMaxPrice = this._state.levelGap === 10000;
+      if (level > 0) {
+        levelGap = showMaxPrice ? null : this._state.levelGap;
+      }
+
+      let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
+      let accumulatedPrice = 0;
+      let maxAffordableLevel = level;
+      let imaginaryAvailableResources = this._state.balance[CURRENCY_SANTABUCKS];
+      let stat = null;
+      for (
+        let tickLevel = 1;
+        showMaxPrice ? imaginaryAvailableResources >= 0 : tickLevel <= levelGap;
+        tickLevel++
+      ) {
+        stat = getFarmUpgradeData(tier, level + tickLevel, {
+          upgradePerkLevel: perkData ? perkData.level : 0
+        });
+        accumulatedPrice += stat.upgrade;
+        imaginaryAvailableResources -= stat.upgrade;
+        maxAffordableLevel = level + tickLevel;
+        if (level === 0) {
+          break;
+        }
+      }
+
+      if (level > 0 && showMaxPrice) {
+        accumulatedPrice -= stat.upgrade;
+        maxAffordableLevel--;
+      }
+
+      return {
+        value: accumulatedPrice,
+        nextLevel: maxAffordableLevel
+      };
+    }
 }

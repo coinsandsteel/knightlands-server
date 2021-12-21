@@ -38,7 +38,10 @@ export interface SlotData {
   },
   stats: {
     cycleLength: number;
-    upgradePrice: number;
+    upgrade:  {
+      value: number;
+      nextLevel: number;
+    };
     income: {
       current: IncomeData;
       next: IncomeData;

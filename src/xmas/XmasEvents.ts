@@ -24,10 +24,23 @@ export class XmasEvents {
         this._events.tower = data;
     }
 
-    accumulated(tier, accumulated) {
+    balance(currency, balance) {
+        this._events.balance = { 
+          [currency]: balance
+        };
+    }
+
+    level(tier, level) {
+        this._events.level = {
+          tier,
+          level
+        };
+    }
+
+    accumulated(tier, currency, exp) {
         this._events.accumulated = {
           tier,
-          accumulated
+          accumulated: { currency, exp }
         };
     }
 
@@ -45,10 +58,10 @@ export class XmasEvents {
         };
     }
 
-    upgradePrice(tier, upgradePrice) {
-        this._events.upgradePrice = {
+    upgrade(tier, upgrade) {
+        this._events.upgrade = {
           tier,
-          upgradePrice
+          upgrade
         };
     }
 
@@ -58,7 +71,7 @@ export class XmasEvents {
         current,
         next
       };
-  }
+    }
 
     branch(currency, unlocked) {
         this._events.branch = {
@@ -74,7 +87,11 @@ export class XmasEvents {
         };
     }
 
-    balance(balance) {
-        this._events.balance = balance;
+    cycleFinished(tier) {
+        this._events.cycleFinished = { tier };
+    }
+
+    epochFinished(tier) {
+        this._events.epochFinished = { tier };
     }
 }

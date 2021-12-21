@@ -8,7 +8,7 @@ import User from "../user";
 import { XmasEvents } from "./XmasEvents";
 import { XmasUser } from "./XmasUser";
 import { XmasSaveData, XmasState } from "./types";
-import { balance, slots, perksTree as perks } from "../knightlands-shared/xmas";
+import { CURRENCY_SANTABUCKS, balance, slots, perksTree as perks, currencies } from "../knightlands-shared/xmas";
 
 const IAP_TAG = "xmas";
 
@@ -25,26 +25,18 @@ export class XmasController {
 
     async init() {
         const saveData = await Game.xmasManager.loadProgress(this._user.id);
-        if (saveData) {
-            this._saveData = saveData as XmasSaveData;
-            this.initPlayer();
-        }
-
         if (!this._saveData) {
-            await this.generate();
+          await this.generate();
+        } else {
+          this._saveData = saveData as XmasSaveData;
         }
-
-        await this.enter();
-    }
-
-    async enter() {
-      await this.generate();
-      await this._save();
+        this.initPlayer();
+        await this._save();
     }
 
     async dispose() {
         // flush data
-        await this._save()
+        await this._save();
     }
 
     async load() {
@@ -52,38 +44,39 @@ export class XmasController {
     }
 
     async generate() {
-      let state = {
-          levelGap: 1,
-          tower: {
-            level: 0,
-            percentage: 0,
-            exp: 0
-          },
-          slots,
-          perks,
-          balance
-        };
-
-        this._saveData = { state };
-        await Game.xmasManager.saveProgress(this._user.id, this._saveData);
-        
-        return this.getState();
+        this._saveData = { state: XmasUser.getInitialState() };
     }
 
     getState(): XmasState {
-        const state: XmasState = {
-          levelGap: 1,
-          tower: {
-            level: 0,
-            percentage: 0,
-            exp: 0
-          },
-          slots,
-          perks,
-          balance
-        };
+        return this._xmasUser.getState();
+    }
 
-        return state;
+    async farmUpgrade(tier) {
+      if (
+        !this._xmasUser.upgradeIsAllowed(tier)
+        ||
+        !this._xmasUser.canAffordUpgrade(tier)
+      ) {
+        return;
+      }
+      
+      this._xmasUser.upgradeSlot(tier);
+      this._events.flush();
+    }
+
+    async harvest(tier) {
+      this._xmasUser.harvest(tier);
+      this._events.flush();
+    }
+    
+    async commitPerks(perks) {
+      this._xmasUser.commitPerks(perks);
+      this._events.flush();
+    }
+
+    async updateLevelGap(value) {
+      this._xmasUser.updateLevelGap(value);
+      this._events.flush();
     }
 
     private initPlayer() {
@@ -97,6 +90,6 @@ export class XmasController {
     }
 
     private async _save() {
-        await Game.xmasManager.saveProgress(this._user.id, this._saveData);
+        await Game.xmasManager.saveProgress(this._user.id, { state: this.getState() });
     }
 }

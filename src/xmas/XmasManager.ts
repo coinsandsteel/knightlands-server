@@ -18,19 +18,10 @@ export class XmasManager {
         this._saveCollection = Game.db.collection(Collections.XmasUsers);
     }
 
-    async init(iapExecutor) {
+    async init() {
         this._collection = Game.db.collection(Collections.XmasRanks);
         this._collection.createIndex({ score: 1 });
         this._collection.createIndex({ order: 1 });
-
-        // TODO create meta
-        this._meta = {};
-
-        iapExecutor.registerAction(this._meta.iap, async context => {
-            return this._allowEntrance(context.iap, context.userId);
-        });
-
-        iapExecutor.mapIAPtoEvent(this._meta.iap, Events.PurchaseComplete);
     }
 
     async loadProgress(userId: ObjectId) {
@@ -109,17 +100,5 @@ export class XmasManager {
             records,
             finished: total <= page * PAGE_SIZE + PAGE_SIZE
         };
-    }
-
-    async _allowEntrance(iap: string, userId: ObjectId) {
-        let controller = await Game.getPlayerControllerById(userId);
-        if (!controller) {
-            const xmas = new XmasController(await Game.getUserById(userId));
-            await xmas.init();
-            await xmas.enter();
-        } else {
-            await controller.enterXmas();
-        }
-        
     }
 }
