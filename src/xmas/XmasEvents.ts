@@ -90,4 +90,11 @@ export class XmasEvents {
     cycleStop(tier) {
         this._events.cycleStop = { tier };
     }
+
+    launched(tier, value) {
+      this._events.launched = {
+        ...this._events.launched,
+        ...{ [tier]: value }
+      };
+    }
 }

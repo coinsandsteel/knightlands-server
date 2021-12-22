@@ -25,6 +25,7 @@ export interface XmasState {
 }
 
 export interface SlotData {
+  launched: boolean;
   lastLaunch: number;
   level: number;
   accumulated: {

@@ -33,13 +33,15 @@ export class XmasUser {
     private tierIntervals = {};
 
     constructor(state: XmasState | null, events: XmasEvents) {
+        this.towerLevelBoundaries = getTowerLevelBoundaries();
         this._events = events;
+
         if (state) {
           this._state = state;
+          this.wakeUp();
         } else {
           this.setInitialState();
         }
-        this.towerLevelBoundaries = getTowerLevelBoundaries();
     }
 
     public getState(): XmasState {
@@ -70,6 +72,31 @@ export class XmasUser {
       return tier == 6 && this._state.slots[tier].stats.income.current.currencyPerCycle < 1;
     }
 
+    wakeUp() {
+      for (let tier = 1; tier <= 9; tier++) {
+        let tierData = this._state.slots[tier];
+        if (!tierData.launched) {
+          continue;
+        }
+        
+        let accumulated = this.getAccumulatedProgressive(tier);
+        if (this.tier6IsNotReady(tier)) {
+          this._state.slots[tier].accumulated.currency = 0;
+        } else {
+          this._state.slots[tier].accumulated.currency = accumulated.currency;
+        }
+        this._state.slots[tier].accumulated.exp = accumulated.exp;
+        this._state.slots[tier].launched = accumulated.launched;
+        this._state.slots[tier].progress.autoCyclesLeft = accumulated.autoCyclesLeft;
+        this._state.slots[tier].progress.autoCyclesSpent = accumulated.autoCyclesSpent;
+        this._state.slots[tier].progress.percentage = accumulated.percentage;
+
+        if (this._state.slots[tier].launched) {
+          this.launchTimer(tier, false);
+        }
+      }
+    }
+
     public upgradeIsAllowed(tier) {
       if (tier == 1) {
         return true;
@@ -94,10 +121,13 @@ export class XmasUser {
 
       this._events.cycleStart(tier);
       if (initial) {
+        this._state.slots[tier].launched = true;
         this._state.slots[tier].lastLaunch = Game.now;
       }
 
       let slotData = this._state.slots[tier];
+      let innerCycleTimeModifier = (100 - slotData.progress.percentage) / 100;
+
       this.tierIntervals[tier] = setTimeout(() => {
         let currentIncomeValue = slotData.stats.income.current;
 
@@ -108,19 +138,20 @@ export class XmasUser {
         
         this._events.accumulated(
           tier,
-          this._state.slots[tier].accumulated.currency,
-          this._state.slots[tier].accumulated.exp
+          slotData.accumulated.currency,
+          slotData.accumulated.exp
         );
 
         if (slotData.progress.autoCyclesLeft > 0) {
           this.hookCycleFinished(tier);
           this.launchTimer(tier, false);
         } else {
+          this._state.slots[tier].launched = false;
           this.hookEpochFinished(tier);
         }
 
         this._events.flush();
-      }, slotData.stats.cycleLength * 1000);
+      }, (innerCycleTimeModifier || 1) * slotData.stats.cycleLength * 1000);
     }
 
     getAccumulatedProgressive(tier) {
@@ -131,16 +162,33 @@ export class XmasUser {
 
       let power = this._state.slots[tier].stats.income.current;
       let passedTime = (Game.now - this._state.slots[tier].lastLaunch) / 1000;
+      let endReached = passedTime >= maxEfficientTime;
       let time = Math.min(passedTime, maxEfficientTime);
-      let multiplier = time == maxEfficientTime ? 1 : 0.5;
+      let multiplier = endReached ? 1 : 0.5;
+
+      let percentage = 0;
+      let autoCyclesLeft = autoCyclesMax;
+      let autoCyclesSpent = 0;
+
+      if (!endReached) {
+        let passedTimeInsideCycle = passedTime % cycleLength;
+        percentage = Math.round(passedTimeInsideCycle * 100 / cycleLength);
+        autoCyclesSpent = Math.floor(passedTime / cycleLength);
+        autoCyclesLeft = autoCyclesMax - autoCyclesSpent;
+      }
 
       return {
+        launched: !endReached,
+        percentage,
+        autoCyclesLeft,
+        autoCyclesSpent,
         currency: time * power.currencyPerSecond * multiplier,
         exp: time * power.expPerSecond * multiplier
       };
     }
 
     hookCycleFinished(tier) {
+      this._state.slots[tier].progress.percentage = 100;
       if (this._state.slots[tier].progress.autoCyclesLeft > 0) {
         this._state.slots[tier].progress.autoCyclesLeft--;
         this._state.slots[tier].progress.autoCyclesSpent++;
@@ -149,6 +197,7 @@ export class XmasUser {
       }
 
       this._events.progress(tier, {
+        percentage: 100,
         autoCyclesLeft: this._state.slots[tier].progress.autoCyclesLeft,
         autoCyclesSpent: this._state.slots[tier].progress.autoCyclesSpent,
       });
@@ -159,10 +208,12 @@ export class XmasUser {
       let autoCyclesLeft = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
       this._state.slots[tier].progress.autoCyclesLeft = autoCyclesLeft;
       this._state.slots[tier].progress.autoCyclesSpent = 0;
+      this._state.slots[tier].progress.percentage = 0;
 
       this._events.progress(
         tier,
         {
+          percentage: 0,
           autoCyclesLeft,
           autoCyclesSpent: 0
         }
@@ -178,6 +229,7 @@ export class XmasUser {
     hookEpochFinished(tier) {
       clearInterval(this.tierIntervals[tier]);
       this._events.cycleStop(tier);
+      this._events.launched(tier, false);
       this.resetCounters(tier);
     }
     
@@ -261,7 +313,6 @@ export class XmasUser {
       this._events.level(tier, this._state.slots[tier].level);
 
       this.reCalculateStats(tier, true);
-      this.launchTimer(tier, true);
     }
 
     public commitPerks(perks) {

@@ -30,7 +30,6 @@ export class XmasController {
         }
         
         this.initPlayer();
-        
         if (!this._saveData) {
           this.generate();
         }
@@ -39,7 +38,6 @@ export class XmasController {
     }
 
     async dispose() {
-        // flush data
         await this._save();
         this._xmasUser.stopTimers();
     }
@@ -47,6 +45,7 @@ export class XmasController {
     async load() {
         return this.getState();
     }
+
     async generate() {
         this._saveData = { state: this._xmasUser.getState() };
     }
