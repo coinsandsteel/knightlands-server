@@ -60,16 +60,15 @@ export class XmasEvents {
 
     upgrade(tier, upgrade) {
         this._events.upgrade = {
-          tier,
-          upgrade
+          ...this._events.upgrade,
+          ...{ [tier]: upgrade }
         };
     }
 
     income(tier, current, next) {
       this._events.income = {
-        tier,
-        current,
-        next
+        ...this._events.income,
+        ...{ [tier]: { current, next } }
       };
     }
 
@@ -85,6 +84,10 @@ export class XmasEvents {
           currency,
           tiers
         };
+    }
+
+    cycleStarted(tier) {
+        this._events.cycleStarted = { tier };
     }
 
     cycleFinished(tier) {

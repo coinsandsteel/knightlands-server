@@ -1,10 +1,10 @@
+import _ from "lodash";
 import game from "../game";
 import errors from "../knightlands-shared/errors";
 import { XmasEvents } from "./XmasEvents";
 import { XmasState } from "./types";
+import Game from "../game";
 import { 
-  initialSlotState,
-  perksTree,
   getFarmTimeData,
   getFarmIncomeData,
   getFarmUpgradeData,
@@ -13,10 +13,7 @@ import {
   farmConfig,
   TOWER_PERK_AUTOCYCLES_COUNT,
   CURRENCY_SANTABUCKS,
-  CURRENCY_GOLD,
-  CURRENCY_UNIT_ESSENCE,
   CURRENCY_CHRISTMAS_POINTS,
-  CURRENCY_SHINIES,
   TOWER_PERK_UPGRADE,
   TOWER_PERK_INCOME,
   TOWER_PERK_CYCLE_DURATION,
@@ -35,9 +32,13 @@ export class XmasUser {
     private towerLevelBoundaries = {};
     private tierIntervals = {};
 
-    constructor(state: XmasState, events: XmasEvents) {
-        this._state = state;
+    constructor(state: XmasState | null, events: XmasEvents) {
         this._events = events;
+        if (state) {
+          this._state = state;
+        } else {
+          this.setInitialState();
+        }
         this.towerLevelBoundaries = getTowerLevelBoundaries();
     }
 
@@ -45,7 +46,7 @@ export class XmasUser {
       return this._state;
     }
 
-    public static getInitialState(): XmasState {
+    public setInitialState() {
       const state: XmasState = {
         levelGap: 1,
         tower: {
@@ -57,8 +58,8 @@ export class XmasUser {
         perks,
         balance
       };
-
-      return state;
+      this._state = state;
+      this.setInitialStats();
     }
 
     get sbBalance() {
@@ -80,9 +81,14 @@ export class XmasUser {
       return this._state.slots[tier].stats.upgrade.value <= this.sbBalance;
     }
 
-    restartTimer(tier) {
+    launchTimer(tier, initial) {
       if (this.tierIntervals[tier]) {
         clearInterval(this.tierIntervals[tier]);
+      }
+
+      this._events.cycleStarted(tier);
+      if (initial) {
+        this._state.slots[tier].lastLaunch = Game.now;
       }
 
       let slotData = this._state.slots[tier];
@@ -93,14 +99,38 @@ export class XmasUser {
           this._state.slots[tier].accumulated.currency += currentIncomeValue.currencyPerCycle;
         }
         this._state.slots[tier].accumulated.exp += currentIncomeValue.expPerCycle;
+        
+        this._events.accumulated(
+          tier,
+          this._state.slots[tier].accumulated.currency,
+          this._state.slots[tier].accumulated.exp
+        );
 
         if (slotData.progress.autoCyclesLeft > 0) {
           this.hookCycleFinished(tier);
         } else {
           this.hookEpochFinished(tier);
         }
+
         this._events.flush();
       }, slotData.stats.cycleLength * 1000);
+    }
+
+    getAccumulatedProgressive(tier) {
+      let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
+      let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+      let cycleLength = this._state.slots[tier].stats.cycleLength;
+      let maxEfficientTime = cycleLength * (autoCyclesMax || 1);
+
+      let power = this._state.slots[tier].stats.income.current;
+      let passedTime = (Game.now - this._state.slots[tier].lastLaunch) / 1000;
+      let time = Math.min(passedTime, maxEfficientTime);
+      let multiplier = time == maxEfficientTime ? 1 : 0.5;
+
+      return {
+        currency: time * power.currencyPerSecond * multiplier,
+        exp: time * power.expPerSecond * multiplier
+      };
     }
 
     hookCycleFinished(tier) {
@@ -111,7 +141,7 @@ export class XmasUser {
         this._state.slots[tier].progress.autoCyclesSpent = 0;
       }
       this._events.cycleFinished(tier);
-      this.restartTimer(tier);
+      this.launchTimer(tier, false);
     }
 
     resetCounters(tier) {
@@ -129,35 +159,53 @@ export class XmasUser {
       );
     }
     
+    resetAccumulated(tier) {
+      this._state.slots[tier].accumulated.exp = 0;
+      this._state.slots[tier].accumulated.currency = 0;
+      this._events.accumulated(tier, 0, 0);
+    }
+    
     hookEpochFinished(tier) {
       clearInterval(this.tierIntervals[tier]);
       this._events.epochFinished(tier);
       this.resetCounters(tier);
     }
     
-    reCalculateCycleLength(tier){
-      let cycleLength = this.getTierCycleLength(tier);
+    reCalculateCycleLength(tier, fireEvents){
+      const cycleLength = this.getTierCycleLength(tier);
       this._state.slots[tier].stats.cycleLength = cycleLength;
-      this._events.cycleLength(tier, cycleLength);
+      if (fireEvents) {
+        this._events.cycleLength(tier, cycleLength);
+      }
     }
 
-    reCalculateUpgradeData(tier){
-      let upgradeData = this.getTierUpgradePrice(tier);
+    reCalculateUpgradeData(tier, fireEvents){
+      const upgradeData = this.getTierUpgradePrice(tier);
       this._state.slots[tier].stats.upgrade = upgradeData;
-      this._events.upgrade(tier, upgradeData);
+      if (fireEvents) {
+        this._events.upgrade(tier, upgradeData);
+      }
     }
-
-    reCalculateIncomeValue(tier){
-      let incomeValue = this.getTierIncomeValue(tier);
+    
+    reCalculateIncomeValue(tier, fireEvents){
+      const incomeValue = this.getTierIncomeValue(tier);
       this._state.slots[tier].stats.income.current = incomeValue.current;
       this._state.slots[tier].stats.income.next = incomeValue.next;
-      this._events.income(tier, incomeValue.current, incomeValue.next);
+      if (fireEvents) {
+        this._events.income(tier, incomeValue.current, incomeValue.next);
+      }
     }
 
-    reCalculateStats(tier){
-      this.reCalculateCycleLength(tier);
-      this.reCalculateUpgradeData(tier);
-      this.reCalculateIncomeValue(tier);
+    reCalculateStats(tier, fireEvents){
+      this.reCalculateCycleLength(tier, fireEvents);
+      this.reCalculateUpgradeData(tier, fireEvents);
+      this.reCalculateIncomeValue(tier, fireEvents);
+    }
+
+    setInitialStats(){
+      for (let tier = 1; tier <= 9; tier++) {
+        this.reCalculateStats(tier, false);
+      }
     }
 
     public updatePerkDependants(){
@@ -182,15 +230,13 @@ export class XmasUser {
     }
 
     public harvest(tier) {
-      // TODO calculate exp and currency amound depending on time passed and lastLaunch
-      this.addExpirience(this._state.slots[tier].accumulated.exp);
-      this.increaseBalance(
-        farmConfig[tier].currency, 
-        this._state.slots[tier].accumulated.currency
-      );
-
+      let accumulated = this.getAccumulatedProgressive(tier);
+      this.addExpirience(accumulated.exp);
+      this.increaseBalance(farmConfig[tier].currency, accumulated.currency);
+      
+      this.resetAccumulated(tier);
       this.resetCounters(tier);
-      this.restartTimer(tier);
+      this.launchTimer(tier, true);
     }
 
     public upgradeSlot(tier){
@@ -202,9 +248,10 @@ export class XmasUser {
       this._state.slots[tier].level += this._state.levelGap;
       this._events.level(tier, this._state.slots[tier].level);
 
-      this.reCalculateStats(tier);
+      this.reCalculateStats(tier, true);
+      this.resetAccumulated(tier);
       this.resetCounters(tier);
-      this.restartTimer(tier);
+      this.launchTimer(tier, true);
     }
 
     // TODO
@@ -222,8 +269,8 @@ export class XmasUser {
       this._events.levelGap(value);
 
       for (let tier = 1; tier <= 9; tier++) {
-        this.reCalculateUpgradeData(tier);
-        this.reCalculateIncomeValue(tier);
+        this.reCalculateUpgradeData(tier, true);
+        this.reCalculateIncomeValue(tier, true);
       }
     }
 
@@ -252,6 +299,8 @@ export class XmasUser {
       this._state.tower.percentage = Math.floor(
         currentGap * 100 / expGap
       );
+
+      this._events.tower(this._state.tower);
     }
 
     private increaseBalance(currency, amount) {

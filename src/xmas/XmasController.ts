@@ -25,12 +25,16 @@ export class XmasController {
 
     async init() {
         const saveData = await Game.xmasManager.loadProgress(this._user.id);
-        if (!this._saveData) {
-          await this.generate();
-        } else {
+        if (this._saveData) {
           this._saveData = saveData as XmasSaveData;
         }
+        
         this.initPlayer();
+        
+        if (!this._saveData) {
+          this.generate();
+        }
+
         await this._save();
     }
 
@@ -42,9 +46,8 @@ export class XmasController {
     async load() {
         return this.getState();
     }
-
     async generate() {
-        this._saveData = { state: XmasUser.getInitialState() };
+        this._saveData = { state: this._xmasUser.getState() };
     }
 
     getState(): XmasState {
@@ -81,15 +84,14 @@ export class XmasController {
 
     private initPlayer() {
         if (!this._xmasUser) {
-            this._xmasUser = new XmasUser(this._saveData.state, this._events);
+            this._xmasUser = new XmasUser(
+              this._saveData ? this._saveData.state : null, 
+              this._events
+            );
         }
     }
 
-    private async increaseRank(points: number) {
-        await Game.xmasManager.updateRank(this._user.id, points);
-    }
-
     private async _save() {
-        await Game.xmasManager.saveProgress(this._user.id, { state: this.getState() });
+      await Game.xmasManager.saveProgress(this._user.id, { state: this.getState() });
     }
 }
