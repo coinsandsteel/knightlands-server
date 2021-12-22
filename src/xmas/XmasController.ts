@@ -25,7 +25,7 @@ export class XmasController {
 
     async init() {
         const saveData = await Game.xmasManager.loadProgress(this._user.id);
-        if (this._saveData) {
+        if (saveData) {
           this._saveData = saveData as XmasSaveData;
         }
         
