@@ -1,11 +1,3 @@
-import {
-  CURRENCY_SANTABUCKS,
-  CURRENCY_GOLD,
-  CURRENCY_UNIT_ESSENCE,
-  CURRENCY_CHRISTMAS_POINTS,
-  CURRENCY_SHINIES
-} from "../../../knightlands-shared/xmas";
-
 export interface XmasSaveData {
   state: XmasState;
 }

@@ -172,7 +172,7 @@ export class XmasUser {
 
       if (!endReached) {
         let passedTimeInsideCycle = passedTime % cycleLength;
-        percentage = Math.round(passedTimeInsideCycle * 100 / cycleLength);
+        percentage = Math.floor(passedTimeInsideCycle * 100 / cycleLength);
         autoCyclesSpent = Math.floor(passedTime / cycleLength);
         autoCyclesLeft = autoCyclesMax - autoCyclesSpent;
       }
