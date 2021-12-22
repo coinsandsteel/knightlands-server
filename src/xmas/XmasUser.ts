@@ -188,7 +188,6 @@ export class XmasUser {
     }
 
     hookCycleFinished(tier) {
-      this._state.slots[tier].progress.percentage = 100;
       if (this._state.slots[tier].progress.autoCyclesLeft > 0) {
         this._state.slots[tier].progress.autoCyclesLeft--;
         this._state.slots[tier].progress.autoCyclesSpent++;
@@ -197,7 +196,6 @@ export class XmasUser {
       }
 
       this._events.progress(tier, {
-        percentage: 100,
         autoCyclesLeft: this._state.slots[tier].progress.autoCyclesLeft,
         autoCyclesSpent: this._state.slots[tier].progress.autoCyclesSpent,
       });
