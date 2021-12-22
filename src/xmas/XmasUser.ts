@@ -66,8 +66,8 @@ export class XmasUser {
       return this._state.balance[CURRENCY_SANTABUCKS];
     }
 
-    tier6IsNotReady() {
-      return true;
+    tier6IsNotReady(tier) {
+      return tier == 6 && this._state.slots[tier].stats.income.current.currencyPerCycle < 1;
     }
 
     public upgradeIsAllowed(tier) {
@@ -81,12 +81,18 @@ export class XmasUser {
       return this._state.slots[tier].stats.upgrade.value <= this.sbBalance;
     }
 
+    stopTimers(){
+      for (let tier = 1; tier <= 9; tier++) {
+        clearInterval(this.tierIntervals[tier]);
+      }
+    }
+
     launchTimer(tier, initial) {
       if (this.tierIntervals[tier]) {
         clearInterval(this.tierIntervals[tier]);
       }
 
-      this._events.cycleStarted(tier);
+      this._events.cycleStart(tier);
       if (initial) {
         this._state.slots[tier].lastLaunch = Game.now;
       }
@@ -95,7 +101,7 @@ export class XmasUser {
       this.tierIntervals[tier] = setTimeout(() => {
         let currentIncomeValue = slotData.stats.income.current;
 
-        if (!this.tier6IsNotReady) {
+        if (!this.tier6IsNotReady(tier)) {
           this._state.slots[tier].accumulated.currency += currentIncomeValue.currencyPerCycle;
         }
         this._state.slots[tier].accumulated.exp += currentIncomeValue.expPerCycle;
@@ -108,6 +114,7 @@ export class XmasUser {
 
         if (slotData.progress.autoCyclesLeft > 0) {
           this.hookCycleFinished(tier);
+          this.launchTimer(tier, false);
         } else {
           this.hookEpochFinished(tier);
         }
@@ -140,8 +147,11 @@ export class XmasUser {
       } else {
         this._state.slots[tier].progress.autoCyclesSpent = 0;
       }
-      this._events.cycleFinished(tier);
-      this.launchTimer(tier, false);
+
+      this._events.progress(tier, {
+        autoCyclesLeft: this._state.slots[tier].progress.autoCyclesLeft,
+        autoCyclesSpent: this._state.slots[tier].progress.autoCyclesSpent,
+      });
     }
 
     resetCounters(tier) {
@@ -167,7 +177,7 @@ export class XmasUser {
     
     hookEpochFinished(tier) {
       clearInterval(this.tierIntervals[tier]);
-      this._events.epochFinished(tier);
+      this._events.cycleStop(tier);
       this.resetCounters(tier);
     }
     
@@ -209,24 +219,26 @@ export class XmasUser {
     }
 
     public updatePerkDependants(){
-      /*
-      let data = {};
-      let slotData = store.getters.slot(tier);
+      for (let tier = 1; tier <= 9; tier++) {
+        let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
+        if (!perkData) {
+          continue;
+        }
 
-      // Update autocycles counters
-      let perkData = store.getters.perkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
-      if (perkData) {
         let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
-        data.autoCyclesLeft = autoCyclesMax - slotData.autoCyclesSpent;
-      }
-
-      if (Object.keys(data).length) {
-        store.dispatch('updateSlot', {
+        let autoCyclesLeft = autoCyclesMax - this._state.slots[tier].progress.autoCyclesSpent;
+      
+        this._state.slots[tier].progress.autoCyclesLeft = autoCyclesLeft;
+        this._state.slots[tier].progress.autoCyclesSpent = 0;
+  
+        this._events.progress(
           tier,
-          data
-        });
+          {
+            autoCyclesLeft,
+            autoCyclesSpent: 0
+          }
+        );
       }
-      */
     }
 
     public harvest(tier) {
@@ -249,19 +261,42 @@ export class XmasUser {
       this._events.level(tier, this._state.slots[tier].level);
 
       this.reCalculateStats(tier, true);
-      this.resetAccumulated(tier);
-      this.resetCounters(tier);
       this.launchTimer(tier, true);
     }
 
-    // TODO
     public commitPerks(perks) {
-      /*
-      store.commit('commitPerks', payload);
-      for (let tier = 1; tier <= 9; tier++) {
-        store.dispatch('updateTierPerks', tier);
+      let newPerksSum = 0;
+      for (let currencyName in perks) {
+        for (let tier in perks[currencyName].tiers) {
+          newPerksSum += _.sum(
+            _.map(
+              Object.values(perks[currencyName].tiers[tier]),
+              "level"
+            )
+          );
+        }
       }
-      */
+
+      let newUnlockedBranchesCount = 0;
+      for (let currencyName in perks) {
+        newUnlockedBranchesCount += perks[currencyName].unlocked ? 1 : 0;
+      }
+
+      if (newPerksSum > this._state.tower.level - newUnlockedBranchesCount - 1) {
+        return;
+      }
+
+      for (let currencyName in perks) {
+        this._state.perks[currencyName].unlocked = perks[currencyName].unlocked;
+        for (let tier in perks[currencyName].tiers) {
+          for (let perkName in perks[currencyName].tiers[tier]) {
+            this._state.perks[currencyName].tiers[tier][perkName].level = perks[currencyName].tiers[tier][perkName].level;
+          }
+        }
+      }
+
+      this._events.perks(this._state.perks);
+      this.updatePerkDependants();
     }
 
     async updateLevelGap(value) {

@@ -41,6 +41,7 @@ export class XmasController {
     async dispose() {
         // flush data
         await this._save();
+        this._xmasUser.stopTimers();
     }
 
     async load() {

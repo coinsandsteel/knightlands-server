@@ -45,17 +45,17 @@ export class XmasEvents {
     }
 
     progress(tier, progress) {
-        this._events.progress = {
-          tier,
-          progress
-        };
+      this._events.progress = {
+        ...this._events.progress,
+        ...{ [tier]: progress }
+      };
     }
 
     cycleLength(tier, cycleLength) {
-        this._events.cycleLength = {
-          tier,
-          cycleLength
-        };
+      this._events.cycleLength = {
+        ...this._events.cycleLength,
+        ...{ [tier]: cycleLength }
+      };
     }
 
     upgrade(tier, upgrade) {
@@ -79,22 +79,15 @@ export class XmasEvents {
         };
     }
 
-    perk(currency, tiers) {
-        this._events.perk = {
-          currency,
-          tiers
-        };
+    perks(perks) {
+        this._events.perks = perks;
     }
 
-    cycleStarted(tier) {
-        this._events.cycleStarted = { tier };
+    cycleStart(tier) {
+        this._events.cycleStart = { tier };
     }
 
-    cycleFinished(tier) {
-        this._events.cycleFinished = { tier };
-    }
-
-    epochFinished(tier) {
-        this._events.epochFinished = { tier };
+    cycleStop(tier) {
+        this._events.cycleStop = { tier };
     }
 }
