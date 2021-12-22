@@ -132,9 +132,9 @@ export class XmasUser {
         let currentIncomeValue = slotData.stats.income.current;
 
         if (!this.tier6IsNotReady(tier)) {
-          this._state.slots[tier].accumulated.currency += currentIncomeValue.currencyPerCycle;
+          this._state.slots[tier].accumulated.currency = currentIncomeValue.currencyPerCycle;
         }
-        this._state.slots[tier].accumulated.exp += currentIncomeValue.expPerCycle;
+        this._state.slots[tier].accumulated.exp = currentIncomeValue.expPerCycle;
         
         this._events.accumulated(
           tier,
