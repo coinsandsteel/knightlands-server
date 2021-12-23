@@ -126,15 +126,15 @@ export class XmasUser {
       }
 
       let slotData = this._state.slots[tier];
-      let innerCycleTimeModifier = (100 - slotData.progress.percentage) / 100;
+      let innerCycleModifier = (100 - slotData.progress.percentage) / 100;
 
       this.tierIntervals[tier] = setTimeout(() => {
         let currentIncomeValue = slotData.stats.income.current;
 
         if (!this.tier6IsNotReady(tier)) {
-          this._state.slots[tier].accumulated.currency = currentIncomeValue.currencyPerCycle;
+          this._state.slots[tier].accumulated.currency += (currentIncomeValue.currencyPerCycle * innerCycleModifier);
         }
-        this._state.slots[tier].accumulated.exp = currentIncomeValue.expPerCycle;
+        this._state.slots[tier].accumulated.exp += (currentIncomeValue.expPerCycle * innerCycleModifier);
         
         this._events.accumulated(
           tier,
@@ -151,7 +151,7 @@ export class XmasUser {
         }
 
         this._events.flush();
-      }, (innerCycleTimeModifier || 1) * slotData.stats.cycleLength * 1000);
+      }, (innerCycleModifier || 1) * slotData.stats.cycleLength * 1000);
     }
 
     getAccumulatedProgressive(tier) {
