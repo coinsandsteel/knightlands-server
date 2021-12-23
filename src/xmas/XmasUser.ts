@@ -32,6 +32,12 @@ import {
 import { CPoints } from "./Cpoints";
 import User from "../user";
 
+const CURRENCY_TO_ITEM = {
+  [CURRENCY_GOLD]: 2383,
+  [CURRENCY_SHINIES]: 2480,
+  [CURRENCY_UNIT_ESSENCE]: 2978
+}
+
 export class XmasUser {
     private _state: XmasState;
     private _events: XmasEvents;
@@ -435,7 +441,7 @@ export class XmasUser {
         this._events.cpoints(await this._cpoints.addPoints(accumulated.currency));
       } else if (currency == CURRENCY_GOLD || currency == CURRENCY_SHINIES || currency == CURRENCY_UNIT_ESSENCE) {
         // add items
-        await this._user.inventory.addItemTemplate(currency, accumulated.currency);
+        await this._user.inventory.addItemTemplate(CURRENCY_TO_ITEM[currency], accumulated.currency);
       } else {
         this.increaseBalance(currency, accumulated.currency);
       }
