@@ -76,7 +76,7 @@ export class XmasUser {
 
     public setInitialState() {
       const state: XmasState = {
-        reset: {
+        rebalance: {
           price: 0,
           counter: 1
         },
