@@ -471,6 +471,10 @@ export class XmasUser {
 
       this.reCalculateTierStats(tier, true);
       this.reCalculatePerkPrices(true);
+
+      if (this._state.slots[tier].level === 1) {
+        this.launchTimer(tier, true);
+      }
     }
 
     // TODO implement chain of perks
