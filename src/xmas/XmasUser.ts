@@ -177,7 +177,7 @@ export class XmasUser {
 
     disableActivePerks(){
       for (let currency in this._state.perks) {
-        for (let tier in this._state.perks[currency]) {
+        for (let tier in this._state.perks[currency].tiers) {
           for (let perkName in this._state.perks[currency].tiers[tier]) {
             this._state.perks[currency].tiers[tier][perkName].active = false;
           }
@@ -349,7 +349,7 @@ export class XmasUser {
 
       // Perks
       for (let currency in this._state.perks) {
-        for (let tier in this._state.perks[currency]) {
+        for (let tier in this._state.perks[currency].tiers) {
           for (let perkName in this._state.perks[currency].tiers[tier]) {
             if ([TOWER_PERK_SPEED, TOWER_PERK_SUPER_SPEED, TOWER_PERK_BOOST, TOWER_PERK_SUPER_BOOST].includes(perkName)) {
               this._state.perks[currency].tiers[tier][perkName].price = 
@@ -389,7 +389,7 @@ export class XmasUser {
       this.decreaseBalance(CURRENCY_SANTABUCKS, this._state.rebalance.price);
 
       for (let currency in this._state.perks) {
-        for (let tier in this._state.perks[currency]) {
+        for (let tier in this._state.perks[currency].tiers) {
           for (let perkName in this._state.perks[currency].tiers[tier]) {
               this._state.perks[currency].tiers[tier][perkName].level = 0;
           }
