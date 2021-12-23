@@ -24,6 +24,10 @@ export class XmasEvents {
         this._events.tower = data;
     }
 
+    cpoints({ shares, score, lastClaimed }) {
+      this._events.cpoints = { shares, score, lastClaimed };
+    }
+
     balance(currency, balance) {
         this._events.balance = { 
           [currency]: balance

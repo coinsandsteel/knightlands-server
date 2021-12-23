@@ -59,6 +59,10 @@ export class XmasUser {
         this._cpoints = new CPoints(this._state.cpoints, this._user);
     }
 
+    public async init() {
+      await this._cpoints.tryClaimDkt();
+    }
+
     public getState(): XmasState {
       return this._state;
     }
@@ -321,7 +325,7 @@ export class XmasUser {
 
       if (currency == CURRENCY_CHRISTMAS_POINTS) {
         // increase cp for the server too
-        await this._cpoints.addPoints(accumulated.currency);
+        this._events.cpoints(await this._cpoints.addPoints(accumulated.currency));
       } else if (currency == CURRENCY_GOLD || currency == CURRENCY_SHINIES || currency == CURRENCY_UNIT_ESSENCE) {
         // add items
         await this._user.inventory.addItemTemplate(currency, accumulated.currency);

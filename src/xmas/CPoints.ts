@@ -48,6 +48,8 @@ export class CPoints {
         this._data.score += amount;
 
         await Game.xmasManager.cpoints.increaseTotalPoints(amount, shares);
+
+        return this._data;
     }
 
     async tryClaimDkt() {

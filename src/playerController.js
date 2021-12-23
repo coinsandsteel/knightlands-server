@@ -27,6 +27,7 @@ import { Lock } from "./utils/lock";
 import { exist, isNumber, isString } from "./validation";
 import { DungeonController } from "./simple-dungeon/DungeonController";
 import { XmasController } from "./xmas/XmasController";
+import { GetArmy } from "./knightlands-shared/operations";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -261,6 +262,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.XmasHarvest, this._gameHandler(this._xmasHarvest.bind(this)));
         this._socket.on(Operations.XmasCommitPerks, this._gameHandler(this._xmasCommitPerks.bind(this)));
         this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
+        this._socket.on(Operations.XmasCPointsStatus, this._gameHandler(this._xmasCPointsStatus.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -317,7 +319,7 @@ class PlayerController extends IPaymentListener {
         // console.log('start loading dungeon')
         await this.simpleDungeon.init();
         // console.log('loaded dungeon')
-        
+
         this.xmas = new XmasController(await this.getUser());
         console.log('start loading xmas')
         await this.xmas.init();
@@ -1919,7 +1921,7 @@ class PlayerController extends IPaymentListener {
         }
         return this.xmas.farmUpgrade(data.tier);
     }
-    
+
     async _xmasHarvest(_, data) {
         if (!isNumber(data.tier)) {
             throw Errors.IncorrectArguments;
@@ -1933,12 +1935,16 @@ class PlayerController extends IPaymentListener {
         }
         return this.xmas.commitPerks(data.perks);
     }
-  
+
     async _xmasUpdateLevelGap(_, data) {
         if (!isNumber(data.value)) {
             throw Errors.IncorrectArguments;
         }
         return this.xmas.updateLevelGap(data.value);
+    }
+
+    async _xmasCPointsStatus() {
+        return Game.xmasManager.cpoints.getLatestState();
     }
 }
 

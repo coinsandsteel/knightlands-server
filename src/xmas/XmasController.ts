@@ -43,6 +43,7 @@ export class XmasController {
     }
 
     async load() {
+        await this._xmasUser.init();
         return this.getState();
     }
 
