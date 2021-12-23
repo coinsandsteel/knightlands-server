@@ -66,6 +66,7 @@ export interface CurrencyPerkData {
 export interface TierPerkData {
   [key: string]: {
     level: number;
-    lastActivated?: any;
+    active?: boolean;
+    lastActivated?: number;
   };
 }

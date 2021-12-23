@@ -101,4 +101,12 @@ export class XmasEvents {
         ...{ [tier]: value }
       };
     }
+
+    perkActivated(currency, tier, perkName) {
+      this._events.perkActivated = {
+        currency,
+        tier,
+        perkName
+      };
+    }
 }

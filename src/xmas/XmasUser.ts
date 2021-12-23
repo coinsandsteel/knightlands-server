@@ -36,6 +36,7 @@ export class XmasUser {
     private _events: XmasEvents;
     private towerLevelBoundaries = {};
     private tierIntervals = {};
+    private activePerkTimeouts = {};
     private _cpoints: CPoints;
     private _user: User;
 
@@ -43,7 +44,6 @@ export class XmasUser {
         this.towerLevelBoundaries = getTowerLevelBoundaries();
         this._events = events;
         this._user = user;
-        
 
         if (state) {
           this._state = state;
@@ -87,7 +87,7 @@ export class XmasUser {
         }
       };
       this._state = state;
-      this.setInitialStats();
+      this.recalculateAllSlotStats();
     }
 
     get sbBalance() {
@@ -134,9 +134,42 @@ export class XmasUser {
       return this._state.slots[tier].stats.upgrade.value <= this.sbBalance;
     }
 
-    stopTimers(){
+    shutdown() {
+      this.removeTimers();
+      this.disableActivePerks();
+      this.recalculateAllSlotStats();
+    }
+
+    launchActivePerkTimeout(currency, tier, perkName){
+      console.log('Active perk launched', currency, tier, perkName);
+      let perkData = this.getPerkData(tier, perkName);
+      let perkDuration = getMainTowerPerkValue(tier, perkName, perkData ? perkData.level : 0);
+      
+      this.activePerkTimeouts[`${currency}_${tier}_${perkName}`] = setTimeout(() => {
+        console.log('Active perk stoped', currency, tier, perkName);
+        this._state.perks[currency].tiers[tier][perkName].active = false;
+        this.reCalculateStats(tier, true);
+      }, perkDuration);
+    }
+    
+    removeTimers(){
       for (let tier = 1; tier <= 9; tier++) {
+        console.log('Cycle removed', tier);
         clearInterval(this.tierIntervals[tier]);
+      }
+      for (let key in this.activePerkTimeouts) {
+        console.log('Active perk removed', key);
+        clearTimeout(this.activePerkTimeouts[key]);
+      }
+    }
+
+    disableActivePerks(){
+      for (let currency in this._state.perks) {
+        for (let tier in this._state.perks[currency]) {
+          for (let perkName in this._state.perks[currency].tiers[tier]) {
+            this._state.perks[currency].tiers[tier][perkName].active = false;
+          }
+        }
       }
     }
 
@@ -183,7 +216,7 @@ export class XmasUser {
 
     getAccumulatedProgressive(tier) {
       let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
-      let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+      let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData ? perkData.level : 0);
       let cycleLength = this._state.slots[tier].stats.cycleLength;
       let maxEfficientTime = cycleLength * (autoCyclesMax || 1);
 
@@ -232,7 +265,7 @@ export class XmasUser {
 
     resetCounters(tier) {
       let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
-      let autoCyclesLeft = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+      let autoCyclesLeft = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData ? perkData.level : 0);
       this._state.slots[tier].progress.autoCyclesLeft = autoCyclesLeft;
       this._state.slots[tier].progress.autoCyclesSpent = 0;
       this._state.slots[tier].progress.percentage = 0;
@@ -291,9 +324,44 @@ export class XmasUser {
       this.reCalculateIncomeValue(tier, fireEvents);
     }
 
-    setInitialStats(){
+    recalculateAllSlotStats(){
       for (let tier = 1; tier <= 9; tier++) {
         this.reCalculateStats(tier, false);
+      }
+    }
+
+    activatePerk({ currency, tier, perkName }){
+      if (!tier) {
+        tier = 'all';
+      }
+      
+      if (
+        this.activePerkIsActiveLOL(tier, perkName)
+        ||
+        !this.activePerkCooldownPassed(tier, perkName)
+      ) {
+        return;
+      }
+
+      this._state.perks[currency].tiers[tier][perkName].active = true;
+      this._state.perks[currency].tiers[tier][perkName].lastActivated = Game.now;
+
+      for (let tierNum in farmConfig) {
+        if (currency !== farmConfig[tierNum].currency) {
+          continue;
+        }
+
+        if (
+          currency === CURRENCY_CHRISTMAS_POINTS
+          &&
+          tier != tierNum
+        ) {
+          continue;
+        }
+
+        this.reCalculateStats(tierNum, true);
+        this.harvest(tierNum);
+        this.launchActivePerkTimeout(currency, tier, perkName);
       }
     }
 
@@ -304,7 +372,7 @@ export class XmasUser {
           continue;
         }
 
-        let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData.level);
+        let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData ? perkData.level : 0);
         let autoCyclesLeft = autoCyclesMax - this._state.slots[tier].progress.autoCyclesSpent;
       
         this._state.slots[tier].progress.autoCyclesLeft = autoCyclesLeft;
@@ -453,29 +521,59 @@ export class XmasUser {
       ][perkName];
     }
     
+    private activePerkIsActiveLOL(tier, perkName) {
+      let perkData = this.getPerkData(tier, perkName);
+      if (!perkData) {
+        return false;
+      }
+      let perkDuration = getMainTowerPerkValue(tier, perkName, perkData.level);
+      let perkIsActive = (Game.now < perkData.lastActivated + perkDuration * 1000) && !!perkData.active;
+      return perkIsActive;
+    }
+
+    private activePerkCooldownPassed(tier, perkName) {
+      let perkData = this.getPerkData(tier, perkName);
+      if (!perkData) {
+        return false;
+      }
+      let perkDuration = getMainTowerPerkValue(tier, perkName, perkData.level);
+      return Game.now >= perkData.lastActivated + perkDuration * 1000 + 3600 * 1000;
+    }
+
     private getTierCycleLength(tier) {
       let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
+      let speedPerkIsActive = this.activePerkIsActiveLOL(tier, TOWER_PERK_SPEED);
+      let superSpeedPerkIsActive = this.activePerkIsActiveLOL(tier, TOWER_PERK_SUPER_SPEED);
+
       let stat = getFarmTimeData(tier, {
         cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
-        [TOWER_PERK_SPEED]: false,
-        [TOWER_PERK_SUPER_SPEED]: false
+        [TOWER_PERK_SPEED]: speedPerkIsActive,
+        [TOWER_PERK_SUPER_SPEED]: superSpeedPerkIsActive
       });
+
       return stat.cycleLength;
     }
 
     private getTierIncomeValue(tier) {
       let level = this._state.slots[tier].level;
+
       let incomePerkData = this.getPerkData(tier, TOWER_PERK_INCOME);
       let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
       let upgradeData = this.getTierUpgradePrice(tier);
+
+      let boostPerkIsActive = this.activePerkIsActiveLOL(tier, TOWER_PERK_BOOST);
+      let superBoostPerkIsActive = this.activePerkIsActiveLOL(tier, TOWER_PERK_SUPER_BOOST);
+      
       let params = {
         incomePerkLevel: incomePerkData ? incomePerkData.level : 0,
         cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
-        [TOWER_PERK_BOOST]: false,
-        [TOWER_PERK_SUPER_BOOST]: false
+        [TOWER_PERK_BOOST]: boostPerkIsActive,
+        [TOWER_PERK_SUPER_BOOST]: superBoostPerkIsActive
       };
+
       let currentStat = getFarmIncomeData(tier, level, params);
       let nextStat = getFarmIncomeData(tier, upgradeData.nextLevel, params);
+
       return { current: currentStat, next: nextStat };
     }
     

@@ -39,7 +39,7 @@ export class XmasController {
 
     async dispose() {
         await this._save();
-        this._xmasUser.stopTimers();
+        this._xmasUser.shutdown();
     }
 
     async load() {
