@@ -52,6 +52,10 @@ export class XmasUser {
           this.setInitialState();
         }
 
+        if (!this._state.cpoints) {
+          this._state.cpoints = {} as any;
+        }
+
         this._cpoints = new CPoints(this._state.cpoints, this._user);
     }
 
