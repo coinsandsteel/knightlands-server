@@ -342,12 +342,21 @@ export class XmasUser {
     }
 
     public upgradeSlot(tier){
-      this.decreaseBalance(
-        CURRENCY_SANTABUCKS,
-        this._state.slots[tier].stats.upgrade.value
-      );
+      let tierData = this._state.slots[tier];
+      let upgradePrice = this._state.slots[tier].stats.upgrade.value;
+      let levelGap = this._state.levelGap;
 
-      this._state.slots[tier].level += this._state.levelGap;
+      if (tierData.level === 0) {
+        let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
+        let upgradeStat = getFarmUpgradeData(tier, 1, {
+          upgradePerkLevel: perkData ? perkData.level : 0
+        });
+        upgradePrice = upgradeStat.upgrade;
+        levelGap = 1;
+      }
+
+      this.decreaseBalance(CURRENCY_SANTABUCKS, upgradePrice);
+      this._state.slots[tier].level += levelGap;
       this._events.level(tier, this._state.slots[tier].level);
 
       this.reCalculateStats(tier, true);
