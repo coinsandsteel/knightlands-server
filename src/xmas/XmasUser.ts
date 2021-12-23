@@ -149,10 +149,11 @@ export class XmasUser {
       if (initial) {
         this._state.slots[tier].launched = true;
         this._state.slots[tier].lastLaunch = Game.now;
+        this._events.launched(tier, true);
       }
 
       let slotData = this._state.slots[tier];
-      let innerCycleModifier = (100 - slotData.progress.percentage) / 100;
+      let innerCycleModifier = ((100 - slotData.progress.percentage) / 100) || 1;
 
       this.tierIntervals[tier] = setTimeout(() => {
         let currentIncomeValue = slotData.stats.income.current;
@@ -177,7 +178,7 @@ export class XmasUser {
         }
 
         this._events.flush();
-      }, (innerCycleModifier || 1) * slotData.stats.cycleLength * 1000);
+      }, innerCycleModifier * slotData.stats.cycleLength * 1000);
     }
 
     getAccumulatedProgressive(tier) {
@@ -214,6 +215,8 @@ export class XmasUser {
     }
 
     hookCycleFinished(tier) {
+      this._state.slots[tier].progress.percentage = 100;
+
       if (this._state.slots[tier].progress.autoCyclesLeft > 0) {
         this._state.slots[tier].progress.autoCyclesLeft--;
         this._state.slots[tier].progress.autoCyclesSpent++;
