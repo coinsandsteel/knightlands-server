@@ -365,12 +365,12 @@ export class XmasUser {
       }
 
       // Perks reset price
-      this._state.reset.price = totalExpIncomePerSecond * this._state.tower.level * this._state.reset.counter / 360;
+      this._state.rebalance.price = totalExpIncomePerSecond * this._state.tower.level * this._state.rebalance.counter / 360;
 
       if (sendEvents) {
         this._events.perks(this._state.perks);
         this._events.burstPerks(this._state.burstPerks);
-        this._events.reset(this._state.reset);
+        this._events.rebalance(this._state.rebalance);
       }
     }
 
@@ -381,10 +381,12 @@ export class XmasUser {
       this.reCalculatePerkPrices(sendEvents);
     }
 
-    public resetPerks(){
-      if (this._state.reset.price > this.sbBalance) {
+    public rebalancePerks(){
+      if (this._state.rebalance.price > this.sbBalance) {
         return;
       }
+
+      this.decreaseBalance(CURRENCY_SANTABUCKS, this._state.rebalance.price);
 
       for (let currency in this._state.perks) {
         for (let tier in this._state.perks[currency]) {
@@ -398,7 +400,7 @@ export class XmasUser {
         this._state.burstPerks[perkName].level = 0;
       }
       
-      this._state.reset.counter++;
+      this._state.rebalance.counter++;
       this.reCalculatePerkPrices(true);
     }
 

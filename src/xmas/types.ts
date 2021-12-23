@@ -11,7 +11,7 @@ export interface CPointsData {
 }
 
 export interface XmasState {
-  reset: {
+  rebalance: {
     price: number;
     counter: number;
   },

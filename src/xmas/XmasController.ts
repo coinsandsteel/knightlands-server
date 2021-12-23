@@ -88,8 +88,8 @@ export class XmasController {
       this._events.flush();
     }
 
-    async resetPerks() {
-      this._xmasUser.resetPerks();
+    async rebalancePerks() {
+      this._xmasUser.rebalancePerks();
       this._events.flush();
     }
 

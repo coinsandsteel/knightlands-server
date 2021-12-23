@@ -264,7 +264,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
         this._socket.on(Operations.XmasCPointsStatus, this._gameHandler(this._xmasCPointsStatus.bind(this)));
         this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
-        this._socket.on(Operations.XmasResetPerks, this._gameHandler(this._xmasXmasResetPerks.bind(this)));
+        this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -1952,8 +1952,8 @@ class PlayerController extends IPaymentListener {
         return this.xmas.activatePerk(data);
     }
 
-    async _xmasXmasResetPerks(_, data) {
-        return this.xmas.resetPerks(data);
+    async _xmasXmasRebalancePerks(_, data) {
+        return this.xmas.rebalancePerks(data);
     }
 
     async _xmasCPointsStatus() {
