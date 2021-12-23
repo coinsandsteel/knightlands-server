@@ -87,6 +87,10 @@ export class XmasEvents {
         this._events.perks = perks;
     }
 
+    burstPerks(burstPerks) {
+        this._events.burstPerks = burstPerks;
+    }
+
     cycleStart(tier) {
         this._events.cycleStart = { tier };
     }

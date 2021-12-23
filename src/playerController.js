@@ -1931,10 +1931,10 @@ class PlayerController extends IPaymentListener {
     }
 
     async _xmasCommitPerks(_, data) {
-        if (!data.perks) {
+        if (!data.perks || !data.burstPerks) {
             throw Errors.IncorrectArguments;
         }
-        return this.xmas.commitPerks(data.perks);
+        return this.xmas.commitPerks(data);
     }
 
     async _xmasUpdateLevelGap(_, data) {

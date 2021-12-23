@@ -73,8 +73,8 @@ export class XmasController {
       this._events.flush();
     }
     
-    async commitPerks(perks) {
-      this._xmasUser.commitPerks(perks);
+    async commitPerks(data) {
+      this._xmasUser.commitPerks(data);
       this._events.flush();
     }
 

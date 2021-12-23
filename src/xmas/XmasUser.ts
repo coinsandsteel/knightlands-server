@@ -24,6 +24,7 @@ import {
   balance,
   slots,
   perksTree as perks,
+  burstPerksTree as burstPerks,
   CURRENCY_GOLD,
   CURRENCY_SHINIES,
   CURRENCY_UNIT_ESSENCE
@@ -76,6 +77,7 @@ export class XmasUser {
           exp: 0
         },
         slots,
+        burstPerks,
         perks,
         balance,
         cpoints: {
@@ -87,7 +89,7 @@ export class XmasUser {
         }
       };
       this._state = state;
-      this.recalculateAllSlotStats();
+      this.recalculateStats(false);
     }
 
     get sbBalance() {
@@ -137,7 +139,7 @@ export class XmasUser {
     shutdown() {
       this.removeTimers();
       this.disableActivePerks();
-      this.recalculateAllSlotStats();
+      this.recalculateStats(false);
     }
 
     launchActivePerkTimeout(currency, tier, perkName){
@@ -148,7 +150,7 @@ export class XmasUser {
       this.activePerkTimeouts[`${currency}_${tier}_${perkName}`] = setTimeout(() => {
         console.log('Active perk stoped', currency, tier, perkName);
         this._state.perks[currency].tiers[tier][perkName].active = false;
-        this.reCalculateStats(tier, true);
+        this.reCalculateTierStats(tier, true);
       }, perkDuration);
     }
     
@@ -318,16 +320,50 @@ export class XmasUser {
       }
     }
 
-    reCalculateStats(tier, fireEvents){
+    reCalculateTierStats(tier, fireEvents){
       this.reCalculateCycleLength(tier, fireEvents);
       this.reCalculateUpgradeData(tier, fireEvents);
       this.reCalculateIncomeValue(tier, fireEvents);
     }
 
-    recalculateAllSlotStats(){
+    getTotalExpIncomePerSecond() {
+      let totalExpIncomePerSecond = 0;
       for (let tier = 1; tier <= 9; tier++) {
-        this.reCalculateStats(tier, false);
+        totalExpIncomePerSecond += this._state.slots[tier].stats.income.current.expPerSecond;
       }
+      return totalExpIncomePerSecond;
+    }
+
+    reCalculatePerkPrices(sendEvents){
+      let totalExpIncomePerSecond = this.getTotalExpIncomePerSecond();
+      // Perks
+      for (let currency in this._state.perks) {
+        for (let tier in this._state.perks[currency]) {
+          for (let perkName in this._state.perks[currency].tiers[tier]) {
+            if ([TOWER_PERK_SPEED, TOWER_PERK_SUPER_SPEED, TOWER_PERK_BOOST, TOWER_PERK_SUPER_BOOST].includes(perkName)) {
+              this._state.perks[currency].tiers[tier][perkName].price = 
+              totalExpIncomePerSecond * this._state.perks[currency].tiers[tier][perkName].level / 100;
+            }
+          }
+        }
+      }
+      
+      // Burst perks
+      for (let perkName in this._state.burstPerks) {
+        this._state.burstPerks[perkName].price = totalExpIncomePerSecond * this._state.burstPerks[perkName].level / 100;
+      }
+
+      if (sendEvents) {
+        this._events.perks(this._state.perks);
+        this._events.burstPerks(this._state.burstPerks);
+      }
+    }
+
+    recalculateStats(sendEvents){
+      for (let tier = 1; tier <= 9; tier++) {
+        this.reCalculateTierStats(tier, sendEvents);
+      }
+      this.reCalculatePerkPrices(sendEvents);
     }
 
     activatePerk({ currency, tier, perkName }){
@@ -359,7 +395,7 @@ export class XmasUser {
           continue;
         }
 
-        this.reCalculateStats(tierNum, true);
+        this.reCalculateTierStats(tierNum, true);
         this.harvest(tierNum);
         this.launchActivePerkTimeout(currency, tier, perkName);
       }
@@ -427,10 +463,14 @@ export class XmasUser {
       this._state.slots[tier].level += levelGap;
       this._events.level(tier, this._state.slots[tier].level);
 
-      this.reCalculateStats(tier, true);
+      this.reCalculateTierStats(tier, true);
+      this.reCalculatePerkPrices(true);
     }
 
-    public commitPerks(perks) {
+    // TODO implement chain of perks
+    // TODO restrict perk downgrade
+    public commitPerks({ perks, burstPerks }) {
+      // ==== PERKS ====
       let newPerksSum = 0;
       for (let currencyName in perks) {
         for (let tier in perks[currencyName].tiers) {
@@ -461,8 +501,13 @@ export class XmasUser {
         }
       }
 
-      this._events.perks(this._state.perks);
+      // ==== BURST PERKS ====
+      for (let perkName in burstPerks) {
+        this._state.burstPerks[perkName].level = burstPerks[perkName].level;
+      }
+
       this.updatePerkDependants();
+      this.reCalculatePerkPrices(true);
     }
 
     async updateLevelGap(value) {

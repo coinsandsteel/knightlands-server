@@ -19,6 +19,7 @@ export interface XmasState {
   };
   slots: { [key: number]: SlotData };
   perks: { [key: string]: CurrencyPerkData };
+  burstPerks: { [key: string]: PerkData; },
   balance: {
     [key: string]: number;
   },
@@ -64,9 +65,13 @@ export interface CurrencyPerkData {
 }
 
 export interface TierPerkData {
-  [key: string]: {
-    level: number;
-    active?: boolean;
-    lastActivated?: number;
-  };
+  [key: string]: PerkData;
+}
+
+export interface PerkData {
+  enabled: boolean;
+  level: number;
+  active?: boolean;
+  lastActivated?: number;
+  price?: number;
 }
