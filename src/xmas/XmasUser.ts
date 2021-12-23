@@ -23,18 +23,27 @@ import {
   TOWER_PERK_SUPER_BOOST,
   balance,
   slots,
-  perksTree as perks
+  perksTree as perks,
+  CURRENCY_GOLD,
+  CURRENCY_SHINIES,
+  CURRENCY_UNIT_ESSENCE
 } from "../knightlands-shared/xmas";
+import { CPoints } from "./Cpoints";
+import User from "../user";
 
 export class XmasUser {
     private _state: XmasState;
     private _events: XmasEvents;
     private towerLevelBoundaries = {};
     private tierIntervals = {};
+    private _cpoints: CPoints;
+    private _user: User;
 
-    constructor(state: XmasState | null, events: XmasEvents) {
+    constructor(state: XmasState | null, events: XmasEvents, user: User) {
         this.towerLevelBoundaries = getTowerLevelBoundaries();
         this._events = events;
+        this._user = user;
+        
 
         if (state) {
           this._state = state;
@@ -42,6 +51,8 @@ export class XmasUser {
         } else {
           this.setInitialState();
         }
+
+        this._cpoints = new CPoints(this._state.cpoints, this._user);
     }
 
     public getState(): XmasState {
@@ -58,7 +69,14 @@ export class XmasUser {
         },
         slots,
         perks,
-        balance
+        balance,
+        cpoints: {
+          lastClaimed: 0,
+          pointsPool: 0,
+          shares: 0,
+          sharesPool: 0,
+          score: 0
+        }
       };
       this._state = state;
       this.setInitialStats();
@@ -291,10 +309,21 @@ export class XmasUser {
       }
     }
 
-    public harvest(tier) {
+    public async harvest(tier) {
       let accumulated = this.getAccumulatedProgressive(tier);
       this.addExpirience(accumulated.exp);
-      this.increaseBalance(farmConfig[tier].currency, accumulated.currency);
+
+      const currency = farmConfig[tier].currency;
+
+      if (currency == CURRENCY_CHRISTMAS_POINTS) {
+        // increase cp for the server too
+        await this._cpoints.addPoints(accumulated.currency);
+      } else if (currency == CURRENCY_GOLD || currency == CURRENCY_SHINIES || currency == CURRENCY_UNIT_ESSENCE) {
+        // add items
+        await this._user.inventory.addItemTemplate(currency, accumulated.currency);
+      } else {
+        this.increaseBalance(currency, accumulated.currency);
+      }
       
       this.resetAccumulated(tier);
       this.resetCounters(tier);

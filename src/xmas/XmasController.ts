@@ -68,7 +68,7 @@ export class XmasController {
     }
 
     async harvest(tier) {
-      this._xmasUser.harvest(tier);
+      await this._xmasUser.harvest(tier);
       this._events.flush();
     }
     
@@ -86,7 +86,8 @@ export class XmasController {
         if (!this._xmasUser) {
             this._xmasUser = new XmasUser(
               this._saveData ? this._saveData.state : null, 
-              this._events
+              this._events,
+              this._user
             );
         }
     }

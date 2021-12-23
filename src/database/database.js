@@ -86,7 +86,8 @@ module.exports = {
         XmasUsers: "xmas_users",
         XmasRanks: "xmas_ranks",
         ActionsLogs: "actions_logs",
-        FarmUsers: "farm_users"
+        FarmUsers: "farm_users",
+        XmasPoints: "xmas_points"
     },
 
 

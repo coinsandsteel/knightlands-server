@@ -2,6 +2,14 @@ export interface XmasSaveData {
   state: XmasState;
 }
 
+export interface CPointsData {
+    score: number;
+    lastClaimed: number;
+    shares: number;
+    sharesPool: number;
+    pointsPool: number;
+}
+
 export interface XmasState {
   levelGap: number;
   tower: {
@@ -13,7 +21,8 @@ export interface XmasState {
   perks: { [key: string]: CurrencyPerkData };
   balance: {
     [key: string]: number;
-  }
+  },
+  cpoints: CPointsData
 }
 
 export interface SlotData {

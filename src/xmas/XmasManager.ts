@@ -2,8 +2,9 @@ import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 import Events from "../knightlands-shared/events";
+import { CPointsManager } from "./CPointsManager";
 import { XmasController } from "./XmasController";
-import { Lock } from "../utils/lock";
+
 
 const PAGE_SIZE = 50;
 
@@ -11,10 +12,11 @@ export class XmasManager {
     private _meta: any;
     private _collection: Collection;
     private _saveCollection: Collection;
-    private _lock: Lock;
+
+    public cpoints: CPointsManager;
     
     constructor() {
-        this._lock = new Lock();
+        this.cpoints = new CPointsManager();
         this._saveCollection = Game.db.collection(Collections.XmasUsers);
     }
 
