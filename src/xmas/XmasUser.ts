@@ -76,6 +76,10 @@ export class XmasUser {
 
     public setInitialState() {
       const state: XmasState = {
+        reset: {
+          price: 0,
+          counter: 1
+        },
         levelGap: 1,
         tower: {
           level: 1,
@@ -342,6 +346,7 @@ export class XmasUser {
 
     reCalculatePerkPrices(sendEvents){
       let totalExpIncomePerSecond = this.getTotalExpIncomePerSecond();
+
       // Perks
       for (let currency in this._state.perks) {
         for (let tier in this._state.perks[currency]) {
@@ -359,9 +364,13 @@ export class XmasUser {
         this._state.burstPerks[perkName].price = totalExpIncomePerSecond * this._state.burstPerks[perkName].level / 100;
       }
 
+      // Perks reset price
+      this._state.reset.price = totalExpIncomePerSecond * this._state.tower.level * this._state.reset.counter / 360;
+
       if (sendEvents) {
         this._events.perks(this._state.perks);
         this._events.burstPerks(this._state.burstPerks);
+        this._events.reset(this._state.reset);
       }
     }
 
@@ -370,6 +379,27 @@ export class XmasUser {
         this.reCalculateTierStats(tier, sendEvents);
       }
       this.reCalculatePerkPrices(sendEvents);
+    }
+
+    public resetPerks(){
+      if (this._state.reset.price > this.sbBalance) {
+        return;
+      }
+
+      for (let currency in this._state.perks) {
+        for (let tier in this._state.perks[currency]) {
+          for (let perkName in this._state.perks[currency].tiers[tier]) {
+              this._state.perks[currency].tiers[tier][perkName].level = 0;
+          }
+        }
+      }
+      
+      for (let perkName in this._state.burstPerks) {
+        this._state.burstPerks[perkName].level = 0;
+      }
+      
+      this._state.reset.counter++;
+      this.reCalculatePerkPrices(true);
     }
 
     activatePerk({ currency, tier, perkName }){

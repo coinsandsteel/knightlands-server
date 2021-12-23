@@ -11,6 +11,10 @@ export interface CPointsData {
 }
 
 export interface XmasState {
+  reset: {
+    price: number;
+    counter: number;
+  },
   levelGap: number;
   tower: {
     level: number;

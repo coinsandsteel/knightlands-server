@@ -83,6 +83,16 @@ export class XmasController {
       this._events.flush();
     }
 
+    async activatePerk(data) {
+      this._xmasUser.activatePerk(data);
+      this._events.flush();
+    }
+
+    async resetPerks() {
+      this._xmasUser.resetPerks();
+      this._events.flush();
+    }
+
     private initPlayer() {
         if (!this._xmasUser) {
             this._xmasUser = new XmasUser(
