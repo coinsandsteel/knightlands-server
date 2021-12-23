@@ -72,7 +72,7 @@ export class XmasUser {
       const state: XmasState = {
         levelGap: 1,
         tower: {
-          level: 0,
+          level: 1,
           percentage: 0,
           exp: 0
         },
