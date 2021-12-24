@@ -166,7 +166,7 @@ class Raid extends EventEmitter {
             }
         }
 
-        await this._db.collection(Collections.XmasRaidStats).updateOne({ user: userId }, { $set: entry });
+        await this._db.collection(Collections.XmasRaidStats).updateOne({ user: userId }, { $set: entry }, { upsert: true });
 
         return count;
     }
