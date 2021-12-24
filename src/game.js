@@ -20,6 +20,7 @@ import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
 import { PresaleCardsService } from "./shop/PresaleCards";
 import { QuestZones } from "./QuestZones";
 import { DungeonManager } from "./simple-dungeon/DungeonManager";
+import { XmasManager } from "./xmas/XmasManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -67,11 +68,13 @@ class Game extends EventEmitter {
         this.founderSale = new PresaleCardsService(blockchain);
         this.questZones = new QuestZones();
         this.dungeonManager = new DungeonManager();
+        this.xmasManager = new XmasManager();
 
         this._players = {};
         this._playersById = {};
 
         await this.dungeonManager.init(iapExecutor);
+        await this.xmasManager.init();
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();

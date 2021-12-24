@@ -26,6 +26,8 @@ import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
 import { exist, isNumber, isString } from "./validation";
 import { DungeonController } from "./simple-dungeon/DungeonController";
+import { XmasController } from "./xmas/XmasController";
+import { GetArmy } from "./knightlands-shared/operations";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -254,6 +256,16 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
         this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
 
+        // Xmas
+        this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
+        this._socket.on(Operations.XmasFarmUpgrade, this._gameHandler(this._xmasFarmUpgrade.bind(this)));
+        this._socket.on(Operations.XmasHarvest, this._gameHandler(this._xmasHarvest.bind(this)));
+        this._socket.on(Operations.XmasCommitPerks, this._gameHandler(this._xmasCommitPerks.bind(this)));
+        this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
+        this._socket.on(Operations.XmasCPointsStatus, this._gameHandler(this._xmasCPointsStatus.bind(this)));
+        this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
+        this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -288,6 +300,13 @@ class PlayerController extends IPaymentListener {
             this.simpleDungeon = null
         }
 
+        if (this.xmas) {
+            console.log('start xmas dispose')
+            await this.xmas.dispose();
+            console.log('finish xmas dispose')
+            this.xmas = null
+        }
+
         return true;
     }
 
@@ -302,6 +321,11 @@ class PlayerController extends IPaymentListener {
         // console.log('start loading dungeon')
         await this.simpleDungeon.init();
         // console.log('loaded dungeon')
+
+        this.xmas = new XmasController(await this.getUser());
+        console.log('start loading xmas')
+        await this.xmas.init();
+        console.log('loaded xmas')
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -1888,8 +1912,52 @@ class PlayerController extends IPaymentListener {
         return this.simpleDungeon.commitStats(data.stats);
     }
 
-    async enterHalloween() {
-        return this.simpleDungeon.enter(true, false);
+    // Xmas
+    async _xmasLoad() {
+        return this.xmas.load();
+    }
+
+    async _xmasFarmUpgrade(_, data) {
+        if (!isNumber(data.tier)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.xmas.farmUpgrade(data.tier);
+    }
+
+    async _xmasHarvest(_, data) {
+        if (!isNumber(data.tier)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.xmas.harvest(data.tier);
+    }
+
+    async _xmasCommitPerks(_, data) {
+        if (!data.perks || !data.burstPerks) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.xmas.commitPerks(data);
+    }
+
+    async _xmasUpdateLevelGap(_, data) {
+        if (!isNumber(data.value)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.xmas.updateLevelGap(data.value);
+    }
+
+    async _xmasXmasActivatePerk(_, data) {
+        if (!data.currency || !data.tier || !data.perkName) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.xmas.activatePerk(data);
+    }
+
+    async _xmasXmasRebalancePerks(_, data) {
+        return this.xmas.rebalancePerks(data);
+    }
+
+    async _xmasCPointsStatus() {
+        return Game.xmasManager.cpoints.getLatestState();
     }
 }
 

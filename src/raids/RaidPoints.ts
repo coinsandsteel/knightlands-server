@@ -36,7 +36,7 @@ export class RaidPoints {
     }
 
     async rollbackRP() {
-        await Game.raidPoints.increaseTotalPoints(this._data.score, this._data.shares, this._user.isFreeAccount);
+        await Game.raidPoints.increaseTotalPoints(-this._data.score, -this._data.shares, this._user.isFreeAccount);
         this.reset();
     }
 
@@ -82,20 +82,20 @@ export class RaidPoints {
                     dkt = 0;
                 }
 
-                const before = this._user.dkt;
+                // const before = this._user.dkt;
 
                 await this._user.addDkt(dkt);
 
                 // before reset - save it to the external collection for the debuggin purposes
-                await Game.db.collection(`user_raid_points_${this._data.lastClaimed}`).insertOne({
-                    user: this._user.id,
-                    pointsPool: this._data.pointsPool,
-                    sharesPool: this._data.sharesPool,
-                    shares: this._data.shares,
-                    score: this._data.score,
-                    beforeDkt: before,
-                    dkt: this._user.dkt
-                })
+                // await Game.db.collection(`user_raid_points_${this._data.lastClaimed}`).insertOne({
+                //     user: this._user.id,
+                //     pointsPool: this._data.pointsPool,
+                //     sharesPool: this._data.sharesPool,
+                //     shares: this._data.shares,
+                //     score: this._data.score,
+                //     beforeDkt: before,
+                //     dkt: this._user.dkt
+                // })
 
                 this.reset();
             }
