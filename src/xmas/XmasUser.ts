@@ -785,21 +785,25 @@ export class XmasUser {
         let start = level;
         let end = level + levelGap;
 
-        while (end - start > 1) {
+        while (start <= end) {
           let mid = Math.floor((start + end) / 2);
-          accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, mid);
-          if (accumulatedPrice - currentTotalPrice <= imaginaryAvailableResources) {
-            start = mid;
+          const totalPrice = getUpgradeTotalPriceAtLevel(upgradeData, mid);
+          
+          if (totalPrice - currentTotalPrice <= imaginaryAvailableResources) {
+            start = mid + 1;
+            accumulatedPrice = totalPrice;
           } else {
-            end = mid;
+            end = mid - 1;
           }
-
-          maxAffordableLevel = start + level;
         }
 
       } else {
         maxAffordableLevel = level + levelGap;
         accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, maxAffordableLevel);
+      }
+
+      if (maxAffordableLevel == level) {
+        accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, maxAffordableLevel + 1);
       }
 
       accumulatedPrice -= currentTotalPrice;
@@ -815,6 +819,8 @@ export class XmasUser {
       //   accumulatedPrice -= stat.upgrade;
       //   maxAffordableLevel--;
       // }
+
+      
 
       return {
         value: accumulatedPrice,
