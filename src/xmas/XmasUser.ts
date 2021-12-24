@@ -623,7 +623,7 @@ export class XmasUser {
       }
 
       this.updatePerkDependants();
-      this.reCalculatePerkPrices(true);
+      this.recalculateStats(true);
     }
 
     async updateLevelGap(value) {
