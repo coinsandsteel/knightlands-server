@@ -144,7 +144,6 @@ class Raid extends EventEmitter {
         return this._data.busySlots >= this.template.maxSlots;
     }
 
-<<<<<<< HEAD
     async countRaid(userId, withTickets) {
         let count = 0;
 
@@ -174,10 +173,6 @@ class Raid extends EventEmitter {
 
     async init(data) {
         await this._initFromData(data);
-=======
-    async init(data, peek) {
-        await this._initFromData(data, peek);
->>>>>>> master
     }
 
     async getPlayers() {
