@@ -163,9 +163,7 @@ export class XmasUser {
       let perkData = this.getPerkData(tier, perkName, currency);
       let perkDuration = getMainTowerPerkValue(tier, perkName, perkData ? perkData.level : 0, currency);
       
-      console.log('Active perk launched:', perkDuration + ' sec.', { currency, tier, perkName}, perkData);
       this.activePerkTimeouts[`${currency}_${tier}_${perkName}`] = setTimeout(() => {
-        console.log('Active perk stoped:', {currency, tier, perkName});
         this._state.perks[currency].tiers[tier][perkName].active = false;
         if (tier !== 'all') {
           this.reCalculateTierStats(tier, true);
@@ -535,7 +533,7 @@ export class XmasUser {
 
     public upgradeSlot(tier){
       let tierCurrency = farmConfig[tier].currency;
-      if (process.env.ENV == "prod" && !this._state.perks[tierCurrency].unlocked) {
+      if (!this._state.perks[tierCurrency].unlocked) {
         return;
       }
       
