@@ -38,8 +38,8 @@ export class XmasController {
     }
 
     async dispose() {
-        await this._save();
         this._xmasUser.shutdown();
+        await this._save();
     }
 
     async load() {
