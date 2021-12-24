@@ -693,7 +693,14 @@ export class XmasUser {
         }
       }
 
-      if (level > 0 && showMaxPrice) {
+      let alreadyMax = maxAffordableLevel == level + 1;
+      if (
+        level > 0 
+        && 
+        showMaxPrice
+        &&
+        !alreadyMax
+      ) {
         accumulatedPrice -= stat.upgrade;
         maxAffordableLevel--;
       }
