@@ -1068,7 +1068,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _claimLootRaid(user, data) {
-        const { rewards, free, damageDone, creationTime } = await this._raidManager.claimLoot(user, data.raidId);
+        const rewards = await this._raidManager.claimLoot(user, data.raidId);
 
         if (!rewards) {
             throw Errors.NoRewards;
@@ -1079,22 +1079,7 @@ class PlayerController extends IPaymentListener {
         await user.inventory.addItemTemplates(rewards.items);
         await user.addRP(rewards.rp, true);
         await user.addHardCurrency(rewards.hardCurrency);
-
-        // for XMAS
-        const EVENT_START = 1640304000; //24th of december 00 00 00 GMT +0
-
-        if (!free && creationTime >= EVENT_START) {
-            const daysPassed = Math.floor((Game.nowSec - EVENT_START) / 86400) + 1;
-
-            const baseFactor = user.isFreeAccount ? 2.5 : 25;
-            const raidFactor = user.isFreeAccount ? 1.1 : 1.5;
-            const dayFactor = user.isFreeAccount ? 3 : 10;
-
-            const raidsClosed = await this._db.collection(Collections.XmasRaidStats).findOne({ _id: "finished_raids" });
-
-            rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidsClosed.count;
-            this.xmas.addSantabucks(rewards.santabucks);
-        }
+        this.xmas.addSantabucks(rewards.santabucks);
 
         return rewards;
     }

@@ -500,12 +500,13 @@ class Raid extends EventEmitter {
         }
 
         // all participants get at least min dkt
-        let rewards = {
+        const rewards = {
             rp: raidStage.minDkt,
             exp: 0,
             gold: 0,
             hardCurrency: 0,
-            items: []
+            items: [],
+            santabucks: 0
         };
 
         if (chosenLoot) {
@@ -543,6 +544,22 @@ class Raid extends EventEmitter {
                     rewards.hardCurrency += challengeRewards.hardCurrency;
                 }
             }
+        }
+
+        // for XMAS
+        const EVENT_START = 1640304000; //24th of december 00 00 00 GMT +0
+
+        if (!this.free && this.creationTime >= EVENT_START) {
+            const damageDone = this.getPlayerDamage(user.id) / this.template.health;
+            const daysPassed = Math.floor((Game.nowSec - EVENT_START) / 86400) + 1;
+
+            const baseFactor = user.isFreeAccount ? 2.5 : 25;
+            const raidFactor = user.isFreeAccount ? 1.1 : 1.5;
+            const dayFactor = user.isFreeAccount ? 3 : 10;
+
+            const raidsClosed = await this._db.collection(Collections.XmasRaidStats).findOne({ _id: "finished_raids" });
+
+            rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidsClosed.count;
         }
 
         if (this._data.isFree) {

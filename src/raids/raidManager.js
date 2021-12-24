@@ -372,12 +372,7 @@ class RaidManager {
 
     async claimLoot(user, raidId) {
         let raid = await this._getFinishedRaid(user.id, raidId);
-        return {
-            rewards: await raid.claimLoot(user),
-            free: raid.free,
-            creationTime: raid.creationTime,
-            damageDone: raid.getPlayerDamage(user.id) / raid.template.health // damage ratio
-        }
+        return raid.claimLoot(user);
     }
 
     async getLootPreview(user, raidId) {
