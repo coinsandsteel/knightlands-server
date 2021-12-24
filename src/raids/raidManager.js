@@ -408,7 +408,7 @@ class RaidManager {
             raidData = raidData[0];
 
             raid = new Raid(this._db);
-            await raid.init(raidData);
+            await raid.init(raidData, true);
 
             // TODO implement proper caching
             this._finishedRaids[raidId] = raid;

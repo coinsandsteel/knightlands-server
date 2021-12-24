@@ -88,7 +88,9 @@ module.exports = {
         ActionsLogs: "actions_logs",
         FarmUsers: "farm_users",
         XmasPoints: "xmas_points",
-        XmasRaidStats: "xmas_raid_stats"
+        XmasRaidStats: "xmas_raid_stats",
+        HalloweenWithdrawals: "halloween_withdrawals",
+        ActionsLogs: "actions_logs"
     },
 
 

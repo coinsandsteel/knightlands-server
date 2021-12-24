@@ -206,6 +206,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchPrizePool, this._gameHandler(this._fetchPrizePool.bind(this)));
         this._socket.on(Operations.GetPrizePoolRank, this._gameHandler(this._getPrizePoolRank.bind(this)));
         this._socket.on(Operations.GetPrizePoolRewards, this._gameHandler(this._getPrizePoolRewards.bind(this)));
+        this._socket.on(Operations.PrizePoolWithdraw, this._gameHandler(this._withdrawPrizePool.bind(this)));
 
         // Army
         this._socket.on(Operations.GetArmy, this._gameHandler(this._getArmy.bind(this)));
@@ -255,6 +256,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
         this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
         this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
+        this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwa.bind(this)));
 
         // Xmas
         this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
@@ -1698,6 +1700,14 @@ class PlayerController extends IPaymentListener {
         return Game.prizePool.getRewards();
     }
 
+    async _withdrawPrizePool(user, data) {
+        if (typeof data.to !== 'string') {
+            throw Errors.IncorrectArguments;
+        }
+
+        return Game.prizePool.createOrGetWithdrawRequest(user.id, data.to);
+    }
+
     // Armies
     async _getArmy(user, data) {
         return Game.armyManager.getArmy(user);
@@ -1875,7 +1885,7 @@ class PlayerController extends IPaymentListener {
 
     async _sDungeonRank(user, data) {
         if (data.personal) {
-            return Game.dungeonManager.getUserRank(user.id);
+            return this.simpleDungeon.getRank();
         }
 
         if (!isNumber(data.page)) {
@@ -1969,6 +1979,14 @@ class PlayerController extends IPaymentListener {
 
     async _xmasCPointsStatus() {
         return Game.xmasManager.cpoints.getLatestState();
+    }
+
+    async _sDungeonWithdrwa(_, data) {
+        if (typeof data.to !== 'string') {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.withdrawReward(data.to);
     }
 }
 

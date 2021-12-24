@@ -19,7 +19,6 @@ export class DungeonController {
     private _user: User;
     private _dungeonUser: DungeonUser;
     private _saveData: DungeonSaveData;
-    private _saveCollection: Collection;
     private _revealedLookUp: { [key: number]: number };
     private _combat: DungeonCombat;
     private _events: DungeonEvents;
@@ -114,6 +113,15 @@ export class DungeonController {
 
     async load() {
         return this.getState();
+    }
+
+    async getRank() {
+        const rank = await Game.dungeonManager.getUserRank(this._user.id)
+        if (await Game.dungeonManager.isClaimedReward(this._user.id)) {
+            rank.claimed = true
+        }
+
+        return rank;
     }
 
     async generateNewFloor(force: boolean = false) {
@@ -254,6 +262,8 @@ export class DungeonController {
     }
 
     async nextFloor() {
+        this.assertNotFinished();
+
         if (!this.isComplete) {
             throw errors.IncorrectArguments;
         }
@@ -269,8 +279,13 @@ export class DungeonController {
         return this.generateNewFloor();
     }
 
+    async withdrawReward(to: string) {
+        return Game.dungeonManager.createOrGetWithdrawRequest(this._user.id, to);
+    }
+
     // reveal and move 
     async reveal(cellId: number) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
@@ -318,6 +333,7 @@ export class DungeonController {
     }
 
     async useItem(itemType: string) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
 
@@ -350,6 +366,7 @@ export class DungeonController {
     }
 
     async moveTo(cellId: number) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
@@ -392,6 +409,7 @@ export class DungeonController {
      * 
      */
     async useCell(cellId: number) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
 
         try {
@@ -433,6 +451,7 @@ export class DungeonController {
     }
 
     async equip(mHand: number, oHand: number) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
 
         if (!isNumber(mHand) || !isNumber(oHand)) {
@@ -466,6 +485,7 @@ export class DungeonController {
     }
 
     async combatAction(move: number) {
+        this.assertNotFinished();
         this.assertAllowedToPlayer();
 
         if (!this._saveData.state.combat) {
@@ -522,6 +542,8 @@ export class DungeonController {
     }
 
     estimateEnergy(cellId: number) {
+        this.assertNotFinished();
+
         let targetCell = this.getRevealedCell(cellId);
 
         const meta = Game.dungeonManager.getMeta();
@@ -850,5 +872,11 @@ export class DungeonController {
         }
         
         return revealed;
+    }
+
+    private assertNotFinished() {
+        if (Game.dungeonManager.isFinished()) {
+            throw errors.IncorrectArguments;
+        }
     }
 }

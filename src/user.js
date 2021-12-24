@@ -398,7 +398,7 @@ class User {
             await this._updateTimersRegen();
         }
 
-        await Game.db.collection(Collections.ActionsLogs).insertOne({ action: "exp", tag, user: this.id, value: totalExp, data: Game.nowSec });
+        // await Game.db.collection(Collections.ActionsLogs).insertOne({ action: "exp", tag, user: this.id, value: totalExp, data: Game.nowSec });
 
         await Game.rankings.updateRank(this.id, {
             type: RankingType.ExpGained
