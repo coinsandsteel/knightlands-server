@@ -88,8 +88,8 @@ export class XmasController {
       this._events.flush();
     }
 
-    async activateSlotPerk(data) {
-      this._xmasUser.activateSlotPerk(data.tier, data.perkName);
+    async commitSlotPerks(data) {
+      this._xmasUser.commitSlotPerks(data.tier, data.slotPerks);
       this._events.flush();
     }
 
