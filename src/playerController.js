@@ -1960,7 +1960,7 @@ class PlayerController extends IPaymentListener {
         if (!data.slotPerks || !data.tier) {
             throw Errors.IncorrectArguments;
         }
-        return this.xmas.commitSlotPerks(data.tier, data.slotPerks);
+        return this.xmas.commitSlotPerks(data);
     }
 
     async _xmasXmasRebalancePerks(_, data) {
