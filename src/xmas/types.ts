@@ -53,6 +53,9 @@ export interface SlotData {
       current: IncomeData;
       next: IncomeData;
     }
+  },
+  slotPerks: {
+    [key: string]: boolean;
   }
 }
 

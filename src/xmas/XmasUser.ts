@@ -453,6 +453,24 @@ export class XmasUser {
       this.launchActivePerkTimeout(currency, tier, perkName);
     }
 
+    activateSlotPerk(tier, perkName){
+      let freePerkPoints = Math.floor(this._state.slots[tier].level / 25);
+      let enabledPerksCount = 
+        Object.values(this._state.slots[tier].slotPerks)
+        .map(value => value ? 1 : 0)
+        .reduce(
+          (previousValue, currentValue) => previousValue + currentValue,
+          0
+        );
+
+      if (freePerkPoints <= enabledPerksCount) {
+        return;
+      }
+
+      this._state.slots[tier].slotPerks[perkName] = true;
+      this.reCalculateTierStats(tier, true);
+    }
+
     public updatePerkDependants(){
       for (let tier = 1; tier <= 9; tier++) {
         let perkData = this.getPerkData(tier, TOWER_PERK_AUTOCYCLES_COUNT);
