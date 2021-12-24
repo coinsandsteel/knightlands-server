@@ -30,7 +30,7 @@ import {
   TOWER_PERK_SLEEP,
   TOWER_PERK_PRESENT
 } from "../knightlands-shared/xmas";
-import { CPoints } from "./Cpoints";
+import { CPoints } from "./CPoints";
 import User from "../user";
 
 const CURRENCY_TO_ITEM = {
