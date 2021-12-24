@@ -807,6 +807,7 @@ export class XmasUser {
           if (totalPrice - currentTotalPrice <= imaginaryAvailableResources) {
             start = mid + 1;
             accumulatedPrice = totalPrice;
+            maxAffordableLevel = mid;
           } else {
             end = mid - 1;
           }
