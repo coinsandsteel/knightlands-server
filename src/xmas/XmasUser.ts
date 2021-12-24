@@ -497,7 +497,7 @@ export class XmasUser {
 
     public upgradeSlot(tier){
       let tierCurrency = farmConfig[tier].currency;
-      if (this.sbBalance < 1000000000 && !this._state.perks[tierCurrency].unlocked) {
+      if (process.env.ENV == "prod" && !this._state.perks[tierCurrency].unlocked) {
         return;
       }
       
