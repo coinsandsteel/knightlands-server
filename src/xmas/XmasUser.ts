@@ -483,6 +483,10 @@ export class XmasUser {
       this.launchTimer(tier, true);
     }
 
+    public addSantabucks(amount: number) {
+      this.increaseBalance(CURRENCY_SANTABUCKS, amount)
+    }
+
     public upgradeSlot(tier){
       let tierData = this._state.slots[tier];
       let upgradePrice = tierData.stats.upgrade.value;

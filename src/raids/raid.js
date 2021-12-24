@@ -73,6 +73,10 @@ class Raid extends EventEmitter {
         return this._data.summoner;
     }
 
+    get creationTime() {
+        return this._data.creationTime;
+    }
+
     async create(summonerId, raidTemplateId, isFree, isPublic) {
         raidTemplateId *= 1;
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
@@ -161,6 +165,10 @@ class Raid extends EventEmitter {
         return info;
     }
 
+    getPlayerDamage(userId) {
+        return this._data.participants[userId];
+    }
+
     isParticipant(userId) {
         return this._data.participants[userId] !== undefined;
     }
@@ -228,6 +236,12 @@ class Raid extends EventEmitter {
 
         this._data.dktFactor = dktFactor;
         await this._checkpoint();
+
+        // FOR XMAS
+        if (!this.free) {
+            await this._db.collection(Collections.XmasRaidStats).updateOne({ _id: "finished_raids" }, { $inc: { count: 1 } }, { upsert: true });
+        }
+
     }
 
     async _loadRaidTemplate(raidTemplateId) {
@@ -316,6 +330,8 @@ class Raid extends EventEmitter {
             boss: { health: 0, damage: 0 }
         };
 
+        const bossHealthBeforeDamage = this._bossUnit.getHealth();
+
         while (hitsToPerform > 0 && combatUnit.isAlive && this._bossUnit.isAlive) {
             attackLog.exp += this.template.exp + attacker.maxStats[CharacterStats.ExpOnHitInRaid];
             attackLog.soft += this.template.gold + attacker.maxStats[CharacterStats.GoldOnHitInRaid];
@@ -369,7 +385,12 @@ class Raid extends EventEmitter {
         await attacker.modifyTimerValue(CharacterStats.Stamina, -damageLog.hits);
 
         if (damageLog.damage > 0) {
-            this._data.participants[attacker.id] += damageLog.damage;
+            let actualDamage = damageLog.damage;
+            if (bossHealthBeforeDamage < actualDamage) {
+                actualDamage = bossHealthBeforeDamage;
+            }
+
+            this._data.participants[attacker.id] += actualDamage;
 
             this._damageLog.push(damageLog);
 

@@ -93,6 +93,11 @@ export class XmasController {
       this._events.flush();
     }
 
+    async addSantabucks(amount: number) {
+      this._xmasUser.addSantabucks(amount);
+      this._events.flush();
+    }
+
     private initPlayer() {
         if (!this._xmasUser) {
             this._xmasUser = new XmasUser(
