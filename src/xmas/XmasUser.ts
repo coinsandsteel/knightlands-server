@@ -1,6 +1,4 @@
 import _ from "lodash";
-import game from "../game";
-import errors from "../knightlands-shared/errors";
 import { XmasEvents } from "./XmasEvents";
 import { XmasState } from "./types";
 import Game from "../game";
@@ -25,9 +23,12 @@ import {
   slots,
   perksTree as perks,
   burstPerksTree as burstPerks,
+  perksUnlockMap,
   CURRENCY_GOLD,
   CURRENCY_SHINIES,
-  CURRENCY_UNIT_ESSENCE
+  CURRENCY_UNIT_ESSENCE,
+  TOWER_PERK_SLEEP,
+  TOWER_PERK_PRESENT
 } from "../knightlands-shared/xmas";
 import { CPoints } from "./Cpoints";
 import User from "../user";
@@ -98,6 +99,7 @@ export class XmasUser {
           score: 0
         }
       };
+      console.log(perks);
       this._state = state;
       this.recalculateStats(false);
     }
@@ -365,7 +367,7 @@ export class XmasUser {
       }
 
       // Perks reset price
-      this._state.rebalance.price = totalExpIncomePerSecond * this._state.tower.level * this._state.rebalance.counter / 360;
+      this._state.rebalance.price = totalExpIncomePerSecond * this._state.tower.level * this._state.rebalance.counter * 360;
 
       if (sendEvents) {
         this._events.perks(this._state.perks);
@@ -513,8 +515,6 @@ export class XmasUser {
       }
     }
 
-    // TODO implement chain of perks
-    // TODO restrict perk downgrade
     public commitPerks({ perks, burstPerks }) {
       // ==== PERKS ====
       let newPerksSum = 0;
@@ -534,22 +534,78 @@ export class XmasUser {
         newUnlockedBranchesCount += perks[currencyName].unlocked ? 1 : 0;
       }
 
-      if (newPerksSum > this._state.tower.level - newUnlockedBranchesCount - 1) {
+      if (newPerksSum > this._state.tower.level - newUnlockedBranchesCount) {
         return;
       }
+
+      // Perk downgrade is prohibited
+      for (let currencyName in perks) {
+        this._state.perks[currencyName].unlocked = perks[currencyName].unlocked;
+        for (let tier in perks[currencyName].tiers) {
+          for (let perkName in perks[currencyName].tiers[tier]) {
+            if (this._state.perks[currencyName].tiers[tier][perkName].level > perks[currencyName].tiers[tier][perkName].level) {
+              return;
+            }
+          }
+        }
+      }
+      for (let perkName in burstPerks) {
+        if (this._state.burstPerks[perkName].level > burstPerks[perkName].level) {
+          return;
+        }
+      }
+
+      // Update actual values
+      let enableSleepPerk = true;
+      let enablePresentPerk = true;
 
       for (let currencyName in perks) {
         this._state.perks[currencyName].unlocked = perks[currencyName].unlocked;
         for (let tier in perks[currencyName].tiers) {
           for (let perkName in perks[currencyName].tiers[tier]) {
             this._state.perks[currencyName].tiers[tier][perkName].level = perks[currencyName].tiers[tier][perkName].level;
+            
+            // Enable next perks in the branch
+            if (this._state.perks[currencyName].tiers[tier][perkName].level > 0) {
+              let perksToEnable = perksUnlockMap[currencyName][tier][perkName];
+              if (perksToEnable) {
+                perksToEnable.forEach((nextPerkName) => {
+                  if (this._state.perks[currencyName].tiers[tier][nextPerkName]) {
+                    this._state.perks[currencyName].tiers[tier][nextPerkName].enabled = true;
+                  }
+                });
+              }
+            }
+
+            // Try to unlock the "sleep perk"
+            if (
+              [CURRENCY_UNIT_ESSENCE, CURRENCY_SANTABUCKS, CURRENCY_GOLD].includes(currencyName)
+              &&
+              this._state.perks[currencyName].tiers[tier][perkName].level == 0
+            ) {
+              enableSleepPerk = false;
+            }
+
+            // Try to unlock the "present perk"
+            if (
+              [CURRENCY_SHINIES, CURRENCY_CHRISTMAS_POINTS].includes(currencyName)
+              &&
+              this._state.perks[currencyName].tiers[tier][perkName].level == 0
+            ) {
+              enablePresentPerk = false;
+            }
           }
         }
       }
 
-      // ==== BURST PERKS ====
-      for (let perkName in burstPerks) {
-        this._state.burstPerks[perkName].level = burstPerks[perkName].level;
+      if (enableSleepPerk) {
+        this._state.burstPerks[TOWER_PERK_SLEEP].enabled = true;
+        this._state.burstPerks[TOWER_PERK_SLEEP].level = burstPerks[TOWER_PERK_SLEEP].level;
+      }
+
+      if (enablePresentPerk) {
+        this._state.burstPerks[TOWER_PERK_PRESENT].enabled = true;
+        this._state.burstPerks[TOWER_PERK_PRESENT].level = burstPerks[TOWER_PERK_PRESENT].level;
       }
 
       this.updatePerkDependants();
