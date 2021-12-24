@@ -490,6 +490,11 @@ export class XmasUser {
     }
 
     public upgradeSlot(tier){
+      let tierCurrency = farmConfig[tier].currency;
+      if (!this._state.perks[tierCurrency].unlocked) {
+        return;
+      }
+      
       let tierData = this._state.slots[tier];
       let upgradePrice = tierData.stats.upgrade.value;
       let nextLevel = tierData.stats.upgrade.nextLevel;
