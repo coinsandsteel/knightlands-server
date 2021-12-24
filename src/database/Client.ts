@@ -34,6 +34,8 @@ export class DatabaseClient {
         await this.db.collection(Collections.Armies).createIndex({ "units.id": 1 });
 
         await this.db.collection(Collections.ActivityHistory).createIndex({ user: 1, date: 1, "data.pending": 1, type: 1, chain: 1, "data.deadline": 1 });
+
+        await this.db.collection(Collections.XmasRaidStats).createIndex({ user: 1, raid: 1 });
     }
 
     async withoutTransaction(fn: (db: Db) => Promise<void>) {

@@ -77,7 +77,7 @@ class Raid extends EventEmitter {
         return this._data.creationTime;
     }
 
-    async create(summonerId, raidTemplateId, isFree, isPublic) {
+    async create(summonerId, raidTemplateId, isFree, isPublic, withTickets) {
         raidTemplateId *= 1;
         let raidTemplate = await this._loadRaidTemplate(raidTemplateId);
         if (!raidTemplate) {
@@ -92,6 +92,9 @@ class Raid extends EventEmitter {
             summoner: summonerId,
             raidTemplateId,
             participants: {
+                [summonerId]: 0
+            },
+            counter: {
                 [summonerId]: 0
             },
             challenges: {},
@@ -116,8 +119,15 @@ class Raid extends EventEmitter {
 
         raidEntry.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId });
 
+        // FOR XMAS
+        if (!isFree) {
+            raidEntry.counter[summonerId] = await this.countRaid(summonerId, withTickets);
+        }
+
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
         raidEntry._id = insertResult.insertedId;
+
+
 
         await this._initFromData(raidEntry);
     }
@@ -132,6 +142,33 @@ class Raid extends EventEmitter {
         }
 
         return this._data.busySlots >= this.template.maxSlots;
+    }
+
+    async countRaid(userId, withTickets) {
+        let count = 0;
+
+        let entry = await this._db.collection(Collections.XmasRaidStats).findOne({ user: userId });
+
+        if (!entry) {
+            entry = {
+                paid: 0,
+                free: 0
+            }
+        }
+
+        if (entry) {
+            if (withTickets) {
+                entry.paid++;
+                count = entry.paid;
+            } else {
+                entry.free++;
+                count = entry.free;
+            }
+        }
+
+        await this._db.collection(Collections.XmasRaidStats).updateOne({ user: userId }, { $set: entry });
+
+        return count;
     }
 
     async init(data) {
@@ -236,12 +273,6 @@ class Raid extends EventEmitter {
 
         this._data.dktFactor = dktFactor;
         await this._checkpoint();
-
-        // FOR XMAS
-        if (!this.free) {
-            await this._db.collection(Collections.XmasRaidStats).updateOne({ _id: "finished_raids" }, { $inc: { count: 1 } }, { upsert: true });
-        }
-
     }
 
     async _loadRaidTemplate(raidTemplateId) {
@@ -250,9 +281,13 @@ class Raid extends EventEmitter {
         });
     }
 
-    async join(userId) {
+    async join(userId, withTickets) {
         if (this._data.busySlots >= this.template.maxSlots) {
             throw Errors.RaidIsFull;
+        }
+
+        if (!this.free) {
+            this._data.counter[userId] = await this.countRaid(userId, withTickets);
         }
 
         this._data.participants[userId] = 0;
@@ -261,6 +296,7 @@ class Raid extends EventEmitter {
 
         await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
             $set: {
+                counter: this._data.counter,
                 participants: this._data.participants,
                 [`loot.${userId}`]: false,
                 busySlots: this._data.busySlots
@@ -550,16 +586,16 @@ class Raid extends EventEmitter {
         const EVENT_START = 1640304000; //24th of december 00 00 00 GMT +0
 
         if (!this.free && this.creationTime >= EVENT_START) {
-            const damageDone = this.getPlayerDamage(user.id) / this.template.health;
+            const damageDone = this.getPlayerDamage(userId) / this.template.health;
             const daysPassed = Math.floor((Game.nowSec - EVENT_START) / 86400) + 1;
 
             const baseFactor = user.isFreeAccount ? 2.5 : 25;
             const raidFactor = user.isFreeAccount ? 1.1 : 1.5;
             const dayFactor = user.isFreeAccount ? 3 : 10;
 
-            const raidsClosed = await this._db.collection(Collections.XmasRaidStats).findOne({ _id: "finished_raids" });
+            const raidCounter = this._data.counter[userId];
 
-            rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidsClosed.count;
+            rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidCounter;
         }
 
         if (this._data.isFree) {

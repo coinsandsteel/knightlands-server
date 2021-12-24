@@ -119,7 +119,7 @@ class RaidManager {
         await user.modifyTimerValue(CharacterStat.Stamina, -raid.template.summonPrice);
 
         await user.dailyQuests.onPaidRaidJoin();
-        await raid.join(user.id.toHexString());
+        await raid.join(user.id.toHexString(), !user.isFreeAccount);
 
         if (raid.isFull) {
             Game.publishToChannel("public_raids", { full: raid.id });
@@ -157,7 +157,7 @@ class RaidManager {
         await summoner.modifyTimerValue(CharacterStat.Stamina, -data.summonPrice);
 
         const raid = new Raid(this._db);
-        await raid.create(summoner.id, raidTemplateId, free, isPublic);
+        await raid.create(summoner.id, raidTemplateId, free, isPublic, !summoner.isFreeAccount);
         this._addRaid(raid);
 
         if (!free) {
