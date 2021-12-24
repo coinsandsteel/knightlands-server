@@ -3,10 +3,17 @@ import { Collections } from "../database/database";
 import Game from "../game";
 import Events from "../knightlands-shared/events";
 import { CPointsManager } from "./CPointsManager";
-import { XmasController } from "./XmasController";
-
 
 const PAGE_SIZE = 50;
+
+const IAPS = [
+  { iap: "sb_1", count: 9999 },
+  { iap: "sb_2", count: 9999 },
+  { iap: "sb_3", count: 9999 },
+  { iap: "sb_4", count: 9999 },
+  { iap: "sb_5", count: 9999 },
+  { iap: "sb_6", count: 9999 }
+];
 
 export class XmasManager {
     private _meta: any;
@@ -20,10 +27,18 @@ export class XmasManager {
         this._saveCollection = Game.db.collection(Collections.XmasUsers);
     }
 
-    async init() {
+    async init(iapExecutor) {
         this._collection = Game.db.collection(Collections.XmasRanks);
         this._collection.createIndex({ score: 1 });
         this._collection.createIndex({ order: 1 });
+
+        // IAPS.forEach(record => {
+        //     iapExecutor.registerAction(record.iap, async context => {
+        //         return this._topUpSantabucks(context.userId, record.count);
+        //     });
+
+        //     iapExecutor.mapIAPtoEvent(record.iap, Events.PurchaseComplete);
+        // });
     }
 
     async loadProgress(userId: ObjectId) {
@@ -102,5 +117,14 @@ export class XmasManager {
             records,
             finished: total <= page * PAGE_SIZE + PAGE_SIZE
         };
+    }
+
+    async _topUpSantabucks(userId: ObjectId, count: number) {
+        const controller = await Game.getPlayerControllerById(userId);
+        if (controller) {
+            controller.xmas.addSantabucks(count);
+        } else {
+
+        }
     }
 }
