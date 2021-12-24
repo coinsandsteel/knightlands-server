@@ -415,6 +415,7 @@ export class XmasUser {
       
       this._state.rebalance.counter++;
       this.reCalculatePerkPrices(true);
+      this.updateLevelGap(this._state.levelGap);
     }
 
     activatePerk({ currency, tier, perkName }){
