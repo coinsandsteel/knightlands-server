@@ -20,6 +20,9 @@ import {
   TOWER_PERK_SUPER_SPEED,
   TOWER_PERK_BOOST,
   TOWER_PERK_SUPER_BOOST,
+  SLOT_PERK_CYCLE_DURATION,
+  SLOT_PERK_UPGRADE,
+  SLOT_PERK_INCOME,
   balance,
   slots,
   perksTree as perks,
@@ -454,11 +457,10 @@ export class XmasUser {
       this.launchActivePerkTimeout(currency, tier, perkName);
     }
 
-    activateSlotPerk(tier, perkName){
+    commitSlotPerks(tier, slotPerks){
       let freePerkPoints = Math.floor(this._state.slots[tier].level / 25);
       let enabledPerksCount = 
         Object.values(this._state.slots[tier].slotPerks)
-        .map(value => value ? 1 : 0)
         .reduce(
           (previousValue, currentValue) => previousValue + currentValue,
           0
@@ -468,7 +470,18 @@ export class XmasUser {
         return;
       }
 
-      this._state.slots[tier].slotPerks[perkName] = true;
+      // Perk downgrade is prohibited
+      for (let perkName in slotPerks) {
+        if (this._state.slots[tier].slotPerks[perkName] > slotPerks[perkName]) {
+          return;
+        }
+      }
+      
+      this._state.slots[tier].slotPerks = {
+        ...this._state.slots[tier].slotPerks,
+        ...slotPerks
+      };
+
       this.reCalculateTierStats(tier, true);
     }
 
@@ -729,9 +742,11 @@ export class XmasUser {
       let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
       let speedPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_SPEED);
       let superSpeedPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_SUPER_SPEED);
+      let slotCycleDurationPerkLevel = this._state.slots[tier].slotPerks[SLOT_PERK_CYCLE_DURATION];
 
       let stat = getFarmTimeData(tier, {
         cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
+        slotCycleDurationPerkLevel,
         [TOWER_PERK_SPEED]: speedPerkIsActive,
         [TOWER_PERK_SUPER_SPEED]: superSpeedPerkIsActive
       });
@@ -748,9 +763,11 @@ export class XmasUser {
 
       let boostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_BOOST);
       let superBoostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_SUPER_BOOST);
+      let slotIncomePerkLevel = this._state.slots[tier].slotPerks[SLOT_PERK_INCOME];
       
       let params = {
         incomePerkLevel: incomePerkData ? incomePerkData.level : 0,
+        slotIncomePerkLevel,
         cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
         [TOWER_PERK_BOOST]: boostPerkIsActive,
         [TOWER_PERK_SUPER_BOOST]: superBoostPerkIsActive

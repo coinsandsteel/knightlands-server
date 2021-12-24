@@ -91,6 +91,13 @@ export class XmasEvents {
         this._events.burstPerks = burstPerks;
     }
 
+    slotPerks(tier, slotPerks) {
+      this._events.slotPerks = {
+        tier,
+        slotPerks
+      };
+    }
+
     rebalance(rebalance) {
         this._events.rebalance = rebalance;
     }

@@ -55,7 +55,7 @@ export interface SlotData {
     }
   },
   slotPerks: {
-    [key: string]: boolean;
+    [key: string]: number;
   }
 }
 
