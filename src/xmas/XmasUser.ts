@@ -394,6 +394,9 @@ export class XmasUser {
         for (let tier in this._state.perks[currency].tiers) {
           for (let perkName in this._state.perks[currency].tiers[tier]) {
               this._state.perks[currency].tiers[tier][perkName].level = 0;
+              if (perkName != TOWER_PERK_AUTOCYCLES_COUNT) {
+                this._state.perks[currency].tiers[tier][perkName].enabled = false;
+              }
           }
         }
       }
