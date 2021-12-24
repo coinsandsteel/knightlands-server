@@ -302,9 +302,13 @@ class PlayerController extends IPaymentListener {
 
         if (this.xmas) {
             console.log('start xmas dispose')
-            await this.xmas.dispose();
-            console.log('finish xmas dispose')
-            this.xmas = null
+            try {
+                await this.xmas.dispose();
+            } finally {
+                console.log('finish xmas dispose')
+                this.xmas = null
+            }
+
         }
 
         return true;
