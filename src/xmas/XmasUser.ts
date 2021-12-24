@@ -6,6 +6,7 @@ import {
   getFarmTimeData,
   getFarmIncomeData,
   getFarmUpgradeData,
+  getUpgradeTotalPriceAtLevel,
   getTowerLevelBoundaries,
   getMainTowerPerkValue,
   farmConfig,
@@ -32,6 +33,8 @@ import {
 } from "../knightlands-shared/xmas";
 import { CPoints } from "./CPoints";
 import User from "../user";
+
+const bounds = require("binary-search-bounds");
 
 const CURRENCY_TO_ITEM = {
   [CURRENCY_GOLD]: 2383,
@@ -510,10 +513,10 @@ export class XmasUser {
 
       if (tierData.level === 0) {
         let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
-        let upgradeStat = getFarmUpgradeData(tier, 1, {
+        let price = getUpgradeTotalPriceAtLevel(getFarmUpgradeData(tier, {
           upgradePerkLevel: perkData ? perkData.level : 0
-        });
-        upgradePrice = upgradeStat.upgrade;
+        }), 1);
+        upgradePrice = price;
         nextLevel = 1;
       }
 
@@ -739,47 +742,60 @@ export class XmasUser {
 
       return { current: currentStat, next: nextStat };
     }
-    
+  
+
     private getTierUpgradePrice(tier) {
       let levelGap = 1;
       let level = this._state.slots[tier].level;
       let showMaxPrice = this._state.levelGap === 10000;
       if (level > 0) {
-        levelGap = showMaxPrice ? null : this._state.levelGap;
+        levelGap = this._state.levelGap;
       }
 
       let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
       let accumulatedPrice = 0;
       let maxAffordableLevel = level;
       let imaginaryAvailableResources = this._state.balance[CURRENCY_SANTABUCKS];
-      let stat = null;
-      for (
-        let tickLevel = 1;
-        showMaxPrice ? imaginaryAvailableResources >= 0 : tickLevel <= levelGap;
-        tickLevel++
-      ) {
-        stat = getFarmUpgradeData(tier, level + tickLevel, {
-          upgradePerkLevel: perkData ? perkData.level : 0
-        });
-        accumulatedPrice += stat.upgrade;
-        imaginaryAvailableResources -= stat.upgrade;
-        maxAffordableLevel = level + tickLevel;
-        if (level === 0) {
-          break;
+      const upgradeData = getFarmUpgradeData(tier, {
+        upgradePerkLevel: perkData ? perkData.level : 0
+      });
+
+      const currentTotalPrice = getUpgradeTotalPriceAtLevel(upgradeData, level);
+
+      if (showMaxPrice) {
+        let start = level;
+        let end = level + levelGap;
+
+        while (end - start > 1) {
+          let mid = Math.floor((start + end) / 2);
+          accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, mid);
+          if (accumulatedPrice - currentTotalPrice <= imaginaryAvailableResources) {
+            start = mid;
+          } else {
+            end = mid;
+          }
+
+          maxAffordableLevel = start + level;
         }
+
+      } else {
+        maxAffordableLevel = level + levelGap;
+        accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, maxAffordableLevel);
       }
 
-      let alreadyMax = maxAffordableLevel == level + 1;
-      if (
-        level > 0 
-        && 
-        showMaxPrice
-        &&
-        !alreadyMax
-      ) {
-        accumulatedPrice -= stat.upgrade;
-        maxAffordableLevel--;
-      }
+      accumulatedPrice -= currentTotalPrice;
+
+      // let alreadyMax = maxAffordableLevel == level + 1;
+      // if (
+      //   level > 0 
+      //   && 
+      //   showMaxPrice
+      //   &&
+      //   !alreadyMax
+      // ) {
+      //   accumulatedPrice -= stat.upgrade;
+      //   maxAffordableLevel--;
+      // }
 
       return {
         value: accumulatedPrice,
