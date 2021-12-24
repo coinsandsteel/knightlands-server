@@ -473,7 +473,7 @@ export class XmasUser {
         this._events.cpoints(await this._cpoints.addPoints(accumulated.currency));
       } else if (currency == CURRENCY_GOLD || currency == CURRENCY_SHINIES || currency == CURRENCY_UNIT_ESSENCE) {
         // add items
-        await this._user.inventory.addItemTemplate(CURRENCY_TO_ITEM[currency], accumulated.currency);
+        await this._user.inventory.addItemTemplate(CURRENCY_TO_ITEM[currency], Math.floor(accumulated.currency));
       } else {
         this.increaseBalance(currency, accumulated.currency);
       }
