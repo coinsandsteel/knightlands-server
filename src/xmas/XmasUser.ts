@@ -757,7 +757,7 @@ export class XmasUser {
 
       let incomePerkData = this.getPerkData(tier, TOWER_PERK_INCOME);
       let cyclePerkData = this.getPerkData(tier, TOWER_PERK_CYCLE_DURATION);
-      let upgradeData = this.getTierUpgradePrice(tier);
+      let upgradeData = this._state.slots[tier].stats.upgrade;
 
       let boostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_BOOST);
       let superBoostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_SUPER_BOOST);
