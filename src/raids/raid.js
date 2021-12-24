@@ -583,7 +583,7 @@ class Raid extends EventEmitter {
         }
 
         // for XMAS
-        const EVENT_START = 1640304000; //24th of december 00 00 00 GMT +0
+        const EVENT_START = 1640390400; //25th of december 00 00 00 GMT +0
 
         if (!this.free && this.creationTime >= EVENT_START) {
             const damageDone = this.getPlayerDamage(userId) / this.template.health;
