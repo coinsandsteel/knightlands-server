@@ -724,6 +724,10 @@ export class XmasUser {
     }
     
     private decreaseBalance(currency, amount) {
+      if (!isNumber(amount)) {
+        return;
+      }
+      
       this._state.balance[currency] -= amount;
       this._events.balance(currency, this._state.balance[currency]);
     }
