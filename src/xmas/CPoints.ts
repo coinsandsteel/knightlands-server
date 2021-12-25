@@ -6,7 +6,7 @@ function toShares(amount, poolIn, poolOut) {
 }
 
 const CURVATURE = 20000;
-const FLESH_EMISSION = 250;
+const FLESH_EMISSION = 750;
 
 export class CPoints {
     private _user: any;
@@ -59,8 +59,8 @@ export class CPoints {
             if (data) {
                 let dkt = 0;
 
-                if (data.totalShares > 0) {
-                    dkt = this._data.shares / data.totalShares * FLESH_EMISSION
+                if (data.totalPoints > 0) {
+                    dkt = this._data.score / data.totalPoints * FLESH_EMISSION
                 }
 
                 if (isNaN(dkt)) {
