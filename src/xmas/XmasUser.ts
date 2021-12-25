@@ -174,6 +174,8 @@ export class XmasUser {
             }
           }
         }
+        this._events.perks(this._state.perks);
+        this._events.flush();
       }, perkDuration * 1000);
     }
     
@@ -462,6 +464,7 @@ export class XmasUser {
       }
 
       this.launchActivePerkTimeout(currency, tier, perkName);
+      this._events.perks(this._state.perks);
     }
 
     commitSlotPerks(tier, slotPerks){
