@@ -304,7 +304,7 @@ class Raid extends EventEmitter {
             $set: {
                 counter: this._data.counter,
                 participants: this._data.participants,
-                [`loot.${userId}`]: false,
+                [`loot.${userId.toHexString()}`]: false,
                 busySlots: this._data.busySlots
             }
         });

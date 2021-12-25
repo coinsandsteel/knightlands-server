@@ -119,7 +119,7 @@ class RaidManager {
         await user.modifyTimerValue(CharacterStat.Stamina, -raid.template.summonPrice);
 
         await user.dailyQuests.onPaidRaidJoin();
-        await raid.join(user.id.toHexString(), !user.isFreeAccount);
+        await raid.join(user.id, !user.isFreeAccount);
 
         if (raid.isFull) {
             Game.publishToChannel("public_raids", { full: raid.id });
