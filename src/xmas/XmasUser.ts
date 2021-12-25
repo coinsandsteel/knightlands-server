@@ -251,9 +251,11 @@ export class XmasUser {
       let autoCyclesSpent = Math.floor(time / cycleLength);
 
       let currency = 0;
+      let exp = 0;
 
       if (autoCyclesSpent > 0) {
         currency = cycleLength * autoCyclesSpent * power.currencyPerSecond;
+        exp = cycleLength * autoCyclesSpent * power.expPerSecond;
         time -= cycleLength * autoCyclesSpent;
       }
       
@@ -270,6 +272,7 @@ export class XmasUser {
       }
 
       currency += time * power.currencyPerSecond * multiplier;
+      exp += time * power.expPerSecond * multiplier;
 
       return {
         launched: !endReached,
@@ -277,7 +280,7 @@ export class XmasUser {
         autoCyclesLeft,
         autoCyclesSpent,
         currency,
-        exp: time * power.expPerSecond * multiplier
+        exp
       };
     }
 
