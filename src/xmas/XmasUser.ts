@@ -105,7 +105,7 @@ export class XmasUser {
           score: 0
         }
       };
-      this._state = state;
+      this._state = _.cloneDeep(state);
       this.recalculateStats(false);
     }
 
