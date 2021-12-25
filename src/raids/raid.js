@@ -292,7 +292,7 @@ class Raid extends EventEmitter {
             throw Errors.RaidIsFull;
         }
 
-        if (!this.free) {
+        if (!this.free && this._data.counter) {
             this._data.counter[userId] = await this.countRaid(userId, withTickets);
         }
 

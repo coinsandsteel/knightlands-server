@@ -325,14 +325,10 @@ class PlayerController extends IPaymentListener {
         Game.on(this.id, this._handleEventBind);
 
         this.simpleDungeon = new DungeonController(await this.getUser());
-        // console.log('start loading dungeon')
         await this.simpleDungeon.init();
-        // console.log('loaded dungeon')
 
         this.xmas = new XmasController(await this.getUser());
-        console.log('start loading xmas')
         await this.xmas.init();
-        console.log('loaded xmas')
     }
 
     async onPayment(iap, eventToTrigger, context) {
