@@ -36,6 +36,7 @@ import {
 } from "../knightlands-shared/xmas";
 import { CPoints } from "./CPoints";
 import User from "../user";
+import { isNumber } from "../validation";
 
 const bounds = require("binary-search-bounds");
 
@@ -715,6 +716,9 @@ export class XmasUser {
     }
 
     private increaseBalance(currency, amount) {
+      if (!isNumber(amount)) {
+        return;
+      }
       this._state.balance[currency] += amount;
       this._events.balance(currency, this._state.balance[currency]);
     }
