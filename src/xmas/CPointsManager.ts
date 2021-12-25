@@ -18,7 +18,7 @@ export class CPointsManager {
     }
 
     async init() {
-        const state = await Game.db.collection(Collections.XmasPoints).findOne({ _id: STATE_RECORD_ID });
+        const state = await Game.db.collection(Collections.DivTokenState).findOne({ _id: STATE_RECORD_ID });
         if (state) {
             this._totalShares = state.totalShares;
             this._totalPoints = state.totalPoints;
@@ -63,7 +63,7 @@ export class CPointsManager {
             this._totalShares = 0;
             this._currentPayout = this.getCurrentPayout();
 
-            await db.collection(Collections.XmasPoints).updateOne(
+            await db.collection(Collections.DivTokenState).updateOne(
                 { _id: STATE_RECORD_ID },
                 { $set: { lastPayout: this._currentPayout, totalPoints: 0, totalShares: 0, totalFreePoints: 0, totalFreeShares: 0 } },
                 { upsert: true }
