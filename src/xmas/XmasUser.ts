@@ -820,6 +820,7 @@ export class XmasUser {
       }
 
       if (maxAffordableLevel == level) {
+        maxAffordableLevel++;
         accumulatedPrice = getUpgradeTotalPriceAtLevel(upgradeData, maxAffordableLevel + 1);
       }
 
