@@ -242,30 +242,39 @@ export class XmasUser {
       let autoCyclesMax = getMainTowerPerkValue(tier, TOWER_PERK_AUTOCYCLES_COUNT, perkData ? perkData.level : 0);
       let cycleLength = this._state.slots[tier].stats.cycleLength;
       let maxEfficientTime = cycleLength * (autoCyclesMax || 1);
+      let passedTime = (Game.now - this._state.slots[tier].lastLaunch) / 1000;
+      let time = Math.min(passedTime, maxEfficientTime);
 
       let power = this._state.slots[tier].stats.income.current;
-      let passedTime = (Game.now - this._state.slots[tier].lastLaunch) / 1000;
-      let endReached = passedTime >= maxEfficientTime;
-      let time = Math.min(passedTime, maxEfficientTime);
+      let autoCyclesSpent = Math.floor(time / cycleLength);
+
+      let currency = 0;
+
+      if (autoCyclesSpent > 0) {
+        currency = cycleLength * autoCyclesSpent * power.currencyPerSecond;
+        time -= cycleLength * autoCyclesSpent;
+      }
+      
+      let endReached = time >= cycleLength;
       let multiplier = endReached ? 1 : 0.5;
 
       let percentage = 0;
       let autoCyclesLeft = autoCyclesMax;
-      let autoCyclesSpent = 0;
 
       if (!endReached) {
-        let passedTimeInsideCycle = passedTime % cycleLength;
+        let passedTimeInsideCycle = time % cycleLength;
         percentage = Math.floor(passedTimeInsideCycle * 100 / cycleLength);
-        autoCyclesSpent = Math.floor(passedTime / cycleLength);
         autoCyclesLeft = autoCyclesMax - autoCyclesSpent;
       }
+
+      currency += time * power.currencyPerSecond * multiplier;
 
       return {
         launched: !endReached,
         percentage,
         autoCyclesLeft,
         autoCyclesSpent,
-        currency: time * power.currencyPerSecond * multiplier,
+        currency,
         exp: time * power.expPerSecond * multiplier
       };
     }
