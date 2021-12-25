@@ -538,8 +538,9 @@ export class XmasUser {
       }
       
       let tierData = this._state.slots[tier];
-      let upgradePrice = tierData.stats.upgrade.value;
-      let nextLevel = tierData.stats.upgrade.nextLevel;
+      const upgrade = this.getTierUpgradePrice(tier);
+      let upgradePrice = upgrade.value;
+      let nextLevel = upgrade.nextLevel;
 
       if (tierData.level === 0) {
         let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
