@@ -167,10 +167,12 @@ export class XmasUser {
       this.activePerkTimeouts[`${currency}_${tier}_${perkName}`] = setTimeout(() => {
         this._state.perks[currency].tiers[tier][perkName].active = false;
         if (tier !== 'all') {
+          this.harvest(tier);
           this.reCalculateTierStats(tier, true);
         } else {
           for (let tierNum in farmConfig) {
             if (currency === farmConfig[tierNum].currency) {
+              this.harvest(tierNum);
               this.reCalculateTierStats(tierNum, true);
             }
           }
@@ -571,12 +573,14 @@ export class XmasUser {
       this._state.slots[tier].level = nextLevel;
       this._events.level(tier, this._state.slots[tier].level);
 
+      if (nextLevel > 1) {
+        this.harvest(tier);
+      }
+
       this.reCalculateTierStats(tier, true);
       this.reCalculatePerkPrices(true);
 
-      if (this._state.slots[tier].level === 1) {
-        this.launchTimer(tier, true);
-      }
+      this.launchTimer(tier, true);
     }
 
     public commitPerks({ perks, burstPerks }) {
