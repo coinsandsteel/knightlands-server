@@ -27,7 +27,8 @@ export class XmasManager {
         this._saveCollection = Game.db.collection(Collections.XmasUsers);
     }
 
-    async init(iapExecutor) {
+    async init() {
+        await this.cpoints.init();
         this._collection = Game.db.collection(Collections.XmasRanks);
         this._collection.createIndex({ score: 1 });
         this._collection.createIndex({ order: 1 });
