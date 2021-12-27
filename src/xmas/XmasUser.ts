@@ -230,7 +230,7 @@ export class XmasUser {
           slotData.accumulated.exp
         );
 
-        if (slotData.progress.autoCyclesLeft > 0) {
+        if (slotData.progress.autoCyclesLeft > 1) {
           this.hookCycleFinished(tier);
           this.launchTimer(tier, false);
         } else {
@@ -290,7 +290,7 @@ export class XmasUser {
     hookCycleFinished(tier) {
       this._state.slots[tier].progress.percentage = 100;
 
-      if (this._state.slots[tier].progress.autoCyclesLeft > 0) {
+      if (this._state.slots[tier].progress.autoCyclesLeft > 1) {
         this._state.slots[tier].progress.autoCyclesLeft--;
         this._state.slots[tier].progress.autoCyclesSpent++;
       } else {
