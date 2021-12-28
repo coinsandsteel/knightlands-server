@@ -45,6 +45,7 @@ const CURRENCY_TO_ITEM = {
   [CURRENCY_SHINIES]: 2480,
   [CURRENCY_UNIT_ESSENCE]: 2978
 }
+const LEVEL_GAP_MAX = 10000;
 
 export class XmasUser {
     private _state: XmasState;
@@ -577,6 +578,13 @@ export class XmasUser {
         this.harvest(tier);
       }
 
+      if (this._state.levelGap === LEVEL_GAP_MAX) {
+        for (let tierTmp = 1; tierTmp <= 9; tierTmp++) {
+          this.reCalculateUpgradeData(tierTmp, true);
+          this.reCalculateIncomeValue(tierTmp, true);
+        }
+      }
+
       this.reCalculateTierStats(tier, true);
       this.reCalculatePerkPrices(true);
 
@@ -809,7 +817,7 @@ export class XmasUser {
     private getTierUpgradePrice(tier) {
       let levelGap = 1;
       let level = this._state.slots[tier].level;
-      let showMaxPrice = this._state.levelGap === 10000;
+      let showMaxPrice = this._state.levelGap === LEVEL_GAP_MAX;
       if (level > 0) {
         levelGap = this._state.levelGap;
       }
@@ -852,20 +860,6 @@ export class XmasUser {
       }
 
       accumulatedPrice -= currentTotalPrice;
-
-      // let alreadyMax = maxAffordableLevel == level + 1;
-      // if (
-      //   level > 0 
-      //   && 
-      //   showMaxPrice
-      //   &&
-      //   !alreadyMax
-      // ) {
-      //   accumulatedPrice -= stat.upgrade;
-      //   maxAffordableLevel--;
-      // }
-
-      
 
       return {
         value: accumulatedPrice,
