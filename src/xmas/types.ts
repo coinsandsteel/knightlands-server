@@ -20,6 +20,8 @@ export interface XmasState {
     level: number;
     percentage: number;
     exp: number;
+    currentLevelExp?: number;
+    nextLevelExp?: number;
   };
   slots: { [key: number]: SlotData };
   perks: { [key: string]: CurrencyPerkData };

@@ -93,7 +93,9 @@ export class XmasUser {
         tower: {
           level: 1,
           percentage: 0,
-          exp: 0
+          exp: 0,
+          currentLevelExp: 0,
+          nextLevelExp: 0
         },
         slots,
         burstPerks,
@@ -723,6 +725,8 @@ export class XmasUser {
       this._state.tower.percentage = Math.floor(
         currentGap * 100 / expGap
       );
+      this._state.tower.currentLevelExp = currentGap;
+      this._state.tower.nextLevelExp = expGap;
 
       this._events.tower(this._state.tower);
     }
