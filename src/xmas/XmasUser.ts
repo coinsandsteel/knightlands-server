@@ -117,10 +117,6 @@ export class XmasUser {
       return this._state.balance[CURRENCY_SANTABUCKS];
     }
 
-    tier6IsNotReady(tier) {
-      return tier == 6 && this._state.slots[tier].stats.income.current.currencyPerCycle < 1;
-    }
-
     wakeUp() {
       for (let tier = 1; tier <= 9; tier++) {
         let tierData = this._state.slots[tier];
@@ -129,11 +125,7 @@ export class XmasUser {
         }
         
         let accumulated = this.getAccumulatedProgressive(tier);
-        if (this.tier6IsNotReady(tier)) {
-          this._state.slots[tier].accumulated.currency = 0;
-        } else {
-          this._state.slots[tier].accumulated.currency = accumulated.currency;
-        }
+        this._state.slots[tier].accumulated.currency = accumulated.currency;
         this._state.slots[tier].accumulated.exp = accumulated.exp;
         this._state.slots[tier].launched = accumulated.launched;
         this._state.slots[tier].progress.autoCyclesLeft = accumulated.autoCyclesLeft;
@@ -222,11 +214,9 @@ export class XmasUser {
       this.tierIntervals[tier] = setTimeout(() => {
         let currentIncomeValue = slotData.stats.income.current;
 
-        if (!this.tier6IsNotReady(tier)) {
-          this._state.slots[tier].accumulated.currency += (currentIncomeValue.currencyPerCycle * innerCycleModifier);
-        }
+        this._state.slots[tier].accumulated.currency += (currentIncomeValue.currencyPerCycle * innerCycleModifier);
         this._state.slots[tier].accumulated.exp += (currentIncomeValue.expPerCycle * innerCycleModifier);
-        
+
         this._events.accumulated(
           tier,
           slotData.accumulated.currency,
