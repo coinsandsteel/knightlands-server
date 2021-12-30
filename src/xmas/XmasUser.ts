@@ -491,6 +491,7 @@ export class XmasUser {
         ...slotPerks
       };
 
+      this._events.slotPerks(tier, this._state.slots[tier].slotPerks)
       this.reCalculateTierStats(tier, true);
     }
 
@@ -793,10 +794,12 @@ export class XmasUser {
       let boostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_BOOST);
       let superBoostPerkIsActive = this.activePerkIsActiveLOL(null, tier, TOWER_PERK_SUPER_BOOST);
       let slotIncomePerkLevel = this._state.slots[tier].slotPerks[SLOT_PERK_INCOME];
+      let slotCycleDurationPerkLevel = this._state.slots[tier].slotPerks[SLOT_PERK_CYCLE_DURATION];
       
       let params = {
         incomePerkLevel: incomePerkData ? incomePerkData.level : 0,
         slotIncomePerkLevel,
+        slotCycleDurationPerkLevel,
         cycleDurationPerkLevel: cyclePerkData ? cyclePerkData.level : 0,
         [TOWER_PERK_BOOST]: boostPerkIsActive,
         [TOWER_PERK_SUPER_BOOST]: superBoostPerkIsActive
