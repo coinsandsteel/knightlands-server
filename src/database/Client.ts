@@ -13,7 +13,7 @@ export class DatabaseClient {
     }
 
     get db() {
-        return this._client.db("knightlands");
+        return this._client.db(process.env.DB_NAME || "knightlands");
     }
 
     async connect() {
