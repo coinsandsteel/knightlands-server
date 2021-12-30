@@ -556,7 +556,8 @@ export class XmasUser {
       if (tierData.level === 0) {
         let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
         let price = getUpgradeTotalPriceAtLevel(getFarmUpgradeData(tier, {
-          upgradePerkLevel: perkData ? perkData.level : 0
+          upgradePerkLevel: perkData ? perkData.level : 0,
+          slotUpgradePerkLevel: 0
         }), 1);
         upgradePrice = price;
         nextLevel = 1;
@@ -817,11 +818,13 @@ export class XmasUser {
       }
 
       let perkData = this.getPerkData(tier, TOWER_PERK_UPGRADE);
+      let slotUpgradePerkLevel = this._state.slots[tier].slotPerks[SLOT_PERK_UPGRADE];
       let accumulatedPrice = 0;
       let maxAffordableLevel = level;
       let imaginaryAvailableResources = this._state.balance[CURRENCY_SANTABUCKS];
       const upgradeData = getFarmUpgradeData(tier, {
-        upgradePerkLevel: perkData ? perkData.level : 0
+        upgradePerkLevel: perkData ? perkData.level : 0,
+        slotUpgradePerkLevel
       });
 
       const currentTotalPrice = getUpgradeTotalPriceAtLevel(upgradeData, level);
