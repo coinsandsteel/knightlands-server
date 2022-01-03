@@ -82,20 +82,12 @@ class Giveaway {
 
     async _giveItem(req, res) {
         // check if such item exist
-        let itemId = BotGiveawayWhitelist[req.body.itemId];
+        const count = req.body.count || 1;
+        const itemId = BotGiveawayWhitelist[req.body.itemId];
+        const accountId = req.body.user;
+
         if (!itemId) {
             res.status(500).end("unknown item");
-            return;
-        }
-
-        let linkedAccount = await this._db.collection(Collections.LinkedAccounts).findOne({ tgUser: req.body.user });
-        if (!linkedAccount) {
-            res.status(500).end("no account");
-            return;
-        }
-
-        if (!linkedAccount.wallet) {
-            res.status(500).end("no wallet");
             return;
         }
 
@@ -106,22 +98,19 @@ class Giveaway {
             return;
         }
 
-        let user = await Game.loadUser(linkedAccount.wallet);
+        let user = await Game.loadUserById(accountId);
         await user.loadInventory();
 
         await user.inventory.addItemTemplates([{
             item: itemTemplate._id,
-            quantity: 1
+            quantity: count
         }]);
         await user.commitChanges();
 
-        await this._db.collection(Collections.GiveawayLogs).insertOne({ user: req.body.user, item: itemTemplate._id });
+        await this._db.collection(Collections.GiveawayLogs).insertOne({ user: accountId, item: itemId, count });
 
         // send item's image url for the telegram bot
-        res.json({
-            media: `https://game.knightlands.com:9000/img/${itemTemplate.icon}.mp4`,
-            caption: itemTemplate.caption
-        });
+        res.json({ ok: true });
     }
 
     _requiresApiKey(req, res, next) {
