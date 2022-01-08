@@ -63,7 +63,7 @@ export class XmasUser {
 
         if (state) {
           this._state = state;
-          this.wakeUp();
+          // this.wakeUp();
         } else {
           this.setInitialState();
         }

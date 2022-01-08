@@ -43,7 +43,7 @@ export class XmasManager {
     }
 
     async loadProgress(userId: ObjectId) {
-        return this._saveCollection.findOne({ _id: userId })
+        return this._saveCollection.findOne({ _id: userId }, { projection: { "state.cpoints": 1 } })
     }
 
     async saveProgress(userId: ObjectId, saveData: any) {
