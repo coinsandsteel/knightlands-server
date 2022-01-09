@@ -120,9 +120,9 @@ class Raid extends EventEmitter {
         raidEntry.weakness = await this._db.collection(Collections.RaidsWeaknessRotations).findOne({ raid: raidTemplateId });
 
         // FOR XMAS
-        if (!isFree) {
-            raidEntry.counter[summonerId] = await this.countRaid(summonerId, withTickets);
-        }
+        // if (!isFree) {
+        //     raidEntry.counter[summonerId] = await this.countRaid(summonerId, withTickets);
+        // }
 
         let insertResult = await this._db.collection(Collections.Raids).insertOne(raidEntry);
         raidEntry._id = insertResult.insertedId;
@@ -589,20 +589,20 @@ class Raid extends EventEmitter {
         }
 
         // for XMAS
-        const EVENT_START = 1640390400; //25th of december 00 00 00 GMT +0
+        // const EVENT_START = 1640390400; //25th of december 00 00 00 GMT +0
 
-        if (!this.free && this.creationTime >= EVENT_START) {
-            const damageDone = this.getPlayerDamage(userId) / this.template.health;
-            const daysPassed = Math.floor((Game.nowSec - EVENT_START) / 86400) + 1;
+        // if (!this.free && this.creationTime >= EVENT_START) {
+        //     const damageDone = this.getPlayerDamage(userId) / this.template.health;
+        //     const daysPassed = Math.floor((Game.nowSec - EVENT_START) / 86400) + 1;
 
-            const baseFactor = user.isFreeAccount ? 2.5 : 25;
-            const raidFactor = user.isFreeAccount ? 1.1 : 1.5;
-            const dayFactor = user.isFreeAccount ? 3 : 10;
+        //     const baseFactor = user.isFreeAccount ? 2.5 : 25;
+        //     const raidFactor = user.isFreeAccount ? 1.1 : 1.5;
+        //     const dayFactor = user.isFreeAccount ? 3 : 10;
 
-            const raidCounter = this._data.counter[userId];
+        //     const raidCounter = this._data.counter[userId];
 
-            rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidCounter;
-        }
+        //     rewards.santabucks = damageDone * baseFactor * raidFactor * dayFactor * daysPassed * raidCounter;
+        // }
 
         if (this._data.isFree) {
             rewards.rp = 0;
