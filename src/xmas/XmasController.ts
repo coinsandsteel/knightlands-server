@@ -34,6 +34,7 @@ export class XmasController {
           this.generate();
         }
 
+        await this._xmasUser.init();
         await this._save();
     }
 

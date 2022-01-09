@@ -259,15 +259,15 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwa.bind(this)));
 
         // Xmas
-        this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
-        this._socket.on(Operations.XmasFarmUpgrade, this._gameHandler(this._xmasFarmUpgrade.bind(this)));
-        this._socket.on(Operations.XmasHarvest, this._gameHandler(this._xmasHarvest.bind(this)));
-        this._socket.on(Operations.XmasCommitPerks, this._gameHandler(this._xmasCommitPerks.bind(this)));
-        this._socket.on(Operations.XmasCommitSlotPerks, this._gameHandler(this._xmasXmasCommitSlotPerks.bind(this)));
-        this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
-        this._socket.on(Operations.XmasCPointsStatus, this._gameHandler(this._xmasCPointsStatus.bind(this)));
-        this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
-        this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
+        // this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
+        // this._socket.on(Operations.XmasFarmUpgrade, this._gameHandler(this._xmasFarmUpgrade.bind(this)));
+        // this._socket.on(Operations.XmasHarvest, this._gameHandler(this._xmasHarvest.bind(this)));
+        // this._socket.on(Operations.XmasCommitPerks, this._gameHandler(this._xmasCommitPerks.bind(this)));
+        // this._socket.on(Operations.XmasCommitSlotPerks, this._gameHandler(this._xmasXmasCommitSlotPerks.bind(this)));
+        // this._socket.on(Operations.XmasUpdateLevelGap, this._gameHandler(this._xmasUpdateLevelGap.bind(this)));
+        // this._socket.on(Operations.XmasCPointsStatus, this._gameHandler(this._xmasCPointsStatus.bind(this)));
+        // this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
+        // this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
