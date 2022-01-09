@@ -304,12 +304,7 @@ class PlayerController extends IPaymentListener {
         }
 
         if (this.xmas) {
-            try {
-                await this.xmas.dispose();
-            } finally {
-                this.xmas = null
-            }
-
+            this.xmas = null
         }
 
         return true;
