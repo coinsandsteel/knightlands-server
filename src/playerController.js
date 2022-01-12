@@ -269,6 +269,10 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
         // this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
 
+        // Lunar
+        this._socket.on(Operations.CollectDailyLunarReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
+        this._socket.on(Operations.FetchDailyLunarRewardStatus, this._gameHandler(this._fetchDailyLunarRewardStatus.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -1976,6 +1980,15 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.withdrawReward(data.to);
+    }
+
+    // Lunar
+    async _lunarCollectDailyReward(user) {
+        return user.collectDailyLunarReward();
+    }
+
+    async _fetchDailyLunarRewardStatus(user) {
+        return user.getDailyLunarRewardStatus();
     }
 }
 
