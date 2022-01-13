@@ -274,8 +274,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.LunarLoad, this._gameHandler(this._lunarLoad.bind(this)));
         this._socket.on(Operations.LunarCraft, this._gameHandler(this._lunarCraft.bind(this)));
         this._socket.on(Operations.LunarExchange, this._gameHandler(this._lunarExchange.bind(this)));
-        this._socket.on(Operations.CollectDailyLunarReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
-        this._socket.on(Operations.FetchDailyLunarRewardStatus, this._gameHandler(this._fetchDailyLunarRewardStatus.bind(this)));
+        this._socket.on(Operations.LunarCollectDailyReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
+        this._socket.on(Operations.LunarFetchDailyRewardStatus, this._gameHandler(this._fetchDailyLunarRewardStatus.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
