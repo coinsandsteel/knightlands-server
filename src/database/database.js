@@ -85,6 +85,8 @@ module.exports = {
         HalloweenFloors: "halloween_floors",
         XmasUsers: "xmas_users",
         XmasRanks: "xmas_ranks",
+        LunarUsers: "lunar_users",
+        LunarRanks: "lunar_ranks",
         ActionsLogs: "actions_logs",
         FarmUsers: "farm_users",
         XmasPoints: "xmas_points",

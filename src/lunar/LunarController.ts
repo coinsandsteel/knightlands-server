@@ -1,10 +1,8 @@
 import User from "../user";
 import Game from "../game";
 import { LunarUser } from "./LunarUser";
-import { LunarEvents } from "./LunarEvent";
+import { LunarEvents } from "./LunarEvents";
 import { LunarSaveData, LunarState } from "./types";
-import { Collections } from "../database/database";
-
 
 export class LunarController {
   private _user: User;
@@ -36,7 +34,6 @@ export class LunarController {
   }
 
   async dispose() {
-    this._lunarUser.shutdown();
     await this._save();
   }
 
