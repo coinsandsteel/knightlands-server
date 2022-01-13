@@ -47,12 +47,24 @@ export class LunarController {
     }
   }
 
-
   getState(): LunarState {
     return this._lunarUser.getState();
-``}
+  }
 
   private async _save() {
     await Game.lunarManager.saveProgress(this._user.id, { state: this.getState() });
+  }
+
+  async load() {
+    await this._lunarUser.init();
+    return this.getState();
+  }
+
+  async craft(items) {
+    await this._lunarUser.craft(items);
+  }
+
+  async exchange(items) {
+    await this._lunarUser.exchange(items);
   }
 }

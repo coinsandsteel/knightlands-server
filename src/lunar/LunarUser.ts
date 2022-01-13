@@ -22,6 +22,14 @@ export class LunarUser {
     }
 
     public async init() {
+      
+    }
+
+    public async craft(items) {
+
+    }
+
+    public async exchange(items) {
 
     }
 
