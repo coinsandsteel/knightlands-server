@@ -90,7 +90,8 @@ module.exports = {
         XmasPoints: "xmas_points",
         XmasRaidStats: "xmas_raid_stats",
         HalloweenWithdrawals: "halloween_withdrawals",
-        ActionsLogs: "actions_logs"
+        ActionsLogs: "actions_logs",
+        LunarUsers: "lunar_users",
     },
 
 

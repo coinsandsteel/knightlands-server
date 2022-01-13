@@ -28,6 +28,7 @@ import { exist, isNumber, isString } from "./validation";
 import { DungeonController } from "./simple-dungeon/DungeonController";
 import { XmasController } from "./xmas/XmasController";
 import { GetArmy } from "./knightlands-shared/operations";
+import { LunarController } from "./lunar/LunarController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -270,6 +271,7 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
 
         // Lunar
+        this._socket.on(Operations.LunarLoad, this._gameHandler(this._lunarLoad.bind(this)));
         this._socket.on(Operations.CollectDailyLunarReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
         this._socket.on(Operations.FetchDailyLunarRewardStatus, this._gameHandler(this._fetchDailyLunarRewardStatus.bind(this)));
 
@@ -1079,7 +1081,6 @@ class PlayerController extends IPaymentListener {
         await user.inventory.addItemTemplates(rewards.items);
         await user.addRP(rewards.rp, true);
         await user.addHardCurrency(rewards.hardCurrency);
-        this.xmas.addSantabucks(rewards.santabucks);
 
         return rewards;
     }
@@ -1983,6 +1984,10 @@ class PlayerController extends IPaymentListener {
     }
 
     // Lunar
+    async _lunarLoad() {
+        return this.lunar.load();
+    }
+
     async _lunarCollectDailyReward(user) {
         return user.collectDailyLunarReward();
     }
