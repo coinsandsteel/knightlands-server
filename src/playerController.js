@@ -333,11 +333,7 @@ class PlayerController extends IPaymentListener {
         this.xmas = new XmasController(user);
         await this.xmas.init();
 
-<<<<<<< HEAD
-        this.lunar = new LunarController(await this.getUser());
-=======
         this.lunar = new LunarController(user);
->>>>>>> ebf32ba... chg: crafting and exchange logic
         await this.lunar.init();
     }
 
@@ -2011,13 +2007,8 @@ class PlayerController extends IPaymentListener {
         return this.lunar.collectDailyLunarReward();
     }
 
-<<<<<<< HEAD
-    async _fetchDailyLunarRewardStatus(user) {
-        return this.lunar.getDailyLunarRewardStatus();
-=======
     async _lunarFetchDailyLunarRewardStatus(user) {
         return user.getDailyLunarRewardStatus();
->>>>>>> ebf32ba... chg: crafting and exchange logic
     }
 
     async _lunarAddTestItems() {
