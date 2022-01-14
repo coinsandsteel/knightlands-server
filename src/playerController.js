@@ -330,6 +330,9 @@ class PlayerController extends IPaymentListener {
 
         this.xmas = new XmasController(await this.getUser());
         await this.xmas.init();
+
+        this.lunar = new LunarController(await this.getUser());
+        await this.lunar.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -1998,12 +2001,12 @@ class PlayerController extends IPaymentListener {
         return this.lunar.exchange(items);
     }
 
-    async _lunarCollectDailyReward(user) {
-        return user.collectDailyLunarReward();
+    async _lunarCollectDailyReward() {
+        return this.lunar.collectDailyLunarReward();
     }
 
     async _fetchDailyLunarRewardStatus(user) {
-        return user.getDailyLunarRewardStatus();
+        return this.lunar.getDailyLunarRewardStatus();
     }
 }
 

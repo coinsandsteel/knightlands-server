@@ -1905,10 +1905,6 @@ class User {
         return Math.floor(Game.now / Config.game.dailyRewardCycle);
     }
 
-    getDailyLunarRewardCycle() {
-        return Math.floor(Game.now / Config.game.dailyLunarRewardCycle);
-    }
-
     convertToCycle(timeSec) {
         return Math.floor(timeSec / (Config.game.dailyRewardCycle / 1000));
     }
@@ -1921,41 +1917,6 @@ class User {
         }
 
         return dailyRewardCollect;
-    }
-
-    async collectDailyLunarReward() {
-        const dailyLunarRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_lunar_rewards" })).lunarRewards;
-        const dailyLunarRewardCollect = this._processDailyLunarReward(dailyLunarRewardsMeta);
-
-        if (dailyLunarRewardCollect.cycle >= this.getDailyLunarRewardCycle()) {
-            throw Errors.DailyLunarRewardCollected;
-        }
-
-        const reward = dailyLunarRewardsMeta[dailyLunarRewardCollect.step];
-
-        const item = {
-            item: reward.itemId,
-            quantity: Random.intRange(reward.minCount, reward.maxCount)
-        }
-
-        await this.inventory.addItemTemplate(item.item, item.quantity);
-
-        dailyLunarRewardCollect.cycle = this.getDailyRewardCycle();
-        dailyLunarRewardCollect.step++;
-
-        this._data.dailyLunarRewardCollect = dailyLunarRewardCollect;
-
-        return item;
-    }
-      
-    _processDailyLunarReward(dailyLunarRewardsMeta) {
-    const dailyLunarRewardCollect = this._data.dailyLunarRewardCollect;
-
-    if (dailyLunarRewardCollect.step < 0 || dailyLunarRewardCollect.step >= dailyLunarRewardsMeta.length) {
-        dailyLunarRewardCollect.step = 0;
-    }
-
-    return dailyLunarRewardCollect;
     }
     
     async collectDailyReward() {
@@ -1981,17 +1942,6 @@ class User {
         this._data.dailyRewardCollect = dailyRewardCollect;
 
         return item;
-    }
-
-    async getDailyLunarRewardStatus() {
-        const dailyLunarRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_lunar_rewards" })).lunarRewards;
-        const dailyLunarRewards = this._processDailyLunarReward(dailyLunarRewardsMeta);
-
-        return {
-            readyToCollect: dailyLunarRewards.cycle < this.getDailyLunarRewardCycle(),
-            step: dailyLunarRewards.step,
-            untilNext: Config.game.dailyLunarRewardCycle - Game.now % Config.game.dailyLunarRewardCycle
-        };
     }
 
     async beastBoost(boostCount, regular, metaIndex = -1) {
