@@ -5,9 +5,11 @@ import Game from "../game";
 export class LunarManager {
   private _meta: any;
   private _saveCollection: Collection;
+  private _craftingCollection: Collection;
   
   constructor() {
     this._saveCollection = Game.db.collection(Collections.LunarUsers);
+    this._craftingCollection = Game.db.collection(Collections.CraftingRecipes);
   }
 
   async init() {
@@ -15,6 +17,10 @@ export class LunarManager {
 
   async loadProgress(userId: ObjectId) {
     return this._saveCollection.findOne({ _id: userId })
+  }
+
+  async getRecipes() {
+    return this._craftingCollection.find({ category: 'lunar' })
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {

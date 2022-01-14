@@ -11,6 +11,10 @@ export class LunarEvents {
         this._events = {};
     }
 
+    items(items) {
+      this._events.items = items;
+    }
+
     flush() {
         game.emitPlayerEvent(this._userId, events.LunarUpdate, this._events);
         this._events = {};

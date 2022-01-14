@@ -275,7 +275,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.LunarCraft, this._gameHandler(this._lunarCraft.bind(this)));
         this._socket.on(Operations.LunarExchange, this._gameHandler(this._lunarExchange.bind(this)));
         this._socket.on(Operations.LunarCollectDailyReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
-        this._socket.on(Operations.LunarFetchDailyRewardStatus, this._gameHandler(this._fetchDailyLunarRewardStatus.bind(this)));
+        this._socket.on(Operations.LunarFetchDailyRewardStatus, this._gameHandler(this._lunarFetchDailyLunarRewardStatus.bind(this)));
+        this._socket.on(Operations.LunarAddTestItems, this._gameHandler(this._lunarAddTestItems.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -325,13 +326,18 @@ class PlayerController extends IPaymentListener {
         Game.removeAllListeners(this.id)
         Game.on(this.id, this._handleEventBind);
 
-        this.simpleDungeon = new DungeonController(await this.getUser());
+        const user = await this.getUser();
+        this.simpleDungeon = new DungeonController(user);
         await this.simpleDungeon.init();
 
-        this.xmas = new XmasController(await this.getUser());
+        this.xmas = new XmasController(user);
         await this.xmas.init();
 
+<<<<<<< HEAD
         this.lunar = new LunarController(await this.getUser());
+=======
+        this.lunar = new LunarController(user);
+>>>>>>> ebf32ba... chg: crafting and exchange logic
         await this.lunar.init();
     }
 
@@ -1993,11 +1999,11 @@ class PlayerController extends IPaymentListener {
         return this.lunar.load();
     }
 
-    async _lunarCraft(items) {
+    async _lunarCraft(_, items) {
         return this.lunar.craft(items);
     }
 
-    async _lunarExchange(items) {
+    async _lunarExchange(_, items) {
         return this.lunar.exchange(items);
     }
 
@@ -2005,8 +2011,17 @@ class PlayerController extends IPaymentListener {
         return this.lunar.collectDailyLunarReward();
     }
 
+<<<<<<< HEAD
     async _fetchDailyLunarRewardStatus(user) {
         return this.lunar.getDailyLunarRewardStatus();
+=======
+    async _lunarFetchDailyLunarRewardStatus(user) {
+        return user.getDailyLunarRewardStatus();
+>>>>>>> ebf32ba... chg: crafting and exchange logic
+    }
+
+    async _lunarAddTestItems() {
+        return this.lunar.addTestItems();
     }
 }
 

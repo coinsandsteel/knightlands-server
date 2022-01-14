@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import User from "../user";
 import Game from "../game";
 import { LunarUser } from "./LunarUser";
@@ -76,5 +77,7 @@ export class LunarController {
     await this._lunarUser.getDailyLunarRewardStatus();
   }
 
-  
+  async addTestItems() {
+    await this._lunarUser.addTestItems();
+  }
 }
