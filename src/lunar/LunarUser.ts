@@ -151,7 +151,6 @@ export class LunarUser {
 
     public setInitialState() {
       const state: LunarState = {
-        items: [],
         dailyRewards: this.getInitialDailyrewards()
       };
       this._state = _.cloneDeep(state);

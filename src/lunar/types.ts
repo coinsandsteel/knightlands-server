@@ -3,7 +3,6 @@ export interface LunarSaveData {
 }
 
 export interface LunarState {
-  items: LunarItem[];
   dailyRewards: LunarRewardDayData[];
 }
 
