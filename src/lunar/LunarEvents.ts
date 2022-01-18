@@ -11,8 +11,8 @@ export class LunarEvents {
         this._events = {};
     }
 
-    items(items) {
-      this._events.items = items;
+    newItem(item) {
+      this._events.newItem = item;
     }
 
     dailyRewards(entries) {

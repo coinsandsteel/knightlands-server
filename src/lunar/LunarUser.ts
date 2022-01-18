@@ -6,6 +6,7 @@ import Game from "../game";
 import Errors from "../knightlands-shared/errors";
 import { Collections } from "../database/database";
 import Random from "../random";
+import CurrencyType from "../knightlands-shared/currency_type";
 
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
@@ -39,9 +40,10 @@ export class LunarUser {
     }
 
     // TODO test
+    // TODO add one test recept
     public async craft(items) {
       const cachedRecipieKey = items
-        .map(item => item.caption)
+        .map(item => item.info.caption)
         .sort()
         .join('');
 
@@ -50,10 +52,10 @@ export class LunarUser {
         return;
       }
 
-      await Game.craftingQueue._craftRecipe(this._user.id, recipe.id, 0);
+      const result = await this._user.crafting.craftRecipe(recipe.id, CurrencyType.Soft, 0);
+      return result;
     }
 
-    // TODO test
     public async exchange(items) {
       if (items.length !== 2) {
         return;
@@ -74,7 +76,12 @@ export class LunarUser {
         ) !== -1;
       } while (haveItemInInventory);
 
-      await this._user.inventory.addItemTemplates([{ item: randomItem.template, quantity: 1 }]);
+      await this._user.inventory.addItemTemplates([
+        { item: randomItem.template, quantity: 1 }
+      ]);
+
+      this._events.newItem(_.pick(randomItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
+      this._events.flush();
     }
 
     public getState(): LunarState {
@@ -85,9 +92,16 @@ export class LunarUser {
       return _.sampleSize(this._allItems, count);
     }
 
-    // TODO test
     public async testAction(action) {
       switch (action) {
+        case 'clearInventory':{
+          for (let templateId in this._user.inventory._itemsByTemplate) {
+            if (parseInt(templateId) >= 3214) {
+              this._user.inventory.removeItemByTemplate(templateId, 1000);
+            }
+          }
+          break;
+        }
         case 'addTestItems':{
           const choosedItems = this.getRandomItems(10);
           const choosedItemsTemplates = choosedItems.map(item => ({ item: item.template, quantity: 1 }));
