@@ -73,11 +73,7 @@ export class LunarController {
     await this._lunarUser.collectDailyLunarReward();
   }
 
-  async getDailyLunarRewardStatus() {
-    await this._lunarUser.getDailyLunarRewardStatus();
-  }
-
-  async addTestItems() {
-    await this._lunarUser.addTestItems();
+  async testAction(action) {
+    await this._lunarUser.testAction(action);
   }
 }

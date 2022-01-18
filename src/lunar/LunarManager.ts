@@ -2,6 +2,8 @@ import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../database/database";
 import Game from "../game";
 
+const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
+
 export class LunarManager {
   private _meta: any;
   private _saveCollection: Collection;
@@ -20,7 +22,11 @@ export class LunarManager {
   }
 
   async getRecipes() {
-    return this._craftingCollection.find({ category: 'lunar' })
+    return this._craftingCollection.find({ category: 'lunar' }).toArray();
+  }
+
+  async getItems() {
+    return Game.itemTemplates._items().find({ type: ITEM_TYPE_LUNAR_RESOURCE }).toArray();
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {

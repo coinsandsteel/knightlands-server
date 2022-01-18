@@ -4,13 +4,20 @@ export interface LunarSaveData {
 
 export interface LunarState {
   items: LunarItem[];
-  lunarRewardHistory: LunarItem[][];
+  dailyRewards: LunarRewardDayData[];
 }
 
 export interface LunarItem {
   id: number;
   template: number;
+  rarity: string;
   caption: string;
   quantity: number;
-  rarity: string;
+}
+
+export interface LunarRewardDayData {
+  collected: boolean;
+  quantity: number;
+  active: boolean;
+  items: LunarItem[];
 }

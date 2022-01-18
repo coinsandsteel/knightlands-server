@@ -9,7 +9,9 @@ import Random from "../random";
 
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
+
 const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
+const DAILY_REWARD_BASE = 4;
 
 export class LunarUser {
     private _state: LunarState;
@@ -17,6 +19,7 @@ export class LunarUser {
     private _user: User;
     private _recipiesCached = {};
     private _allItems = [];
+    private day = 1;
 
     constructor(state: LunarState | null, events: LunarEvents, user: User) {
         this._events = events;
@@ -30,10 +33,12 @@ export class LunarUser {
     }
 
     public async init() {
-      this._cacheRecipies();
-      this._cacheItems();
+      await this._cacheRecipies();
+      await this._cacheItems();
+      this.distributeDailyRewards();
     }
 
+    // TODO test
     public async craft(items) {
       const cachedRecipieKey = items
         .map(item => item.caption)
@@ -46,10 +51,9 @@ export class LunarUser {
       }
 
       await Game.craftingQueue._craftRecipe(this._user.id, recipe.id, 0);
-      
-      this.syncItems();
     }
 
+    // TODO test
     public async exchange(items) {
       if (items.length !== 2) {
         return;
@@ -59,135 +63,123 @@ export class LunarUser {
         return;
       }
 
-      if (this._state.items.length < 2) {
-        return;
-      }
-
       const itemsFilteredByCategory = this._allItems.filter(item => item.rarity === items[0].rarity);
 
       let randomItem = null;
       let haveItemInInventory = false;
       do {
         randomItem = _.sample(itemsFilteredByCategory);
-        haveItemInInventory = this._state.items.findIndex(
+        haveItemInInventory = this._user.inventory._items.findIndex(
           existingItem => existingItem.caption == randomItem.caption
         ) !== -1;
       } while (haveItemInInventory);
 
-      this._user.addLoot([randomItem.template]);
-      await this.syncItems();
+      await this._user.inventory.addItemTemplates([{ item: randomItem.template, quantity: 1 }]);
     }
 
     public getState(): LunarState {
       return this._state;
     }
 
-    public async addTestItems() {
-      const choosedItems = _.sampleSize(this._allItems, 10);
-      const choosedItemsTemplates = choosedItems.map(item => item.template);
-      await this._user.addLoot(choosedItemsTemplates);
-      await this.syncItems();
+    getRandomItems(count) {
+      return _.sampleSize(this._allItems, count);
     }
 
-    async syncItems() {
-      this._state.items = await this.getFilteredInventory();
-      this._events.items(this._state.items);
+    // TODO test
+    public async testAction(action) {
+      switch (action) {
+        case 'addTestItems':{
+          const choosedItems = this.getRandomItems(10);
+          const choosedItemsTemplates = choosedItems.map(item => ({ item: item.template, quantity: 1 }));
+          await this._user.inventory.addItemTemplates(choosedItemsTemplates);
+          break;
+        }
+        case 'resetDailyRewards':{
+          this.day = 1;
+          this._state.dailyRewards = this.getInitialDailyrewards();
+          this.distributeDailyRewards();
+          break;
+        }
+        case 'plus1Day':{
+          this.day++;
+          this.distributeDailyRewards();
+          break;
+        }
+      }
+    }
+
+    getInitialDailyrewards() {
+      const entries = [];
+      for (let day = 1; day <= 7; day++) {
+        entries.push({
+          collected: false,
+          active: false,
+          quantity: day * DAILY_REWARD_BASE,
+          items: []
+        });
+      }
+      return entries;
+    }
+
+    async distributeDailyRewards() {
+      this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
+        const items = index < this.day && !entry.items.length ? this.getRandomItems(entry.quantity) : [];
+        const newEntry = {
+          ...entry,
+          active: index+1 === this.day,
+          items
+        };
+        return newEntry;
+      });
+      this._events.dailyRewards(this._state.dailyRewards);
       this._events.flush();
-    }
-
-    async getFilteredInventory() {
-      return await this._user.inventory
-        .loadAllItems()
-        .filter(item => item.type === ITEM_TYPE_LUNAR_RESOURCE);
     }
 
     public setInitialState() {
       const state: LunarState = {
-        lunarRewardHistory: [],
-        items: []
+        items: [],
+        dailyRewards: this.getInitialDailyrewards()
       };
       this._state = _.cloneDeep(state);
-    }
-
-    private addLunarDailyReward(lunarItem: LunarItem[]) {
-      this._state.lunarRewardHistory.push(lunarItem);
+      this.distributeDailyRewards();
     }
     
     async collectDailyLunarReward() {
-      const dailyLunarRewardsMeta = await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "lunar_meta" });
-      const dailyLunarRewardCollect = this._processDailyLunarReward(dailyLunarRewardsMeta.lunarRewards);
-      const rewardCount = dailyLunarRewardsMeta.dailyRewardBase * dailyLunarRewardCollect.step;
-      const rewardItems = dailyLunarRewardsMeta.rewardItems;
-      if (dailyLunarRewardCollect.cycle >= this.getDailyLunarRewardCycle()) {
-          throw Errors.DailyLunarRewardCollected;
+      const entry = this._state.dailyRewards[this.day - 1];
+      const rewardItems = entry.items;
+      if (!rewardItems.length) {
+        return;
       }
-      const itemIds = [];
-      for(let i = 0; i < rewardCount; i++) {
-          itemIds.push(rewardItems[Random.intRange(0, rewardItems.count)]);
+
+      if (entry.collected) {
+        throw Errors.DailyLunarRewardCollected;
       }
 
       const items = [];
-      itemIds.forEach((itemId) => {
-          const foundIndex = items.findIndex((it) => it.item === itemId)
-          if (foundIndex !== -1) {
-              items[foundIndex].quantity++;
-          } else {
-              // TODO adjust it, please
-              /*items.push({
-                  item: itemId,
-                  quantity: 1
-              } as LunarItem)*/
-          }
+      rewardItems.forEach(item => {
+        items.push({ item: item.template, quantity: 1 });
       })
 
       await this._user.inventory.addItemTemplates(items);
-      this.addLunarDailyReward(items);
+      this._state.dailyRewards[this.day - 1].collected = true;
 
-      dailyLunarRewardCollect.cycle = this.getDailyLunarRewardCycle();
-      dailyLunarRewardCollect.step++;
-
-      this._user._data.dailyLunarRewardCollect = dailyLunarRewardCollect;
-
-      return items;
-    }
-    
-    _processDailyLunarReward(dailyLunarRewardsMeta) {
-        const dailyLunarRewardCollect = this._user._data.dailyLunarRewardCollect;
-
-        if (dailyLunarRewardCollect.step < 0 || dailyLunarRewardCollect.step >= dailyLunarRewardsMeta.length) {
-            dailyLunarRewardCollect.step = 0;
-        }
-
-        return dailyLunarRewardCollect;
-    }
-
-    getDailyLunarRewardCycle() {
-        return Math.floor(Game.now / Config.game.dailyLunarRewardCycle);
-    }
-
-    async getDailyLunarRewardStatus() {
-      const dailyLunarRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "lunar_meta" })).lunarRewards;
-      const dailyLunarRewards = this._processDailyLunarReward(dailyLunarRewardsMeta);
-
-      return {
-          readyToCollect: dailyLunarRewards.cycle < this.getDailyLunarRewardCycle(),
-          step: dailyLunarRewards.step,
-          untilNext: Config.game.dailyLunarRewardCycle - Game.now % Config.game.dailyLunarRewardCycle
-      };
+      this._events.dailyRewards(this._state.dailyRewards);
+      this._events.flush();
     }
 
     private async _cacheRecipies() {
       const recipies = await Game.lunarManager.getRecipes();
-      for (let recipe in recipies) {
-        let key = recipies[recipe].ingridients.sort().join('');
+      recipies.forEach(recipe => {
+        let key = recipies[recipe._id].ingridients.sort().join('');
         this._recipiesCached[key] = recipe;
-      }
+      })
     }
 
     private async _cacheItems() {
-      this._allItems = await Game.itemTemplates
-        ._items()
-        .findAll({ type: ITEM_TYPE_LUNAR_RESOURCE })
-        .toArray();
+      const items = await Game.lunarManager.getItems();
+      this._allItems = items.map(item => ({
+        ...item,
+        template: item._id
+      }));
     }
 }
