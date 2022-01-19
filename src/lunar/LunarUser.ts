@@ -11,16 +11,12 @@ import CurrencyType from "../knightlands-shared/currency_type";
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
 
-const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
 const DAILY_REWARD_BASE = 4;
-const DATE_EVENT_START = '2022-01-19 00:00:00';
 
 export class LunarUser {
     private _state: LunarState;
     private _events: LunarEvents;
     private _user: User;
-    private _recipiesCached = {};
-    private _allItems = [];
     private day = 1;
 
     constructor(state: LunarState | null, events: LunarEvents, user: User) {
@@ -35,14 +31,12 @@ export class LunarUser {
     }
 
     public async init() {
-      await this._cacheRecipies();
-      await this._cacheItems();
       this.setEventDay();
       this.distributeDailyRewards();
     }
 
     private setEventDay() {
-      const eventStart = new Date(DATE_EVENT_START);
+      const eventStart = new Date(Game.lunarManager.eventStartDate);
       const now = new Date();
       const oneDay = 1000 * 60 * 60 * 24;
       const diffInTime = now.getTime() - eventStart.getTime();
@@ -58,7 +52,7 @@ export class LunarUser {
         .sort()
         .join('');
 
-      const recipe = this._recipiesCached[cachedRecipieKey];
+      const recipe = Game.lunarManager.getRecipe(cachedRecipieKey);
       if (!recipe) {
         return;
       }
@@ -76,7 +70,8 @@ export class LunarUser {
         return;
       }
 
-      const itemsFilteredByCategory = this._allItems.filter(item => item.rarity === items[0].rarity);
+      const rarity = items[0].rarity;
+      const itemsFilteredByCategory = Game.lunarManager.getItemsByRarity(rarity);
 
       let randomItem = null;
       let haveItemInInventory = false;
@@ -99,10 +94,6 @@ export class LunarUser {
       return this._state;
     }
 
-    getRandomItems(count) {
-      return _.sampleSize(this._allItems, count);
-    }
-
     public async testAction(action) {
       switch (action) {
         case 'clearInventory':{
@@ -114,7 +105,7 @@ export class LunarUser {
           break;
         }
         case 'addTestItems':{
-          const choosedItems = this.getRandomItems(10);
+          const choosedItems = Game.lunarManager.getRandomItems(10);
           const choosedItemsTemplates = choosedItems.map(item => ({ item: item.template, quantity: 1 }));
           await this._user.inventory.addItemTemplates(choosedItemsTemplates);
           break;
@@ -148,7 +139,7 @@ export class LunarUser {
 
     async distributeDailyRewards() {
       this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
-        const items = index < this.day && !entry.items.length ? this.getRandomItems(entry.quantity) : [];
+        const items = index < this.day && !entry.items.length ? Game.lunarManager.getRandomItems(entry.quantity) : [];
         const newEntry = {
           ...entry,
           active: index+1 === this.day,
@@ -189,21 +180,5 @@ export class LunarUser {
 
       this._events.dailyRewards(this._state.dailyRewards);
       this._events.flush();
-    }
-
-    private async _cacheRecipies() {
-      const recipies = await Game.lunarManager.getRecipes();
-      recipies.forEach(recipe => {
-        let key = recipies[recipe._id].ingridients.sort().join('');
-        this._recipiesCached[key] = recipe;
-      })
-    }
-
-    private async _cacheItems() {
-      const items = await Game.lunarManager.getItems();
-      this._allItems = items.map(item => ({
-        ...item,
-        template: item._id
-      }));
     }
 }

@@ -1,6 +1,9 @@
+import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
+import { date } from "random-js";
 import { Collections } from "../database/database";
 import Game from "../game";
+import { ITEM_RARITY_BASIC } from "../knightlands-shared/lunar";
 
 const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
 
@@ -8,13 +11,83 @@ export class LunarManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _craftingCollection: Collection;
-  
+
+  private _recipiesCached = {};
+  private _allItems = [];
+
   constructor() {
     this._saveCollection = Game.db.collection(Collections.LunarUsers);
     this._craftingCollection = Game.db.collection(Collections.CraftingRecipes);
   }
+  
+  get eventStartDate() {
+    //return this._meta.eventStartDate;
+    return '2022-01-19 00:00:00';
+  }
+  
+  get eventEndDate() {
+    //return this._meta.eventEndDate;
+    return '2022-01-26 23:59:59';
+  }
+
+  get raidRewardCount() {
+    return this._meta.raidReward;
+  }
 
   async init() {
+    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "lunar_meta" });
+    await this._cacheRecipies();
+    await this._cacheItems();
+  }
+
+  getRecipe(id) {
+    return this._recipiesCached[id];
+  }
+
+  getRandomItems(count) {
+    return _.sampleSize(this._allItems, count);
+  }
+
+  getRaidReward() {
+    /*{
+      item: 2984,
+      quantity: 3,
+      guaranteed: true,
+    }*/
+    let items = this.getSomeBaseItems(this.raidRewardCount);
+    let loot = {};
+    items.forEach(item => {
+      if (!loot[item._id]) {
+        loot[item._id] = {
+          item: item._id,
+          quantity: 1,
+          guaranteed: true
+        };
+      } else {
+        loot[item._id].quantity++;
+      }
+    });
+    return Object.values(loot);
+  }
+
+  getSomeBaseItems(count) {
+    const baseItems = this.getItemsByRarity(ITEM_RARITY_BASIC);
+    let loot = [];
+    for (let i = 0; i < count; i++) {
+      loot.push(_.clone(_.sample(baseItems)));
+    }
+    return loot;
+  }
+
+  getItemsByRarity(rarity) {
+    return this._allItems.filter(item => item.rarity === rarity);
+  }
+
+  public eventIsInProgress() {
+    let now = new Date();
+    let start = new Date(this.eventStartDate);
+    let end = new Date(this.eventEndDate);
+    return now >= start && now <= end;
   }
 
   async loadProgress(userId: ObjectId) {
@@ -35,5 +108,21 @@ export class LunarManager {
 
   getMeta() {
     return this._meta;
+  }
+
+  private async _cacheRecipies() {
+    const recipies = await this.getRecipes();
+    recipies.forEach(recipe => {
+      let key = recipies[recipe._id].ingridients.sort().join('');
+      this._recipiesCached[key] = recipe;
+    })
+  }
+
+  private async _cacheItems() {
+    const items = await this.getItems();
+    this._allItems = items.map(item => ({
+      ...item,
+      template: item._id
+    }));
   }
 }
