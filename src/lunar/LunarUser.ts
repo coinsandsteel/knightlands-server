@@ -13,6 +13,7 @@ const bounds = require("binary-search-bounds");
 
 const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
 const DAILY_REWARD_BASE = 4;
+const DATE_EVENT_START = '2022-01-19 00:00:00';
 
 export class LunarUser {
     private _state: LunarState;
@@ -36,7 +37,17 @@ export class LunarUser {
     public async init() {
       await this._cacheRecipies();
       await this._cacheItems();
+      this.setEventDay();
       this.distributeDailyRewards();
+    }
+
+    private setEventDay() {
+      const eventStart = new Date(DATE_EVENT_START);
+      const now = new Date();
+      const oneDay = 1000 * 60 * 60 * 24;
+      const diffInTime = now.getTime() - eventStart.getTime();
+      const diffInDays = Math.round(diffInTime / oneDay);
+      this.day = diffInDays < 1 ? 1 : diffInDays;
     }
 
     // TODO test
