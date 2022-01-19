@@ -6,6 +6,7 @@ import Game from "../game";
 import { ITEM_RARITY_BASIC } from "../knightlands-shared/lunar";
 
 const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
+const RECIPE_CATEGORY_LUNAR = 'lunar';
 
 export class LunarManager {
   private _meta: any;
@@ -38,6 +39,10 @@ export class LunarManager {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "lunar_meta" });
     await this._cacheRecipies();
     await this._cacheItems();
+  }
+
+  getItem(template) {
+    return this._allItems.find(item => item.template === template);
   }
 
   getRecipe(id) {
@@ -95,7 +100,7 @@ export class LunarManager {
   }
 
   async getRecipes() {
-    return this._craftingCollection.find({ category: 'lunar' }).toArray();
+    return this._craftingCollection.find({ category: RECIPE_CATEGORY_LUNAR }).toArray();
   }
 
   async getItems() {
@@ -113,7 +118,7 @@ export class LunarManager {
   private async _cacheRecipies() {
     const recipies = await this.getRecipes();
     recipies.forEach(recipe => {
-      let key = recipies[recipe._id].ingridients.sort().join('');
+      let key = recipe.ingridients.map(item => item.itemId).sort().join('');
       this._recipiesCached[key] = recipe;
     })
   }

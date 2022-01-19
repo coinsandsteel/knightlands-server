@@ -44,10 +44,9 @@ export class LunarUser {
       this.day = diffInDays < 1 ? 1 : diffInDays;
     }
 
-    // TODO add one test recept
     public async craft(items) {
       const cachedRecipieKey = items
-        .map(item => item.info.caption)
+        .map(item => item.template)
         .sort()
         .join('');
 
@@ -56,8 +55,12 @@ export class LunarUser {
         return;
       }
 
-      const result = await this._user.crafting.craftRecipe(recipe.id, CurrencyType.Soft, 0);
-      return result;
+      const result = await this._user.crafting.craftRecipe(recipe._id, CurrencyType.Soft, 1);
+      if (result.recipe.resultItem) {
+        const newItem = Game.lunarManager.getItem(result.recipe.resultItem);
+        this._events.newItem(_.pick(newItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
+        this._events.flush();
+      }
     }
 
     public async exchange(items) {
