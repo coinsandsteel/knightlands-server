@@ -71,6 +71,7 @@ export class LunarController {
 
   async collectDailyLunarReward() {
     await this._lunarUser.collectDailyLunarReward();
+    await this._save();
   }
 
   async testAction(action) {

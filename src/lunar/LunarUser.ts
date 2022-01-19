@@ -44,7 +44,6 @@ export class LunarUser {
       this.day = diffInDays < 1 ? 1 : diffInDays;
     }
 
-    // TODO test
     // TODO add one test recept
     public async craft(items) {
       const cachedRecipieKey = items
@@ -70,17 +69,33 @@ export class LunarUser {
         return;
       }
 
+      let itemsToRemove = {};
+      items.forEach(item => {
+        itemsToRemove[item.id] = itemsToRemove[item.id] || {
+          item,
+          count: 0
+        };
+        itemsToRemove[item.id].count++;
+      });
+
       const rarity = items[0].rarity;
       const itemsFilteredByCategory = Game.lunarManager.getItemsByRarity(rarity);
 
       let randomItem = null;
       let haveItemInInventory = false;
+      let limiter = 300;
+      const lunarInventory = this._user.inventory._items.filter(inventoryItem => inventoryItem.template >= 3214);
       do {
         randomItem = _.sample(itemsFilteredByCategory);
-        haveItemInInventory = this._user.inventory._items.findIndex(
-          existingItem => existingItem.caption == randomItem.caption
+        haveItemInInventory = lunarInventory.findIndex(
+          existingItem => { 
+            return existingItem.template === randomItem._id 
+          }
         ) !== -1;
-      } while (haveItemInInventory);
+        limiter--;
+      } while (haveItemInInventory && limiter);
+
+      this._user.inventory.removeItems(Object.values(itemsToRemove));
 
       await this._user.inventory.addItemTemplates([
         { item: randomItem.template, quantity: 1 }
@@ -139,10 +154,14 @@ export class LunarUser {
 
     async distributeDailyRewards() {
       this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
-        const items = index < this.day && !entry.items.length ? Game.lunarManager.getRandomItems(entry.quantity) : [];
+        const isCurrentDay = index+1 === this.day;
+        let items = [];
+        if (isCurrentDay && !entry.items.length) {
+          items = Game.lunarManager.getSomeBaseItems(entry.quantity);
+        }
         const newEntry = {
           ...entry,
-          active: index+1 === this.day,
+          active: isCurrentDay,
           items
         };
         return newEntry;
