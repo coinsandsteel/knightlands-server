@@ -63,6 +63,7 @@ export class LunarController {
 
   async craft(items) {
     await this._lunarUser.craft(items);
+    await this._save();
   }
 
   async exchange(items) {

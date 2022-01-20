@@ -55,6 +55,10 @@ export class LunarUser {
 
       const result = await this._user.crafting.craftRecipe(recipe._id, CurrencyType.Soft, 1);
       if (result.recipe.resultItem) {
+        this._state.usedRecipes.push(recipe._id);
+        this._state.usedRecipes = _.uniq(this._state.usedRecipes);
+        this._events.usedRecipes(this._state.usedRecipes);
+
         const newItem = Game.lunarManager.getItem(result.recipe.resultItem);
         this._events.newItem(_.pick(newItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
         this._events.flush();
@@ -156,7 +160,7 @@ export class LunarUser {
     async distributeDailyRewards() {
       this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
         const isCurrentDay = index+1 === this.day;
-        let items = [];
+        let items = entry.items;
         if (isCurrentDay && !entry.items.length) {
           items = Game.lunarManager.getSomeBaseItems(entry.quantity);
         }
@@ -173,7 +177,8 @@ export class LunarUser {
 
     public setInitialState() {
       const state: LunarState = {
-        dailyRewards: this.getInitialDailyrewards()
+        dailyRewards: this.getInitialDailyrewards(),
+        usedRecipes: []
       };
       this._state = _.cloneDeep(state);
       this.distributeDailyRewards();
@@ -192,7 +197,7 @@ export class LunarUser {
 
       const items = [];
       rewardItems.forEach(item => {
-        items.push({ item: item.template, quantity: 1 });
+        items.push({ item: item.template, quantity: +item.quantity });
       })
 
       await this._user.inventory.addItemTemplates(items);

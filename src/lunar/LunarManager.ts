@@ -4,6 +4,8 @@ import { date } from "random-js";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { ITEM_RARITY_BASIC } from "../knightlands-shared/lunar";
+import objectUtils from "../objectUtils";
+import { LunarItem } from "./types";
 
 const ITEM_TYPE_LUNAR_RESOURCE = 'lunarResource';
 const RECIPE_CATEGORY_LUNAR = 'lunar';
@@ -60,14 +62,14 @@ export class LunarManager {
     let items = this.getSomeBaseItems(this.raidRewardCount);
     let loot = {};
     items.forEach(item => {
-      if (!loot[item._id]) {
-        loot[item._id] = {
-          item: item._id,
+      if (!loot[item.id]) {
+        loot[item.id] = {
+          item: item.id,
           quantity: 1,
           guaranteed: true
         };
       } else {
-        loot[item._id].quantity++;
+        loot[item.id].quantity++;
       }
     });
     return Object.values(loot);
@@ -75,11 +77,26 @@ export class LunarManager {
 
   getSomeBaseItems(count) {
     const baseItems = this.getItemsByRarity(ITEM_RARITY_BASIC);
-    let loot = [];
+
+    let items = [];
     for (let i = 0; i < count; i++) {
-      loot.push(_.clone(_.sample(baseItems)));
+      let newItem = _.cloneDeep(_.sample(baseItems));
+      let index = items.findIndex(i => i.id === newItem._id);
+      if (index === -1) {
+        const item: LunarItem = {
+          id: newItem._id,
+          template: newItem._id,
+          rarity: newItem.rarity,
+          caption: newItem.caption,
+          quantity: 1
+        }
+        items.push(item);
+      } else {
+        items[index].quantity++;
+      }
     }
-    return loot;
+
+    return items;
   }
 
   getItemsByRarity(rarity) {
