@@ -3,7 +3,7 @@ import { Collection, ObjectId } from "mongodb";
 import { date } from "random-js";
 import { Collections } from "../database/database";
 import Game from "../game";
-import { ITEM_RARITY_BASIC } from "../knightlands-shared/lunar";
+import { ITEM_RARITY_BASIC, ITEM_RARITY_NFT } from "../knightlands-shared/lunar";
 import objectUtils from "../objectUtils";
 import { LunarItem } from "./types";
 
@@ -50,7 +50,10 @@ export class LunarManager {
   }
 
   getRandomItems(count) {
-    return _.sampleSize(this._allItems, count);
+    return _.sampleSize(
+      this._allItems.filter(item => item.rarity !== ITEM_RARITY_NFT), 
+      count
+    );
   }
 
   getRaidReward() {

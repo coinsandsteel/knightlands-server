@@ -43,13 +43,18 @@ export class LunarUser {
       this.day = diffInDays < 1 ? 1 : diffInDays;
     }
 
-    public async craft(items) {
-      const cachedRecipieKey = items
-        .map(item => item.template)
-        .sort()
-        .join('');
+    public async craft(payload) {
+      let recipe = null;
+      if (Array.isArray(payload)) {
+        const cachedRecipieKey = payload
+          .map(item => item.template)
+          .sort()
+          .join('');
+        recipe = Game.lunarManager.getRecipe(cachedRecipieKey);
+      } else if (payload.recipeId) {
+        recipe = { _id: payload.recipeId };
+      }
 
-      const recipe = Game.lunarManager.getRecipe(cachedRecipieKey);
       if (!recipe) {
         return;
       }
