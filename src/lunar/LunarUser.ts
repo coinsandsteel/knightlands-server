@@ -7,6 +7,7 @@ import Errors from "../knightlands-shared/errors";
 import { Collections } from "../database/database";
 import Random from "../random";
 import CurrencyType from "../knightlands-shared/currency_type";
+import { ITEM_RARITY_EXPERT } from "../knightlands-shared/lunar";
 
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
@@ -27,7 +28,7 @@ export class LunarUser {
           this.setInitialState();
         }
     }
-
+  
     public async init() {
       this.setEventDay();
       this.distributeDailyRewards();
