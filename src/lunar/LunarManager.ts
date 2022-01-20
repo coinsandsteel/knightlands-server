@@ -57,25 +57,12 @@ export class LunarManager {
   }
 
   getRaidReward() {
-    /*{
-      item: 2984,
-      quantity: 3,
-      guaranteed: true,
-    }*/
     let items = this.getSomeBaseItems(this.raidRewardCount);
-    let loot = {};
-    items.forEach(item => {
-      if (!loot[item.id]) {
-        loot[item.id] = {
-          item: item.id,
-          quantity: 1,
-          guaranteed: true
-        };
-      } else {
-        loot[item.id].quantity++;
-      }
-    });
-    return Object.values(loot);
+    return items.map(item => ({
+      item: item.id,
+      quantity: item.quantity,
+      guaranteed: true
+    }));
   }
 
   getSomeBaseItems(count) {
