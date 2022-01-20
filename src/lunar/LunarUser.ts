@@ -11,8 +11,6 @@ import CurrencyType from "../knightlands-shared/currency_type";
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
 
-const DAILY_REWARD_BASE = 4;
-
 export class LunarUser {
     private _state: LunarState;
     private _events: LunarEvents;
@@ -148,7 +146,7 @@ export class LunarUser {
         entries.push({
           collected: false,
           active: false,
-          quantity: day * DAILY_REWARD_BASE,
+          quantity: day * Game.lunarManager.raidRewardCount,
           items: []
         });
       }
