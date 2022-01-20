@@ -154,7 +154,7 @@ class RaidManager {
             await summoner.inventory.consumeItemsFromCraftingRecipe(summonRecipe);
         }
 
-        await summoner.modifyTimerValue(CharacterStat.Stamina, -data.summonPrice);
+        await summoner.modifyTimerValue(CharacterStat.Stamina, -data.staminaCost);
 
         const raid = new Raid(this._db);
         await raid.create(summoner.id, raidTemplateId, free, isPublic, !summoner.isFreeAccount);
