@@ -130,6 +130,27 @@ export class LunarUser {
           }
           break;
         }
+        case 'addBaseItems':{
+          await this._user.inventory.addItemTemplates([
+            { 
+              item: 3214,
+              quantity: 1
+            },
+            { 
+              item: 3215,
+              quantity: 1
+            },
+            { 
+              item: 3216,
+              quantity: 1
+            },
+            { 
+              item: 3217,
+              quantity: 1
+            },
+          ]);
+          break;
+        }
         case 'addTestItems':{
           const choosedItems = Game.lunarManager.getRandomItems(10);
           const choosedItemsTemplates = choosedItems.map(item => ({ item: item.template, quantity: 1 }));
