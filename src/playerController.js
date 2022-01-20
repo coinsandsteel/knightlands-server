@@ -315,6 +315,11 @@ class PlayerController extends IPaymentListener {
             this.xmas = null
         }
 
+        if (this.lunar) {
+            await this.lunar.dispose();
+            this.lunar = null
+        }
+
         return true;
     }
 
