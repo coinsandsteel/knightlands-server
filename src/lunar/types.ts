@@ -20,4 +20,5 @@ export interface LunarRewardDayData {
   quantity: number;
   active: boolean;
   items: LunarItem[];
+  date?: string;
 }

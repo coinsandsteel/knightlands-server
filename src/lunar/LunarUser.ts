@@ -35,12 +35,20 @@ export class LunarUser {
     }
 
     private setEventDay() {
-      const eventStart = new Date(Game.lunarManager.eventStartDate);
-      const now = new Date();
-      const oneDay = 1000 * 60 * 60 * 24;
-      const diffInTime = now.getTime() - eventStart.getTime();
-      const diffInDays = Math.round(diffInTime / oneDay);
-      this.day = diffInDays < 1 ? 1 : diffInDays;
+      const currentDate = new Date().toISOString().split("T")[0];
+      const currentDayIndex = this._state.dailyRewards.findIndex(
+        entry => entry.date && entry.date === currentDate
+      );
+
+      if (currentDayIndex !== -1) {
+        this.day = currentDayIndex + 1;
+        return;
+      }
+
+      const firstUncollectedDayIndex = this._state.dailyRewards.findIndex(
+        entry => !entry.date && !entry.collected
+      );
+      this.day = firstUncollectedDayIndex + 1;
     }
 
     public async craft(payload) {
@@ -229,6 +237,7 @@ export class LunarUser {
 
       await this._user.inventory.addItemTemplates(items);
       this._state.dailyRewards[this.day - 1].collected = true;
+      this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
       this._events.dailyRewards(this._state.dailyRewards);
       this._events.flush();
