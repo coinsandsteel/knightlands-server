@@ -612,9 +612,9 @@ class Raid extends EventEmitter {
             rewards.rp = 0;
         } else {
             rewards.rp = await user.getBonusRP(rewards.rp);
-
-            await this._updateLoot(userId, rewards);
         }
+        
+        await this._updateLoot(userId, rewards);
 
         return rewards;
     }
