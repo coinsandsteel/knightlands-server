@@ -276,6 +276,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.LunarExchange, this._gameHandler(this._lunarExchange.bind(this)));
         this._socket.on(Operations.LunarCollectDailyReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
         this._socket.on(Operations.LunarTestAction, this._gameHandler(this._lunarTestAction.bind(this)));
+        this._socket.on(Operations.LunarPurchase, this._gameHandler(this._lunarPurchase.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2013,6 +2014,13 @@ class PlayerController extends IPaymentListener {
 
     async _lunarTestAction(_, data) {
         return this.lunar.testAction(data.action);
+    }
+
+    async _lunarPurchase(_, data) {
+      if (data.shopIndex === undefined || data.shopIndex === null || !data.itemsCount || !data.currency) {
+        throw Errors.IncorrectArguments;
+      }
+      return this.lunar.purchase(data.shopIndex, data.itemsCount, data.currency);
     }
 }
 

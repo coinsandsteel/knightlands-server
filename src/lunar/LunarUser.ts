@@ -11,6 +11,7 @@ import { ITEM_RARITY_EXPERT } from "../knightlands-shared/lunar";
 
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
+const BASE_ELEMENTS = [3214, 3215, 3216, 3217];
 
 export class LunarUser {
     private _state: LunarState;
@@ -141,19 +142,19 @@ export class LunarUser {
         case 'addBaseItems':{
           await this._user.inventory.addItemTemplates([
             { 
-              item: 3214,
+              item: BASE_ELEMENTS[0],
               quantity: 1
             },
             { 
-              item: 3215,
+              item: BASE_ELEMENTS[1],
               quantity: 1
             },
             { 
-              item: 3216,
+              item: BASE_ELEMENTS[2],
               quantity: 1
             },
             { 
-              item: 3217,
+              item: BASE_ELEMENTS[3],
               quantity: 1
             },
           ]);
@@ -241,5 +242,59 @@ export class LunarUser {
 
       this._events.dailyRewards(this._state.dailyRewards);
       this._events.flush();
+    }
+    
+    async purchase(shopIndex, itemsCount, currency) {
+      // Retrieve meta
+      // let meta = [{ quantity: 4, hard: 9999, flesh: 9999 }]
+      let shopMeta = Game.lunarManager.shopMeta;
+      let choosedShopOption = shopMeta[shopIndex];
+
+      // Wrong metadata protection
+      if (!choosedShopOption || !choosedShopOption.hard || !choosedShopOption.flesh) {
+        throw Errors.IncorrectArguments;
+      }
+
+      // let itemsCount = { 1: 5, 2: 5, 3: 5, 4: 5 }
+      itemsCount = _.pick(itemsCount, BASE_ELEMENTS);
+      let totalItemsCount = _.sum(Object.values(itemsCount));
+      if (!totalItemsCount || totalItemsCount > choosedShopOption.quantity) {
+        throw Errors.IncorrectArguments;
+      }
+
+      // check balance
+      let balance = 0;
+      let price = Infinity;
+      switch (currency) {
+        case "hard": {
+          balance = this._user.hardCurrency;
+          price = choosedShopOption.hard;
+          break;
+        }
+        case "flesh": {
+          balance = this._user.dkt;
+          price = choosedShopOption.flesh;
+          break;
+        }
+        default: {
+          return;
+        }
+      }
+      if (balance < price) {
+        throw Errors.IncorrectArguments;
+      }
+
+      // change balance
+      if (currency === "hard") {
+        this._user.addHardCurrency(-price);
+      } else if (currency === "flesh") {
+        this._user.addDkt(-price);
+      }
+
+      let addItems = [];
+      for (let templateId in itemsCount) {
+        addItems.push({ item: +templateId, quantity: +itemsCount[templateId] });
+      }
+      await this._user.inventory.addItemTemplates(addItems);
     }
 }

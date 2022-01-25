@@ -76,4 +76,8 @@ export class LunarController {
   async testAction(action) {
     await this._lunarUser.testAction(action);
   }
+
+  async purchase(shopIndex, itemsCount, currency) {
+    await this._lunarUser.purchase(shopIndex, itemsCount, currency);
+  }
 }

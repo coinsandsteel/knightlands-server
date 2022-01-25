@@ -35,6 +35,10 @@ export class LunarManager {
     return this._meta.raidReward;
   }
 
+  get shopMeta() {
+    return this._meta.shop;
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "lunar_meta" });
     await this._cacheRecipies();
