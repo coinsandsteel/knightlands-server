@@ -74,6 +74,15 @@ class RaidManager {
         return raid.getPlayers();
     }
 
+    async publishRaid(userId, raidId) {
+        let raid = this.getRaid(raidId);
+        if (!raid || raid.free) {
+            throw Errors.InvalidRaid;
+        }
+        await raid.publish();
+        Game.publishToChannel("public_raids", { raid: raid.getInfo() });
+    }
+
     async joinRaid(userId, raidId) {
         let raid = this.getRaid(raidId);
         if (!raid || raid.free) {

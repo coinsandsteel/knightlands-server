@@ -310,6 +310,14 @@ class Raid extends EventEmitter {
         });
     }
 
+    async publish() {
+        await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, {
+            $set: {
+                'public': true
+            }
+        });
+    }
+
     async attack(attacker, hits, legionIndex) {
         if (!this.isParticipant(attacker.id)) {
             throw Errors.InvalidRaid;
