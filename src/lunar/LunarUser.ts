@@ -68,6 +68,7 @@ export class LunarUser {
         return;
       }
 
+      let newItems = [];
       const result = await this._user.crafting.craftRecipe(recipe._id, CurrencyType.Soft, 1);
       if (result.recipe.resultItem) {
         this._state.usedRecipes.push(recipe._id);
@@ -77,7 +78,14 @@ export class LunarUser {
         const newItem = Game.lunarManager.getItem(result.recipe.resultItem);
         this._events.newItem(_.pick(newItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
         this._events.flush();
+
+        newItems.push({
+          item: newItem.template,
+          quantity: 1
+        });
       }
+
+      return newItems;
     }
 
     public async exchange(items) {
