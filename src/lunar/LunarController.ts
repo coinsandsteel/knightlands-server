@@ -78,6 +78,6 @@ export class LunarController {
   }
 
   async purchase(shopIndex, itemsCount, currency) {
-    await this._lunarUser.purchase(shopIndex, itemsCount, currency);
+    return await this._lunarUser.purchase(shopIndex, itemsCount, currency);
   }
 }

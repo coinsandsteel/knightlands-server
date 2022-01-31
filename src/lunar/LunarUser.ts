@@ -141,6 +141,8 @@ export class LunarUser {
     }
 
     public async testAction(action) {
+      return;
+
       switch (action) {
         case 'clearInventory':{
           for (let templateId in this._user.inventory._itemsByTemplate) {
@@ -307,5 +309,7 @@ export class LunarUser {
         addItems.push({ item: +templateId, quantity: +itemsCount[templateId] });
       }
       await this._user.inventory.addItemTemplates(addItems);
+
+      return addItems;
     }
 }
