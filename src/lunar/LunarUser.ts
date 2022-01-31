@@ -306,7 +306,9 @@ export class LunarUser {
 
       let addItems = [];
       for (let templateId in itemsCount) {
-        addItems.push({ item: +templateId, quantity: +itemsCount[templateId] });
+        if (+itemsCount[templateId] > 0) {
+          addItems.push({ item: +templateId, quantity: +itemsCount[templateId] });
+        }
       }
       await this._user.inventory.addItemTemplates(addItems);
 
