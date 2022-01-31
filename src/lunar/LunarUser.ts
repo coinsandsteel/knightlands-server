@@ -75,8 +75,11 @@ export class LunarUser {
         this._state.usedRecipes = _.uniq(this._state.usedRecipes);
         this._events.usedRecipes(this._state.usedRecipes);
 
-        const newItem = Game.lunarManager.getItem(result.recipe.resultItem);
-        this._events.newItem(_.pick(newItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
+        const newItemTemplate = await Game.itemTemplates.getTemplate(result.recipe.resultItem);
+        const newItem = _.pick(newItemTemplate, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']);
+        newItem.quantity = +newItem.quantity;
+        newItem.template = newItem._id;
+        this._events.newItem(newItem);
         this._events.flush();
 
         newItems.push({
