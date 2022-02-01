@@ -24,11 +24,11 @@ export class LunarManager {
   }
   
   get eventStartDate() {
-    return this._meta.eventStartDate || '2022-01-20 00:00:00';
+    return this._meta.eventStartDate * 1000 || '2022-01-20 00:00:00';
   }
   
   get eventEndDate() {
-    return this._meta.eventEndDate || '2022-01-26 23:59:59';
+    return this._meta.eventEndDate * 1000 || '2022-01-26 23:59:59';
   }
 
   get raidRewardCount() {
