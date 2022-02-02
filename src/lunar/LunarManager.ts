@@ -4,6 +4,7 @@ import { date } from "random-js";
 import { Collections } from "../database/database";
 import Game from "../game";
 import { ITEM_RARITY_BASIC, ITEM_RARITY_NFT } from "../knightlands-shared/lunar";
+import Rarity from "../knightlands-shared/rarity";
 import objectUtils from "../objectUtils";
 import { LunarItem } from "./types";
 
@@ -17,6 +18,7 @@ export class LunarManager {
 
   private _recipiesCached = {};
   private _allItems = [];
+  private _itemsByRarity: any = {};
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.LunarUsers);
@@ -94,7 +96,7 @@ export class LunarManager {
   }
 
   getItemsByRarity(rarity) {
-    return this._allItems.filter(item => item.rarity === rarity);
+    return this._itemsByRarity[rarity];
   }
 
   public eventIsInProgress() {
@@ -138,5 +140,23 @@ export class LunarManager {
       ...item,
       template: item._id
     }));
+
+    const sorter = (x, y) => {
+      return x._id - y._id
+    }
+
+    this._itemsByRarity[Rarity.Common] = this._allItems.filter(item => item.rarity === Rarity.Common).sort(sorter);
+    this._itemsByRarity[Rarity.Rare] = this._allItems.filter(item => item.rarity === Rarity.Rare).sort(sorter);
+    this._itemsByRarity[Rarity.Legendary] = this._allItems.filter(item => item.rarity === Rarity.Legendary).sort(sorter);
+  }
+
+  private _mapItems(items) {
+    const m = {};
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      m[item._id] = item;
+    }
+
+    return m;
   }
 }

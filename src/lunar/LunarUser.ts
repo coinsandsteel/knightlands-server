@@ -8,6 +8,7 @@ import { Collections } from "../database/database";
 import Random from "../random";
 import CurrencyType from "../knightlands-shared/currency_type";
 import { ITEM_RARITY_EXPERT } from "../knightlands-shared/lunar";
+import ItemType from "../knightlands-shared/item_type";
 
 const Config = require("../config");
 const bounds = require("binary-search-bounds");
@@ -96,39 +97,91 @@ export class LunarUser {
         return;
       }
 
-      if (items[0].rarity !== items[1].rarity) {
-        return;
+      // check that items do exist, and map items to remove data
+      items = this._user.inventory.getItemById(items.map(x => x.id));
+
+      let rarity;
+      const itemsToRemove = {};
+      
+      {
+        const templates = await Game.itemTemplates.getTemplates(items.map(x => x.template), true);
+        for (let index = 0; index < items.length; index++) {
+          const item = items[index];
+          if (!item) { 
+            // no such item
+            return;
+          }
+
+          if (!rarity) {
+            rarity = templates[item.template].rarity;
+          } else if (rarity != templates[item.template].rarity) {
+            return;
+          }
+
+          itemsToRemove[item.template] = itemsToRemove[item.template] || {
+            item,
+            count: 0
+          }
+          itemsToRemove[item.template].count++;
+        }
       }
 
-      let itemsToRemove = {};
-      items.forEach(item => {
-        const inventoryItem = this._user.inventory.getItemById(item.id);
-        itemsToRemove[item.id] = itemsToRemove[item.id] || {
-          item: inventoryItem,
-          count: 0
-        };
-        itemsToRemove[item.id].count++;
-      });
+      /**
+       * The idea is very simple - we have lunar inventory, which suppose to be shorter or at least the same as list of lunar templates that can be
+       * To execute O(N) search we sort inventory result first for O(N * log(N))
+       * If we encounter an item in the inventory that is not desired rarity - we skip it
+       * If we encounter item that is in the existing list we skip it
+       * If lunar inventory is finished, we add whatever is left in templates list
+       * If templates list is exhausted - we add everything from it, except items provided for exchange
+       */
 
-      const rarity = items[0].rarity;
+      
       const itemsFilteredByCategory = Game.lunarManager.getItemsByRarity(rarity);
+      const lunarInventory = this._user.inventory._items
+        .filter(item => item.template > 3213)
+        .sort((x, y) => x.template - y.template);
 
-      let randomItem = null;
-      let haveItemInInventory = false;
-      let limiter = 300;
-      const lunarInventory = this._user.inventory._items.filter(inventoryItem => inventoryItem.template >= 3214);
-      do {
-        randomItem = _.sample(itemsFilteredByCategory);
-        haveItemInInventory = lunarInventory.findIndex(
-          existingItem => { 
-            return existingItem.template === randomItem._id 
+      const templates = await Game.itemTemplates.getTemplates(lunarInventory.map(x => x.template), true);
+
+      let sampleItems = [];
+      let fullSampleItems = new Array(itemsFilteredByCategory.length - Object.keys(itemsToRemove).length);
+      let templateIndex = 0;  
+      let fullSampleIndex = 0;
+
+      for (let index = 0; index < lunarInventory.length && templateIndex < itemsFilteredByCategory.length; index++) {
+        const _item = lunarInventory[index];
+        if (templates[_item.template].rarity != rarity) {
+          continue;
+        }
+
+        const template = itemsFilteredByCategory[templateIndex];
+        if (template._id == _item.template) {
+          // populate sample items in case inventory has everything already
+          if (!itemsToRemove[template._id]) {
+            fullSampleItems[fullSampleIndex] = template;
+            fullSampleIndex++;
           }
-        ) !== -1;
-        limiter--;
-      } while (haveItemInInventory && limiter);
+        } else {
+          // there is a missing template!
+          sampleItems.push(template);
+          // run against the same item in the inventory
+          index--;
+        }
+
+        templateIndex++;
+      }
+
+      if (itemsFilteredByCategory.length != templateIndex) {
+        // something is left here, add to the sampling
+        sampleItems.push(..._.slice(itemsFilteredByCategory, templateIndex));
+      } else if (sampleItems.length == 0) {
+        sampleItems = fullSampleItems;
+      }
+      
+      const randomItem = _.sample(sampleItems);
 
       await this._user.inventory.addItemTemplates([
-        { item: randomItem.template, quantity: 1 }
+        { item: randomItem._id, quantity: 1 }
       ]);
       this._user.inventory.removeItems(Object.values(itemsToRemove));
 
