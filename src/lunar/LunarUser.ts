@@ -102,8 +102,9 @@ export class LunarUser {
 
       let itemsToRemove = {};
       items.forEach(item => {
+        const inventoryItem = this._user.inventory.getItemById(item.id);
         itemsToRemove[item.id] = itemsToRemove[item.id] || {
-          item,
+          item: inventoryItem,
           count: 0
         };
         itemsToRemove[item.id].count++;
@@ -126,11 +127,10 @@ export class LunarUser {
         limiter--;
       } while (haveItemInInventory && limiter);
 
-      this._user.inventory.removeItems(Object.values(itemsToRemove));
-
       await this._user.inventory.addItemTemplates([
         { item: randomItem.template, quantity: 1 }
       ]);
+      this._user.inventory.removeItems(Object.values(itemsToRemove));
 
       this._events.newItem(_.pick(randomItem, ['caption', 'icon', 'quantity', 'rarity', 'template', '_id']));
       this._events.flush();
