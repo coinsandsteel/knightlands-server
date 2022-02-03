@@ -94,6 +94,7 @@ module.exports = {
         HalloweenWithdrawals: "halloween_withdrawals",
         ActionsLogs: "actions_logs",
         LunarUsers: "lunar_users",
+        MarchUsers: "march_users",
     },
 
 
