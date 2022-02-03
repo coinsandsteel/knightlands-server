@@ -1,23 +1,66 @@
-export class Artifact {
-  /* 
-  - .type
-    - Ball lightning
-      - .hp = ???
-    - Dragon breath
-      - .hp = ???
-    - Bomb
-      - .hp = ???
-    - Reinforcer
-      - .hp = ???
-  - .touch() ???
-    - Choose cells
-    - Modify HP
-    - Launch a callback
-  - .activate() ???
-    - Choose cells
-    - Modify HP
-    - Launch a callback
-  - .destroy()
-    - ???
-  */
+import { Unit } from "../other/UnitClass";
+import { MarchMap } from "../MarchMap";
+import * as march from "../../../knightlands-shared/march";
+
+export class Artifact extends Unit {
+  /*protected setInitialHP(): void {
+    // HP ???
+    // Ball lightning
+    // Dragon breath
+    // Bomb
+    // Bow
+    // Reinforcer
+  };*/
+
+  public userStepCallback() {
+    this.hp--;
+    if (this.hp <= 0 && this.type === march.UNIT_TYPE_BOMB) {
+      this.activate();
+    }
+  }
+
+  public touch() {
+    if (this.type === march.UNIT_TYPE_BOMB) {
+      // swap positions
+      this.map.swapPetCellTo(this.index);
+    }
+  };
+
+  public activate() {
+    let hpModifier = null;
+    let direction = null;
+    switch (this.type) {
+      case march.UNIT_TYPE_BALL_LIGHTNING: {
+        direction = "random5";
+        hpModifier = -this.hp;
+        // Animation event?
+        break;
+      }
+      case march.UNIT_TYPE_DRAGON_BREATH: {
+        direction = "all";
+        hpModifier = -1000;
+        // Animation event?
+        break;
+      }
+      case march.UNIT_TYPE_BOMB: {
+        direction = "cross";
+        hpModifier = -1000;
+        // Animation event?
+        break;
+      }
+      case march.UNIT_TYPE_REINFORCER: {
+        direction = "round";
+        hpModifier = 2;
+        // Animation event?
+        break;
+      }
+      case march.UNIT_TYPE_BOW: {
+        hpModifier = this.hp;
+        direction = "crossBow";
+        // Animation event?
+        break;
+      }
+    }
+    this.map.modifyHP(this.index, hpModifier, direction);
+  };
 }
