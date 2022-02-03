@@ -1,7 +1,7 @@
 import { Collection, ObjectId } from "mongodb";
-import { Collections } from "../database/database";
-import Game from "../game";
-import Events from "../knightlands-shared/events";
+import { Collections } from "../../database/database";
+import Game from "../../game";
+import Events from "../../knightlands-shared/events";
 import { CPointsManager } from "./CPointsManager";
 
 const PAGE_SIZE = 50;

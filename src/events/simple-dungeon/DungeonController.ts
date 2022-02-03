@@ -1,11 +1,11 @@
 import _ from "lodash";
 import { Collection } from "mongodb";
-import { isNumber } from "../validation";
-import Game from "../game";
-import { AltarType } from "../knightlands-shared/dungeon_types";
-import errors from "../knightlands-shared/errors";
-import random from "../random";
-import User from "../user";
+import { isNumber } from "../../validation";
+import Game from "../../game";
+import { AltarType } from "../../knightlands-shared/dungeon_types";
+import errors from "../../knightlands-shared/errors";
+import random from "../../random";
+import User from "../../user";
 import { AStar } from "./AStar";
 import { CombatOutcome, DungeonCombat } from "./DungeonCombat";
 import { DungeonEvents } from "./DungeonEvents";

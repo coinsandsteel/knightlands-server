@@ -1,6 +1,6 @@
-import game from "../game";
-import { AltarType } from "../knightlands-shared/dungeon_types";
-import errors from "../knightlands-shared/errors";
+import game from "../../game";
+import { AltarType } from "../../knightlands-shared/dungeon_types";
+import errors from "../../knightlands-shared/errors";
 import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState, ProgressionData, TrapData } from "./types";
 

@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { XmasEvents } from "./XmasEvents";
 import { XmasState } from "./types";
-import Game from "../game";
+import Game from "../../game";
 import { 
   getFarmTimeData,
   getFarmIncomeData,
@@ -33,10 +33,10 @@ import {
   CURRENCY_UNIT_ESSENCE,
   TOWER_PERK_SLEEP,
   TOWER_PERK_PRESENT
-} from "../knightlands-shared/xmas";
+} from "../../knightlands-shared/xmas";
 import { CPoints } from "./CPoints";
-import User from "../user";
-import { isNumber } from "../validation";
+import User from "../../user";
+import { isNumber } from "../../validation";
 
 const bounds = require("binary-search-bounds");
 

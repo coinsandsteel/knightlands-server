@@ -1,13 +1,13 @@
 import { Collection, Db, ObjectId } from "mongodb";
-import { Collections } from "../database/database";
-import Game from "../game";
+import { Collections } from "../../database/database";
+import Game from "../../game";
 import { DungeonMeta } from "./types";
-import Events from "../knightlands-shared/events";
+import Events from "../../knightlands-shared/events";
 import { DungeonController } from "./DungeonController";
-import { Lock } from "../utils/lock";
-import blockchains from "../knightlands-shared/blockchains";
-import { Blockchain } from "../blockchain/Blockchain";
-import errors from "../knightlands-shared/errors";
+import { Lock } from "../../utils/lock";
+import blockchains from "../../knightlands-shared/blockchains";
+import { Blockchain } from "../../blockchain/Blockchain";
+import errors from "../../knightlands-shared/errors";
 
 const PAGE_SIZE = 50;
 

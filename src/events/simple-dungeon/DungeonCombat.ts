@@ -1,8 +1,8 @@
 import { DungeonUser } from "./DungeonUser";
-import { MoveWinTable } from "../knightlands-shared/dungeon_types";
+import { MoveWinTable } from "../../knightlands-shared/dungeon_types";
 import { CombatState, EnemyData } from "./types";
-import random from "../random";
-import Game from "../game";
+import random from "../../random";
+import Game from "../../game";
 import { DungeonEvents } from "./DungeonEvents";
 
 export const CombatOutcome = {

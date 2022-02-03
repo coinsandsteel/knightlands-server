@@ -1,14 +1,14 @@
 import _ from "lodash";
 import { Collection } from "mongodb";
-import { isNumber } from "../validation";
-import Game from "../game";
-import errors from "../knightlands-shared/errors";
-import random from "../random";
-import User from "../user";
+import { isNumber } from "../../validation";
+import Game from "../../game";
+import errors from "../../knightlands-shared/errors";
+import random from "../../random";
+import User from "../../user";
 import { XmasEvents } from "./XmasEvents";
 import { XmasUser } from "./XmasUser";
 import { XmasSaveData, XmasState } from "./types";
-import { CURRENCY_SANTABUCKS, balance, slots, perksTree as perks, currencies } from "../knightlands-shared/xmas";
+import { CURRENCY_SANTABUCKS, balance, slots, perksTree as perks, currencies } from "../../knightlands-shared/xmas";
 
 const IAP_TAG = "xmas";
 

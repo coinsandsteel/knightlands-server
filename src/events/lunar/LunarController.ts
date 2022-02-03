@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import User from "../user";
-import Game from "../game";
+import User from "../../user";
+import Game from "../../game";
 import { LunarUser } from "./LunarUser";
 import { LunarEvents } from "./LunarEvents";
 import { LunarSaveData, LunarState } from "./types";

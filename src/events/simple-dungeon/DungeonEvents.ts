@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
-import game from "../game";
-import events from "../knightlands-shared/events";
+import game from "../../game";
+import events from "../../knightlands-shared/events";
 import { CombatOutcome } from "./DungeonCombat";
 import { Cell, CombatState, DungeonTrapTile } from "./types";
 

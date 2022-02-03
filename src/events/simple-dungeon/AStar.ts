@@ -1,4 +1,4 @@
-import { BinaryHeap } from "../utils/BinaryHeap";
+import { BinaryHeap } from "../../utils/BinaryHeap";
 import { DungeonController } from "./DungeonController";
 import { Cell } from "./types";
 

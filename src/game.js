@@ -19,9 +19,10 @@ import { RaidPointsManager } from './raids/RaidPointsManager';
 import { PrizePoolManager } from "./rankings/PrizePool/PrizePoolManager";
 import { PresaleCardsService } from "./shop/PresaleCards";
 import { QuestZones } from "./QuestZones";
-import { DungeonManager } from "./simple-dungeon/DungeonManager";
-import { XmasManager } from "./xmas/XmasManager";
-import { LunarManager } from "./lunar/LunarManager";
+
+import { DungeonManager } from "./events/simple-dungeon/DungeonManager";
+import { XmasManager } from "./events/xmas/XmasManager";
+import { LunarManager } from "./events/lunar/LunarManager";
 
 class Game extends EventEmitter {
     constructor() {

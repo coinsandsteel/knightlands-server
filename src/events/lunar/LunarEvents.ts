@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
-import game from "../game";
-import events from "../knightlands-shared/events";
+import game from "../../game";
+import events from "../../knightlands-shared/events";
 
 export class LunarEvents {
     private _events: any;

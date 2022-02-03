@@ -1,4 +1,4 @@
-import Game from "../game"
+import Game from "../../game"
 import { CPointsData } from "./types";
 
 function toShares(amount, poolIn, poolOut) {

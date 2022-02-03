@@ -1,5 +1,5 @@
-import random from "../random";
-import Game from "../game";
+import random from "../../random";
+import Game from "../../game";
 import { Cell, CompactedConfig, DungeonEnemiesCompact, DungeonFloorConfig, DungeonFloorData, EnemyData } from "./types";
 
 export function cellToIndex(cell: Cell, width: number) {

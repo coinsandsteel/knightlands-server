@@ -25,10 +25,11 @@ import Game from "./game";
 import blockchains from "./knightlands-shared/blockchains";
 import { Lock } from "./utils/lock";
 import { exist, isNumber, isString } from "./validation";
-import { DungeonController } from "./simple-dungeon/DungeonController";
-import { XmasController } from "./xmas/XmasController";
 import { GetArmy } from "./knightlands-shared/operations";
-import { LunarController } from "./lunar/LunarController";
+
+import { DungeonController } from "./events/simple-dungeon/DungeonController";
+import { XmasController } from "./events/xmas/XmasController";
+import { LunarController } from "./events/lunar/LunarController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";

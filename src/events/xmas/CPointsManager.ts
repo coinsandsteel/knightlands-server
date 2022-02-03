@@ -1,6 +1,6 @@
-import Game from "../game"
-import { Collections } from "../database/database";
-import { Lock } from "../utils/lock";
+import Game from "../../game"
+import { Collections } from "../../database/database";
+import { Lock } from "../../utils/lock";
 
 const PAYOUT_PERIOD = 86400;
 const STATE_RECORD_ID = "cpoints_state";
