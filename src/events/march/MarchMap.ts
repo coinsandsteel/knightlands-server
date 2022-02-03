@@ -22,6 +22,9 @@ export class MarchMap {
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
     //  .getCardByIndex(index).touch()
+    this.cards.forEach(card => {
+      card.userStepCallback();
+    });
   }
 
   public swapPetCellTo(index) {

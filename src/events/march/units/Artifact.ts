@@ -3,19 +3,12 @@ import { MarchMap } from "../MarchMap";
 import * as march from "../../../knightlands-shared/march";
 
 export class Artifact extends Unit {
-  /*protected setInitialHP(): void {
-    // HP ???
-    // Ball lightning
-    // Dragon breath
-    // Bomb
-    // Bow
-    // Reinforcer
-  };*/
-
   public userStepCallback() {
-    this.hp--;
-    if (this.hp <= 0 && this.type === march.UNIT_TYPE_BOMB) {
-      this.activate();
+    if (this.type === march.UNIT_TYPE_BOMB) {
+      this.hp--;
+      if (this.hp <= 0) {
+        this.activate();
+      }
     }
   }
 
