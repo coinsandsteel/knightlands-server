@@ -138,7 +138,7 @@ class RaidManager {
             throw Errors.NotEnoughLevel;
         }
 
-        if(this.activeRaidsCount(summoner.id) >= RAIDS_ACTIVE_LIMIT) {
+        if (await this.activeRaidsCount(summoner.id) >= RAIDS_ACTIVE_LIMIT) {
             throw Errors.IncorrectArguments;
         }
 
