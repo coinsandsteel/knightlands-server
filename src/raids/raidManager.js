@@ -22,6 +22,7 @@ const DktFactorUpdateInterval = 1800000; // every 30 minutes
 // const DktFactorUpdateInterval = 10000; // every 10 seconds
 const DKT_RESTORE_FACTOR = 0.05;
 const RAIDS_PER_PAGE = 20;
+const RAIDS_ACTIVE_LIMIT = 25;
 const FINISHED_RAID_CACHE_TTL = 3600000; // 1 hour
 
 class RaidManager {
@@ -135,6 +136,10 @@ class RaidManager {
 
         if (summoner.level < raitTemplate.level) {
             throw Errors.NotEnoughLevel;
+        }
+
+        if (await this.activeRaidsCount(summoner.id) >= RAIDS_ACTIVE_LIMIT) {
+            throw Errors.IncorrectArguments;
         }
 
         // check if there is enough crafting materials
