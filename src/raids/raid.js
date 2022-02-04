@@ -379,7 +379,6 @@ class Raid extends EventEmitter {
 
         const bossHealthBeforeDamage = this._bossUnit.getHealth();
 
-        console.log("🚀 ~ file: raid.js ~ line 379 ~ Raid ~ attack ~ attacker.maxStats", attacker.maxStats)
         while (hitsToPerform > 0 && combatUnit.isAlive && this._bossUnit.isAlive) {
             attackLog.exp += this.template.exp + attacker.maxStats[CharacterStats.ExpOnHitInRaid];
             attackLog.soft += this.template.gold + attacker.maxStats[CharacterStats.GoldOnHitInRaid];
@@ -448,7 +447,6 @@ class Raid extends EventEmitter {
             this._publishEvent({ event: Events.RaidDamaged, bossHp: this._bossUnit.getHealth(), ...damageLog });
 
             attackLog.boss.health = this._bossUnit.getHealth();
-            console.log("🚀 ~ file: raid.js ~ line 454 ~ Raid ~ attack ~ attackLog", attackLog)
             Game.emitPlayerEvent(attacker.address, Events.RaidDamaged, attackLog);
 
             // finalize challenges to detect final changes inside 
