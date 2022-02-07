@@ -7,10 +7,10 @@ export class Enemy extends Unit {
   }  
   
   public activate(){
-    if (this.type === march.UNIT_TYPE_TRAP) {
-      this.map.pet.enablePenalty(this.tier);
+    if (this.class === march.UNIT_CLASS_TRAP) {
+      this.map.pet.enablePenalty(this.level);
       this.destroy();
-      this.map.movePetTo(this.index);
+      this.map.movePetTo(this);
     } else {
       this.fight();
     }
@@ -26,13 +26,13 @@ export class Enemy extends Unit {
       pet.restoreHealth();
       this.replaceWithLoot();
       this.map.addGold(initialEnemyHp);
-      this.map.movePetTo(this.index);
+      this.map.movePetTo(this);
     }
   }
 
   public replaceWithLoot(): void {
     // TODO rules
     const loot = new Unit(this.map);
-    this.map.replaceCellWith(this.index, loot);
+    this.map.replaceCellWith(this, loot);
   }
 }

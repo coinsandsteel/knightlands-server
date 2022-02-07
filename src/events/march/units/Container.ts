@@ -1,5 +1,5 @@
 import { Unit } from "../other/UnitClass";
-import { UNIT_TYPE_BARRELL, UNIT_TYPE_CHEST } from "../../../knightlands-shared/march";
+import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST } from "../../../knightlands-shared/march";
 
 export class Container extends Unit {
   private _keyNumber: number;
@@ -9,10 +9,10 @@ export class Container extends Unit {
   };
 
   public activate(): void {
-    if (this.type === UNIT_TYPE_BARRELL) {
+    if (this.class === UNIT_CLASS_BARRELL) {
       this.replaceWithLoot();
     }
-    if (this.type === UNIT_TYPE_CHEST) {
+    if (this.class === UNIT_CLASS_CHEST) {
       this.map.launchMiniGame(this);
     }
   }
@@ -20,7 +20,7 @@ export class Container extends Unit {
   public replaceWithLoot(): void {
     // TODO rules
     const loot = new Unit(this.map);
-    this.map.replaceCellWith(this.index, loot);
+    this.map.replaceCellWith(this, loot);
   }
 
   public setRandomKeyNumber(): void {

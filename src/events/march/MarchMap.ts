@@ -32,7 +32,7 @@ export class MarchMap {
     // Move next card to old pet's position
   }
 
-  public replaceCellWith(index: number, unit: Unit) {
+  public replaceCellWith(oldUnit: Unit, newUnit: Unit) {
 
   }
 

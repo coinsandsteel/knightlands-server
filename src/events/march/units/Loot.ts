@@ -7,20 +7,20 @@ export class Loot extends Unit {
   };
 
   public activate(): void {
-    switch (this.type) {
-      case march.UNIT_TYPE_HP: {
+    switch (this.class) {
+      case march.UNIT_CLASS_HP: {
         this.map.pet.modifyHp(this.hp);
         break;
       }
-      case march.UNIT_TYPE_EXTRA_HP: {
+      case march.UNIT_CLASS_EXTRA_HP: {
         this.map.pet.upgradeHP(this.hp);
         break;
       }
-      case march.UNIT_TYPE_ARMOR: {
+      case march.UNIT_CLASS_ARMOR: {
         this.map.pet.modifyArmor(this.hp);
         break;
       }
-      case march.UNIT_TYPE_GOLD: {
+      case march.UNIT_CLASS_GOLD: {
         // TODO
         break;
       }
