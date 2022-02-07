@@ -13,7 +13,6 @@ export interface MarchCell {
   _id: string;
   class: string;
   hp: string;
-  level?: number;
   opened?: boolean;
 }
 
