@@ -14,10 +14,7 @@ export interface MarchCell {
   class: string;
   hp: string;
   level?: number;
-  
-  armor?: number;
-  petClass?: number;
-  penaltySteps?: number;
+  opened?: boolean;
 }
 
 

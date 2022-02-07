@@ -1,9 +1,16 @@
 import { Unit } from "../other/UnitClass";
 import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST } from "../../../knightlands-shared/march";
+import { MarchMap } from "../MarchMap";
 
 export class Container extends Unit {
+  private opened: boolean;
   private _keyNumber: number;
 
+  constructor(map: MarchMap) {
+    super(map);
+    this.opened = false;
+  }
+  
   public touch(): void {
     this.activate();
   };
