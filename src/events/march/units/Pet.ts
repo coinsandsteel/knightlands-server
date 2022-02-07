@@ -1,5 +1,6 @@
 import { UNIT_CLASS_PET } from "../../../knightlands-shared/march";
-import { HpClass } from "../other/HpClass";
+import { Unit } from "../other/UnitClass";
+import { MarchMap } from "../MarchMap";
 import { StepInterface } from "../other/StepInterface";
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,24 +16,27 @@ import { v4 as uuidv4 } from "uuid";
 }
 */
 
-export class Pet extends HpClass implements StepInterface {
+export class Pet extends Unit {
   protected _id: string;
 
   private maxHp: number;
   private armor: number = 0;
   private penaltySteps: number = 0;
+  
+  protected unitClass = UNIT_CLASS_PET;
+  protected petClass: number;
+  protected level: number;
 
-  private petClass: number = 1;
-  private level: number = 1;
-
-  protected class = UNIT_CLASS_PET;
-
-  constructor(petClass: number, level: number) {
-    super();
+  constructor(map: MarchMap, petClass: number, level: number, armor: number, penaltySteps: number) {
+    super(map);
+    
     this._id = uuidv4().split('-').slice(-1);
     this.maxHp = this.hp;
+
     this.petClass = petClass;
     this.level = level;
+    this.armor = armor;
+    this.penaltySteps = penaltySteps;
   }
 
   protected setInitialHP(): void {
@@ -78,4 +82,9 @@ export class Pet extends HpClass implements StepInterface {
   public enablePenalty(steps): void {
     this.penaltySteps = steps;
   }
+
+  public setUnitClass(unitClass: string): void { return; };
+  public activate(): void { return; };
+  public touch(): void { return; };
+  public destroy(): void { return; };
 }

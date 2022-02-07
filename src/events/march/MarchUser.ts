@@ -2,15 +2,17 @@ import _ from "lodash";
 import User from "../../user";
 import Game from "../../game";
 import Errors from "../../knightlands-shared/errors";
-import { MarchState } from "./types";
+import { MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
+import { MarchMap } from "./MarchMap";
 
 export class MarchUser {
-    private _state: MarchState;
+    private _state: MarchUserState;
     private _events: MarchEvents;
     private _user: User;
+    private _map: MarchMap;
 
-    constructor(state: MarchState | null, events: MarchEvents, user: User) {
+    constructor(state: MarchUserState | null, events: MarchEvents, user: User) {
         this._events = events;
         this._user = user;
 
@@ -20,11 +22,25 @@ export class MarchUser {
           this.setInitialState();
         }
     }
-  
-    public async init() {}
-
+      
     public setInitialState() {
-      const state: MarchState = {};
-      this._state = _.cloneDeep(state);
+      this._state = {
+        balance: {
+          tickets: 0,
+          gold: 0
+        },
+        boosters: {
+          maxHealth: 0,
+          extraLife: 0,
+          key: 0,
+        }
+      } as MarchUserState;
+    }
+    
+    public getState(): MarchUserState {
+      return this._state;
+    }
+    
+    public async init() {
     }
 }

@@ -1,12 +1,32 @@
 export interface MarchSaveData {
-  state: MarchState;
+  user: MarchUserState;
+  map: MarchMapState;
 }
 
-export interface MarchState {
+export interface MarchUserState {
+  balance: {
+    tickets: number;
+    gold: number;
+  },
+  boosters: {
+    maxHealth: number;
+    extraLife: number;
+    key: number;
+  }
 }
 
-export interface MarchBoard {
-  cells: MarchCell[];
+export interface MarchMapState {
+  stat: {
+    stepsToNextBoss: number|null;
+    bossesKilled: number;
+  },
+  pet: {
+    penaltySteps: number;
+    class: number;
+    level: number;
+    armor: number;
+  },
+  cells: MarchCell[]
 }
 
 export interface MarchCell {

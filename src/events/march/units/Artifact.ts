@@ -4,7 +4,7 @@ import * as march from "../../../knightlands-shared/march";
 
 export class Artifact extends Unit {
   public userStepCallback() {
-    if (this.class === march.UNIT_CLASS_BOMB) {
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
       this.hp--;
       if (this.hp <= 0) {
         this.activate();
@@ -13,7 +13,7 @@ export class Artifact extends Unit {
   }
 
   public touch() {
-    if (this.class === march.UNIT_CLASS_BOMB) {
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
       // swap positions
       this.map.swapPetCellTo(this);
     }
@@ -22,7 +22,7 @@ export class Artifact extends Unit {
   public activate() {
     let hpModifier = null;
     let direction = null;
-    switch (this.class) {
+    switch (this.unitClass) {
       case march.UNIT_CLASS_BALL_LIGHTNING: {
         direction = "random5";
         hpModifier = -this.hp;

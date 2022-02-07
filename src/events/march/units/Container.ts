@@ -3,23 +3,18 @@ import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST } from "../../../knightlands-share
 import { MarchMap } from "../MarchMap";
 
 export class Container extends Unit {
-  private opened: boolean;
+  private opened: boolean = false;
   private _keyNumber: number;
-
-  constructor(map: MarchMap) {
-    super(map);
-    this.opened = false;
-  }
   
   public touch(): void {
     this.activate();
   };
 
   public activate(): void {
-    if (this.class === UNIT_CLASS_BARRELL) {
+    if (this.unitClass === UNIT_CLASS_BARRELL) {
       this.replaceWithLoot();
     }
-    if (this.class === UNIT_CLASS_CHEST) {
+    if (this.unitClass === UNIT_CLASS_CHEST) {
       this.map.launchMiniGame(this);
     }
   }

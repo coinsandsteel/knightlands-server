@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 export class Unit extends HpClass implements StepInterface {
   protected _id: string;
   protected _map: MarchMap;
-  protected class: string;
+  protected unitClass: string;
   protected level?: number;
 
   get map(): MarchMap {
@@ -19,6 +19,9 @@ export class Unit extends HpClass implements StepInterface {
     this._id = uuidv4().split('-').slice(-1);
   }
 
+  public setUnitClass(unitClass: string): void {
+    this.unitClass = unitClass;
+  };
   public activate(): void {};
   public touch(): void {};
   public destroy(): void {};

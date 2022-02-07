@@ -23,6 +23,7 @@ import { QuestZones } from "./QuestZones";
 import { DungeonManager } from "./events/simple-dungeon/DungeonManager";
 import { XmasManager } from "./events/xmas/XmasManager";
 import { LunarManager } from "./events/lunar/LunarManager";
+import { MarchManager } from "./events/march/MarchManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -72,6 +73,7 @@ class Game extends EventEmitter {
         this.dungeonManager = new DungeonManager();
         this.xmasManager = new XmasManager();
         this.lunarManager = new LunarManager();
+        this.marchManager = new MarchManager();
 
         this._players = {};
         this._playersById = {};
@@ -79,6 +81,7 @@ class Game extends EventEmitter {
         await this.lunarManager.init();
         await this.dungeonManager.init(iapExecutor);
         await this.xmasManager.init();
+        await this.marchManager.init();
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();

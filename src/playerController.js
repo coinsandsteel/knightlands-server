@@ -30,6 +30,7 @@ import { GetArmy } from "./knightlands-shared/operations";
 import { DungeonController } from "./events/simple-dungeon/DungeonController";
 import { XmasController } from "./events/xmas/XmasController";
 import { LunarController } from "./events/lunar/LunarController";
+import { MarchController } from "./events/march/MarchController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -322,6 +323,11 @@ class PlayerController extends IPaymentListener {
             this.lunar = null
         }
 
+        if (this.march) {
+            await this.march.dispose();
+            this.march = null
+        }
+
         return true;
     }
 
@@ -341,6 +347,9 @@ class PlayerController extends IPaymentListener {
 
         this.lunar = new LunarController(user);
         await this.lunar.init();
+
+        this.march = new MarchController(user);
+        await this.march.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
