@@ -76,6 +76,8 @@ class RaidManager {
     }
 
     async joinRaid(userId, raidId) {
+        await this.isEnoughSpaceInActiveList(userId);
+
         let raid = this.getRaid(raidId);
         if (!raid || raid.free) {
             throw Errors.InvalidRaid;
@@ -138,9 +140,7 @@ class RaidManager {
             throw Errors.NotEnoughLevel;
         }
 
-        if (await this.activeRaidsCount(summoner.id) >= RAIDS_ACTIVE_LIMIT) {
-            throw Errors.IncorrectArguments;
-        }
+        await this.isEnoughSpaceInActiveList(summoner.id);
 
         // check if there is enough crafting materials
         let data = (free || summoner.isFreeAccount) ? raitTemplate.soloData : raitTemplate.data;
@@ -176,6 +176,12 @@ class RaidManager {
         return {
             raid: raid.id
         };
+    }
+
+    async isEnoughSpaceInActiveList(id) {
+        if (await this.activeRaidsCount(id) >= RAIDS_ACTIVE_LIMIT) {
+            throw Errors.IncorrectArguments;
+        }
     }
 
     async fetchPublicRaids(userId, userLevel, page) {
