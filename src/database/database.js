@@ -85,12 +85,15 @@ module.exports = {
         HalloweenFloors: "halloween_floors",
         XmasUsers: "xmas_users",
         XmasRanks: "xmas_ranks",
+        LunarUsers: "lunar_users",
+        LunarRanks: "lunar_ranks",
         ActionsLogs: "actions_logs",
         FarmUsers: "farm_users",
         XmasPoints: "xmas_points",
         XmasRaidStats: "xmas_raid_stats",
         HalloweenWithdrawals: "halloween_withdrawals",
-        ActionsLogs: "actions_logs"
+        ActionsLogs: "actions_logs",
+        LunarUsers: "lunar_users",
     },
 
 

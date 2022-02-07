@@ -21,6 +21,7 @@ import { PresaleCardsService } from "./shop/PresaleCards";
 import { QuestZones } from "./QuestZones";
 import { DungeonManager } from "./simple-dungeon/DungeonManager";
 import { XmasManager } from "./xmas/XmasManager";
+import { LunarManager } from "./lunar/LunarManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -69,10 +70,12 @@ class Game extends EventEmitter {
         this.questZones = new QuestZones();
         this.dungeonManager = new DungeonManager();
         this.xmasManager = new XmasManager();
+        this.lunarManager = new LunarManager();
 
         this._players = {};
         this._playersById = {};
 
+        await this.lunarManager.init();
         await this.dungeonManager.init(iapExecutor);
         await this.xmasManager.init();
         await this.questZones.init();

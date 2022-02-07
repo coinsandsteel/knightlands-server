@@ -28,6 +28,7 @@ import { exist, isNumber, isString } from "./validation";
 import { DungeonController } from "./simple-dungeon/DungeonController";
 import { XmasController } from "./xmas/XmasController";
 import { GetArmy } from "./knightlands-shared/operations";
+import { LunarController } from "./lunar/LunarController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -269,6 +270,14 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.XmasActivatePerk, this._gameHandler(this._xmasXmasActivatePerk.bind(this)));
         // this._socket.on(Operations.XmasRebalancePerks, this._gameHandler(this._xmasXmasRebalancePerks.bind(this)));
 
+        // Lunar
+        this._socket.on(Operations.LunarLoad, this._gameHandler(this._lunarLoad.bind(this)));
+        this._socket.on(Operations.LunarCraft, this._gameHandler(this._lunarCraft.bind(this)));
+        this._socket.on(Operations.LunarExchange, this._gameHandler(this._lunarExchange.bind(this)));
+        this._socket.on(Operations.LunarCollectDailyReward, this._gameHandler(this._lunarCollectDailyReward.bind(this)));
+        this._socket.on(Operations.LunarTestAction, this._gameHandler(this._lunarTestAction.bind(this)));
+        this._socket.on(Operations.LunarPurchase, this._gameHandler(this._lunarPurchase.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -307,6 +316,11 @@ class PlayerController extends IPaymentListener {
             this.xmas = null
         }
 
+        if (this.lunar) {
+            await this.lunar.dispose();
+            this.lunar = null
+        }
+
         return true;
     }
 
@@ -317,11 +331,15 @@ class PlayerController extends IPaymentListener {
         Game.removeAllListeners(this.id)
         Game.on(this.id, this._handleEventBind);
 
-        this.simpleDungeon = new DungeonController(await this.getUser());
+        const user = await this.getUser();
+        this.simpleDungeon = new DungeonController(user);
         await this.simpleDungeon.init();
 
-        this.xmas = new XmasController(await this.getUser());
+        this.xmas = new XmasController(user);
         await this.xmas.init();
+
+        this.lunar = new LunarController(user);
+        await this.lunar.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -1075,7 +1093,6 @@ class PlayerController extends IPaymentListener {
         await user.inventory.addItemTemplates(rewards.items);
         await user.addRP(rewards.rp, true);
         await user.addHardCurrency(rewards.hardCurrency);
-        this.xmas.addSantabucks(rewards.santabucks);
 
         return rewards;
     }
@@ -1976,6 +1993,34 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.simpleDungeon.withdrawReward(data.to);
+    }
+
+    // Lunar
+    async _lunarLoad() {
+        return this.lunar.load();
+    }
+
+    async _lunarCraft(_, items) {
+        return this.lunar.craft(items);
+    }
+
+    async _lunarExchange(_, items) {
+        return this.lunar.exchange(items);
+    }
+
+    async _lunarCollectDailyReward() {
+        return this.lunar.collectDailyLunarReward();
+    }
+
+    async _lunarTestAction(_, data) {
+        return this.lunar.testAction(data.action);
+    }
+
+    async _lunarPurchase(_, data) {
+      if (data.shopIndex === undefined || data.shopIndex === null || !data.itemsCount || !data.currency) {
+        throw Errors.IncorrectArguments;
+      }
+      return this.lunar.purchase(data.shopIndex, data.itemsCount, data.currency);
     }
 }
 

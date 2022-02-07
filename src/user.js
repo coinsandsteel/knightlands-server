@@ -15,6 +15,7 @@ import Game from "./game";
 import Buffs from "./knightlands-shared/buffs";
 import Errors from "./knightlands-shared/errors";
 import Events from "./knightlands-shared/events";
+import Elements from "./knightlands-shared/elements";
 import ItemProperties from "./knightlands-shared/item_properties";
 import AccessoryOption from "./knightlands-shared/accessory_option";
 import { RaidPoints } from "./raids/RaidPoints"
@@ -907,10 +908,11 @@ class User {
                     break
                 case AccessoryOption.ArmyDamageInRaidElement:
                     const byElement = finalStats[CharacterStats.ArmyDamageInRaidElement];
-                    if (!byElement[propTemplate.element]) {
-                        byElement[propTemplate.element] = 0;
+                    const element = Elements[Object.keys(Elements)[propTemplate.element]];
+                    if (!byElement[element]) {
+                        byElement[element] = 0;
                     }
-                    byElement[propTemplate.element] += prop.value;
+                    byElement[element] += prop.value;
                     break
 
                 case AccessoryOption.DropItemInQuest:
@@ -1352,6 +1354,13 @@ class User {
 
         if (!user.dailyRewardCollect) {
             user.dailyRewardCollect = {
+                cycle: 0,
+                step: 0
+            };
+        }
+
+        if (!user.dailyLunarRewardCollect) {
+            user.dailyLunarRewardCollect = {
                 cycle: 0,
                 step: 0
             };
@@ -1911,7 +1920,7 @@ class User {
 
         return dailyRewardCollect;
     }
-
+    
     async collectDailyReward() {
         const dailyRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);

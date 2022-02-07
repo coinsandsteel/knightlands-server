@@ -349,6 +349,11 @@ class Raid extends EventEmitter {
             }
         }
 
+        const armyDamageInRaidElement = combatUnit.getArmyDamageInRaidElement(this._data.weakness.current.element);
+        if (armyDamageInRaidElement) {
+            bonusDamage *= 1 + armyDamageInRaidElement;
+        }
+
         combatUnit.updateStats(this._data.weakness.current.element)
 
         const army = await Game.armyManager.createCombatLegion(attacker, legionIndex);
@@ -559,7 +564,11 @@ class Raid extends EventEmitter {
 
             if (this._data.isFree) {
                 let winLoot = baseLoot.winnerLootFree;
-                rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
+                let addLoot = await Game.lootGenerator.getLootFromTable(winLoot);
+                rewards.items.push(...addLoot);
+                if (Game.lunarManager.eventIsInProgress()) {
+                  rewards.items.push(...Game.lunarManager.getRaidReward());
+                }
             } else {
                 let winLoot = user.isFreeAccount ? baseLoot.winnerLootFree : baseLoot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
@@ -608,9 +617,9 @@ class Raid extends EventEmitter {
             rewards.rp = 0;
         } else {
             rewards.rp = await user.getBonusRP(rewards.rp);
-
-            await this._updateLoot(userId, rewards);
         }
+        
+        await this._updateLoot(userId, rewards);
 
         return rewards;
     }

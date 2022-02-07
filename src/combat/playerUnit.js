@@ -19,6 +19,10 @@ class PlayerUnit extends Unit {
         }
     }
 
+    getArmyDamageInRaidElement(raidElement) {
+        return this._maxStats[CharacterStats.ArmyDamageInRaidElement][raidElement];
+    }
+
     setHealth(value) {
         super.setHealth(value);
         this._user.setTimerValue(CharacterStats.Health, this.getHealth());
