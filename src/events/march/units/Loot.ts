@@ -7,7 +7,7 @@ export class Loot extends Unit {
   };
 
   public activate(): void {
-    switch (this.class) {
+    switch (this.unitClass) {
       case march.UNIT_CLASS_HP: {
         this.map.pet.modifyHp(this.hp);
         break;

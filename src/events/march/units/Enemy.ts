@@ -8,7 +8,7 @@ export class Enemy extends Unit {
   
   public activate(){
     if (this.unitClass === march.UNIT_CLASS_TRAP) {
-      this.map.pet.enablePenalty(this.level);
+      this.map.enablePenalty(this.hp);
       this.destroy();
       this.map.movePetTo(this);
     } else {

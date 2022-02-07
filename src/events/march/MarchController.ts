@@ -33,7 +33,7 @@ export class MarchController {
       this.generate();
     }
 
-    if (this._saveData && this._saveData.map.cells.length) {
+    if (this._saveData && this._saveData.map.cards.length) {
       this._marchMap.load(this._saveData.map);
       this._marchMap.start();
     }

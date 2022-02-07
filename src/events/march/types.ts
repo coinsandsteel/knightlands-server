@@ -19,21 +19,23 @@ export interface MarchMapState {
   stat: {
     stepsToNextBoss: number|null;
     bossesKilled: number;
-  },
-  pet: {
     penaltySteps: number;
-    class: number;
-    level: number;
-    armor: number;
   },
-  cells: MarchCell[]
+  pet: PetState,
+  cards: MarchCard[]
 }
 
-export interface MarchCell {
+export interface MarchCard {
   _id: string;
-  class: string;
-  hp: string;
+  unitClass: string;
+  hp: number;
   opened?: boolean;
+}
+
+export interface PetState {
+  petClass: number;
+  level: number;
+  armor: number;
 }
 
 

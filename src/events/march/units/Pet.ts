@@ -3,11 +3,12 @@ import { Unit } from "../other/UnitClass";
 import { MarchMap } from "../MarchMap";
 import { StepInterface } from "../other/StepInterface";
 import { v4 as uuidv4 } from "uuid";
+import { PetState } from "../types";
 
 /*
 { 
   _id: "dc8c4aefc000"
-  class: 'pet',
+  unitClass: 'pet',
   hp: 5
   armor: 0
   petClass: 1,
@@ -21,34 +22,29 @@ export class Pet extends Unit {
 
   private maxHp: number;
   private armor: number = 0;
-  private penaltySteps: number = 0;
   
   protected unitClass = UNIT_CLASS_PET;
   protected petClass: number;
   protected level: number;
 
-  constructor(map: MarchMap, petClass: number, level: number, armor: number, penaltySteps: number) {
+  constructor(map: MarchMap, petClass: number, level: number, armor: number) {
     super(map);
     
-    this._id = uuidv4().split('-').slice(-1);
+    this._id = uuidv4().split('-').pop();
     this.maxHp = this.hp;
 
     this.petClass = petClass;
     this.level = level;
     this.armor = armor;
-    this.penaltySteps = penaltySteps;
   }
 
-  protected setInitialHP(): void {
-    // ???
+  protected serializeState(): PetState {
+    return {
+      petClass: this.petClass,
+      level: this.level,
+      armor: this.armor
+    };
   }
-
-  public userStepCallback(): void {
-    this.penaltySteps--;
-    if (this.penaltySteps <= 0) {
-      this.penaltySteps = 0;
-    }
-  };
 
   public handleDamage(value): void {
     this.modifyArmor(-value);
@@ -77,10 +73,6 @@ export class Pet extends Unit {
 
   public restoreHealth(): void {
     this.hp = this.maxHp;
-  }
-
-  public enablePenalty(steps): void {
-    this.penaltySteps = steps;
   }
 
   public setUnitClass(unitClass: string): void { return; };

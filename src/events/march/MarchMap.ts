@@ -1,4 +1,4 @@
-import { MarchCell, MarchMapState } from "./types";
+import { MarchCard, MarchMapState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
@@ -12,9 +12,9 @@ export class MarchMap {
   private _events: MarchEvents;
   private _user: User;
 
-  private cards: Unit[];
-  private activeChest?: Container;
-  private _pet: Pet;
+  protected cards: Unit[] = [];
+  protected activeChest?: Container;
+  protected _pet: Pet;
  
   constructor(state: MarchMapState | null, events: MarchEvents, user: User) {
     this._events = events;
@@ -25,21 +25,23 @@ export class MarchMap {
     } else {
       this.setInitialState();
     }
+
+    this.init();
   }
 
   public setInitialState() {
     this._state = {
       stat: {
         stepsToNextBoss: null,
-        bossesKilled: 0
+        bossesKilled: 0,
+        penaltySteps: 0
       },
       pet: {
-        penaltySteps: 0,
-        class: 1,
+        petClass: 1,
         level: 1,
         armor: 0
       },
-      cells: []
+      cards: []
     } as MarchMapState;
   }
 
@@ -55,31 +57,39 @@ export class MarchMap {
     const pet = this._state.pet;
     this._pet = new Pet(
       this,
-      pet.class,
+      pet.petClass,
       pet.level,
-      pet.armor,
-      pet.penaltySteps
+      pet.armor
     );
+    this.pet.setHP(10);
 
     // DEMO
-    this.cards = [
-      this.makeUnit(march.UNIT_CLASS_GOLD, 1),
-      this.makeUnit(march.UNIT_CLASS_ARMOR, 2),
-      this.makeUnit(march.UNIT_CLASS_CHEST, 5),
+    const metaExample = [
+      { unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
+      { unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
+      { unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
+      { unitClass: march.UNIT_CLASS_HP, hp: 2 },
+      { unitClass: march.UNIT_CLASS_PET },
+      { unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
+      { unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
+      { unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
+      { unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
+    ] as MarchCard[];
 
-      this.makeUnit(march.UNIT_CLASS_HP, 2),
-      this._pet,
-      this.makeUnit(march.UNIT_CLASS_ENEMY, 3),
-
-      this.makeUnit(march.UNIT_CLASS_BARRELL, 2),
-      this.makeUnit(march.UNIT_CLASS_TRAP, 3),
-      this.makeUnit(march.UNIT_CLASS_EXTRA_HP, 4),
-    ];
+    this.parseCards(metaExample);
   }
 
-  public makeUnit(unitClass: string, hp: number): Unit
+  protected setCardByIndex(card: Unit, index: number): void {
+    this.cards[index] = card;
+    this._state.cards[index] = card.serialize();
+  }
+
+  public makeUnit(_id: string|null, unitClass: string, hp: number, opened: boolean|null = null): Unit
   {
-    const unit = new Unit(this);
+    const unit = new Unit(this, _id);
+    if (opened !== null) {
+      unit.setOpened(opened);
+    }
     unit.setUnitClass(unitClass);
     unit.setHP(hp);
     return unit;
@@ -91,8 +101,18 @@ export class MarchMap {
 
   public load(state: MarchMapState) {
     // Init the card game
-    state.cells.forEach(cell => {
+    this.parseCards(state.cards);
+  }
 
+  protected parseCards(cards: MarchCard[]) {
+    cards.forEach((unit: MarchCard, index: number) => {
+      this.setCardByIndex(
+        unit.unitClass === march.UNIT_CLASS_PET ? 
+          this.pet 
+          : 
+          this.makeUnit(null, unit.unitClass, unit.hp, unit.opened),
+        index
+      );
     });
   }
 
@@ -109,6 +129,19 @@ export class MarchMap {
     this.cards.forEach(card => {
       card.userStepCallback();
     });
+
+    this.reducePenalty();
+  }
+
+  public reducePenalty(): void {
+    this._state.stat.penaltySteps--;
+    if (this._state.stat.penaltySteps <= 0) {
+      this._state.stat.penaltySteps = 0;
+    }
+  };
+
+  public enablePenalty(steps): void {
+    this._state.stat.penaltySteps = steps;
   }
 
   public swapPetCellTo(index) {
@@ -127,9 +160,9 @@ export class MarchMap {
   }
 
   public modifyHP(index, amount, direction) {
-    // Choose cells to attack/heal
+    // Choose cards to attack/heal
     // Modify HP
-    // Launch callbacks to all the affected cells
+    // Launch callbacks to all the affected cards
   }
 
   public launchMiniGame(chest: Container) {
