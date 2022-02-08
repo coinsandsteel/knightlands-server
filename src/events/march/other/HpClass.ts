@@ -9,6 +9,9 @@ export class HpClass {
   public setHP(value: number): void {
     this.hp = value;
   };
+  public getHP(): number {
+    return this.hp;
+  };
   public destroy(): void {};
   public isDead(): boolean {
     return this.hp <= 0;

@@ -24,23 +24,23 @@ export class Artifact extends Unit {
     let direction = null;
     switch (this.unitClass) {
       case march.UNIT_CLASS_BALL_LIGHTNING: {
-        direction = "random5";
+        direction = march.DIRECTION_RANDOM5;
         hpModifier = -this.hp;
         break;
       }
       case march.UNIT_CLASS_DRAGON_BREATH: {
-        direction = "all";
+        direction = march.DIRECTION_ALL;
         hpModifier = -1000;
         break;
       }
       case march.UNIT_CLASS_BOMB: {
-        direction = "cross";
+        direction = march.DIRECTION_CROSS;
         hpModifier = -1000;
         break;
       }
       case march.UNIT_CLASS_BOW: {
         hpModifier = this.hp;
-        direction = "crossBow";
+        direction = march.DIRECTION_CROSS_BOW;
         break;
       }
     }

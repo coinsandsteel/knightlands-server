@@ -3,6 +3,7 @@ import { HpClass } from "./HpClass";
 import { StepInterface } from "./StepInterface";
 import { v4 as uuidv4 } from "uuid";
 import { MarchCard } from "../types";
+import * as march from "../../../knightlands-shared/march";
 
 export class Unit extends HpClass implements StepInterface {
   protected _id: string;
@@ -26,9 +27,29 @@ export class Unit extends HpClass implements StepInterface {
   public setUnitClass(unitClass: string): void {
     this.unitClass = unitClass;
   };
+
+  public getUnitClass(): string {
+    return this.unitClass;
+  };
+
+  public isEnemy(): boolean {
+    return this.unitClass === march.UNIT_CLASS_ENEMY || this.unitClass === march.UNIT_CLASS_ENEMY_BOSS || this.unitClass === march.UNIT_CLASS_TRAP;
+  };
+
+  public isPet(): boolean {
+    return this.unitClass === march.UNIT_CLASS_PET;
+  };
+
+
   public setOpened(opened: boolean): void {
     this.opened = opened;
   };
+
+  public replaceWithGold(): void {
+    const gold = new Unit(this.map);
+    gold.setUnitClass(march.UNIT_CLASS_GOLD);
+    this.map.replaceCellWith(this, gold);
+  }
   
   public activate(): void {};
   public touch(): void {};
