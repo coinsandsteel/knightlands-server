@@ -25,8 +25,6 @@ export class MarchMap {
     } else {
       this.setInitialState();
     }
-
-    this.init();
   }
 
   public setInitialState() {
@@ -37,6 +35,7 @@ export class MarchMap {
         penaltySteps: 0
       },
       pet: {
+        maxHp: 10,
         petClass: 1,
         level: 1,
         armor: 0
@@ -54,29 +53,6 @@ export class MarchMap {
   }
 
   public init() {
-    const pet = this._state.pet;
-    this._pet = new Pet(
-      this,
-      pet.petClass,
-      pet.level,
-      pet.armor
-    );
-    this.pet.setHP(10);
-
-    // DEMO
-    const metaExample = [
-      { unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
-      { unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
-      { unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
-      { unitClass: march.UNIT_CLASS_HP, hp: 2 },
-      { unitClass: march.UNIT_CLASS_PET },
-      { unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
-      { unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
-      { unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
-      { unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
-    ] as MarchCard[];
-
-    this.parseCards(metaExample);
   }
 
   protected setCardByIndex(card: Unit, index: number): void {
@@ -96,19 +72,42 @@ export class MarchMap {
   }
 
   public start() {
+    this._pet = new Pet(this, this._state.pet);
+
     // Start the card game from scratch
+    // TODO MarchCroupier should return an initial card list
+    const initialCardList = [
+      { unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
+      { unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
+      { unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
+      { unitClass: march.UNIT_CLASS_HP, hp: 2 },
+      { unitClass: march.UNIT_CLASS_PET, hp: 10 },
+      { unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
+      { unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
+      { unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
+      { unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
+    ] as MarchCard[];
+
+    this.parseCards(initialCardList);
   }
 
   public load(state: MarchMapState) {
-    // Init the card game
+    // Parse pet
+    this._pet = new Pet(this, state.pet);
+    
+    // Parse cards
     this.parseCards(state.cards);
   }
 
   protected parseCards(cards: MarchCard[]) {
     cards.forEach((unit: MarchCard, index: number) => {
+      const isPet = unit.unitClass === march.UNIT_CLASS_PET;
+      if (isPet) {
+        this.pet.setHP(unit.hp);
+      }
       this.setCardByIndex(
-        unit.unitClass === march.UNIT_CLASS_PET ? 
-          this.pet 
+        isPet ? 
+          this.pet
           : 
           this.makeUnit(null, unit.unitClass, unit.hp, unit.opened),
         index

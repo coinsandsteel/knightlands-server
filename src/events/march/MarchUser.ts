@@ -10,7 +10,6 @@ export class MarchUser {
     private _state: MarchUserState;
     private _events: MarchEvents;
     private _user: User;
-    private _map: MarchMap;
 
     constructor(state: MarchUserState | null, events: MarchEvents, user: User) {
         this._events = events;

@@ -17,6 +17,8 @@ import { PetState } from "../types";
 }
 */
 
+const PET_INITIAL_HP = 10;
+
 export class Pet extends Unit {
   protected _id: string;
 
@@ -27,19 +29,20 @@ export class Pet extends Unit {
   protected petClass: number;
   protected level: number;
 
-  constructor(map: MarchMap, petClass: number, level: number, armor: number) {
+  constructor(map: MarchMap, state: PetState) {
     super(map);
     
     this._id = uuidv4().split('-').pop();
-    this.maxHp = this.hp;
-
-    this.petClass = petClass;
-    this.level = level;
-    this.armor = armor;
+    this.hp = PET_INITIAL_HP;
+    this.maxHp = state.maxHp || this.hp;
+    this.petClass = state.petClass;
+    this.level = state.level;
+    this.armor = state.armor;
   }
 
   protected serializeState(): PetState {
     return {
+      maxHp: this.maxHp,
       petClass: this.petClass,
       level: this.level,
       armor: this.armor

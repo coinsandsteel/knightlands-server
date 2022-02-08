@@ -33,6 +33,7 @@ export interface MarchCard {
 }
 
 export interface PetState {
+  maxHp: number;
   petClass: number;
   level: number;
   armor: number;
