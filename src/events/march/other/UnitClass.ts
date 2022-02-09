@@ -53,8 +53,8 @@ export class Unit extends HpClass implements StepInterface {
   };
 
   public replaceWithGold(): void {
-    const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
-    this.map.replaceCellWith(this, newUnit);
+    // const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
+    // this.map.replaceCellWith(this, newUnit);
   }
   
   public activate(): void {};

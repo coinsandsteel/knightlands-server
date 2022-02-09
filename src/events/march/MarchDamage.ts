@@ -29,7 +29,7 @@ export class MarchDamage {
                       i++;
                     }
                     unitStack.splice(randomIndex, 1);
-                } while (unitStack.length === 0 || i === 5)
+                } while (unitStack.length > 0 || i < 5)
                 break;
             }
             case march.DIRECTION_ALL: {
