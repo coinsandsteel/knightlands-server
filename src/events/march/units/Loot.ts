@@ -21,10 +21,11 @@ export class Loot extends Unit {
         break;
       }
       case march.UNIT_CLASS_GOLD: {
-        // TODO
+        this.map.addGold(this.hp);
         break;
       }
     }
+    this.map.movePetTo(this);
   }
 
   public destroy(): void { 

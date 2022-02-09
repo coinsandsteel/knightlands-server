@@ -5,20 +5,6 @@ import { StepInterface } from "../other/StepInterface";
 import { v4 as uuidv4 } from "uuid";
 import { PetState } from "../types";
 
-/*
-{ 
-  _id: "dc8c4aefc000"
-  unitClass: 'pet',
-  hp: 5
-  armor: 0
-  petClass: 1,
-  level: 1,
-  penaltySteps: 0
-}
-*/
-
-const PET_INITIAL_HP = 10;
-
 export class Pet extends Unit implements StepInterface {
   protected _id: string;
 

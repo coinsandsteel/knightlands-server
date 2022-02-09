@@ -12,6 +12,8 @@ import { Enemy } from "./units/Enemy";
 import { Loot } from "./units/Loot";
 import { Artifact } from "./units/Artifact";
 
+const PET_INITIAL_HP = 10;
+
 export class MarchMap {
   private _state: MarchMapState;
   private _events: MarchEvents;
@@ -41,7 +43,7 @@ export class MarchMap {
         penaltySteps: 0
       },
       pet: {
-        maxHp: 10,
+        maxHp: PET_INITIAL_HP,
         petClass: 1,
         level: 1,
         armor: 0
