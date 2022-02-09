@@ -19,7 +19,7 @@ import { PetState } from "../types";
 
 const PET_INITIAL_HP = 10;
 
-export class Pet extends Unit {
+export class Pet extends Unit implements StepInterface {
   protected _id: string;
 
   private _maxHp: number;
@@ -87,4 +87,5 @@ export class Pet extends Unit {
   public activate(): void { return; };
   public touch(): void { return; };
   public destroy(): void { return; };
+  public userStepCallback(): void { return; };
 }

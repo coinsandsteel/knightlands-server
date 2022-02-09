@@ -32,4 +32,9 @@ export class Loot extends Unit {
       this.replaceWithGold();
     }
   };
+
+  public replaceWithGold(): void {
+    const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
+    this.map.replaceCellWith(this, newUnit);
+  }
 }

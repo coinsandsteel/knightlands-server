@@ -1,7 +1,6 @@
 import { Unit } from "../other/UnitClass";
-import { MarchMap } from "../MarchMap";
+import { Loot } from "../units/Loot";
 import * as march from "../../../knightlands-shared/march";
-import { Loot } from "./Loot";
 
 export class Artifact extends Unit {
   public userStepCallback() {
@@ -44,5 +43,14 @@ export class Artifact extends Unit {
     }
     this.map.handleScriptDamage(this, hpModifier, direction);
     this.destroy();
+  };
+
+  public replaceWithGold(): void {
+    const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
+    this.map.replaceCellWith(this, newUnit);
+  }
+
+  public destroy(): void { 
+    this.replaceWithGold();
   };
 }

@@ -166,9 +166,10 @@ export class MarchMap {
   public touch(index: number) {
     // ###### THE MAIN ENTRY POINT ######
     // Touch a card
+    
   }
 
-  public movePetTo(index) {
+  public movePetTo(index: number) {
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
