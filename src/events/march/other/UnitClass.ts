@@ -4,12 +4,13 @@ import { StepInterface } from "./StepInterface";
 import { v4 as uuidv4 } from "uuid";
 import { MarchCard } from "../types";
 import * as march from "../../../knightlands-shared/march";
+import { Loot } from "../units/Loot";
 
 export class Unit extends HpClass implements StepInterface {
   protected _id: string;
   protected _map: MarchMap;
-  protected unitClass: string;
-  protected opened: boolean|null = null;
+  protected _unitClass: string;
+  protected _opened: boolean|null = null;
 
   get map(): MarchMap {
     return this._map;
@@ -19,45 +20,52 @@ export class Unit extends HpClass implements StepInterface {
     return this._id;
   }
 
+  get opened(): boolean|null {
+    return this._opened;
+  }
+
+  get unitClass(): string {
+    return this._unitClass;
+  }
+
   get isEnemy(): boolean {
     return this.unitClass === march.UNIT_CLASS_ENEMY || this.unitClass === march.UNIT_CLASS_ENEMY_BOSS || this.unitClass === march.UNIT_CLASS_TRAP;
-  }
+  };
 
   get isPet(): boolean {
     return this.unitClass === march.UNIT_CLASS_PET;
-  }
-
-  get getUnitClass(): string {
-    return this.unitClass;
-  }
-
-  constructor(map: MarchMap, id?: string) {
+  };
+  
+  constructor(unitClass: string, initialHp: number, map: MarchMap, id?: string) {
     super();
+    
+    this._unitClass = unitClass;
     this._map = map;
+    this._hp = initialHp;
 
     if (!id) {
       this._id = uuidv4().split('-').pop();
     }
   }
 
-  public setUnitClass(unitClass: string): void {
-    this.unitClass = unitClass;
-  };
-
   public setOpened(opened: boolean): void {
-    this.opened = opened;
+    this._opened = opened;
   };
 
+  public replaceWithGold(): void {
+    const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
+    this.map.replaceCellWith(this, newUnit);
+  }
+  
   public activate(): void {};
   public touch(): void {};
   public destroy(): void {};
   public userStepCallback(): void {};
-  public replaceWithGold(): void {}
 
   public serialize(): MarchCard {
     const card = {
       _id: this._id,
-      hp: this.hp,
+      hp: this._hp,
       unitClass: this.unitClass
     } as MarchCard;
 
@@ -68,14 +76,15 @@ export class Unit extends HpClass implements StepInterface {
     return card;
   };
 
-  public modifyHp(value: number, modifier: Unit = null): void {
-    this.hp += value;
+  public modifyHp(value: number, modifier?: Unit): void {
+    this._hp += value;
     if (this.isDead()) {
-      if (modifier && 
-        (modifier.getUnitClass === march.UNIT_CLASS_DRAGON_BREATH || 
-        modifier.getUnitClass === march.UNIT_CLASS_BOMB || 
-        modifier.getUnitClass === march.UNIT_CLASS_BALL_LIGHTNING || 
-        modifier.getUnitClass === march.UNIT_CLASS_BOW)) {
+      if ([
+        march.UNIT_CLASS_DRAGON_BREATH,
+        march.UNIT_CLASS_BOMB,
+        march.UNIT_CLASS_BALL_LIGHTNING,
+        march.UNIT_CLASS_BOW,
+      ].includes(modifier.unitClass)) {
         this.replaceWithGold();
         return;
       }

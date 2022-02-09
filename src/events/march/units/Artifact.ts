@@ -6,7 +6,7 @@ import { Loot } from "./Loot";
 export class Artifact extends Unit {
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.hp--;
+      this.modifyHp(-1);
       if (this.hp <= 0) {
         this.activate();
       }
@@ -20,37 +20,28 @@ export class Artifact extends Unit {
     }
   };
 
-  public replaceWithGold(): void {
-    const gold = new Loot(this.map);
-    gold.setUnitClass(march.UNIT_CLASS_GOLD);
-    this.map.replaceCellWith(this, gold);
-  }
-
   public activate() {
-    let amount = null;
+    let hpModifier = null;
     let direction = null;
     switch (this.unitClass) {
       case march.UNIT_CLASS_BALL_LIGHTNING: {
         direction = march.DIRECTION_RANDOM5;
-        amount = -this.hp;
+        hpModifier = -this.hp;
         break;
       }
       case march.UNIT_CLASS_DRAGON_BREATH: {
         direction = march.DIRECTION_ALL;
-        amount = -1000;
+        hpModifier = -1000;
         break;
       }
-      case march.UNIT_CLASS_BOMB: {
-        direction = march.DIRECTION_CROSS;
-        amount = -this.initialHp;
-        break;
-      }
+      case march.UNIT_CLASS_BOMB:
       case march.UNIT_CLASS_BOW: {
         direction = march.DIRECTION_CROSS;
-        amount = this.hp;
+        // TODO initialHp or hp?
+        hpModifier = -this.hp;
         break;
       }
     }
-    this.map.handleScriptDamage(this, amount, direction);
+    this.map.handleScriptDamage(this, hpModifier, direction);
   };
 }

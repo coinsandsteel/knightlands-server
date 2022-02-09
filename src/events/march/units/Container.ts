@@ -4,7 +4,7 @@ import { Loot } from "./Loot";
 import * as march from "../../../knightlands-shared/march";
 
 export class Container extends Unit {
-  protected opened: boolean = false;
+  protected _opened: boolean = false;
   private _keyNumber: number;
   
   public touch(): void {
@@ -22,14 +22,8 @@ export class Container extends Unit {
 
   public replaceWithLoot(): void {
     // TODO rules
-    const loot = new Loot(this.map);
-    this.map.replaceCellWith(this, loot);
-  }
-
-  public replaceWithGold(): void {
-    const gold = new Loot(this.map);
-    gold.setUnitClass(march.UNIT_CLASS_GOLD);
-    this.map.replaceCellWith(this, gold);
+    //const loot = new Loot(class, this.map);
+    //this.map.replaceCellWith(this, loot);
   }
 
   public setRandomKeyNumber(): void {

@@ -1,12 +1,15 @@
-import _ from "lodash";
-import { MarchCard, MarchMapState } from "./types";
+import { MarchCard, MarchMapState, PetState, StatState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
 import { MarchEvents } from "./MarchEvents";
+import { MarchDamage } from "./MarchDamage";
 import User from "../../user";
 import * as march from "../../knightlands-shared/march";
-import { MarchDamage } from "./MarchDamage";
+import Random from "../../random";
+import { Enemy } from "./units/Enemy";
+import { Loot } from "./units/Loot";
+import { Artifact } from "./units/Artifact";
 
 export class MarchMap {
   private _state: MarchMapState;
@@ -61,61 +64,102 @@ export class MarchMap {
   protected setCardByIndex(card: Unit, index: number): void {
     this.cards[index] = card;
     this._state.cards[index] = card.serialize();
-  }
+}
 
-  public makeUnit(_id: string|null, unitClass: string, hp: number, opened: boolean|null = null): Unit
+  public makeUnit(_id: string|null, unitClass: string, hp: number, opened: boolean|null = null): Artifact|Container|Enemy|Loot|Pet
   {
-    const unit = new Unit(this, _id);
+    let unit = null;
+    switch (unitClass) {
+      case march.UNIT_CLASS_PET:{
+        unit = new Pet(unitClass, hp, this, _id);
+        break;
+      }
+      case march.UNIT_CLASS_BALL_LIGHTNING:
+      case march.UNIT_CLASS_DRAGON_BREATH:
+      case march.UNIT_CLASS_BOW:
+      case march.UNIT_CLASS_BOMB:{
+        unit = new Artifact(unitClass, hp, this, _id);
+        break;
+      }
+      case march.UNIT_CLASS_CHEST:
+      case march.UNIT_CLASS_BARRELL:{
+        unit = new Container(unitClass, hp, this, _id);
+        break;
+      }
+      case march.UNIT_CLASS_ENEMY:
+      case march.UNIT_CLASS_ENEMY_BOSS:
+      case march.UNIT_CLASS_TRAP:{
+        unit = new Enemy(unitClass, hp, this, _id);
+        break;
+      }
+      case march.UNIT_CLASS_HP:
+      case march.UNIT_CLASS_EXTRA_HP:
+      case march.UNIT_CLASS_ARMOR:
+      case march.UNIT_CLASS_GOLD:{
+        unit = new Loot(unitClass, hp, this, _id);
+        break;
+      }
+    }
+
     if (opened !== null) {
       unit.setOpened(opened);
     }
-    unit.setUnitClass(unitClass);
-    unit.setHP(hp);
+
     return unit;
   }
 
+  // Start the card game from scratch
   public start() {
-    this._pet = new Pet(this, this._state.pet);
-
-    // Start the card game from scratch
     // TODO MarchCroupier should return an initial card list
     const initialCardList = [
-      { unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
-      { unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
-      { unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
-      { unitClass: march.UNIT_CLASS_HP, hp: 2 },
-      { unitClass: march.UNIT_CLASS_PET, hp: 10 },
-      { unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
-      { unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
-      { unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
-      { unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
+      { _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
+      { _id: null, unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
+      { _id: null, unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
+      { _id: null, unitClass: march.UNIT_CLASS_HP, hp: 2 },
+      { _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 },
+      { _id: null, unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
+      { _id: null, unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
+      { _id: null, unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
+      { _id: null, unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
     ] as MarchCard[];
 
-    this.parseCards(initialCardList);
+    this.load({
+      stat: this._state.stat,
+      pet: this._state.pet,
+      cards: initialCardList,
+    } as MarchMapState);
   }
 
   public load(state: MarchMapState) {
-    // Parse pet
-    this._pet = new Pet(this, state.pet);
-    
+    // Parse stat
+    this.parseStat(state.stat);
     // Parse cards
     this.parseCards(state.cards);
+    // Set pet attributes
+    this.parsePet(state.pet);
   }
 
   protected parseCards(cards: MarchCard[]) {
     cards.forEach((unit: MarchCard, index: number) => {
-      const isPet = unit.unitClass === march.UNIT_CLASS_PET;
-      if (isPet) {
-        this.pet.setHP(unit.hp);
+      const newUnit = this.makeUnit(unit._id, unit.unitClass, unit.hp, unit.opened);
+      if (newUnit.unitClass === march.UNIT_CLASS_PET) {
+        this._pet = newUnit as Pet;
       }
-      this.setCardByIndex(
-        isPet ? 
-          this.pet
-          : 
-          this.makeUnit(null, unit.unitClass, unit.hp, unit.opened),
-        index
-      );
+      this.setCardByIndex(newUnit, index);
     });
+  }
+
+  protected parsePet(state: PetState): void {
+    if (!this._pet) {
+      throw new Error("Pet is empty.");
+    }
+    this.pet.setAttributes(state);
+  }
+
+  protected parseStat(state: StatState): void {
+    this._state.stat.stepsToNextBoss = state.stepsToNextBoss;
+    this._state.stat.bossesKilled = state.bossesKilled;
+    this._state.stat.penaltySteps = state.penaltySteps;
   }
 
   public touch(index: number) {
@@ -161,7 +205,7 @@ export class MarchMap {
     // Insert a new card
   }
 
-  public handleScriptDamage(attacker, amount, direction) {
+  public handleScriptDamage(attacker: Unit, amount: number, direction: string): void {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards

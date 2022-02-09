@@ -50,38 +50,39 @@ export class MarchDamage {
         }
     }
     
-    handleDamage(attacker: Unit, victim: Unit, amount: number): number {
+    handleDamage(attacker: Unit, victim: Unit, hpModifier: number): number {
         let damage: number = 0;
-        switch(attacker.getUnitClass) {
+        switch(attacker.unitClass) {
             case march.UNIT_CLASS_BALL_LIGHTNING: {
-                switch(victim.getUnitClass) {
+                switch(victim.unitClass) {
                     case march.UNIT_CLASS_ENEMY: 
                     case march.UNIT_CLASS_ENEMY_BOSS: 
                     case march.UNIT_CLASS_TRAP: {
-                        return amount;
+                        return hpModifier;
                     }
                 }
                 break;
             }
             case march.UNIT_CLASS_BOW: {
-                switch(victim.getUnitClass) {
+                switch(victim.unitClass) {
                     case march.UNIT_CLASS_ENEMY:
                     case march.UNIT_CLASS_ENEMY_BOSS:
                     case march.UNIT_CLASS_TRAP:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR: {
-                        return amount;
+                        return hpModifier;
                     }
                     case march.UNIT_CLASS_BOW:{
-                        return -amount;
+                        return -hpModifier;
                     }
                 }
                 break;
             }
             case march.UNIT_CLASS_DRAGON_BREATH: {
-                switch(victim.getUnitClass) {
-                    case march.UNIT_CLASS_PET:
-                    case march.UNIT_CLASS_CHEST:
+                switch(victim.unitClass) {
+                    case march.UNIT_CLASS_HP:
+                    case march.UNIT_CLASS_ARMOR:
+                    case march.UNIT_CLASS_BOW:
                     case march.UNIT_CLASS_EXTRA_HP:
                     case march.UNIT_CLASS_DRAGON_BREATH:
                     case march.UNIT_CLASS_BOMB:
@@ -89,14 +90,16 @@ export class MarchDamage {
                         return 0;
                     }
                     default: { 
-                        return amount; 
+                        return hpModifier; 
                     }
                 }
                 break;
             }
             case march.UNIT_CLASS_BOMB: {
-                switch(victim.getUnitClass) {
-                    case march.UNIT_CLASS_CHEST:
+                switch(victim.unitClass) {
+                    case march.UNIT_CLASS_HP:
+                    case march.UNIT_CLASS_ARMOR:
+                    case march.UNIT_CLASS_BOW:
                     case march.UNIT_CLASS_EXTRA_HP:
                     case march.UNIT_CLASS_DRAGON_BREATH:
                     case march.UNIT_CLASS_BOMB:
@@ -104,14 +107,13 @@ export class MarchDamage {
                         return 0;
                     }
                     default: { 
-                        return amount; 
+                        return hpModifier; 
                     }
                 }
                 break;
             }
             
         }
-        
         return 0;
     }
 }

@@ -7,7 +7,7 @@ export interface MarchUserState {
   balance: {
     tickets: number;
     gold: number;
-  },
+  };
   boosters: {
     maxHealth: number;
     extraLife: number;
@@ -16,13 +16,9 @@ export interface MarchUserState {
 }
 
 export interface MarchMapState {
-  stat: {
-    stepsToNextBoss: number|null;
-    bossesKilled: number;
-    penaltySteps: number;
-  },
-  pet: PetState,
-  cards: MarchCard[]
+  stat: StatState;
+  pet: PetState;
+  cards: MarchCard[];
 }
 
 export interface MarchCard {
@@ -30,6 +26,12 @@ export interface MarchCard {
   unitClass: string;
   hp: number;
   opened?: boolean;
+}
+
+export interface StatState {
+  stepsToNextBoss: number|null;
+  bossesKilled: number;
+  penaltySteps: number;
 }
 
 export interface PetState {

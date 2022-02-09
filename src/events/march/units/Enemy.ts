@@ -33,13 +33,7 @@ export class Enemy extends Unit {
 
   public replaceWithLoot(): void {
     // TODO rules
-    const loot = new Unit(this.map);
-    this.map.replaceCellWith(this, loot);
-  }
-
-  public replaceWithGold(): void {
-    const gold = new Loot(this.map);
-    gold.setUnitClass(march.UNIT_CLASS_GOLD);
-    this.map.replaceCellWith(this, gold);
+    //const loot = new Unit(this.map);
+    //this.map.replaceCellWith(this, loot);
   }
 }
