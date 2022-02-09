@@ -54,6 +54,10 @@ export class Pet extends Unit implements StepInterface {
     }
   };
 
+  public replaceArmor(value): void {
+    this._armor = value;
+  };
+
   public restoreHealth(): void {
     this._hp = this._maxHp;
   }
