@@ -36,15 +36,17 @@ export class Unit extends HpClass implements StepInterface {
     return this.unitClass === march.UNIT_CLASS_PET;
   };
   
-  constructor(unitClass: string, initialHp: number, map: MarchMap, id?: string) {
+  constructor(card: MarchCard, map: MarchMap) {
     super();
     
-    this._unitClass = unitClass;
     this._map = map;
-    this._hp = initialHp;
+    this._unitClass = card.unitClass;
+    this._hp = card.hp;
+    this._maxHp = card.maxHp || card.hp;
+    this._id = card._id || uuidv4().split('-').pop();
 
-    if (!id) {
-      this._id = uuidv4().split('-').pop();
+    if (card.opened !== null) {
+      this._opened = card.opened;
     }
   }
 
@@ -60,6 +62,7 @@ export class Unit extends HpClass implements StepInterface {
     const card = {
       _id: this._id,
       hp: this._hp,
+      maxHp: this._maxHp,
       unitClass: this.unitClass
     } as MarchCard;
 
@@ -70,7 +73,7 @@ export class Unit extends HpClass implements StepInterface {
     return card;
   };
 
-  public modifyHp(hpModifier: number, modifier?: Unit): void {
+  public modifyHp(hpModifier: number): void {
     this._hp += hpModifier;
     if (this.isDead()) {
       this.destroy();

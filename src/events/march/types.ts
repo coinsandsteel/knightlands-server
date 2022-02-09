@@ -25,6 +25,7 @@ export interface MarchCard {
   _id: string;
   unitClass: string;
   hp: number;
+  maxHp?: number;
   opened?: boolean;
 }
 
@@ -35,7 +36,6 @@ export interface StatState {
 }
 
 export interface PetState {
-  maxHp: number;
   petClass: number;
   level: number;
   armor: number;

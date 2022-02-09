@@ -1,6 +1,7 @@
 import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
 import * as march from "../../../knightlands-shared/march";
+import { MarchCard } from "../types";
 
 export class Enemy extends Unit {
   public touch(){
@@ -37,7 +38,11 @@ export class Enemy extends Unit {
   }
 
   public replaceWithGold(): void {
-    const newUnit = new Loot(march.UNIT_CLASS_GOLD, this.hp, this.map);
+    const newUnit = new Loot({
+      unitClass: march.UNIT_CLASS_GOLD,
+      hp: this.maxHp,
+    } as MarchCard, this.map);
+    
     this.map.replaceCellWith(this, newUnit);
   }
 

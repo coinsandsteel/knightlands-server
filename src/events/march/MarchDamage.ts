@@ -13,7 +13,7 @@ export class MarchDamage {
         this._cards = cards;
     }
 
-    handleScriptDamage(attacker: Unit, attackerIndex: number, hpModifier: number, direction: string): void {
+    handleScriptDamage(attacker: Unit, attackerIndex: number, direction: string): void {
         const unitStack = [...Array(9).keys()];
         unitStack.splice(attackerIndex, 1);
         switch (direction) {
@@ -24,8 +24,8 @@ export class MarchDamage {
                     const randomIndex = unitStack.indexOf(randomNumber);
                     const victim = this._cards[randomNumber];
                     if (victim.isEnemy) {
-                      const currentHpModifier = this.handleDamage(attacker, victim, hpModifier);
-                      victim.modifyHp(currentHpModifier, attacker);
+                      const currentHpModifier = this.handleDamage(attacker, victim);
+                      victim.modifyHp(currentHpModifier);
                       i++;
                     }
                     unitStack.splice(randomIndex, 1);
@@ -36,30 +36,31 @@ export class MarchDamage {
                 for (var i = 0; i < 9; i++) {
                   const victim = this._cards[i];
                     if (!victim.isPet) {
-                        const currentHpModifier = this.handleDamage(attacker, victim, hpModifier)
-                        victim.modifyHp(currentHpModifier, attacker);
+                        const currentHpModifier = this.handleDamage(attacker, victim)
+                        victim.modifyHp(currentHpModifier);
                     }
                 }
                 break;
             }
             case march.DIRECTION_CROSS: {
                 for (const adjacentIndex in march.ADJACENT_CELLS[attackerIndex]) {
-                    const currentHpModifier = this.handleDamage(attacker, this._cards[adjacentIndex], hpModifier)
-                    this._cards[adjacentIndex].modifyHp(currentHpModifier, attacker);
+                    const victim = this._cards[adjacentIndex];
+                    const currentHpModifier = this.handleDamage(attacker, victim)
+                    victim.modifyHp(currentHpModifier);
                 }
                 break;
             }
         }
     }
     
-    handleDamage(attacker: Unit, victim: Unit, hpModifier: number): number {
+    handleDamage(attacker: Unit, victim: Unit): number {
         switch(attacker.unitClass) {
             case march.UNIT_CLASS_BALL_LIGHTNING: {
                 switch(victim.unitClass) {
                     case march.UNIT_CLASS_ENEMY: 
                     case march.UNIT_CLASS_ENEMY_BOSS: 
                     case march.UNIT_CLASS_TRAP: {
-                        return hpModifier;
+                        return -attacker.hp;
                     }
                 }
                 break;
@@ -71,44 +72,47 @@ export class MarchDamage {
                     case march.UNIT_CLASS_TRAP:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR: {
-                        return hpModifier;
+                        return -attacker.hp;
                     }
                     case march.UNIT_CLASS_BOW:{
-                        return -hpModifier;
+                        return attacker.hp;
                     }
                 }
                 break;
             }
             case march.UNIT_CLASS_DRAGON_BREATH: {
                 switch(victim.unitClass) {
+                    case march.UNIT_CLASS_ENEMY:
+                    case march.UNIT_CLASS_ENEMY_BOSS:
+                    case march.UNIT_CLASS_TRAP:
+                    case march.UNIT_CLASS_BARRELL:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR:
                     case march.UNIT_CLASS_BOW:
-                    case march.UNIT_CLASS_EXTRA_HP:
-                    case march.UNIT_CLASS_DRAGON_BREATH:
-                    case march.UNIT_CLASS_BOMB:
-                    case march.UNIT_CLASS_GOLD: { 
-                        return 0;
+                    case march.UNIT_CLASS_BALL_LIGHTNING:{ 
+                        return -10000;
                     }
                     default: { 
-                        return hpModifier; 
+                        return 0; 
                     }
                 }
                 break;
             }
             case march.UNIT_CLASS_BOMB: {
                 switch(victim.unitClass) {
+                    case march.UNIT_CLASS_ENEMY:
+                    case march.UNIT_CLASS_ENEMY_BOSS:
+                    case march.UNIT_CLASS_TRAP:
+                    case march.UNIT_CLASS_BARRELL:
+                    case march.UNIT_CLASS_PET:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR:
                     case march.UNIT_CLASS_BOW:
-                    case march.UNIT_CLASS_EXTRA_HP:
-                    case march.UNIT_CLASS_DRAGON_BREATH:
-                    case march.UNIT_CLASS_BOMB:
-                    case march.UNIT_CLASS_GOLD: { 
-                        return 0;
+                    case march.UNIT_CLASS_BALL_LIGHTNING:{ 
+                        return -attacker.hp;
                     }
                     default: { 
-                        return hpModifier; 
+                        return 0; 
                     }
                 }
                 break;

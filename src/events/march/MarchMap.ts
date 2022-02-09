@@ -43,7 +43,6 @@ export class MarchMap {
         penaltySteps: 0
       },
       pet: {
-        maxHp: PET_INITIAL_HP,
         petClass: 1,
         level: 1,
         armor: 0
@@ -69,43 +68,39 @@ export class MarchMap {
     this._state.cards[index] = card.serialize();
 }
 
-  public makeUnit(_id: string|null, unitClass: string, hp: number, opened: boolean|null = null): Artifact|Container|Enemy|Loot|Pet
+  public makeUnit(card: MarchCard): Unit
   {
     let unit = null;
-    switch (unitClass) {
+    switch (card.unitClass) {
       case march.UNIT_CLASS_PET:{
-        unit = new Pet(unitClass, hp, this, _id);
+        unit = new Pet(card, this);
         break;
       }
       case march.UNIT_CLASS_BALL_LIGHTNING:
       case march.UNIT_CLASS_DRAGON_BREATH:
       case march.UNIT_CLASS_BOW:
       case march.UNIT_CLASS_BOMB:{
-        unit = new Artifact(unitClass, hp, this, _id);
+        unit = new Artifact(card, this);
         break;
       }
       case march.UNIT_CLASS_CHEST:
       case march.UNIT_CLASS_BARRELL:{
-        unit = new Container(unitClass, hp, this, _id);
+        unit = new Container(card, this);
         break;
       }
       case march.UNIT_CLASS_ENEMY:
       case march.UNIT_CLASS_ENEMY_BOSS:
       case march.UNIT_CLASS_TRAP:{
-        unit = new Enemy(unitClass, hp, this, _id);
+        unit = new Enemy(card, this);
         break;
       }
       case march.UNIT_CLASS_HP:
       case march.UNIT_CLASS_EXTRA_HP:
       case march.UNIT_CLASS_ARMOR:
       case march.UNIT_CLASS_GOLD:{
-        unit = new Loot(unitClass, hp, this, _id);
+        unit = new Loot(card, this);
         break;
       }
-    }
-
-    if (opened !== null) {
-      unit.setOpened(opened);
     }
 
     return unit;
@@ -144,7 +139,7 @@ export class MarchMap {
 
   protected parseCards(cards: MarchCard[]) {
     cards.forEach((unit: MarchCard, index: number) => {
-      const newUnit = this.makeUnit(unit._id, unit.unitClass, unit.hp, unit.opened);
+      const newUnit = this.makeUnit(unit);
       if (newUnit.unitClass === march.UNIT_CLASS_PET) {
         this._pet = newUnit as Pet;
       }
@@ -210,11 +205,12 @@ export class MarchMap {
     // Insert a new card
   }
 
-  public handleScriptDamage(attacker: Unit, hpModifier: number, direction: string): void {
+  public handleScriptDamage(attacker: Unit, direction: string): void {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards
-    this._damage.handleScriptDamage(attacker, this.getIndexOfCard(attacker), hpModifier, direction);
+    const attackerIndex = this.getIndexOfCard(attacker);
+    this._damage.handleScriptDamage(attacker, attackerIndex, direction);
   }
 
   private getIndexOfCard(card: Unit) {
