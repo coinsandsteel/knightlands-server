@@ -21,7 +21,7 @@ export class Container extends Unit {
   }
 
   public replaceWithLoot(): void {
-    // TODO rules
+    // TODO implement
     //const loot = new Loot(class, this.map);
     //this.map.replaceCellWith(this, loot);
   }

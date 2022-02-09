@@ -43,5 +43,6 @@ export class Artifact extends Unit {
       }
     }
     this.map.handleScriptDamage(this, hpModifier, direction);
+    this.destroy();
   };
 }

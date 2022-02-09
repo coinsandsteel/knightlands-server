@@ -32,7 +32,7 @@ export class Enemy extends Unit {
   }
 
   public replaceWithLoot(): void {
-    // TODO rules
+    // TODO implement
     //const loot = new Unit(this.map);
     //this.map.replaceCellWith(this, loot);
   }

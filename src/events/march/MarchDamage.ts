@@ -22,20 +22,22 @@ export class MarchDamage {
                 do {
                     const randomNumber = Random.pick(unitStack);
                     const randomIndex = unitStack.indexOf(randomNumber);
-                    unitStack.splice(randomIndex, 1);
-                    if (this._cards[randomNumber].isEnemy) {
-                        const currentHpModifier = this.handleDamage(attacker, this._cards[randomNumber], hpModifier);
-                        this._cards[randomNumber].modifyHp(currentHpModifier, attacker);
-                        i++;
+                    const victim = this._cards[randomNumber];
+                    if (victim.isEnemy) {
+                      const currentHpModifier = this.handleDamage(attacker, victim, hpModifier);
+                      victim.modifyHp(currentHpModifier, attacker);
+                      i++;
                     }
+                    unitStack.splice(randomIndex, 1);
                 } while (unitStack.length === 0 || i === 5)
                 break;
             }
             case march.DIRECTION_ALL: {
                 for (var i = 0; i < 9; i++) {
-                    if (!this._cards[i].isPet) {
-                        const currentHpModifier = this.handleDamage(attacker, this._cards[i], hpModifier)
-                        this._cards[i].modifyHp(currentHpModifier, attacker);
+                  const victim = this._cards[i];
+                    if (!victim.isPet) {
+                        const currentHpModifier = this.handleDamage(attacker, victim, hpModifier)
+                        victim.modifyHp(currentHpModifier, attacker);
                     }
                 }
                 break;

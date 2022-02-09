@@ -26,4 +26,10 @@ export class Loot extends Unit {
       }
     }
   }
+
+  public destroy(): void { 
+    if (this.unitClass !== march.UNIT_CLASS_GOLD) {
+      this.replaceWithGold();
+    }
+  };
 }

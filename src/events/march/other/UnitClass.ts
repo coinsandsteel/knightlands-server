@@ -59,7 +59,6 @@ export class Unit extends HpClass implements StepInterface {
   
   public activate(): void {};
   public touch(): void {};
-  public destroy(): void {};
   public userStepCallback(): void {};
 
   public serialize(): MarchCard {
@@ -79,16 +78,11 @@ export class Unit extends HpClass implements StepInterface {
   public modifyHp(hpModifier: number, modifier?: Unit): void {
     this._hp += hpModifier;
     if (this.isDead()) {
-      if ([
-        march.UNIT_CLASS_DRAGON_BREATH,
-        march.UNIT_CLASS_BOMB,
-        march.UNIT_CLASS_BALL_LIGHTNING,
-        march.UNIT_CLASS_BOW,
-      ].includes(modifier.unitClass)) {
-        this.replaceWithGold();
-        return;
-      }
       this.destroy();
     }
+  };
+
+  public destroy(): void { 
+    this.replaceWithGold();
   };
 }
