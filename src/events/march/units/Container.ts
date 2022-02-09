@@ -1,7 +1,6 @@
 import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
 import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
-import { Enemy } from "./Enemy";
 import { MarchCard } from "../types";
 
 export class Container extends Unit {

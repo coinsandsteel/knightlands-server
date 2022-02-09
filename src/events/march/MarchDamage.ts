@@ -1,10 +1,6 @@
-import { ObjectId } from "mongodb";
-import game from "../../game";
-import events from "../../knightlands-shared/events";
 import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import Random from "../../random";
-import { Enemy } from "./units/Enemy";
 
 export class MarchDamage {
     private _cards: Unit[];

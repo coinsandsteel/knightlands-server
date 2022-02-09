@@ -1,9 +1,7 @@
 import { UNIT_CLASS_PET } from "../../../knightlands-shared/march";
 import { Unit } from "../other/UnitClass";
-import { MarchMap } from "../MarchMap";
 import { StepInterface } from "../other/StepInterface";
-import { v4 as uuidv4 } from "uuid";
-import { MarchCard, PetState } from "../types";
+import { PetState } from "../types";
 
 export class Pet extends Unit implements StepInterface {
   protected _armor: number = 0;

@@ -4,7 +4,6 @@ import { StepInterface } from "./StepInterface";
 import { v4 as uuidv4 } from "uuid";
 import { MarchCard } from "../types";
 import * as march from "../../../knightlands-shared/march";
-import { Loot } from "../units/Loot";
 
 export class Unit extends HpClass implements StepInterface {
   protected _id: string;

@@ -7,12 +7,9 @@ import { MarchEvents } from "./MarchEvents";
 import { MarchDamage } from "./MarchDamage";
 import User from "../../user";
 import * as march from "../../knightlands-shared/march";
-import Random from "../../random";
 import { Enemy } from "./units/Enemy";
 import { Loot } from "./units/Loot";
 import { Artifact } from "./units/Artifact";
-
-const PET_INITIAL_HP = 10;
 
 export class MarchMap {
   private _state: MarchMapState;
