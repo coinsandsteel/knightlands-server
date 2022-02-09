@@ -76,8 +76,8 @@ export class Unit extends HpClass implements StepInterface {
     return card;
   };
 
-  public modifyHp(value: number, modifier?: Unit): void {
-    this._hp += value;
+  public modifyHp(hpModifier: number, modifier?: Unit): void {
+    this._hp += hpModifier;
     if (this.isDead()) {
       if ([
         march.UNIT_CLASS_DRAGON_BREATH,

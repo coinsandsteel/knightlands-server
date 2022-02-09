@@ -13,37 +13,37 @@ export class MarchDamage {
         this._cards = cards;
     }
 
-    handleScriptDamage(attacker, attackerIndex, amount, direction) {
-        const array = [...Array(9).keys()];
-        array.splice(attackerIndex, 1);
+    handleScriptDamage(attacker: Unit, attackerIndex: number, hpModifier: number, direction: string): void {
+        const unitStack = [...Array(9).keys()];
+        unitStack.splice(attackerIndex, 1);
         switch (direction) {
             case march.DIRECTION_RANDOM5: {
                 var i = 0;
                 do {
-                    const random = Random.pick(array);
-                    const randomIndex = array.indexOf(random);
-                    array.splice(randomIndex, 1);
-                    if (this._cards[random].isEnemy) {
-                        const hpAmount = this.handleDamage(attacker, this._cards[random], amount);
-                        this._cards[random].modifyHp(hpAmount, attacker);
+                    const randomNumber = Random.pick(unitStack);
+                    const randomIndex = unitStack.indexOf(randomNumber);
+                    unitStack.splice(randomIndex, 1);
+                    if (this._cards[randomNumber].isEnemy) {
+                        const currentHpModifier = this.handleDamage(attacker, this._cards[randomNumber], hpModifier);
+                        this._cards[randomNumber].modifyHp(currentHpModifier, attacker);
                         i++;
                     }
-                } while (array.length === 0 || i === 5)
+                } while (unitStack.length === 0 || i === 5)
                 break;
             }
             case march.DIRECTION_ALL: {
                 for (var i = 0; i < 9; i++) {
                     if (!this._cards[i].isPet) {
-                        const hpAmount = this.handleDamage(attacker, this._cards[i], amount)
-                        this._cards[i].modifyHp(hpAmount, attacker);
+                        const currentHpModifier = this.handleDamage(attacker, this._cards[i], hpModifier)
+                        this._cards[i].modifyHp(currentHpModifier, attacker);
                     }
                 }
                 break;
             }
             case march.DIRECTION_CROSS: {
                 for (const adjacentIndex in march.ADJACENT_CELLS[attackerIndex]) {
-                    const hpAmount = this.handleDamage(attacker, this._cards[adjacentIndex], amount)
-                    this._cards[adjacentIndex].modifyHp(hpAmount, attacker);
+                    const currentHpModifier = this.handleDamage(attacker, this._cards[adjacentIndex], hpModifier)
+                    this._cards[adjacentIndex].modifyHp(currentHpModifier, attacker);
                 }
                 break;
             }
@@ -51,7 +51,6 @@ export class MarchDamage {
     }
     
     handleDamage(attacker: Unit, victim: Unit, hpModifier: number): number {
-        let damage: number = 0;
         switch(attacker.unitClass) {
             case march.UNIT_CLASS_BALL_LIGHTNING: {
                 switch(victim.unitClass) {

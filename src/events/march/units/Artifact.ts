@@ -31,7 +31,7 @@ export class Artifact extends Unit {
       }
       case march.UNIT_CLASS_DRAGON_BREATH: {
         direction = march.DIRECTION_ALL;
-        hpModifier = -1000;
+        hpModifier = 0;
         break;
       }
       case march.UNIT_CLASS_BOMB:

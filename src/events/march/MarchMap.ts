@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { MarchCard, MarchMapState, PetState, StatState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
@@ -205,15 +206,15 @@ export class MarchMap {
     // Insert a new card
   }
 
-  public handleScriptDamage(attacker: Unit, amount: number, direction: string): void {
+  public handleScriptDamage(attacker: Unit, hpModifier: number, direction: string): void {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards
-    this._damage.handleScriptDamage(attacker, this.getIndexOfCard(attacker), amount, direction);
+    this._damage.handleScriptDamage(attacker, this.getIndexOfCard(attacker), hpModifier, direction);
   }
 
-  private getIndexOfCard(card) {
-    return _.findIndex(this.cards, item => item._id === card.id)
+  private getIndexOfCard(card: Unit) {
+    return _.findIndex(this.cards, item => item.id === card.id)
   }
 
   public launchMiniGame(chest: Container) {
