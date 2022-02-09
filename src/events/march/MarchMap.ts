@@ -166,10 +166,11 @@ export class MarchMap {
   public touch(index: number) {
     // ###### THE MAIN ENTRY POINT ######
     // Touch a card
-    
+    const targetCard = this.cards[index];
+    targetCard.touch();
   }
 
-  public movePetTo(index: number) {
+  public movePetTo(target: Unit) {
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
@@ -233,7 +234,7 @@ export class MarchMap {
       this.activeChest.replaceWithLoot();
     } else {
       // Fail
-      this.activeChest.destroy();
+      this.activeChest.replaceWithEnemy();
     }
   }
 

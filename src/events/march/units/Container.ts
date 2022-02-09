@@ -1,6 +1,7 @@
 import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
-import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
+import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
+import { Enemy } from "./Enemy";
 
 export class Container extends Unit {
   protected _opened: boolean = false;
@@ -35,6 +36,11 @@ export class Container extends Unit {
 
   public replaceWithGold(): void {
     const newUnit = new Loot(UNIT_CLASS_GOLD, this.hp, this.map);
+    this.map.replaceCellWith(this, newUnit);
+  }
+
+  public replaceWithEnemy(): void {
+    const newUnit = new Enemy(UNIT_CLASS_ENEMY, this.hp, this.map);
     this.map.replaceCellWith(this, newUnit);
   }
 
