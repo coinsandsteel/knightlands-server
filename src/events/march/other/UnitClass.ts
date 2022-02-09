@@ -15,6 +15,22 @@ export class Unit extends HpClass implements StepInterface {
     return this._map;
   }
 
+  get id(): string {
+    return this._id;
+  }
+
+  get isEnemy(): boolean {
+    return this.unitClass === march.UNIT_CLASS_ENEMY || this.unitClass === march.UNIT_CLASS_ENEMY_BOSS || this.unitClass === march.UNIT_CLASS_TRAP;
+  }
+
+  get isPet(): boolean {
+    return this.unitClass === march.UNIT_CLASS_PET;
+  }
+
+  get getUnitClass(): string {
+    return this.unitClass;
+  }
+
   constructor(map: MarchMap, id?: string) {
     super();
     this._map = map;
@@ -28,34 +44,16 @@ export class Unit extends HpClass implements StepInterface {
     this.unitClass = unitClass;
   };
 
-  public getUnitClass(): string {
-    return this.unitClass;
-  };
-
-  public isEnemy(): boolean {
-    return this.unitClass === march.UNIT_CLASS_ENEMY || this.unitClass === march.UNIT_CLASS_ENEMY_BOSS || this.unitClass === march.UNIT_CLASS_TRAP;
-  };
-
-  public isPet(): boolean {
-    return this.unitClass === march.UNIT_CLASS_PET;
-  };
-
-
   public setOpened(opened: boolean): void {
     this.opened = opened;
   };
 
-  public replaceWithGold(): void {
-    const gold = new Unit(this.map);
-    gold.setUnitClass(march.UNIT_CLASS_GOLD);
-    this.map.replaceCellWith(this, gold);
-  }
-  
   public activate(): void {};
   public touch(): void {};
   public destroy(): void {};
   public userStepCallback(): void {};
-  
+  public replaceWithGold(): void {}
+
   public serialize(): MarchCard {
     const card = {
       _id: this._id,
@@ -68,5 +66,20 @@ export class Unit extends HpClass implements StepInterface {
     }
     
     return card;
+  };
+
+  public modifyHp(value: number, modifier: Unit = null): void {
+    this.hp += value;
+    if (this.isDead()) {
+      if (modifier && 
+        (modifier.getUnitClass === march.UNIT_CLASS_DRAGON_BREATH || 
+        modifier.getUnitClass === march.UNIT_CLASS_BOMB || 
+        modifier.getUnitClass === march.UNIT_CLASS_BALL_LIGHTNING || 
+        modifier.getUnitClass === march.UNIT_CLASS_BOW)) {
+        this.replaceWithGold();
+        return;
+      }
+      this.destroy();
+    }
   };
 }

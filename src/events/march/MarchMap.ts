@@ -1,23 +1,23 @@
+import _ from "lodash";
 import { MarchCard, MarchMapState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
 import { MarchEvents } from "./MarchEvents";
 import User from "../../user";
-import { Artifact } from "./units/Artifact";
 import * as march from "../../knightlands-shared/march";
-import Random from "../../random";
-import { Enemy } from "./units/Enemy";
+import { MarchDamage } from "./MarchDamage";
 
 export class MarchMap {
   private _state: MarchMapState;
   private _events: MarchEvents;
   private _user: User;
+  private _damage: MarchDamage;
 
   protected cards: Unit[] = [];
   protected activeChest?: Container;
   protected _pet: Pet;
- 
+
   constructor(state: MarchMapState | null, events: MarchEvents, user: User) {
     this._events = events;
     this._user = user;
@@ -55,6 +55,7 @@ export class MarchMap {
   }
 
   public init() {
+    this._damage = new MarchDamage(this.cards);
   }
 
   protected setCardByIndex(card: Unit, index: number): void {
@@ -160,50 +161,15 @@ export class MarchMap {
     // Insert a new card
   }
 
-  public modifyHP(index, amount, direction) {
+  public handleScriptDamage(attacker, amount, direction) {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards
-    const array = [...Array(9).keys()];
-    array.splice(index, 1);
-    switch (direction) {
-      case march.DIRECTION_RANDOM5: {
-        var i = 0;
-        do {
-          const random = Random.pick(array);
-          const randomIndex = array.indexOf(random);
-          array.splice(randomIndex, 1);
-          if (this.cards[random].isEnemy()) {
-            this.cards[random].modifyHp(amount);
-            if (this.cards[random].isDead()) {
-              (this.cards[random] as Enemy).replaceWithLoot();
-            }
-            i++;
-          }
-        } while (array.length === 0 || i === 5)
-        break;
-      }
-      case march.DIRECTION_ALL: {
-        for (var i = 0; i < 9; i++) {
-          if (!this.cards[i].isPet()) {
-            this.cards[i].replaceWithGold();
-          }
-        }
-        break;
-      }
-      case march.DIRECTION_CROSS: {
-        for (const adjacentIndex in march.ADJACENT_CELLS[index]) {
-          this.cards[adjacentIndex].replaceWithGold();
-        }
-        break;
-      }
-      case march.DIRECTION_CROSS_BOW: {
-        for (const adjacentIndex in march.ADJACENT_CELLS[index]) {
-          this.cards[adjacentIndex].modifyHp(amount);
-        }
-        break;
-      }
-    }
+    this._damage.handleScriptDamage(attacker, this.getIndexOfCard(attacker), amount, direction);
+  }
+
+  private getIndexOfCard(card) {
+    return _.findIndex(this.cards, item => item._id === card.id)
   }
 
   public launchMiniGame(chest: Container) {

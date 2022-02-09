@@ -6,6 +6,12 @@ export class Loot extends Unit {
     this.activate();
   };
 
+  public replaceWithGold(): void {
+    const gold = new Loot(this.map);
+    gold.setUnitClass(march.UNIT_CLASS_GOLD);
+    this.map.replaceCellWith(this, gold);
+  }
+
   public activate(): void {
     switch (this.unitClass) {
       case march.UNIT_CLASS_HP: {

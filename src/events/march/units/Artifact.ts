@@ -1,6 +1,7 @@
 import { Unit } from "../other/UnitClass";
 import { MarchMap } from "../MarchMap";
 import * as march from "../../../knightlands-shared/march";
+import { Loot } from "./Loot";
 
 export class Artifact extends Unit {
   public userStepCallback() {
@@ -19,31 +20,37 @@ export class Artifact extends Unit {
     }
   };
 
+  public replaceWithGold(): void {
+    const gold = new Loot(this.map);
+    gold.setUnitClass(march.UNIT_CLASS_GOLD);
+    this.map.replaceCellWith(this, gold);
+  }
+
   public activate() {
-    let hpModifier = null;
+    let amount = null;
     let direction = null;
     switch (this.unitClass) {
       case march.UNIT_CLASS_BALL_LIGHTNING: {
         direction = march.DIRECTION_RANDOM5;
-        hpModifier = -this.hp;
+        amount = -this.hp;
         break;
       }
       case march.UNIT_CLASS_DRAGON_BREATH: {
         direction = march.DIRECTION_ALL;
-        hpModifier = -1000;
+        amount = -1000;
         break;
       }
       case march.UNIT_CLASS_BOMB: {
         direction = march.DIRECTION_CROSS;
-        hpModifier = -1000;
+        amount = -this.initialHp;
         break;
       }
       case march.UNIT_CLASS_BOW: {
-        hpModifier = this.hp;
-        direction = march.DIRECTION_CROSS_BOW;
+        direction = march.DIRECTION_CROSS;
+        amount = this.hp;
         break;
       }
     }
-    this.map.modifyHP(this, hpModifier, direction);
+    this.map.handleScriptDamage(this, amount, direction);
   };
 }

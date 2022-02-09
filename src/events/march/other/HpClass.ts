@@ -1,6 +1,7 @@
 export class HpClass {
   protected hp: number;
-  public modifyHp(value: number): void {
+  protected initialHp: number;
+  public modifyHp(value: number, modifier: any = null): void {
     this.hp += value;
     if (this.hp <= 0) {
       this.destroy();
@@ -8,6 +9,7 @@ export class HpClass {
   };
   public setHP(value: number): void {
     this.hp = value;
+    this.initialHp = value;
   };
   public getHP(): number {
     return this.hp;
