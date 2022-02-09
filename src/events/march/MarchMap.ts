@@ -58,6 +58,7 @@ export class MarchMap {
 
   public init() {
     this._damage = new MarchDamage(this.cards);
+    this.load(this._state);
   }
 
   protected setCardByIndex(card: Unit, index: number): void {
@@ -104,7 +105,7 @@ export class MarchMap {
   }
 
   // Start the card game from scratch
-  public start() {
+  public restart() {
     // TODO MarchCroupier should return an initial card list
     const initialCardList = [
       { _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
@@ -117,6 +118,12 @@ export class MarchMap {
       { _id: null, unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
       { _id: null, unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
     ] as MarchCard[];
+
+    this._state.pet.armor = 0;
+    this._state.stat.bossesKilled = 0;
+    this._state.stat.penaltySteps = 0;
+    // TODO calculate inital steps count
+    this._state.stat.stepsToNextBoss = null;
 
     this.load({
       stat: this._state.stat,

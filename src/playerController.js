@@ -280,6 +280,14 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.LunarTestAction, this._gameHandler(this._lunarTestAction.bind(this)));
         this._socket.on(Operations.LunarPurchase, this._gameHandler(this._lunarPurchase.bind(this)));
 
+        // March
+        this._socket.on(Operations.MarchLoad, this._gameHandler(this._marchLoad.bind(this)));
+        this._socket.on(Operations.MarchRestartGame, this._gameHandler(this._marchStartNewGame.bind(this)));
+        this._socket.on(Operations.MarchTouch, this._gameHandler(this._marchTouch.bind(this)));
+        this._socket.on(Operations.MarchCollectDailyReward, this._gameHandler(this._marchCollectDailyReward.bind(this)));
+        this._socket.on(Operations.MarchTestAction, this._gameHandler(this._marchTestAction.bind(this)));
+        this._socket.on(Operations.MarchPurchase, this._gameHandler(this._marchPurchase.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -2031,6 +2039,39 @@ class PlayerController extends IPaymentListener {
         throw Errors.IncorrectArguments;
       }
       return this.lunar.purchase(data.shopIndex, data.itemsCount, data.currency);
+    }
+
+    // March
+    async _marchLoad() {
+        return this.march.load();
+    }
+
+    async _marchPurchaseSessionBooster(_, data) {
+        // Check incoming data
+        return this.march.purchaseSessionBooster(data);
+    }
+
+    async _marchStartNewGame() {
+        return this.march.startNewGame();
+    }
+
+    async _marchTouch(_, index) {
+        return this.march.touch(index);
+    }
+
+    async _marchCollectDailyReward() {
+        return this.march.collectDailyReward();
+    }
+
+    async _marchTestAction(_, data) {
+        return this.march.testAction(data.action);
+    }
+
+    async _marchPurchase(_, data) {
+      /*if (data.shopIndex === undefined || data.shopIndex === null || !data.itemsCount || !data.currency) {
+        throw Errors.IncorrectArguments;
+      }*/
+      return this.march.purchase(data);
     }
 }
 

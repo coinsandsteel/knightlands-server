@@ -5,7 +5,6 @@ import { PetState } from "../types";
 
 export class Pet extends Unit implements StepInterface {
   protected _armor: number = 0;
-  protected _unitClass = UNIT_CLASS_PET;
   protected _petClass: number;
   protected _level: number;
 

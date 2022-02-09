@@ -33,11 +33,6 @@ export class MarchController {
       this.generate();
     }
 
-    if (this._saveData && this._saveData.map.cards.length) {
-      this._marchMap.load(this._saveData.map);
-      this._marchMap.start();
-    }
-
     await this._save();
   }
 
@@ -86,18 +81,30 @@ export class MarchController {
     return this.getState();
   }
 
+  async purchaseSessionBooster(data) {
+    
+  }
+
+  async startNewGame() {
+    // Debit one ticket
+
+    // Start the card game from scratch
+    this._marchMap.restart();
+  }
+
+  async touch(index: number) {
+    this._marchMap.touch(index);
+  }
+
+  async collectDailyReward(action) {
+    //await this._marchUser.testAction(action);
+  }
+
   async testAction(action) {
     //await this._marchUser.testAction(action);
   }
 
-  private startGame() {
-    // Debit one ticket
-
-    // Start the card game from scratch
-    this._marchMap.start();
-  }
-
-  public async touch(index: number) {
-    this._marchMap.touch(index);
+  async purchase(data) {
+    
   }
 }
