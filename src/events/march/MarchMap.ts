@@ -10,20 +10,23 @@ import * as march from "../../knightlands-shared/march";
 import { Enemy } from "./units/Enemy";
 import { Loot } from "./units/Loot";
 import { Artifact } from "./units/Artifact";
+import { MarchUser } from "./MarchUser";
 
 export class MarchMap {
   private _state: MarchMapState;
   private _events: MarchEvents;
   private _user: User;
   private _damage: MarchDamage;
+  private _marchUser: MarchUser;
 
   protected cards: Unit[] = [];
   protected activeChest?: Container;
   protected _pet: Pet;
 
-  constructor(state: MarchMapState | null, events: MarchEvents, user: User) {
+  constructor(state: MarchMapState | null, events: MarchEvents, marchUser: MarchUser, user: User) {
     this._events = events;
     this._user = user;
+    this._marchUser = marchUser;
 
     if (state) {
       this._state = state;
@@ -292,7 +295,7 @@ export class MarchMap {
   }
 
   public addGold(amount: number): void {
-
+    this._marchUser.modifyBalance(march.CURRENCY_GOLD, amount);
   }
 
   public exit(): void {

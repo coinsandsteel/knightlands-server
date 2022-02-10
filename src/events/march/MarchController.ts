@@ -59,6 +59,7 @@ export class MarchController {
       this._marchMap = new MarchMap(
         this._saveData ? this._saveData.map : null, 
         this._events,
+        this._marchUser,
         this._user
       );
     }

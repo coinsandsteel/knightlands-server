@@ -1,10 +1,7 @@
 import _ from "lodash";
 import User from "../../user";
-import Game from "../../game";
-import Errors from "../../knightlands-shared/errors";
 import { MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
-import { MarchMap } from "./MarchMap";
 
 export class MarchUser {
     private _state: MarchUserState;
@@ -41,5 +38,10 @@ export class MarchUser {
     }
     
     public async init() {
+    }
+
+    public modifyBalance(currency: string, amount: number) {
+      this._state.balance[currency] += amount;
+      this._events.balance(currency, this._state.balance[currency]);
     }
 }
