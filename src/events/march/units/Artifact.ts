@@ -17,6 +17,9 @@ export class Artifact extends Unit {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
       // swap positions
       this.map.swapPetCellTo(this);
+    } else {
+      this.map.movePetTo(this);
+      this.activate();
     }
   };
 

@@ -176,6 +176,51 @@ export class MarchMap {
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
     //  .getCardByIndex(index).touch()
+    const petIndex = this.getIndexOfCard(this._pet);
+    const targetIndex = this.getIndexOfCard(target);
+
+    const difference = targetIndex - petIndex;
+    const isHorizontalMove = Math.abs(difference) === 1 ? true : false;
+    if (isHorizontalMove) {
+      if ([1, 4, 7].includes(petIndex)) {
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex - difference];
+        this.addCard(petIndex - difference);
+      } else if ([0, 2, 6, 8].includes(petIndex)) {
+        const isMoveDown = [0, 2].includes(petIndex);
+        const factor = isMoveDown ? 1 : -1;
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex + 3 * factor];
+        this.cards[petIndex + 3 * factor] = this.cards[petIndex + 6 * factor];
+        this.addCard(petIndex + 6 * factor);
+      } else if ([3, 5].includes(petIndex)) {
+        const isMoveDown = petIndex === 5;
+        const factor = isMoveDown ? 1 : -1;
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex + 3 * factor];
+        this.addCard(petIndex + 3 * factor);
+      }
+    } else {
+      if ([1, 7].includes(petIndex)) {
+        const isMoveLeft = petIndex === 7;
+        const factor = isMoveLeft ? 1 : -1;
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex + 1 * factor];
+        this.addCard(petIndex + 1 * factor);
+      } else if ([0, 2, 6, 8].includes(petIndex)) {
+        const isMoveLeft = [0, 6].includes(petIndex);
+        const factor = isMoveLeft ? 1 : -1;
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex + 1 * factor];
+        this.cards[petIndex + 1 * factor] = this.cards[petIndex + 2 * factor];
+        this.addCard(petIndex + 2 * factor);
+      } else if ([3, 4, 5].includes(petIndex)) {
+        this.cards[targetIndex] = this._pet;
+        this.cards[petIndex] = this.cards[petIndex - difference];
+        this.addCard(petIndex - difference);
+      }
+    }
+
     this.cards.forEach(card => {
       card.userStepCallback();
     });
@@ -203,7 +248,7 @@ export class MarchMap {
 
   }
 
-  public addCard() {
+  public addCard(newCardIndex: number) {
     // Determine where should cards be added (indexes)
     // Check probabilities and pick a card
     // Insert a new card
@@ -213,8 +258,8 @@ export class MarchMap {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards
-    const attackerIndex = this.getIndexOfCard(attacker);
-    this._damage.handleScriptDamage(attacker, attackerIndex, direction);
+    const attackerOldIndex = this.getIndexOfCard(this.pet);
+    this._damage.handleScriptDamage(attacker, attackerOldIndex, direction);
   }
 
   private getIndexOfCard(card: Unit) {

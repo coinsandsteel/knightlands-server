@@ -9,9 +9,9 @@ export class MarchDamage {
         this._cards = cards;
     }
 
-    handleScriptDamage(attacker: Unit, attackerIndex: number, direction: string): void {
+    handleScriptDamage(attacker: Unit, attackerOldIndex: number, direction: string): void {
         const unitStack = [...Array(9).keys()];
-        unitStack.splice(attackerIndex, 1);
+        unitStack.splice(attackerOldIndex, 1);
         switch (direction) {
             case march.DIRECTION_RANDOM5: {
                 var i = 0;
@@ -39,7 +39,7 @@ export class MarchDamage {
                 break;
             }
             case march.DIRECTION_CROSS: {
-                for (const adjacentIndex in march.ADJACENT_CELLS[attackerIndex]) {
+                for (const adjacentIndex in march.ADJACENT_CELLS[attackerOldIndex]) {
                     const victim = this._cards[adjacentIndex];
                     const currentHpModifier = this.handleDamage(attacker, victim)
                     victim.modifyHp(currentHpModifier);
