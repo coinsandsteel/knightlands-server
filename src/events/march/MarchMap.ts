@@ -180,7 +180,7 @@ export class MarchMap {
     const targetIndex = this.getIndexOfCard(target);
 
     const difference = targetIndex - petIndex;
-    const isHorizontalMove = Math.abs(difference) === 1 ? true : false;
+    const isHorizontalMove = Math.abs(difference) === 1;
     if (isHorizontalMove) {
       if ([1, 4, 7].includes(petIndex)) {
         this.cards[targetIndex] = this._pet;
