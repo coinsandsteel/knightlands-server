@@ -19,4 +19,10 @@ export class MarchEvents {
         game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
         this._events = {};
     }
+
+    balance(currency, balance) {
+        this._events.balance = { 
+          [currency]: balance
+        };
+    }
 }

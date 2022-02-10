@@ -85,7 +85,7 @@ export class MarchMap {
         break;
       }
       case march.UNIT_CLASS_CHEST:
-      case march.UNIT_CLASS_BARRELL:{
+      case march.UNIT_CLASS_BARREL:{
         unit = new Container(card, this);
         break;
       }
@@ -117,7 +117,7 @@ export class MarchMap {
       { _id: null, unitClass: march.UNIT_CLASS_HP, hp: 2 },
       { _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 },
       { _id: null, unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
-      { _id: null, unitClass: march.UNIT_CLASS_BARRELL, hp: 4 },
+      { _id: null, unitClass: march.UNIT_CLASS_BARREL, hp: 4 },
       { _id: null, unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
       { _id: null, unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
     ] as MarchCard[];

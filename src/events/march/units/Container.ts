@@ -1,6 +1,6 @@
 import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
-import { UNIT_CLASS_BARRELL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
+import { UNIT_CLASS_BARREL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
 
 export class Container extends Unit {
@@ -12,7 +12,7 @@ export class Container extends Unit {
   };
 
   public activate(): void {
-    if (this.unitClass === UNIT_CLASS_BARRELL) {
+    if (this.unitClass === UNIT_CLASS_BARREL) {
       this.replaceWithLoot();
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {

@@ -81,7 +81,7 @@ export class MarchDamage {
                     case march.UNIT_CLASS_ENEMY:
                     case march.UNIT_CLASS_ENEMY_BOSS:
                     case march.UNIT_CLASS_TRAP:
-                    case march.UNIT_CLASS_BARRELL:
+                    case march.UNIT_CLASS_BARREL:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR:
                     case march.UNIT_CLASS_BOW:
@@ -99,7 +99,7 @@ export class MarchDamage {
                     case march.UNIT_CLASS_ENEMY:
                     case march.UNIT_CLASS_ENEMY_BOSS:
                     case march.UNIT_CLASS_TRAP:
-                    case march.UNIT_CLASS_BARRELL:
+                    case march.UNIT_CLASS_BARREL:
                     case march.UNIT_CLASS_PET:
                     case march.UNIT_CLASS_HP:
                     case march.UNIT_CLASS_ARMOR:
