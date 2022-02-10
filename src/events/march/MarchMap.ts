@@ -239,13 +239,19 @@ export class MarchMap {
     this._state.stat.penaltySteps = steps;
   }
 
-  public swapPetCellTo(index) {
+  public swapPetCellTo(unit: Unit) {
     // Move pet to index
     // Move next card to old pet's position
+    const petIndex = this.getIndexOfCard(this._pet);
+    const unitIndex = this.getIndexOfCard(unit);
+
+    this.cards[petIndex] = this.cards[unitIndex];
+    this.cards[unitIndex] = this.pet;
   }
 
   public replaceCellWith(oldUnit: Unit, newUnit: Unit) {
-
+    const index = this.getIndexOfCard(oldUnit);
+    this.cards[index] = newUnit;
   }
 
   public addCard(newCardIndex: number) {
