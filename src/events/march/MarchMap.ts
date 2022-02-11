@@ -11,6 +11,7 @@ import { Enemy } from "./units/Enemy";
 import { Loot } from "./units/Loot";
 import { Artifact } from "./units/Artifact";
 import { MarchUser } from "./MarchUser";
+import { MarchCroupier } from "./MarchCroupier";
 
 export class MarchMap {
   private _state: MarchMapState;
@@ -18,6 +19,7 @@ export class MarchMap {
   private _user: User;
   private _damage: MarchDamage;
   private _marchUser: MarchUser;
+  private _marchCroupier: MarchCroupier;
 
   protected cards: Unit[] = [];
   protected activeChest?: Container;
@@ -61,6 +63,7 @@ export class MarchMap {
 
   public init() {
     this._damage = new MarchDamage(this.cards);
+    this._marchCroupier = new MarchCroupier(this);
     this.load(this._state);
   }
 
