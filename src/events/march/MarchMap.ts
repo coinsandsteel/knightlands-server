@@ -61,6 +61,10 @@ export class MarchMap {
     return this._pet;
   }
 
+  get croupier(): MarchCroupier {
+    return this._marchCroupier;
+  }
+
   public init() {
     this._damage = new MarchDamage(this.cards);
     this._marchCroupier = new MarchCroupier(this);
@@ -264,6 +268,8 @@ export class MarchMap {
     // Determine where should cards be added (indexes)
     // Check probabilities and pick a card
     // Insert a new card
+    const card = this._marchCroupier.getCardFromPool();
+    this.cards[newCardIndex] = card;
   }
 
   public handleScriptDamage(attacker: Unit, direction: string): void {
@@ -274,7 +280,7 @@ export class MarchMap {
     this._damage.handleScriptDamage(attacker, attackerOldIndex, direction);
   }
 
-  private getIndexOfCard(card: Unit) {
+  public getIndexOfCard(card: Unit) {
     return _.findIndex(this.cards, item => item.id === card.id)
   }
 
@@ -290,10 +296,12 @@ export class MarchMap {
     // Check key number
     if (this.activeChest.tryToOpen(keyNumber)) {
       // Success
-      this.activeChest.replaceWithLoot();
+      const card = this._marchCroupier.getCardForOpenedChest();
+      this.replaceCellWith(this.activeChest, card);
     } else {
       // Fail
-      this.activeChest.replaceWithEnemy();
+      const card = this._marchCroupier.getCardForDestructedChest();
+      this.replaceCellWith(this.activeChest, card);
     }
   }
 

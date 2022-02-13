@@ -13,17 +13,19 @@ export class Container extends Unit {
 
   public activate(): void {
     if (this.unitClass === UNIT_CLASS_BARREL) {
-      this.replaceWithLoot();
+      this.replaceBarrel();
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
       this.map.launchMiniGame(this);
     }
   }
 
-  public replaceWithLoot(): void {
+  public replaceBarrel(): void {
     // TODO implement
     //const loot = new Loot(class, this.map);
     //this.map.replaceCellWith(this, loot);
+    const card = this.map.croupier.getCardForBarrel(this._hp);
+    this.map.replaceCellWith(this, card);
   }
 
   public setRandomKeyNumber(): void {

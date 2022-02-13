@@ -19,14 +19,14 @@ export class Enemy extends Unit {
 
   private fight(): void {
     const pet = this.map.pet;
-    const initialEnemyHp = this.hp;
+    //const initialEnemyHp = this.hp;
     pet.handleDamage(this.hp);
     if (pet.isDead()) {
       this.map.exit();
     } else {
-      pet.restoreHealth();
-      this.replaceWithLoot();
-      this.map.addGold(initialEnemyHp);
+      //pet.restoreHealth();
+      //this.replaceWithLoot();
+      //this.map.addGold(initialEnemyHp);
       this.map.movePetTo(this);
     }
   }
