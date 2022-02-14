@@ -2,12 +2,23 @@ import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
 import * as march from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
+import { MarchMap } from "../MarchMap";
 
 export class Artifact extends Unit {
+  private timer: number;
+
+  constructor(card: MarchCard, map: MarchMap) {
+    super(card, map);
+
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
+      this.timer = march.BOMB_TIMER;
+    }
+  }
+
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.modifyHp(-1);
-      if (this.hp <= 0) {
+      this.timer--;
+      if (this.timer <= 0) {
         this.activate();
       }
     }
@@ -18,7 +29,6 @@ export class Artifact extends Unit {
       // swap positions
       this.map.swapPetCellTo(this);
     } else {
-      this.map.movePetTo(this);
       this.activate();
     }
   };
@@ -40,7 +50,8 @@ export class Artifact extends Unit {
         break;
       }
     }
-    this.map.handleScriptDamage(this, direction);
+
+    this.map.handleDamage(this, direction);
     this.destroy();
   };
 

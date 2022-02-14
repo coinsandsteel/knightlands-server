@@ -13,6 +13,14 @@ import { Artifact } from "./units/Artifact";
 import { MarchUser } from "./MarchUser";
 import { MarchCroupier } from "./MarchCroupier";
 
+
+export enum ActiveUnits {
+  UNIT_CLASS_BALL_LIGHTNING,
+  UNIT_CLASS_BOMB,
+  UNIT_CLASS_DRAGON_BREATH,
+  UNIT_CLASS_BOW
+};
+
 export class MarchMap {
   private _state: MarchMapState;
   private _events: MarchEvents;
@@ -55,6 +63,10 @@ export class MarchMap {
 
   public getState(): MarchMapState {
     return this._state;
+  }
+
+  get events(): MarchEvents {
+    return this._events;
   }
 
   get pet(): Pet {
@@ -181,60 +193,73 @@ export class MarchMap {
     targetCard.touch();
   }
 
+  protected moveCardTo(unit: Unit, index: number): void {
+    this.cards[index] = unit;
+    this._events.cardMoved(unit.serialize(), index);
+  }
+
   public movePetTo(target: Unit) {
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
-    //  .getCardByIndex(index).touch()
-    const petIndex = this.getIndexOfCard(this._pet);
-    const targetIndex = this.getIndexOfCard(target);
+    const petIndex = this._pet.index;
+    const targetIndex = target.index;
 
     const difference = targetIndex - petIndex;
     const isHorizontalMove = Math.abs(difference) === 1;
     if (isHorizontalMove) {
       if ([1, 4, 7].includes(petIndex)) {
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex - difference];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex - difference], petIndex);
         this.addCard(petIndex - difference);
+
       } else if ([0, 2, 6, 8].includes(petIndex)) {
         const isMoveDown = [0, 2].includes(petIndex);
         const factor = isMoveDown ? 1 : -1;
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex + 3 * factor];
-        this.cards[petIndex + 3 * factor] = this.cards[petIndex + 6 * factor];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex + 3 * factor], petIndex);
+        this.moveCardTo(this.cards[petIndex + 6 * factor], petIndex + 3 * factor);
         this.addCard(petIndex + 6 * factor);
+
       } else if ([3, 5].includes(petIndex)) {
         const isMoveDown = petIndex === 5;
         const factor = isMoveDown ? 1 : -1;
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex + 3 * factor];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex + 3 * factor], petIndex);
         this.addCard(petIndex + 3 * factor);
       }
     } else {
       if ([1, 7].includes(petIndex)) {
         const isMoveLeft = petIndex === 7;
         const factor = isMoveLeft ? 1 : -1;
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex + 1 * factor];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex + 1 * factor], petIndex);
         this.addCard(petIndex + 1 * factor);
+
       } else if ([0, 2, 6, 8].includes(petIndex)) {
         const isMoveLeft = [0, 6].includes(petIndex);
         const factor = isMoveLeft ? 1 : -1;
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex + 1 * factor];
-        this.cards[petIndex + 1 * factor] = this.cards[petIndex + 2 * factor];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex + 1 * factor], petIndex);
+        this.moveCardTo(this.cards[petIndex + 2 * factor], petIndex + 1 * factor);
         this.addCard(petIndex + 2 * factor);
+
       } else if ([3, 4, 5].includes(petIndex)) {
-        this.cards[targetIndex] = this._pet;
-        this.cards[petIndex] = this.cards[petIndex - difference];
+        this.moveCardTo(this._pet, targetIndex);
+        this.moveCardTo(this.cards[petIndex - difference], petIndex);
         this.addCard(petIndex - difference);
       }
     }
 
+    // Touch card
+    target.touch();
+
+    // Callbacks
     this.cards.forEach(card => {
       card.userStepCallback();
     });
 
+    // Reduce penalty
     this.reducePenalty();
   }
 
@@ -252,32 +277,52 @@ export class MarchMap {
   public swapPetCellTo(unit: Unit) {
     // Move pet to index
     // Move next card to old pet's position
-    const petIndex = this.getIndexOfCard(this._pet);
-    const unitIndex = this.getIndexOfCard(unit);
+    const petIndex = this._pet.index;
+    const unitIndex = unit.index;
 
     this.cards[petIndex] = this.cards[unitIndex];
     this.cards[unitIndex] = this.pet;
+
+    this._events.cardMoved(this.pet.serialize(), unitIndex);
+    this._events.cardMoved(unit.serialize(), petIndex);
   }
 
   public replaceCellWith(oldUnit: Unit, newUnit: Unit) {
-    const index = this.getIndexOfCard(oldUnit);
+    const index = oldUnit.index;
     this.cards[index] = newUnit;
+    this._events.newCard(newUnit.serialize(), index);
   }
 
   public addCard(newCardIndex: number) {
-    // Determine where should cards be added (indexes)
-    // Check probabilities and pick a card
-    // Insert a new card
-    const card = this._marchCroupier.getCardFromPool();
-    this.cards[newCardIndex] = card;
+    // Insert a new card via croupier
+    const newCard = this._marchCroupier.getCardFromPool();
+    
+    // Demo
+    /*const newCard = new Loot({
+      unitClass: march.UNIT_CLASS_GOLD,
+      hp: 1
+    } as MarchCard, this);*/
+    
+    this.cards[newCardIndex] = newCard;
+    this._events.newCard(newCard.serialize(), newCardIndex);
   }
 
-  public handleScriptDamage(attacker: Unit, direction: string): void {
+  public handleDamage(attacker: Unit, direction: string): void {
     // Choose cards to attack/heal
     // Modify HP
     // Launch callbacks to all the affected cards
-    const attackerOldIndex = this.getIndexOfCard(this.pet);
-    this._damage.handleScriptDamage(attacker, attackerOldIndex, direction);
+    const victims = this._damage.getVictims(attacker, direction);
+    this._events.effect(
+      attacker.unitClass,
+      attacker.index,
+      victims.map(victim => victim.index)
+    );
+
+    victims.forEach(victim => {
+      const currentHpModifier = this._damage.getHpModifier(attacker, victim)
+      victim.modifyHp(currentHpModifier);
+      this._events.cardHp(victim.serialize(), victim.index);
+    })
   }
 
   public getIndexOfCard(card: Unit) {
