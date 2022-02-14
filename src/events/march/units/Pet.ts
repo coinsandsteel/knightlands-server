@@ -49,10 +49,12 @@ export class Pet extends Unit implements StepInterface {
     if (this._armor <= 0) {
       this._armor = 0;
     }
+    this.map.events.petArmor(value);
   };
-
+  
   public replaceArmor(value): void {
     this._armor = value;
+    this.map.events.petArmor(value);
   };
 
   public restoreHealth(): void {

@@ -86,7 +86,7 @@ export class MarchMap {
   protected setCardByIndex(card: Unit, index: number): void {
     this.cards[index] = card;
     this._state.cards[index] = card.serialize();
-}
+  }
 
   public makeUnit(card: MarchCard): Unit
   {
@@ -141,17 +141,25 @@ export class MarchMap {
       { _id: null, unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
     ] as MarchCard[];
 
+    this.pet.replaceArmor(0);
     this._state.pet.armor = 0;
-    this._state.stat.bossesKilled = 0;
-    this._state.stat.penaltySteps = 0;
+    
     // TODO calculate inital steps count
     this._state.stat.stepsToNextBoss = null;
-
+    this._state.stat.bossesKilled = 0;
+    this._state.stat.penaltySteps = 0;
+    
     this.load({
       stat: this._state.stat,
       pet: this._state.pet,
       cards: initialCardList,
     } as MarchMapState);
+    
+    this._events.pet(this._state.pet);
+    this._events.stat(this._state.stat);
+    this._events.cards(
+      this.cards.map(card => card.serialize())
+    );
   }
 
   public load(state: MarchMapState) {
@@ -309,19 +317,17 @@ export class MarchMap {
 
   public handleDamage(attacker: Unit, direction: string): void {
     // Choose cards to attack/heal
-    // Modify HP
-    // Launch callbacks to all the affected cards
     const victims = this._damage.getVictims(attacker, direction);
     this._events.effect(
       attacker.unitClass,
       attacker.index,
       victims.map(victim => victim.index)
     );
-
+    
+    // Modify HP
     victims.forEach(victim => {
       const currentHpModifier = this._damage.getHpModifier(attacker, victim)
       victim.modifyHp(currentHpModifier);
-      this._events.cardHp(victim.serialize(), victim.index);
     })
   }
 

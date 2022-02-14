@@ -21,9 +21,6 @@ export class Container extends Unit {
   }
 
   public replaceBarrel(): void {
-    // TODO implement
-    //const loot = new Loot(class, this.map);
-    //this.map.replaceCellWith(this, loot);
     const card = this.map.croupier.getCardForBarrel(this._hp);
     this.map.replaceCellWith(this, card);
   }

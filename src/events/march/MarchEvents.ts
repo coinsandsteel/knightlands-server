@@ -2,7 +2,7 @@ import _ from "lodash";
 import { ObjectId } from "mongodb";
 import game from "../../game";
 import events from "../../knightlands-shared/events";
-import { MarchCard } from "./types";
+import { MarchCard, PetState, StatState } from "./types";
 
 const CARDS_ARRAY = [
   null, null, null, 
@@ -51,6 +51,22 @@ export class MarchEvents {
     newCard(card: MarchCard, index: number) {
       this._initSequence();
       this._events.sequence[this._step].cards[index] = card;
+    }
+    
+    cards(cards: MarchCard[]) {
+      this._events.cards = cards;
+    }
+    
+    pet(state: PetState) {
+      this._events.pet = state;
+    }
+
+    petArmor(value: number) {
+      this._events.pet = { ...this._events.pet, armor: value };
+    }
+
+    stat(state: StatState) {
+      this._events.stat = state;
     }
 
     effect(unitClass: string, index: number, target: number[]) {

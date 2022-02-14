@@ -52,7 +52,6 @@ export class Artifact extends Unit {
     }
 
     this.map.handleDamage(this, direction);
-    this.destroy();
   };
 
   public replaceWithGold(): void {

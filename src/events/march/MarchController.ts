@@ -91,10 +91,12 @@ export class MarchController {
 
     // Start the card game from scratch
     this._marchMap.restart();
+    this._events.flush();
   }
 
   async touch(index: number) {
     this._marchMap.touch(index);
+    this._events.flush();
   }
 
   async collectDailyReward(action) {
