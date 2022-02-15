@@ -2049,7 +2049,10 @@ class PlayerController extends IPaymentListener {
 
     async _marchPurchaseSessionBooster(_, data) {
         // Check incoming data
-        return this.march.purchaseSessionBooster(data);
+        if (!isString(data.type)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.march.purchaseSessionBooster(data.type);
     }
 
     async _marchStartNewGame() {

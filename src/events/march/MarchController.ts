@@ -82,8 +82,8 @@ export class MarchController {
     return this.getState();
   }
 
-  async purchaseSessionBooster(data) {
-    
+  async purchaseSessionBooster(type: string) {
+    this._marchUser.modifyPreGameBooster(type, 1);
   }
 
   async startNewGame() {
