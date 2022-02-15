@@ -210,9 +210,8 @@ export class MarchMap {
   }
 
   public movePetTo(target: Unit) {
-    // Touch card
-    target.touch();
-    
+    target.captureIndex();
+
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
@@ -265,6 +264,9 @@ export class MarchMap {
       }
     }
 
+    // Touch card
+    target.touch();
+    
     // Callbacks
     this.cards.forEach(card => {
       card.userStepCallback();

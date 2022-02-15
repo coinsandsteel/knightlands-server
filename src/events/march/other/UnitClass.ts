@@ -10,6 +10,7 @@ export class Unit extends HpClass implements StepInterface {
   protected _map: MarchMap;
   protected _unitClass: string;
   protected _opened: boolean|null = null;
+  protected _capturedIndex: number|null = null;
 
   get map(): MarchMap {
     return this._map;
@@ -20,7 +21,7 @@ export class Unit extends HpClass implements StepInterface {
   }
 
   get index(): number {
-    return this.map.getIndexOfCard(this);
+    return this._capturedIndex || this.map.getIndexOfCard(this);
   }
 
   get opened(): boolean|null {
@@ -53,6 +54,10 @@ export class Unit extends HpClass implements StepInterface {
       this._opened = card.opened;
     }
   }
+
+  public captureIndex(): void {
+    this._capturedIndex = this.index;
+  };
 
   public setOpened(opened: boolean): void {
     this._opened = opened;

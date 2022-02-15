@@ -38,10 +38,9 @@ export class MarchDamage {
           break;
         }
         case march.DIRECTION_CROSS: {
-          for (const adjacentIndex in march.ADJACENT_CELLS[attacker.index]) {
-            // TODO check this._cards[adjacentIndex] is working properly
+          march.ADJACENT_CELLS[attacker.index].forEach(adjacentIndex => {
             victims.push(this._cards[adjacentIndex]);
-          }
+          });
           break;
         }
       }
