@@ -20,7 +20,7 @@ export class MarchCroupier {
   }
 
   get bossSummonAllowed(): boolean {
-    return this._stepCounter >= this.pool.stepsToBoss;
+    return this._stepCounter == this.pool.stepsToBoss;
   }
 
   get stepsToNextBoss(): number {
