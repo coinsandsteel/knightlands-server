@@ -2,10 +2,15 @@ import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
 import { BOOSTER_KEY, UNIT_CLASS_BARREL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
+import random from "../../../random";
 
 export class Container extends Unit {
   protected _opened: boolean = false;
   private _keyNumber: number;
+
+  get keyNumber(): number {
+    return this._keyNumber;
+  }
   
   public touch(): void {
     this.activate();
@@ -35,7 +40,7 @@ export class Container extends Unit {
   }
 
   public setRandomKeyNumber(): void {
-    this._keyNumber = 1;
+    this._keyNumber = random.intRange(0, 2);
   }
 
   public tryToOpen(keyNumber: number): boolean {

@@ -341,6 +341,7 @@ export class MarchMap {
     // Set key number to the chest
     this.activeChest.setRandomKeyNumber();
     // Send an event  to front-end
+    this._events.miniGameReady();
   }
 
   public tryToOpenChest(keyNumber: number) {

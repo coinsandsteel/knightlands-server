@@ -84,6 +84,12 @@ export class MarchController {
 
   async purchaseSessionBooster(type: string) {
     this._marchUser.modifyPreGameBooster(type, 1);
+    this._events.flush();
+  }
+
+  async tryToOpenChest(keyNumber: number) {
+    this._marchMap.tryToOpenChest(keyNumber);
+    this._events.flush();
   }
 
   async startNewGame() {
