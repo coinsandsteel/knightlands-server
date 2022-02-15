@@ -26,7 +26,6 @@ export class Loot extends Unit {
         break;
       }
     }
-    this.map.movePetTo(this);
   }
 
   public destroy(): void { 

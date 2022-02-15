@@ -13,7 +13,6 @@ export class Enemy extends Unit {
       if (this.opened) {
         this.map.enablePenalty(this.hp);
       }
-      this.map.movePetTo(this);
     } else {
       this.fight();
     }
@@ -30,11 +29,12 @@ export class Enemy extends Unit {
         pet.upgradeHP(1);
       }
       this.map.addGold(this.hp);
-      this.map.movePetTo(this);
+      this.map.croupier.upgradePool();
     }
   }
 
   public replaceWithGold(): void {
+    // TODO sync bossesKilled stat
     const newUnit = new Loot({
       unitClass: march.UNIT_CLASS_GOLD,
       hp: this.maxHp,

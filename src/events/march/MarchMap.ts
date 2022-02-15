@@ -80,6 +80,7 @@ export class MarchMap {
   public init() {
     this._damage = new MarchDamage(this.cards);
     this._marchCroupier = new MarchCroupier(this);
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 }) as Pet;
     this.load(this._state);
   }
 
@@ -128,26 +129,20 @@ export class MarchMap {
 
   // Start the card game from scratch
   public restart() {
-    // TODO MarchCroupier should return an initial card list
-    const initialCardList = [
-      { _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 2 },
-      { _id: null, unitClass: march.UNIT_CLASS_ARMOR, hp: 3 },
-      { _id: null, unitClass: march.UNIT_CLASS_CHEST, hp: 5 },
-      { _id: null, unitClass: march.UNIT_CLASS_HP, hp: 2 },
-      { _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 },
-      { _id: null, unitClass: march.UNIT_CLASS_ENEMY, hp: 3 },
-      { _id: null, unitClass: march.UNIT_CLASS_BARREL, hp: 4 },
-      { _id: null, unitClass: march.UNIT_CLASS_TRAP, hp: 1, opened: true },
-      { _id: null, unitClass: march.UNIT_CLASS_EXTRA_HP, hp: 2 },
-    ] as MarchCard[];
-
     this.pet.replaceArmor(0);
     this._state.pet.armor = 0;
     
-    // TODO calculate inital steps count
-    this._state.stat.stepsToNextBoss = null;
+    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
     this._state.stat.penaltySteps = 0;
+    
+    const initialCardList = Array.from(
+      { length: 9 }, 
+      (_, i) => i == 4 ? 
+        this.pet.serialize() 
+        : 
+        this._marchCroupier.getCard(true)
+    ) as MarchCard[];
     
     this.load({
       stat: this._state.stat,
@@ -196,9 +191,12 @@ export class MarchMap {
 
   public touch(index: number) {
     // ###### THE MAIN ENTRY POINT ######
-    // Touch a card
     const targetCard = this.cards[index];
-    targetCard.touch();
+    if (targetCard instanceof Container){
+      targetCard.touch();
+    } else {
+      this.movePetTo(targetCard);
+    }
   }
 
   protected moveCardTo(unit: Unit, index: number): void {
@@ -207,6 +205,9 @@ export class MarchMap {
   }
 
   public movePetTo(target: Unit) {
+    // Touch card
+    target.touch();
+    
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
@@ -259,16 +260,17 @@ export class MarchMap {
       }
     }
 
-    // Touch card
-    target.touch();
-
     // Callbacks
     this.cards.forEach(card => {
       card.userStepCallback();
     });
-
+    
+    // Count a step
+    this._marchCroupier.increaseStepCounter();
+    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     // Reduce penalty
     this.reducePenalty();
+    this._events.stat(this._state.stat);
   }
 
   public reducePenalty(): void {
@@ -303,14 +305,7 @@ export class MarchMap {
 
   public addCard(newCardIndex: number) {
     // Insert a new card via croupier
-    const newCard = this._marchCroupier.getCardFromPool();
-    
-    // Demo
-    /*const newCard = new Loot({
-      unitClass: march.UNIT_CLASS_GOLD,
-      hp: 1
-    } as MarchCard, this);*/
-    
+    const newCard = this._marchCroupier.getCard() as Unit;
     this.cards[newCardIndex] = newCard;
     this._events.newCard(newCard.serialize(), newCardIndex);
   }

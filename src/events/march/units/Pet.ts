@@ -1,4 +1,3 @@
-import { UNIT_CLASS_PET } from "../../../knightlands-shared/march";
 import { Unit } from "../other/UnitClass";
 import { StepInterface } from "../other/StepInterface";
 import { PetState } from "../types";

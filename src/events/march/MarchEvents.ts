@@ -27,10 +27,10 @@ export class MarchEvents {
           // Cards move events
           // New cards events
           // Artifact effect event
-          { cards: null, effect: null },
+          { cards: _.cloneDeep(CARDS_ARRAY), effect: null },
           // New cards events (after any artifact effect)
           // HP changed events
-          { cards: null }
+          { cards: _.cloneDeep(CARDS_ARRAY) }
         ];
       }
     }
@@ -74,7 +74,7 @@ export class MarchEvents {
         throw new Error('Only one effect could be played once!');
       }
       
-      this._events.effect = {
+      this._events.sequence[this._step].effect = {
         unitClass, // Animation type
         index, // Cards array index
         target // "Victim" indexes array
