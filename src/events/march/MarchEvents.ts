@@ -21,6 +21,10 @@ export class MarchEvents {
         this._sequence = 0;
     }
 
+    get sequenceCards() {
+      return this._events.sequence ? this._events.sequence[this._sequence].cards : [];
+    }
+
     protected _initSequence(){
       if (!this._events.sequence) {
         this._events.sequence = [
@@ -35,21 +39,49 @@ export class MarchEvents {
       }
     }
 
-    cardMoved(card: MarchCard, newIndex: number) {
+    cardMoved(card: MarchCard, index: number) {
       this._initSequence();
-      this._events.sequence[this._sequence].cards[newIndex] = { _id: card._id };
-      console.log('Card moved', { _id: card._id, toIndex: newIndex, _sequence: this._sequence });
+
+      let updateValue = { _id: card._id };
+      
+      // Check if card was updated
+      const oldIndex = this.sequenceCards.findIndex(item => item && item._id === card._id);
+      if (oldIndex !== -1) {
+        updateValue = this.sequenceCards[oldIndex];
+        this._events.sequence[this._sequence].cards[oldIndex] = null;
+      }
+      this._events.sequence[this._sequence].cards[index] = updateValue
+
+      console.log('Card moved', { _id: card._id, toIndex: index, _sequence: this._sequence });
     }
     
     cardHp(card: MarchCard, index: number) {
       this._initSequence();
-      this._events.sequence[this._sequence].cards[index] = { _id: card._id, hp: card.hp };
+
+      // Check if card was moved
+      const newIndex = this.sequenceCards.findIndex(item => item && item._id === card._id);
+      index = newIndex === -1 ? index : newIndex;
+
+      if (!this.sequenceCards[index]) {
+        this._events.sequence[this._sequence].cards[index] = { 
+          _id: card._id, 
+          hp: card.hp
+        };
+      } else {
+        this._events.sequence[this._sequence].cards[index] = {
+          ...this._events.sequence[this._sequence].cards[index],
+          hp: card.hp
+        }
+      }
       console.log('Card HP', { _id: card._id, hp: card.hp, _sequence: this._sequence });
     }
     
     newCard(card: MarchCard, index: number) {
       this._initSequence();
-      this._events.sequence[this._sequence].cards[index] = card;
+      // Only one card could be inserted to a position
+      if (!this._events.sequence[this._sequence].cards[index]) {
+        this._events.sequence[this._sequence].cards[index] = card;
+      }
       console.log('New card', { ...card, index, _sequence: this._sequence });
     }
     
@@ -94,6 +126,7 @@ export class MarchEvents {
     }
 
     flush() {
+      console.log('Flush', this._events);
       game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
       this._events = {};
       this._sequence = 0;
