@@ -26,12 +26,10 @@ export class Pet extends Unit implements StepInterface {
   }
 
   public handleDamage(value): void {
-    this.modifyArmor(-value);
-
     if (value > this._armor) {
-      value -= this._armor;
-      this.modifyHp(-value);
+      this.modifyHp(-(value - this._armor));
     }
+    this.modifyArmor(-value);
   };
 
   public upgradeHP(value): void {
@@ -48,7 +46,7 @@ export class Pet extends Unit implements StepInterface {
     if (this._armor <= 0) {
       this._armor = 0;
     }
-    this.map.events.petArmor(value);
+    this.map.events.petArmor(this._armor);
   };
   
   public replaceArmor(value): void {

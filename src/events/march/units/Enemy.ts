@@ -27,9 +27,9 @@ export class Enemy extends Unit {
     } else {
       if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
         pet.upgradeHP(1);
+        this.map.croupier.upgradePool();
       }
       this.map.addGold(this.hp);
-      this.map.croupier.upgradePool();
     }
   }
 

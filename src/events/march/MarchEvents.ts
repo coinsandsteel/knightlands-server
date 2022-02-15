@@ -36,21 +36,21 @@ export class MarchEvents {
     }
 
     cardMoved(card: MarchCard, newIndex: number) {
-      if (this._step > 0) {
-        throw new Error('Moving cards at the 2-nd step is not allowed!');
-      }
       this._initSequence();
       this._events.sequence[this._step].cards[newIndex] = { _id: card._id };
+      console.log('Card moved', { _id: card._id, toIndex: newIndex, step: this._step,  });
     }
     
     cardHp(card: MarchCard, index: number) {
       this._initSequence();
       this._events.sequence[this._step].cards[index] = { _id: card._id, hp: card.hp };
+      console.log('Card HP', { _id: card._id, hp: card.hp, step: this._step });
     }
-
+    
     newCard(card: MarchCard, index: number) {
       this._initSequence();
       this._events.sequence[this._step].cards[index] = card;
+      console.log('New card', { ...card, index, step: this._step });
     }
     
     cards(cards: MarchCard[]) {
@@ -60,25 +60,30 @@ export class MarchEvents {
     pet(state: PetState) {
       this._events.pet = state;
     }
-
+    
     petArmor(value: number) {
       this._events.pet = { ...this._events.pet, armor: value };
+      console.log('Pet armor', { armor: value });
     }
-
+    
     stat(state: StatState) {
       this._events.stat = state;
+      console.log('Stat', state);
     }
-
+    
     effect(unitClass: string, index: number, target: number[]) {
       if (this._step > 0) {
-        throw new Error('Only one effect could be played once!');
+        throw new Error('Only one artifact could be activated!');
       }
+      
+      this._initSequence();
       
       this._events.sequence[this._step].effect = {
         unitClass, // Animation type
         index, // Cards array index
         target // "Victim" indexes array
       };
+      console.log('Effect', { unitClass, index, target, step: this._step });
 
       // Next step of animation (after effect played)
       this.nextStep();
@@ -98,5 +103,6 @@ export class MarchEvents {
       this._events.balance = { 
         [currency]: balance
       };
+      console.log('Balance', { currency, balance });
     }
 }
