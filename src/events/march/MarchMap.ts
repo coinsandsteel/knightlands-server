@@ -80,7 +80,12 @@ export class MarchMap {
   public init() {
     this._damage = new MarchDamage(this.cards);
     this._marchCroupier = new MarchCroupier(this);
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 }) as Pet;
+    var hp = 10;
+    if(this.canUsePreGameBooster(march.BOOSTER_HP)) {
+      hp++;
+      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
+    }
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp }) as Pet;
     this.load(this._state);
   }
 
@@ -353,6 +358,18 @@ export class MarchMap {
 
   public addGold(amount: number): void {
     this._marchUser.modifyBalance(march.CURRENCY_GOLD, amount);
+  }
+
+  public modifyPreGameBooster(type: string, amount: number): void {
+    this._marchUser.modifyPreGameBooster(type, amount);
+  }
+
+  public canUsePreGameBooster(type: string): boolean {
+    const amount = this._marchUser.getState().preGameBoosters[type];
+    if (amount > 0) {
+      return true;
+    }
+    return false;
   }
 
   public exit(): void {

@@ -110,4 +110,9 @@ export class MarchController {
   async purchase(data) {
     
   }
+
+  async gameOver() {
+    this._marchMap.gameOver();
+    this._events.flush();
+  }
 }

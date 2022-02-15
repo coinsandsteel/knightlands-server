@@ -25,7 +25,7 @@ export class MarchUser {
           tickets: 0,
           gold: 0
         },
-        boosters: {
+        preGameBoosters: {
           maxHealth: 0,
           extraLife: 0,
           key: 0,
@@ -43,5 +43,10 @@ export class MarchUser {
     public modifyBalance(currency: string, amount: number) {
       this._state.balance[currency] += amount;
       this._events.balance(currency, this._state.balance[currency]);
+    }
+
+    public modifyPreGameBooster(type: string, amount: number) {
+      this._state.preGameBoosters[type] += amount;
+      this._events.preGameBooster(type, this._state.preGameBoosters[type]);
     }
 }

@@ -8,7 +8,7 @@ export interface MarchUserState {
     tickets: number;
     gold: number;
   };
-  boosters: {
+  preGameBoosters: {
     maxHealth: number;
     extraLife: number;
     key: number;
