@@ -13,12 +13,12 @@ const CARDS_ARRAY = [
 export class MarchEvents {
     private _events: any;
     private _userId: ObjectId;
-    private _step: number;
+    private _sequence: number;
 
     constructor(userId: ObjectId) {
         this._userId = userId;
         this._events = {};
-        this._step = 0;
+        this._sequence = 0;
     }
 
     protected _initSequence(){
@@ -37,20 +37,20 @@ export class MarchEvents {
 
     cardMoved(card: MarchCard, newIndex: number) {
       this._initSequence();
-      this._events.sequence[this._step].cards[newIndex] = { _id: card._id };
-      console.log('Card moved', { _id: card._id, toIndex: newIndex, step: this._step,  });
+      this._events.sequence[this._sequence].cards[newIndex] = { _id: card._id };
+      console.log('Card moved', { _id: card._id, toIndex: newIndex, _sequence: this._sequence });
     }
     
     cardHp(card: MarchCard, index: number) {
       this._initSequence();
-      this._events.sequence[this._step].cards[index] = { _id: card._id, hp: card.hp };
-      console.log('Card HP', { _id: card._id, hp: card.hp, step: this._step });
+      this._events.sequence[this._sequence].cards[index] = { _id: card._id, hp: card.hp };
+      console.log('Card HP', { _id: card._id, hp: card.hp, _sequence: this._sequence });
     }
     
     newCard(card: MarchCard, index: number) {
       this._initSequence();
-      this._events.sequence[this._step].cards[index] = card;
-      console.log('New card', { ...card, index, step: this._step });
+      this._events.sequence[this._sequence].cards[index] = card;
+      console.log('New card', { ...card, index, _sequence: this._sequence });
     }
     
     cards(cards: MarchCard[]) {
@@ -72,31 +72,31 @@ export class MarchEvents {
     }
     
     effect(unitClass: string, index: number, target: number[]) {
-      if (this._step > 0) {
+      if (this._sequence > 0) {
         throw new Error('Only one artifact could be activated!');
       }
       
       this._initSequence();
       
-      this._events.sequence[this._step].effect = {
+      this._events.sequence[this._sequence].effect = {
         unitClass, // Animation type
         index, // Cards array index
         target // "Victim" indexes array
       };
-      console.log('Effect', { unitClass, index, target, step: this._step });
+      console.log('Effect', { unitClass, index, target, step: this._sequence });
 
       // Next step of animation (after effect played)
-      this.nextStep();
+      this.nextSequence();
     }
 
-    nextStep() {
-      this._step++;
+    nextSequence() {
+      this._sequence++;
     }
 
     flush() {
       game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
       this._events = {};
-      this._step = 0;
+      this._sequence = 0;
     }
 
     balance(currency, balance) {
