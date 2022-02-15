@@ -1,6 +1,6 @@
 import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
-import { UNIT_CLASS_BARREL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
+import { BOOSTER_KEY, UNIT_CLASS_BARREL, UNIT_CLASS_CHEST, UNIT_CLASS_ENEMY, UNIT_CLASS_GOLD } from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
 
 export class Container extends Unit {
@@ -16,8 +16,17 @@ export class Container extends Unit {
       this.replaceBarrel();
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
-      this.map.launchMiniGame(this);
+      if(this.map.canUsePreGameBooster(BOOSTER_KEY)) {
+        this.replaceOpenedChest();
+      } else {
+        this.map.launchMiniGame(this);
+      }
     }
+  }
+
+  public replaceOpenedChest(): void {
+    const card = this.map.croupier.getCardForOpenedChest();
+    this.map.replaceCellWith(this, card);
   }
 
   public replaceBarrel(): void {

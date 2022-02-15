@@ -365,8 +365,7 @@ export class MarchMap {
   }
 
   public canUsePreGameBooster(type: string): boolean {
-    const amount = this._marchUser.getState().preGameBoosters[type];
-    if (amount > 0) {
+    if (this._marchUser.getState().preGameBoosters[type] > 0) {
       return true;
     }
     return false;
@@ -377,6 +376,7 @@ export class MarchMap {
   }
 
   public gameOver(): void {
-
+    this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
+    this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
   }
 }

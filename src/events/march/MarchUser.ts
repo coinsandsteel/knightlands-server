@@ -46,7 +46,7 @@ export class MarchUser {
     }
 
     public modifyPreGameBooster(type: string, amount: number) {
-      this._state.preGameBoosters[type] += amount;
+      this._state.preGameBoosters[type] = Math.max(amount + this._state.preGameBoosters[type], 0);
       this._events.preGameBooster(type, this._state.preGameBoosters[type]);
     }
 }
