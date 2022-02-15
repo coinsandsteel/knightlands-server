@@ -358,4 +358,8 @@ export class MarchMap {
   public exit(): void {
 
   }
+
+  public gameOver(): void {
+
+  }
 }

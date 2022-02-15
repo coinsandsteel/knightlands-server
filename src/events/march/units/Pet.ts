@@ -60,6 +60,9 @@ export class Pet extends Unit implements StepInterface {
 
   public activate(): void { return; };
   public touch(): void { return; };
-  public destroy(): void { return; };
+  public destroy(): void { 
+    this._map.gameOver();
+    return; 
+  };
   public userStepCallback(): void { return; };
 }
