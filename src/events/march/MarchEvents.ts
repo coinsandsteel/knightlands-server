@@ -139,11 +139,9 @@ export class MarchEvents {
       console.log('Balance', { currency, balance });
     }
 
-    preGameBooster(type: string, amount: number) {
-      this._events.preGameBooster = { 
-        [type]: amount
-      };
-      console.log('PreGameBooster', { type, amount });
+    preGameBoosters(preGameBoosters) {
+      this._events.preGameBoosters = preGameBoosters;
+      console.log('PreGameBoosters', { preGameBoosters: this._events.preGameBoosters });
     }
 
     miniGameReady() {
