@@ -18,33 +18,30 @@ export class Container extends Unit {
 
   public activate(): void {
     if (this.unitClass === UNIT_CLASS_BARREL) {
-      this.replaceBarrel();
+      this.open(true);
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
       if(this.map.canUsePreGameBooster(BOOSTER_KEY)) {
-        this.replaceOpenedChest();
+        this.open(true);
       } else {
         this.map.launchMiniGame(this);
       }
     }
   }
 
-  public replaceOpenedChest(): void {
-    const card = this.map.croupier.getCardForOpenedChest();
-    this.map.replaceCellWith(this, card);
+  public open(success: boolean): void {
+    const loot = this.map.croupier.getContainerLoot(this, success);
+    this.map.replaceCellWith(this, loot);
   }
 
-  public replaceBarrel(): void {
-    const card = this.map.croupier.getCardForBarrel(this._hp);
-    this.map.replaceCellWith(this, card);
+  public tryToOpenChest(key: number): void {
+    const result = this._keyNumber == key;
+    this.open(result);
+    this.map.events.miniGameResult(result);
   }
 
   public setRandomKeyNumber(): void {
     this._keyNumber = random.intRange(0, 2);
-  }
-
-  public tryToOpen(keyNumber: number): boolean {
-    return this._keyNumber === keyNumber;
   }
 
   public replaceWithGold(): void {

@@ -29,7 +29,7 @@ export class Enemy extends Unit {
         pet.upgradeHP(1);
         this.map.croupier.upgradePool();
       }
-      this.map.addGold(this.maxHp);
+      this.map.addGold(this.hp);
     }
   }
 

@@ -21,7 +21,7 @@ export class Unit extends HpClass implements StepInterface {
   }
 
   get index(): number {
-    return this._capturedIndex || this.map.getIndexOfCard(this);
+    return this._capturedIndex !== null ? this._capturedIndex : this.map.getIndexOfCard(this);
   }
 
   get opened(): boolean|null {

@@ -3,6 +3,7 @@ import { MarchMap } from "./MarchMap";
 import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import { MarchCard } from "./types";
+import { Container } from "./units/Container";
 
 export class MarchCroupier {
   protected _map: MarchMap;
@@ -80,37 +81,11 @@ export class MarchCroupier {
     this.resetStepCounter();
   }
 
-  public getCardForBarrel(barrelHp: number): Unit {
-    /*
-    const random = Random.intRange(0, 3);
-    march.UNIT_CLASS_ARMOR
-    march.UNIT_CLASS_HP
-    march.UNIT_CLASS_BOW
-    march.UNIT_CLASS_ENEMY
-    */
-    return this._map.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 1 });
-  }
-
-  public getCardForOpenedChest(): Unit {
-    /*
-    const random = Random.intRange(0, 3);
-    march.UNIT_CLASS_EXTRA_HP
-    march.UNIT_CLASS_BALL_LIGHTNING
-    march.UNIT_CLASS_DRAGON_BREATH
-    march.UNIT_CLASS_BOMB
-    */
-    return this._map.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 1 });
-  }
-
-  public getCardForDestructedChest(): Unit {
-    /*  
-    const random = Random.intRange(0, 4);
-    march.UNIT_CLASS_ENEMY
-    march.UNIT_CLASS_ARMOR
-    march.UNIT_CLASS_HP
-    march.UNIT_CLASS_BOW
-    march.UNIT_CLASS_TRAP
-    */
-    return this._map.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_GOLD, hp: 1 });
+  public getContainerLoot(container: Container, opened: boolean): Unit {
+    const unitClasses = march.UNIT_LOOT[container.unitClass + (opened ? '+' : '-')];
+    const unitClass = unitClasses[Random.intRange(0, unitClasses.length - 1)];
+    const hp = null;
+    const loot = this._map.makeUnit({ _id: null, unitClass, hp: hp || container.hp });
+    return loot;
   }
 }
