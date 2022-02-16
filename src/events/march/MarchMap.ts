@@ -351,10 +351,12 @@ export class MarchMap {
     if (this.activeChest.tryToOpen(keyNumber)) {
       // Success
       const card = this._marchCroupier.getCardForOpenedChest();
+      this._events.miniGameResult(true);
       this.replaceCellWith(this.activeChest, card);
     } else {
       // Fail
       const card = this._marchCroupier.getCardForDestructedChest();
+      this._events.miniGameResult(false);
       this.replaceCellWith(this.activeChest, card);
     }
   }

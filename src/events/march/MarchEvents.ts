@@ -152,4 +152,11 @@ export class MarchEvents {
       };
       console.log('MiniGameReady');
     }
+
+    miniGameResult(isSuccess: boolean) {
+      this._events.miniGameResult = { 
+        isSuccess
+      };
+      console.log('MiniGameResult', { isSuccess });
+    }
 }
