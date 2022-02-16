@@ -197,7 +197,11 @@ export class MarchMap {
   public touch(index: number) {
     // ###### THE MAIN ENTRY POINT ######
     const targetCard = this.cards[index];
-    if (targetCard instanceof Container){
+    if (
+      targetCard instanceof Container
+      ||
+      targetCard.unitClass === march.UNIT_CLASS_BOMB
+    ){
       targetCard.touch();
     } else {
       this.movePetTo(targetCard);

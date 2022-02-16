@@ -52,6 +52,10 @@ export class Artifact extends Unit {
     }
 
     this.map.handleDamage(this, direction);
+
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
+      this.replaceWithGold();
+    }
   };
 
   public replaceWithGold(): void {

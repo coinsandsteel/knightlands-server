@@ -9,13 +9,7 @@ export class Enemy extends Unit {
   }  
   
   public activate(){
-    if (this.unitClass === march.UNIT_CLASS_TRAP) {
-      if (this.opened) {
-        this.map.enablePenalty(this.hp);
-      }
-    } else {
-      this.fight();
-    }
+    this.fight();
   }  
 
   private fight(): void {
@@ -28,6 +22,9 @@ export class Enemy extends Unit {
       if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
         pet.upgradeHP(1);
         this.map.croupier.upgradePool();
+      }
+      if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
+        this.map.enablePenalty(this.hp);
       }
       this.map.addGold(this.hp);
     }
