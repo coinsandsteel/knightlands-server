@@ -34,6 +34,13 @@ export class MarchUser {
           key: 0,
         },
         dailyRewards: this.getInitialDailyrewards(),
+        pets: [
+          {
+            petClass: 1,
+            level: 1,
+            goldCollected: 0
+          }
+        ]
       } as MarchUserState;
     }
 
