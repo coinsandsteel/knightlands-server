@@ -63,8 +63,23 @@ export class MarchUser {
           quantity: day,
         });
       }
+      this.setActiveReward();
       return entries;
     }
+
+    async setActiveReward() {
+      this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
+        const isCurrentDay = index+1 === this.day;
+        const newEntry = {
+          ...entry,
+          active: isCurrentDay,
+        };
+        return newEntry;
+      });
+      this._events.dailyRewards(this._state.dailyRewards);
+      this._events.flush();
+    }
+
     async collectDailyLunarReward() {
       const entry = this._state.dailyRewards[this.day - 1];
 
@@ -88,6 +103,7 @@ export class MarchUser {
     
     public async init() {
       this.setEventDay();
+      this.setActiveReward();
     }
 
     public modifyBalance(currency: string, amount: number) {
