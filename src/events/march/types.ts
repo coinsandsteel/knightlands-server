@@ -14,6 +14,13 @@ export interface MarchUserState {
     key: number;
   };
   dailyRewards: MarchRewardDayData[];
+  pets: MarchPetData[];
+}
+
+export interface MarchPetData {
+  petClass: number;
+  level: number;
+  goldCollected: number;
 }
 
 export interface MarchRewardDayData {

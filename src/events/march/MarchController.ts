@@ -113,6 +113,14 @@ export class MarchController {
     //await this._marchUser.testAction(action);
   }
 
+  async unlockPet(petClass: number) {
+    await this._marchUser.unlockPet(petClass);
+  }
+
+  async upgradePet(petClass: number) {
+    await this._marchUser.upgradePet(petClass);
+  }
+
   async purchase(data) {
     
   }

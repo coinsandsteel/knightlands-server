@@ -1,6 +1,6 @@
 import _ from "lodash";
 import User from "../../user";
-import { MarchRewardDayData, MarchUserState } from "./types";
+import { MarchPetData, MarchRewardDayData, MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
 import Errors from "../../knightlands-shared/errors";
 import Game from "../../game";
@@ -94,6 +94,34 @@ export class MarchUser {
       this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
       this._events.dailyRewards(this._state.dailyRewards);
+      this._events.flush();
+    }
+
+    async unlockPet(petClass: number) {
+      const pet = this._state.pets.find((pet) => pet.petClass === petClass);
+      if (pet) {
+        throw Errors.MarchPetUnlocked;
+      }
+
+      this._state.pets.push({ petClass, level: 1, goldCollected: 0});
+
+      this._events.pets(this._state.pets);
+      this._events.flush();
+    }
+
+    async upgradePet(petClass: number) {
+      const index = this._state.pets.findIndex((pet) => pet.petClass === petClass);
+      if (index === -1) {
+        throw Errors.MarchPetNotUnlocked;
+      }
+      const pet = this._state.pets[index];
+      if (pet.level === 3) {
+        throw Errors.MarchPetMaxLevel;
+      }
+
+      this._state.pets[index].level += 1;
+
+      this._events.pets(this._state.pets);
       this._events.flush();
     }
     

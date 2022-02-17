@@ -162,4 +162,9 @@ export class MarchEvents {
       this._events.dailyRewards = entries;
       console.log('marchDailyRewards', { entries });
     }
+
+    pets(entries) {
+      this._events.pets = entries;
+      console.log('marchPets', { entries });
+    }
 }

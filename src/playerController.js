@@ -289,6 +289,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.MarchPurchase, this._gameHandler(this._marchPurchase.bind(this)));
         this._socket.on(Operations.MarchOpenChest, this._gameHandler(this._marchOpenChest.bind(this)));
         this._socket.on(Operations.MarchPurchasePreGameBooster, this._gameHandler(this._marchPurchasePreGameBooster.bind(this)));
+        this._socket.on(Operations.MarchUnlockPet, this._gameHandler(this._marchUnlockPet.bind(this)));
+        this._socket.on(Operations.MarchUpgradePet, this._gameHandler(this._marchUpgradePet.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2074,6 +2076,20 @@ class PlayerController extends IPaymentListener {
 
     async _marchTestAction(_, data) {
         return this.march.testAction(data.action);
+    }
+
+    async _marchUnlockPet(_, data) {
+        if (!isNumber(data.petClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.march.unlockPet(data.petClass);
+    }
+
+    async _marchUpgradePet(_, data) {
+        if (!isNumber(data.petClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.march.upgradePet(data.petClass);
     }
 
     async _marchPurchase(_, data) {
