@@ -332,8 +332,9 @@ export class MarchMap {
     
     // Modify HP
     victims.forEach(victim => {
-      const currentHpModifier = this._damage.getHpModifier(attacker, victim)
+      const currentHpModifier = this._damage.getHpModifier(attacker, victim);
       victim.modifyHp(currentHpModifier);
+      console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
     })
   }
 

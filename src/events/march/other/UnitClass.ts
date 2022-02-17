@@ -84,7 +84,11 @@ export class Unit extends HpClass implements StepInterface {
 
   public modifyHp(hpModifier: number): void {
     this._hp += hpModifier;
-    if (this._hp > this._maxHp) {
+    if (
+      this.unitClass !== march.UNIT_CLASS_BOW
+      &&
+      this._hp > this._maxHp
+    ) {
       this._hp = this._maxHp;
     }
 

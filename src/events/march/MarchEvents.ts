@@ -52,7 +52,7 @@ export class MarchEvents {
       }
       this._events.sequence[this._sequence].cards[index] = updateValue
 
-      console.log('Card moved', { _id: card._id, toIndex: index, _sequence: this._sequence });
+      console.log('Card moved', { _id: card._id, unitClass: card.unitClass, hp: card.hp, toIndex: index, _sequence: this._sequence });
     }
     
     cardHp(card: MarchCard, index: number) {
@@ -73,7 +73,7 @@ export class MarchEvents {
           hp: card.hp
         }
       }
-      console.log('Card HP', { _id: card._id, hp: card.hp, _sequence: this._sequence });
+      console.log('Card HP', { _id: card._id, unitClass: card.unitClass, hp: card.hp, _sequence: this._sequence });
     }
     
     newCard(card: MarchCard, index: number) {
