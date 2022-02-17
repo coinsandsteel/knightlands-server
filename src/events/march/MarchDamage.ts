@@ -39,7 +39,11 @@ export class MarchDamage {
         }
         case march.DIRECTION_CROSS: {
           march.ADJACENT_CELLS[attacker.index].forEach(adjacentIndex => {
-            victims.push(this._cards[adjacentIndex]);
+            let victim = this._cards[adjacentIndex];
+            let damage = this.getHpModifier(attacker, victim);
+            if (damage !== 0) {
+              victims.push(victim);
+            }
           });
           break;
         }

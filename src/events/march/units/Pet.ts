@@ -50,6 +50,14 @@ export class Pet extends Unit implements StepInterface {
   };
   
   public replaceArmor(value): void {
+    if (value <= this._armor) {
+      return;
+    }
+    this._armor = value;
+    this.map.events.petArmor(value);
+  };
+
+  public setArmor(value): void {
     this._armor = value;
     this.map.events.petArmor(value);
   };
@@ -62,7 +70,6 @@ export class Pet extends Unit implements StepInterface {
   public touch(): void { return; };
   public destroy(): void { 
     this._map.gameOver();
-    return; 
   };
   public userStepCallback(): void { return; };
 }

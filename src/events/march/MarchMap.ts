@@ -134,7 +134,7 @@ export class MarchMap {
 
   // Start the card game from scratch
   public restart() {
-    this.pet.replaceArmor(0);
+    this.pet.setArmor(0);
     this._state.pet.armor = 0;
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
