@@ -84,6 +84,7 @@ export class Unit extends HpClass implements StepInterface {
 
   public modifyHp(hpModifier: number): void {
     this._hp += hpModifier;
+    
     if (
       this.unitClass !== march.UNIT_CLASS_BOW
       &&
@@ -93,12 +94,7 @@ export class Unit extends HpClass implements StepInterface {
     }
 
     if (this.isDead()) {
-      if (this.unitClass === march.UNIT_CLASS_PET && this.map.canUsePreGameBooster(march.BOOSTER_LIFE)) {
-        this._hp = this.maxHp;
-        this.map.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
-      } else {
-        this.destroy();
-      }
+      this.destroy();
     }
 
     if (hpModifier) {

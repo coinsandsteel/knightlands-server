@@ -103,9 +103,16 @@ export class MarchCroupier {
     this.resetStepCounter();
   }
 
-  public getContainerLoot(container: Container, opened: boolean): Unit {
-    const unitClasses = march.UNIT_LOOT[container.unitClass + (opened ? '+' : '-')];
+  public getContainerLoot(container: Container, positive: boolean): Unit {
+    const unitClasses = march.UNIT_LOOT[container.unitClass + (positive ? '+' : '-')];
     const unitClass = unitClasses[Random.intRange(0, unitClasses.length - 1)];
+    let hp = container.hp;
+    if ([
+      march.UNIT_CLASS_EXTRA_HP, 
+      march.UNIT_CLASS_DRAGON_BREATH
+    ].includes(unitClass)) {
+      hp = 0;
+    }
     const loot = this._map.makeUnit({ _id: null, unitClass, hp: container.hp });
     return loot;
   }

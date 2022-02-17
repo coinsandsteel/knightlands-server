@@ -78,12 +78,12 @@ export class MarchMap {
   }
 
   public init() {
-    this._damage = new MarchDamage(this.cards, this.pet);
-    this._marchCroupier = new MarchCroupier(this);
-
     this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
     this._pet.reset();
     
+    this._damage = new MarchDamage(this.cards, this.pet);
+    this._marchCroupier = new MarchCroupier(this);
+
     this.load(this._state);
   }
 

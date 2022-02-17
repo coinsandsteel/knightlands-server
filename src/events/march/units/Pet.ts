@@ -3,6 +3,7 @@ import { Unit } from "../other/UnitClass";
 import { StepInterface } from "../other/StepInterface";
 import { PetState } from "../types";
 import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
+import * as march from "../../../knightlands-shared/march";
 
 /*
 Pet class #3. 
@@ -85,20 +86,37 @@ export class Pet extends Unit implements StepInterface {
   public restoreHealth(): void {
     this._hp = this._maxHp;
   }
-
-  public modifyHp(value: number): void {
-    if (value < 0 && this.serial === 'C3L2') {
-      value += Random.intRange(0, 1);
+  
+  public modifyHp(hpModifier: number): void {
+    if (hpModifier < 0 && this.serial === 'C3L2') {
+      hpModifier += Random.intRange(0, 1);
     }
-    this._hp += value;
-    if (this._hp <= 0) {
-      this.destroy();
+    
+    this._hp += hpModifier;
+    
+    if (this._hp > this._maxHp) {
+      this._hp = this._maxHp;
+    }
+
+    if (this.isDead()) {
+      if (this.map.canUsePreGameBooster(march.BOOSTER_LIFE)) {
+        this._hp = this.maxHp;
+        this.map.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
+      } else {
+        this.destroy();
+      }
+    }
+
+    if (hpModifier) {
+      this.map.events.cardHp(this.serialize(), this.index);
     }
   };
   
   public activate(): void { return; };
   public touch(): void { return; };
   public destroy(): void { 
+    // TODO Why is it here? 
+    // Should it be reset instead of decreased?
     this.map.modifyPreGameBooster(BOOSTER_KEY, -1);
     this.map.modifyPreGameBooster(BOOSTER_LIFE, -1);
   };
