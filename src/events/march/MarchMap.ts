@@ -372,9 +372,4 @@ export class MarchMap {
   public exit(): void {
 
   }
-
-  public gameOver(): void {
-    this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
-    this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
-  }
 }

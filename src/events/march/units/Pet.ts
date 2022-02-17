@@ -1,6 +1,7 @@
 import { Unit } from "../other/UnitClass";
 import { StepInterface } from "../other/StepInterface";
 import { PetState } from "../types";
+import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
 
 export class Pet extends Unit implements StepInterface {
   protected _armor: number = 0;
@@ -69,7 +70,8 @@ export class Pet extends Unit implements StepInterface {
   public activate(): void { return; };
   public touch(): void { return; };
   public destroy(): void { 
-    this._map.gameOver();
+    this.map.modifyPreGameBooster(BOOSTER_KEY, -1);
+    this.map.modifyPreGameBooster(BOOSTER_LIFE, -1);
   };
   public userStepCallback(): void { return; };
 }
