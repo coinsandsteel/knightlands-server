@@ -157,4 +157,9 @@ export class MarchEvents {
       };
       console.log('MiniGameResult', { isSuccess });
     }
+
+    dailyRewards(entries) {
+      this._events.dailyRewards = entries;
+      console.log('marchDailyRewards', { entries });
+    }
 }

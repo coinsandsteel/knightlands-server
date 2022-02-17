@@ -2,6 +2,8 @@ import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
 import Game from "../../game";
+import { TICKET_ITEM_ID } from "../../knightlands-shared/march";
+import { MarchItem } from "./types";
 
 export class MarchManager {
   private _meta: any;
@@ -48,5 +50,18 @@ export class MarchManager {
 
   getMeta() {
     return this._meta;
+  }
+
+  getEventTicketItems(count) {
+    const ticketItem =  Game.itemTemplates._items().findOne({ id: TICKET_ITEM_ID });
+
+    const item: MarchItem = {
+      id: ticketItem.id,
+      template: ticketItem.id,
+      caption: ticketItem.caption,
+      quantity: count
+    }
+
+    return item;
   }
 }

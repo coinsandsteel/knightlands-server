@@ -12,9 +12,16 @@ export interface MarchUserState {
     maxHealth: number;
     extraLife: number;
     key: number;
-  }
+  };
+  dailyRewards: MarchRewardDayData[];
 }
 
+export interface MarchRewardDayData {
+  collected: boolean;
+  quantity: number;
+  active: boolean;
+  date?: string;
+}
 export interface MarchMapState {
   stat: StatState;
   pet: PetState;
@@ -40,5 +47,9 @@ export interface PetState {
   level: number;
   armor: number;
 }
-
-
+export interface MarchItem {
+  id: number;
+  template: number;
+  caption: string;
+  quantity: number;
+}
