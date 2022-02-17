@@ -23,7 +23,8 @@ export class MarchDamage {
             const randomNumber = Random.pick(unitStack);
             const randomIndex = unitStack.indexOf(randomNumber);
             const victim = this._cards[randomNumber];
-            if (victim.isEnemy) {
+            let damage = this.getHpModifier(attacker, victim);
+            if (victim.isEnemy && damage !== 0) {
               victims.push(victim);
               i++;
             }
@@ -32,12 +33,12 @@ export class MarchDamage {
           break;
         }
         case march.DIRECTION_ALL: {
-          for (var i = 0; i < 9; i++) {
-            const victim = this._cards[i];
-              if (!victim.isPet) {
-                victims.push(victim);
-              }
-          }
+          this._cards.forEach(victim => {
+            let damage = this.getHpModifier(attacker, victim);
+            if (damage !== 0) {
+              victims.push(victim);
+            }
+          });
           break;
         }
         case march.DIRECTION_CROSS: {

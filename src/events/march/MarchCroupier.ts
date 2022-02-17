@@ -16,6 +16,13 @@ export class MarchCroupier {
     this._poolNumber = 0;
     this._stepCounter = 0;
     this._queue = [
+      march.UNIT_CLASS_EXTRA_HP,
+      march.UNIT_CLASS_BALL_LIGHTNING,
+      march.UNIT_CLASS_DRAGON_BREATH,
+      march.UNIT_CLASS_BOMB,
+      march.UNIT_CLASS_HP,
+      march.UNIT_CLASS_BOW,
+      march.UNIT_CLASS_ENEMY,
       march.UNIT_CLASS_ENEMY,
       march.UNIT_CLASS_BOW,
       march.UNIT_CLASS_ENEMY,
@@ -24,15 +31,8 @@ export class MarchCroupier {
       march.UNIT_CLASS_ARMOR,
       march.UNIT_CLASS_BOMB,
       march.UNIT_CLASS_HP,
+      march.UNIT_CLASS_ARMOR,
       march.UNIT_CLASS_BOW,
-      //march.UNIT_CLASS_ARMOR,
-      //march.UNIT_CLASS_EXTRA_HP,
-      //march.UNIT_CLASS_BALL_LIGHTNING,
-      //march.UNIT_CLASS_DRAGON_BREATH,
-      //march.UNIT_CLASS_BOMB,
-      //march.UNIT_CLASS_HP,
-      //march.UNIT_CLASS_BOW,
-      //march.UNIT_CLASS_ENEMY,
     ];
   }
 
@@ -54,10 +54,21 @@ export class MarchCroupier {
       unitClass = this.getUnitClassByProbability();
     }
 
-    const hp = Random.intRange(
-      this.pool.unitStat[unitClass] ? this.pool.unitStat[unitClass].min : 1,
-      this.pool.unitStat[unitClass] ? this.pool.unitStat[unitClass].max : 5
-    );
+    let hp = 0;
+    if (
+      [
+        march.UNIT_CLASS_EXTRA_HP,
+        march.UNIT_CLASS_DRAGON_BREATH
+      ].includes(unitClass)
+    ) {
+      hp = 0;
+    } else {
+      hp = Random.intRange(
+        this.pool.unitStat[unitClass] ? this.pool.unitStat[unitClass].min : 1,
+        this.pool.unitStat[unitClass] ? this.pool.unitStat[unitClass].max : 5
+      );
+    }
+    
     const blueprint = { _id: null, unitClass, hp };
 
     if (returnBlueprint) {
@@ -113,7 +124,7 @@ export class MarchCroupier {
     ].includes(unitClass)) {
       hp = 0;
     }
-    const loot = this._map.makeUnit({ _id: null, unitClass, hp: container.hp });
+    const loot = this._map.makeUnit({ _id: null, unitClass, hp });
     return loot;
   }
 }

@@ -16,7 +16,7 @@ export class Loot extends Unit {
         break;
       }
       case march.UNIT_CLASS_EXTRA_HP: {
-        this.map.pet.upgradeHP(this.hp);
+        this.map.pet.upgradeHP(1);
         break;
       }
       case march.UNIT_CLASS_ARMOR: {

@@ -52,8 +52,8 @@ export class Pet extends Unit implements StepInterface {
   };
 
   public upgradeHP(value): void {
-    this.modifyHp(value);
     this.modifyMaxHP(value);
+    this.modifyHp(value);
   };
 
   public modifyMaxHP(value): void {
