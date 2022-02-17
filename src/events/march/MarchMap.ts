@@ -78,14 +78,12 @@ export class MarchMap {
   }
 
   public init() {
-    this._damage = new MarchDamage(this.cards);
+    this._damage = new MarchDamage(this.cards, this.pet);
     this._marchCroupier = new MarchCroupier(this);
-    var hp = 10;
-    if(this.canUsePreGameBooster(march.BOOSTER_HP)) {
-      hp++;
-      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
-    }
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp }) as Pet;
+
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
+    this._pet.reset();
+    
     this.load(this._state);
   }
 
@@ -134,8 +132,12 @@ export class MarchMap {
 
   // Start the card game from scratch
   public restart() {
-    this.pet.setArmor(0);
-    this._state.pet.armor = 0;
+    this.pet.reset();
+
+    if (this.canUsePreGameBooster(march.BOOSTER_HP)) {
+      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
+      this.pet.modifyMaxHP(1);
+    }
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;

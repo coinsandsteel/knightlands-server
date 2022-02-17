@@ -1,7 +1,20 @@
+import Random from "../../../random";
 import { Unit } from "../other/UnitClass";
 import { StepInterface } from "../other/StepInterface";
 import { PetState } from "../types";
 import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
+
+/*
+Pet class #3. 
+III level Extra life at the start of the session
+
+Pet class #4. 
+II level +20% extra Gold per session
+
+Pet class #5. 
+II level HP can exceed the maximum, but if the maximum is exceeded, then the booster does not have an effect
+III level Turns armor into ball lightning
+*/
 
 export class Pet extends Unit implements StepInterface {
   protected _armor: number = 0;
@@ -16,6 +29,10 @@ export class Pet extends Unit implements StepInterface {
 
   get armor(): number {
     return this._armor;
+  }
+
+  get serial(): string {
+    return `C${this._petClass}L${this._level}`;
   }
 
   protected serializeState(): PetState {
@@ -58,15 +75,27 @@ export class Pet extends Unit implements StepInterface {
     this.map.events.petArmor(value);
   };
 
-  public setArmor(value): void {
-    this._armor = value;
-    this.map.events.petArmor(value);
+  public reset(): void {
+    const hpBonus = this.serial === 'C3L1' ? 1 : 0;
+    this._armor = 0;
+    this._maxHp = 10 + hpBonus;
+    this.restoreHealth();
   };
 
   public restoreHealth(): void {
     this._hp = this._maxHp;
   }
 
+  public modifyHp(value: number): void {
+    if (value < 0 && this.serial === 'C3L2') {
+      value += Random.intRange(0, 1);
+    }
+    this._hp += value;
+    if (this._hp <= 0) {
+      this.destroy();
+    }
+  };
+  
   public activate(): void { return; };
   public touch(): void { return; };
   public destroy(): void { 

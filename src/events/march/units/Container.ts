@@ -18,10 +18,14 @@ export class Container extends Unit {
 
   public activate(): void {
     if (this.unitClass === UNIT_CLASS_BARREL) {
-      this.open(true);
+      this.open(this.map.pet.serial === 'C5L1');
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
-      if(this.map.canUsePreGameBooster(BOOSTER_KEY)) {
+      if(
+        this.map.canUsePreGameBooster(BOOSTER_KEY)
+        ||
+        this.map.pet.serial === 'C4L3'
+      ) {
         this.open(true);
       } else {
         this.map.launchMiniGame(this);

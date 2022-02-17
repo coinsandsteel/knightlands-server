@@ -1,12 +1,15 @@
 import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import Random from "../../random";
+import { Pet } from "./units/Pet";
 
 export class MarchDamage {
     private _cards: Unit[];
+    private _pet: Pet;
 
-    constructor(cards: Unit[]) {
-        this._cards = cards;
+    constructor(cards: Unit[], pet: Pet) {
+      this._cards = cards;
+      this._pet = pet;
     }
 
     public getVictims(attacker: Unit, direction: string): Unit[] {
@@ -64,16 +67,18 @@ export class MarchDamage {
           break;
         }
         case march.UNIT_CLASS_BOW: {
+          let bonus = this._pet.serial === 'C2L1' ? 1 : 0;
           switch(victim.unitClass) {
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:
             case march.UNIT_CLASS_TRAP:
             case march.UNIT_CLASS_HP:
             case march.UNIT_CLASS_ARMOR: {
-              return -attacker.hp;
+              return -(attacker.hp + bonus);
             }
             case march.UNIT_CLASS_BOW:{
-              return attacker.hp;
+              let stackBonus = this._pet.serial === 'C2L2' ? 2 : 0;
+              return attacker.hp + bonus + stackBonus;
             }
           }
           break;
@@ -98,11 +103,13 @@ export class MarchDamage {
         }
         case march.UNIT_CLASS_BOMB: {
           switch(victim.unitClass) {
+            case march.UNIT_CLASS_PET:{
+              return this._pet.serial === 'C2L3' ? 0 : -attacker.hp;
+            }
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:
             case march.UNIT_CLASS_TRAP:
             case march.UNIT_CLASS_BARREL:
-            case march.UNIT_CLASS_PET:
             case march.UNIT_CLASS_HP:
             case march.UNIT_CLASS_ARMOR:
             case march.UNIT_CLASS_BOW:

@@ -1,4 +1,4 @@
-import { Unit } from "../other/UnitClass";
+ import { Unit } from "../other/UnitClass";
 import { Loot } from "../units/Loot";
 import * as march from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
@@ -23,7 +23,7 @@ export class Artifact extends Unit {
       }
     }
   }
-
+ 
   public touch() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
       // swap positions
