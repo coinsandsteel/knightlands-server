@@ -16,23 +16,23 @@ export class MarchCroupier {
     this._poolNumber = 0;
     this._stepCounter = 0;
     this._queue = [
-      /*march.UNIT_CLASS_EXTRA_HP,
-      march.UNIT_CLASS_BALL_LIGHTNING,
-      march.UNIT_CLASS_DRAGON_BREATH,
+      march.UNIT_CLASS_ENEMY,
+      march.UNIT_CLASS_BOW,
+      march.UNIT_CLASS_ENEMY,
       march.UNIT_CLASS_ENEMY,
       march.UNIT_CLASS_TRAP,
       march.UNIT_CLASS_ARMOR,
-      march.UNIT_CLASS_HP,
-      march.UNIT_CLASS_BOW,
-      march.UNIT_CLASS_BOMB,
-      march.UNIT_CLASS_ARMOR,
-      march.UNIT_CLASS_EXTRA_HP,
-      march.UNIT_CLASS_BALL_LIGHTNING,
-      march.UNIT_CLASS_DRAGON_BREATH,
       march.UNIT_CLASS_BOMB,
       march.UNIT_CLASS_HP,
       march.UNIT_CLASS_BOW,
-      march.UNIT_CLASS_ENEMY,*/
+      //march.UNIT_CLASS_ARMOR,
+      //march.UNIT_CLASS_EXTRA_HP,
+      //march.UNIT_CLASS_BALL_LIGHTNING,
+      //march.UNIT_CLASS_DRAGON_BREATH,
+      //march.UNIT_CLASS_BOMB,
+      //march.UNIT_CLASS_HP,
+      //march.UNIT_CLASS_BOW,
+      //march.UNIT_CLASS_ENEMY,
     ];
   }
 

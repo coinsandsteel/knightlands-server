@@ -28,13 +28,9 @@ export class MarchEvents {
     protected _initSequence(){
       if (!this._events.sequence) {
         this._events.sequence = [
-          // Cards move events
-          // New cards events
-          // Artifact effect event
           { cards: _.cloneDeep(CARDS_ARRAY), effect: null },
-          // New cards events (after any artifact effect)
-          // HP changed events
-          { cards: _.cloneDeep(CARDS_ARRAY) }
+          { cards: _.cloneDeep(CARDS_ARRAY), effect: null },
+          { cards: _.cloneDeep(CARDS_ARRAY), effect: null },
         ];
       }
     }
@@ -52,7 +48,7 @@ export class MarchEvents {
       }
       this._events.sequence[this._sequence].cards[index] = updateValue
 
-      console.log('Card moved', { _id: card._id, unitClass: card.unitClass, hp: card.hp, toIndex: index, _sequence: this._sequence });
+      this._log('Card moved', [card._id, card.unitClass, 'hp:', card.hp, 'to:', index]);
     }
     
     cardHp(card: MarchCard, index: number) {
@@ -73,7 +69,8 @@ export class MarchEvents {
           hp: card.hp
         }
       }
-      console.log('Card HP', { _id: card._id, unitClass: card.unitClass, hp: card.hp, _sequence: this._sequence });
+
+      this._log('Card HP', [card._id, card.unitClass, 'hp:', card.hp, 'index:', index]);
     }
     
     newCard(card: MarchCard, index: number) {
@@ -82,7 +79,8 @@ export class MarchEvents {
       if (!this._events.sequence[this._sequence].cards[index]) {
         this._events.sequence[this._sequence].cards[index] = card;
       }
-      console.log('New card', { ...card, index, _sequence: this._sequence });
+
+      this._log('Card add', [card._id, card.unitClass, 'hp:', card.hp, 'index:', index]);
     }
     
     cards(cards: MarchCard[]) {
@@ -104,10 +102,6 @@ export class MarchEvents {
     }
     
     effect(unitClass: string, index: number, target: number[]) {
-      if (this._sequence > 0) {
-        throw new Error('Only one artifact could be activated!');
-      }
-      
       this._initSequence();
       
       this._events.sequence[this._sequence].effect = {
@@ -115,7 +109,8 @@ export class MarchEvents {
         index, // Cards array index
         target // "Victim" indexes array
       };
-      console.log('Effect', { unitClass, index, target, step: this._sequence });
+
+      this._log('Effect', [unitClass, 'index:', index], { target });
 
       // Next step of animation (after effect played)
       this.nextSequence();
@@ -166,5 +161,9 @@ export class MarchEvents {
     pets(entries) {
       this._events.pets = entries;
       console.log('marchPets', { entries });
+    }
+
+    _log(event, data, payload?) {
+      console.log(`[Seq #${this._sequence}] ${event} ` + data.join(' '), payload);
     }
 }
