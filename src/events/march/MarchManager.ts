@@ -33,6 +33,15 @@ export class MarchManager {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "march_meta" });
   }
 
+  getRaidReward() {
+    let ticketItem = this.getEventTicketItems(this.raidRewardCount);
+    return {
+      item: ticketItem.id,
+      quantity: ticketItem.quantity,
+      guaranteed: true
+    };
+  }
+
   public eventIsInProgress() {
     let now = new Date();
     let start = new Date(this.eventStartDate);
