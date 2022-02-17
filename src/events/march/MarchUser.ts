@@ -56,7 +56,7 @@ export class MarchUser {
 
     getInitialDailyrewards(): MarchRewardDayData[] {
       const entries = [];
-      for (let day = 1; day <= 7; day++) {
+      for (let day = 1; day <= 15; day++) {
         entries.push({
           collected: false,
           active: false,
