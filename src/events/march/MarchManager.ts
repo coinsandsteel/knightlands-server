@@ -22,7 +22,7 @@ export class MarchManager {
   }
 
   get raidRewardCount() {
-    return this._meta.raidReward;
+    return 2; //this._meta.raidReward;
   }
 
   get shopMeta() {
