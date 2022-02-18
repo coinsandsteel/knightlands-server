@@ -83,7 +83,7 @@ export class MarchController {
   }
 
   async purchasePreGameBooster(type: string) {
-    this._marchUser.modifyPreGameBooster(type, 1);
+    this._marchUser.setPreGameBooster(type, true);
     this._events.flush();
   }
 

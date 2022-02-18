@@ -78,7 +78,7 @@ export class MarchMap {
   }
 
   public init() {
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 }) as Pet;
     this._pet.reset();
     
     this._damage = new MarchDamage(this.cards, this.pet);
@@ -135,7 +135,7 @@ export class MarchMap {
     this.pet.reset();
 
     if (this.canUsePreGameBooster(march.BOOSTER_HP)) {
-      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
+      this.setPreGameBooster(march.BOOSTER_HP, false);
       this.pet.modifyMaxHP(1);
     }
     
@@ -358,11 +358,12 @@ export class MarchMap {
   }
 
   public addGold(amount: number): void {
+    this._marchUser.collectGoldForPet(amount, this._state.pet.petClass);
     this._marchUser.modifyBalance(march.CURRENCY_GOLD, amount);
   }
 
-  public modifyPreGameBooster(type: string, amount: number): void {
-    this._marchUser.modifyPreGameBooster(type, amount);
+  public setPreGameBooster(type: string, hasItem: boolean): void {
+    this._marchUser.setPreGameBooster(type, hasItem);
   }
 
   public canUsePreGameBooster(type: string): boolean {

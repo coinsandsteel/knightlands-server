@@ -146,8 +146,16 @@ export class MarchUser {
       this._events.balance(currency, this._state.balance[currency]);
     }
 
-    public modifyPreGameBooster(type: string, amount: number) {
-      this._state.preGameBoosters[type] = Math.min(Math.max(amount + this._state.preGameBoosters[type], 0), 1);
+    public setPreGameBooster(type: string, hasItem: boolean) {
+      this._state.preGameBoosters[type] = hasItem ? 1 : 0;
       this._events.preGameBoosters(this._state.preGameBoosters);
+    }
+
+    public collectGoldForPet(amount: number, petClass: number) {
+      const index = this._state.pets.findIndex((pet) => pet.petClass === petClass);
+      if (index === -1) {
+        throw Errors.MarchPetNotUnlocked;
+      }
+      this._state.pets[index].goldCollected += amount;
     }
 }

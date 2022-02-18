@@ -101,7 +101,7 @@ export class Pet extends Unit implements StepInterface {
     if (this.isDead()) {
       if (this.map.canUsePreGameBooster(march.BOOSTER_LIFE)) {
         this._hp = this.maxHp;
-        this.map.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
+        this.map.setPreGameBooster(march.BOOSTER_LIFE, false);
       } else {
         this.destroy();
       }
@@ -116,9 +116,9 @@ export class Pet extends Unit implements StepInterface {
   public touch(): void { return; };
   public destroy(): void { 
     // TODO Why is it here? 
-    // Should it be reset instead of decreased?
-    this.map.modifyPreGameBooster(BOOSTER_KEY, -1);
-    this.map.modifyPreGameBooster(BOOSTER_LIFE, -1);
+    // Duc: Because it is the end of the game
+    this.map.setPreGameBooster(BOOSTER_KEY, false);
+    this.map.setPreGameBooster(BOOSTER_LIFE, false);
   };
   public userStepCallback(): void { return; };
 }
