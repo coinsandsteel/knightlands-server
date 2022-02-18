@@ -158,4 +158,12 @@ export class MarchUser {
       }
       this._state.pets[index].goldCollected += amount;
     }
+
+    public getCollectedGoldByPet(petClass: number) {
+      const index = this._state.pets.findIndex((pet) => pet.petClass === petClass);
+      if (index === -1) {
+        throw Errors.MarchPetNotUnlocked;
+      }
+      return this._state.pets[index].goldCollected;
+    }
 }

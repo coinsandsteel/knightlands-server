@@ -117,8 +117,7 @@ export class Pet extends Unit implements StepInterface {
   public destroy(): void { 
     // TODO Why is it here? 
     // Duc: Because it is the end of the game
-    this.map.setPreGameBooster(BOOSTER_KEY, false);
-    this.map.setPreGameBooster(BOOSTER_LIFE, false);
+    this.map.gameOver();
   };
   public userStepCallback(): void { return; };
 }

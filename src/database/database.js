@@ -95,6 +95,7 @@ module.exports = {
         ActionsLogs: "actions_logs",
         LunarUsers: "lunar_users",
         MarchUsers: "march_users",
+        MarchRanks: "march_ranks",
     },
 
 

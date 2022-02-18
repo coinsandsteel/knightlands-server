@@ -12,6 +12,7 @@ import { Loot } from "./units/Loot";
 import { Artifact } from "./units/Artifact";
 import { MarchUser } from "./MarchUser";
 import { MarchCroupier } from "./MarchCroupier";
+import Game from "../../game";
 
 
 export enum ActiveUnits {
@@ -375,5 +376,12 @@ export class MarchMap {
 
   public exit(): void {
 
+  }
+
+  public gameOver(): void {
+    this.setPreGameBooster(march.BOOSTER_KEY, false);
+    this.setPreGameBooster(march.BOOSTER_LIFE, false);
+    const petClass = this._state.pet.petClass
+    Game.marchManager.updateRank(this._user.id, petClass, this._marchUser.getCollectedGoldByPet(petClass));
   }
 }
