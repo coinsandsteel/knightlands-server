@@ -152,6 +152,13 @@ export class MarchUser {
     }
 
     public setPreGameBooster(type: string, hasItem: boolean) {
+      // TODO add meta preGameBooster price
+      // const price = Game.marchManager.getMeta().purchase[type];
+      const price = 100;
+      if (price > this.gold) {
+        throw Errors.NotEnoughCurrency;
+      }
+      this.modifyBalance(march.CURRENCY_GOLD, price);
       this._state.preGameBoosters[type] = hasItem ? 1 : 0;
       this._events.preGameBoosters(this._state.preGameBoosters);
     }
@@ -173,8 +180,8 @@ export class MarchUser {
     }
 
     public async purchaseCurrency(currency: string, amount: number) {
-      // const conversionRate = Game.marchManager.getMeta().purchase[currency];
       // TODO add meta conversionRate
+      // const conversionRate = Game.marchManager.getMeta().purchase[currency];
       const conversionRate = 1;
       const price = amount * conversionRate;
       if (price > this.gold) {
