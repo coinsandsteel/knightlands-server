@@ -124,4 +124,8 @@ export class MarchController {
   async purchase(data) {
     
   }
+
+  async purchaseCurrency(currency: string, amount: number) {
+    this._marchUser.purchaseCurrency(currency, amount);
+  }
 }

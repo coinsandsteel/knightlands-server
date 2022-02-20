@@ -1,15 +1,20 @@
 import _ from "lodash";
 import User from "../../user";
-import { MarchPetData, MarchRewardDayData, MarchUserState } from "./types";
+import { MarchRewardDayData, MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
 import Errors from "../../knightlands-shared/errors";
 import Game from "../../game";
+import * as march from "../../knightlands-shared/march";
 
 export class MarchUser {
     private _state: MarchUserState;
     private _events: MarchEvents;
     private _user: User;
     private day = 1;
+
+    get gold(): number {
+      return this._state.balance.gold;
+    }
 
     constructor(state: MarchUserState | null, events: MarchEvents, user: User) {
         this._events = events;
@@ -165,5 +170,24 @@ export class MarchUser {
         throw Errors.MarchPetNotUnlocked;
       }
       return this._state.pets[index].goldCollected;
+    }
+
+    public async purchaseCurrency(currency: string, amount: number) {
+      // const conversionRate = Game.marchManager.getMeta().purchase[currency];
+      // TODO add meta conversionRate
+      const conversionRate = 1;
+      const price = amount * conversionRate;
+      if (price > this.gold) {
+        throw Errors.NotEnoughCurrency;
+      }
+      this.modifyBalance(march.CURRENCY_GOLD, amount * price);
+      switch(currency) {
+        case 'hard': 
+          await this._user.addHardCurrency(amount);
+          break;
+        case 'dkt': 
+          await this._user.addDkt(amount);
+          break;
+      }
     }
 }
