@@ -8,13 +8,19 @@ import * as march from "../../../knightlands-shared/march";
 /*
 Pet class #3. 
 III level Extra life at the start of the session
+Add booster.
 
 Pet class #4. 
 II level +20% extra Gold per session
+Upgrade gold after session.
 
 Pet class #5. 
 II level HP can exceed the maximum, but if the maximum is exceeded, then the booster does not have an effect
+hp > maxHp - disable booster
+hp <= maxHp - upgrade
+
 III level Turns armor into ball lightning
+No armor, ball lightning intsead.
 */
 
 export class Pet extends Unit implements StepInterface {
