@@ -46,6 +46,7 @@ export class MarchUser {
           }
         ]
       } as MarchUserState;
+      this.setActiveReward();
     }
 
     private setEventDay() {
@@ -74,7 +75,6 @@ export class MarchUser {
           quantity: day,
         });
       }
-      this.setActiveReward();
       return entries;
     }
 
