@@ -99,9 +99,11 @@ export class MarchUser {
         throw Errors.DailyMarchRewardCollected;
       }
 
-      const ticketItem = Game.marchManager.getEventTicketItems(entry.quantity);
-
-      await this._user.inventory.addItemTemplates(ticketItem);
+      await this._user.inventory.addItemTemplates({
+        item: march.TICKET_ITEM_ID,
+        quantity: entry.quantity
+      });
+      
       this._state.dailyRewards[this.day - 1].collected = true;
       this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 

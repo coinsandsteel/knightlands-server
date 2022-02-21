@@ -112,10 +112,9 @@ export class MarchManager {
   }
 
   getRaidReward() {
-    let ticketItem = this.getEventTicketItems(this.raidRewardCount);
     return {
-      item: ticketItem.id,
-      quantity: ticketItem.quantity,
+      item: TICKET_ITEM_ID,
+      quantity: this.raidRewardCount,
       guaranteed: true
     };
   }
@@ -137,18 +136,5 @@ export class MarchManager {
 
   getMeta() {
     return this._meta;
-  }
-
-  getEventTicketItems(count) {
-    const ticketItem =  Game.itemTemplates._items().findOne({ id: TICKET_ITEM_ID });
-
-    const item: MarchItem = {
-      id: ticketItem.id,
-      template: ticketItem.id,
-      caption: ticketItem.caption,
-      quantity: count
-    }
-
-    return item;
   }
 }
