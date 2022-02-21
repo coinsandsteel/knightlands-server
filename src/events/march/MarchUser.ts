@@ -30,13 +30,13 @@ export class MarchUser {
     public setInitialState() {
       this._state = {
         balance: {
-          tickets: 0,
-          gold: 0
+          tickets: 1000,
+          gold: 50000
         },
         preGameBoosters: {
           maxHealth: 0,
           extraLife: 0,
-          key: 0,
+          key: 0
         },
         dailyRewards: this.getInitialDailyrewards(),
         pets: [
