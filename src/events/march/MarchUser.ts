@@ -1,10 +1,11 @@
 import _ from "lodash";
 import User from "../../user";
-import { MarchRewardDayData, MarchUserState } from "./types";
+import { MarchPetData, MarchRewardDayData, MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
 import Errors from "../../knightlands-shared/errors";
 import Game from "../../game";
 import * as march from "../../knightlands-shared/march";
+import { Pet } from "./units/Pet";
 
 export class MarchUser {
     private _state: MarchUserState;
@@ -30,6 +31,7 @@ export class MarchUser {
     public setInitialState() {
       this._state = {
         balance: {
+          sessionGold: 0,
           gold: 50000
         },
         preGameBoosters: {
@@ -116,10 +118,15 @@ export class MarchUser {
         throw Errors.MarchPetUnlocked;
       }
 
-      this._state.pets.push({ petClass, level: 1, goldCollected: 0});
+      // TODO retreive price
+      const price = 1000;
+      if (this.gold < price) {
+        throw Errors.NotEnoughCurrency;
+      }
 
+      this.modifyBalance(march.CURRENCY_GOLD, -price);
+      this._state.pets.push({ petClass, level: 1, goldCollected: 0} as MarchPetData);
       this._events.pets(this._state.pets);
-      this._events.flush();
     }
 
     async upgradePet(petClass: number) {
@@ -132,14 +139,21 @@ export class MarchUser {
         throw Errors.MarchPetMaxLevel;
       }
 
+      // TODO retreive price
+      const price = 300;
+      if (this.gold < price) {
+        throw Errors.NotEnoughCurrency;
+      }
+      
+      this.modifyBalance(march.CURRENCY_GOLD, -price);
+
       await this._user.inventory.addItemTemplates({
         item: march.EVENT_REWARD_ITEM_ID[this._state.pets[index].level - 1][petClass - 1],
         quantity: 1
       });
+      
       this._state.pets[index].level += 1;
-
       this._events.pets(this._state.pets);
-      this._events.flush();
     }
     
     public getState(): MarchUserState {
@@ -156,19 +170,35 @@ export class MarchUser {
       this._events.balance(currency, this._state.balance[currency]);
     }
 
-    public setPreGameBooster(type: string, hasItem: boolean) {
-      // TODO add meta preGameBooster price
-      // const price = Game.marchManager.getMeta().purchase[type];
+    public addSessionGold(amount: number): void {
+      this.modifyBalance(march.CURRENCY_SESSION_GOLD, amount);
+    }
+  
+    public resetSessionGoldBalance() {
+      this._state.balance[march.CURRENCY_SESSION_GOLD] = 0;
+      this._events.balance(march.CURRENCY_SESSION_GOLD, 0);
+    }
+
+    public purchasePreGameBooster(type: string) {
+      // TODO retreive price
       const price = 100;
       if (price > this.gold) {
         throw Errors.NotEnoughCurrency;
       }
-      this.modifyBalance(march.CURRENCY_GOLD, price);
-      this._state.preGameBoosters[type] = hasItem ? 1 : 0;
+
+      this.modifyBalance(march.CURRENCY_GOLD, -price);
+      this.modifyPreGameBooster(type, 1);
+    }
+
+    public modifyPreGameBooster(type: string, value: number) {
+      this._state.preGameBoosters[type] += value;
+      if (this._state.preGameBoosters[type] < 0) {
+        this._state.preGameBoosters[type] = 0;
+      }
       this._events.preGameBoosters(this._state.preGameBoosters);
     }
 
-    public collectGoldForPet(amount: number, petClass: number) {
+    public updateGoldStat(amount: number, petClass: number) {
       const index = this._state.pets.findIndex((pet) => pet.petClass === petClass);
       if (index === -1) {
         throw Errors.MarchPetNotUnlocked;
@@ -176,7 +206,7 @@ export class MarchUser {
       this._state.pets[index].goldCollected += amount;
     }
 
-    public getCollectedGoldByPet(petClass: number) {
+    public getGoldStat(petClass: number) {
       const index = this._state.pets.findIndex((pet) => pet.petClass === petClass);
       if (index === -1) {
         throw Errors.MarchPetNotUnlocked;
@@ -184,10 +214,12 @@ export class MarchUser {
       return this._state.pets[index].goldCollected;
     }
 
-    public async purchaseCurrency(currency: string, amount: number) {
+    public async purchaseGold(currency: string, amount: number) {
       // TODO add meta conversionRate
       // const conversionRate = Game.marchManager.getMeta().purchase[currency];
-      const conversionRate = 1;
+
+      // TODO this logic doesn't make sense, should be re-implemented
+      /*const conversionRate = 1;
       const price = amount * conversionRate;
       if (price > this.gold) {
         throw Errors.NotEnoughCurrency;
@@ -200,6 +232,28 @@ export class MarchUser {
         case 'dkt': 
           await this._user.addDkt(amount);
           break;
-      }
+      }*/
+    }
+
+    public flushStats(pet: Pet): void {
+      let goldModifier = pet.checkClassAndLevel(4, 2) ? 1.2 : 1;
+      let goldAmount = this._state.balance.sessionGold * goldModifier;
+  
+      this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
+      this.updateGoldStat(goldAmount, pet.petClass);
+      this.resetSessionGoldBalance();
+
+      this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
+      this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
+      
+      Game.marchManager.updateRank(
+        this._user.id, 
+        pet.petClass, 
+        this.getGoldStat(pet.petClass)
+      );
+    }
+
+    public canUsePreGameBooster(type: string): boolean {
+      return this._state.preGameBoosters[type] > 0;
     }
 }

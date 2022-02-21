@@ -82,8 +82,13 @@ export class MarchController {
     return this.getState();
   }
 
+  async purchaseGold(currency: string, amount: number) {
+    this._marchUser.purchaseGold(currency, amount);
+    this._events.flush();
+  }
+  
   async purchasePreGameBooster(type: string) {
-    this._marchUser.setPreGameBooster(type, true);
+    this._marchUser.purchasePreGameBooster(type);
     this._events.flush();
   }
 
@@ -115,17 +120,15 @@ export class MarchController {
 
   async unlockPet(petClass: number) {
     await this._marchUser.unlockPet(petClass);
+    this._events.flush();
   }
 
   async upgradePet(petClass: number) {
     await this._marchUser.upgradePet(petClass);
+    this._events.flush();
   }
-
+  
   async purchase(data) {
     
-  }
-
-  async purchaseCurrency(currency: string, amount: number) {
-    this._marchUser.purchaseCurrency(currency, amount);
   }
 }

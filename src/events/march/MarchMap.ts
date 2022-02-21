@@ -74,6 +74,10 @@ export class MarchMap {
     return this._pet;
   }
 
+  get marchUser(): MarchUser {
+    return this._marchUser;
+  }
+
   get croupier(): MarchCroupier {
     return this._marchCroupier;
   }
@@ -135,9 +139,10 @@ export class MarchMap {
   // Start the card game from scratch
   public restart() {
     this.pet.reset();
+    this._marchUser.resetSessionGoldBalance();
 
-    if (this.canUsePreGameBooster(march.BOOSTER_HP)) {
-      this.setPreGameBooster(march.BOOSTER_HP, false);
+    if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
+      this._marchUser.modifyPreGameBooster(march.BOOSTER_HP, -1);
       this.pet.modifyMaxHP(1);
     }
     
@@ -359,30 +364,11 @@ export class MarchMap {
     this.activeChest.tryToOpenChest(keyNumber);
   }
 
-  public addGold(amount: number): void {
-    this._marchUser.collectGoldForPet(amount, this._state.pet.petClass);
-    this._marchUser.modifyBalance(march.CURRENCY_GOLD, amount);
-  }
-
-  public setPreGameBooster(type: string, hasItem: boolean): void {
-    this._marchUser.setPreGameBooster(type, hasItem);
-  }
-
-  public canUsePreGameBooster(type: string): boolean {
-    if (this._marchUser.getState().preGameBoosters[type] > 0) {
-      return true;
-    }
-    return false;
-  }
-
   public exit(): void {
 
   }
 
   public gameOver(): void {
-    this.setPreGameBooster(march.BOOSTER_KEY, false);
-    this.setPreGameBooster(march.BOOSTER_LIFE, false);
-    const petClass = this._state.pet.petClass
-    Game.marchManager.updateRank(this._user.id, petClass, this._marchUser.getCollectedGoldByPet(petClass));
+    this._marchUser.flushStats(this.pet);
   }
 }

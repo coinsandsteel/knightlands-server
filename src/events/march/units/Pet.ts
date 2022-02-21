@@ -23,6 +23,10 @@ export class Pet extends Unit implements StepInterface {
     this._armor = state.armor;
   }
 
+  get petClass(): number {
+    return this._petClass;
+  }
+
   get armor(): number {
     return this._armor;
   }
@@ -102,9 +106,9 @@ export class Pet extends Unit implements StepInterface {
     }
 
     if (this.isDead()) {
-      if (this.map.canUsePreGameBooster(march.BOOSTER_LIFE)) {
+      if (this.map.marchUser.canUsePreGameBooster(march.BOOSTER_LIFE)) {
         this._hp = this.maxHp;
-        this.map.setPreGameBooster(march.BOOSTER_LIFE, false);
+        this.map.marchUser.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
       } else if (this._extraLife) {
         this._hp = this.maxHp;
         this._extraLife = 0;

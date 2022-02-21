@@ -22,7 +22,7 @@ export class Container extends Unit {
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
       if(
-        this.map.canUsePreGameBooster(BOOSTER_KEY)
+        this.map.marchUser.canUsePreGameBooster(BOOSTER_KEY)
         ||
         this.map.pet.checkClassAndLevel(4, 3)
       ) {

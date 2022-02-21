@@ -26,7 +26,7 @@ export class Loot extends Unit {
         break;
       }
       case march.UNIT_CLASS_GOLD: {
-        this.map.addGold(
+        this.map.marchUser.addSessionGold(
           this.hp + (this.map.pet.checkClassAndLevel(4, 1) ? 1 : 0)
         );
         break;
