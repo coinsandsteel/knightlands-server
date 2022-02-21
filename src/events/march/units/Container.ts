@@ -18,13 +18,13 @@ export class Container extends Unit {
 
   public activate(): void {
     if (this.unitClass === UNIT_CLASS_BARREL) {
-      this.open(this.map.pet.serial === 'C5L1');
+      this.open(this.map.pet.checkClassAndLevel(5, 1));
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
       if(
         this.map.canUsePreGameBooster(BOOSTER_KEY)
         ||
-        this.map.pet.serial === 'C4L3'
+        this.map.pet.checkClassAndLevel(4, 3)
       ) {
         this.open(true);
       } else {

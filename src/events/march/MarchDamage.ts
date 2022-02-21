@@ -68,7 +68,7 @@ export class MarchDamage {
           break;
         }
         case march.UNIT_CLASS_BOW: {
-          let bonus = this._pet.serial === 'C2L1' ? 1 : 0;
+          let bonus = this._pet.checkClassAndLevel(2, 1) ? 1 : 0;
           switch(victim.unitClass) {
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:
@@ -78,7 +78,7 @@ export class MarchDamage {
               return -(attacker.hp + bonus);
             }
             case march.UNIT_CLASS_BOW:{
-              let stackBonus = this._pet.serial === 'C2L2' ? 2 : 0;
+              let stackBonus = this._pet.checkClassAndLevel(2, 2) ? 2 : 0;
               return attacker.hp + bonus + stackBonus;
             }
           }
@@ -105,7 +105,7 @@ export class MarchDamage {
         case march.UNIT_CLASS_BOMB: {
           switch(victim.unitClass) {
             case march.UNIT_CLASS_PET:{
-              return this._pet.serial === 'C2L3' ? 0 : -attacker.hp;
+              return this._pet.checkClassAndLevel(2, 3) ? 0 : -attacker.hp;
             }
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:

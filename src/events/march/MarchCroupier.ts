@@ -55,6 +55,14 @@ export class MarchCroupier {
       unitClass = this.getUnitClassByProbability();
     }
 
+    if (
+      this._map.pet.checkClassAndLevel(5, 3)
+      &&
+      unitClass === march.UNIT_CLASS_ARMOR
+    ) {
+      unitClass = march.UNIT_CLASS_BALL_LIGHTNING;
+    }
+
     let hp = 0;
     if (
       [
@@ -117,7 +125,16 @@ export class MarchCroupier {
 
   public getContainerLoot(container: Container, positive: boolean): Unit {
     const unitClasses = march.UNIT_LOOT[container.unitClass + (positive ? '+' : '-')];
-    const unitClass = unitClasses[Random.intRange(0, unitClasses.length - 1)];
+    let unitClass = unitClasses[Random.intRange(0, unitClasses.length - 1)];
+    
+    if (
+      this._map.pet.checkClassAndLevel(5, 3)
+      &&
+      unitClass === march.UNIT_CLASS_ARMOR
+    ) {
+      unitClass = march.UNIT_CLASS_BALL_LIGHTNING;
+    }
+    
     let hp = container.hp;
     if ([
       march.UNIT_CLASS_EXTRA_HP, 

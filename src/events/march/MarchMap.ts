@@ -79,7 +79,8 @@ export class MarchMap {
   }
 
   public init() {
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 }) as Pet;
+    // HP = 1 because we need to ensure that it will be reset to 10+ later
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
     this._pet.reset();
     
     this._damage = new MarchDamage(this.cards, this.pet);

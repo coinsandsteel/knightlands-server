@@ -6,24 +6,13 @@ import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
 import * as march from "../../../knightlands-shared/march";
 
 /*
-Pet class #3. 
-III level Extra life at the start of the session
-Add booster.
-
 Pet class #4. 
 II level +20% extra Gold per session
 Upgrade gold after session.
-
-Pet class #5. 
-II level HP can exceed the maximum, but if the maximum is exceeded, then the booster does not have an effect
-hp > maxHp - disable booster
-hp <= maxHp - upgrade
-
-III level Turns armor into ball lightning
-No armor, ball lightning intsead.
 */
 
 export class Pet extends Unit implements StepInterface {
+  protected _extraLife: number = 0;
   protected _armor: number = 0;
   protected _petClass: number;
   protected _level: number;
@@ -38,16 +27,16 @@ export class Pet extends Unit implements StepInterface {
     return this._armor;
   }
 
-  get serial(): string {
-    return `C${this._petClass}L${this._level}`;
-  }
-
   protected serializeState(): PetState {
     return {
       petClass: this._petClass,
       level: this._level,
       armor: this._armor
     };
+  }
+
+  public checkClassAndLevel(petClass: number, level: number): boolean {
+    return this._petClass === petClass && this._level >= level;
   }
 
   public handleDamage(value): void {
@@ -83,8 +72,11 @@ export class Pet extends Unit implements StepInterface {
   };
 
   public reset(): void {
-    const hpBonus = this.serial === 'C3L1' ? 1 : 0;
+    const hpBonus = this.checkClassAndLevel(3, 1) ? 1 : 0;
+    const extraLifeBonus = this.checkClassAndLevel(3, 3) ? 1 : 0;
+
     this._armor = 0;
+    this._extraLife = extraLifeBonus;
     this._maxHp = 10 + hpBonus;
     this.restoreHealth();
   };
@@ -94,20 +86,28 @@ export class Pet extends Unit implements StepInterface {
   }
   
   public modifyHp(hpModifier: number): void {
-    if (hpModifier < 0 && this.serial === 'C3L2') {
+    if (hpModifier < 0 && this.checkClassAndLevel(3, 2)) {
       hpModifier += Random.intRange(0, 1);
     }
     
-    this._hp += hpModifier;
-    
-    if (this._hp > this._maxHp) {
-      this._hp = this._maxHp;
+    if (this.checkClassAndLevel(5, 2)) {
+      if (this._hp <= this._maxHp) {
+        this._hp += hpModifier;
+      }
+    } else {
+      this._hp += hpModifier;
+      if (this._hp > this._maxHp) {
+        this._hp = this._maxHp;
+      }
     }
 
     if (this.isDead()) {
       if (this.map.canUsePreGameBooster(march.BOOSTER_LIFE)) {
         this._hp = this.maxHp;
         this.map.setPreGameBooster(march.BOOSTER_LIFE, false);
+      } else if (this._extraLife) {
+        this._hp = this.maxHp;
+        this._extraLife = 0;
       } else {
         this.destroy();
       }
