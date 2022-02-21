@@ -5,7 +5,6 @@ export interface MarchSaveData {
 
 export interface MarchUserState {
   balance: {
-    tickets: number;
     gold: number;
   };
   preGameBoosters: {

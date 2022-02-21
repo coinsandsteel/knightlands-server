@@ -17,6 +17,7 @@ export class MarchCroupier {
     this._stepCounter = 0;
     this._queue = [
       march.UNIT_CLASS_EXTRA_HP,
+      march.UNIT_CLASS_CHEST,
       march.UNIT_CLASS_BALL_LIGHTNING,
       march.UNIT_CLASS_DRAGON_BREATH,
       march.UNIT_CLASS_BOMB,

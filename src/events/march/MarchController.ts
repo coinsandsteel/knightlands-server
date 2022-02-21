@@ -23,7 +23,7 @@ export class MarchController {
   async init() {
     const saveData = await Game.marchManager.loadProgress(this._user.id);
     if (saveData) {
-      this._saveData = saveData as MarchSaveData;
+      this._saveData = saveData.state as MarchSaveData;
     }
     
     this.initPlayer();

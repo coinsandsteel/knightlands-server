@@ -30,7 +30,6 @@ export class MarchUser {
     public setInitialState() {
       this._state = {
         balance: {
-          tickets: 1000,
           gold: 50000
         },
         preGameBoosters: {
@@ -103,7 +102,7 @@ export class MarchUser {
         item: march.TICKET_ITEM_ID,
         quantity: entry.quantity
       });
-      
+
       this._state.dailyRewards[this.day - 1].collected = true;
       this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
