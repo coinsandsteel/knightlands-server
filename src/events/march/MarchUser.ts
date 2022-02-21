@@ -92,14 +92,16 @@ export class MarchUser {
       this._events.flush();
     }
 
-    async collectDailyMarchReward() {
+    async collectDailyLunarReward() {
       const entry = this._state.dailyRewards[this.day - 1];
 
       if (entry.collected) {
         throw Errors.DailyMarchRewardCollected;
       }
 
-      this.modifyBalance(march.CURRENCY_TICKETS, entry.quantity);
+      const ticketItem = Game.marchManager.getEventTicketItems(entry.quantity);
+
+      await this._user.inventory.addItemTemplates(ticketItem);
       this._state.dailyRewards[this.day - 1].collected = true;
       this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
