@@ -132,6 +132,10 @@ export class MarchUser {
         throw Errors.MarchPetMaxLevel;
       }
 
+      await this._user.inventory.addItemTemplates({
+        item: march.EVENT_REWARD_ITEM_ID[this._state.pets[index].level - 1][petClass - 1],
+        quantity: 1
+      });
       this._state.pets[index].level += 1;
 
       this._events.pets(this._state.pets);
