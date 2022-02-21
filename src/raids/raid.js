@@ -565,13 +565,15 @@ class Raid extends EventEmitter {
                     rewards.items.push(...Game.lunarManager.getRaidReward());
                 }
                 if (Game.marchManager.eventIsInProgress()) {
-                    rewards.items.push(Game.marchManager.getRaidReward());
+                    const isGetMarchReward = Random.range(0, 1) < 0.05; // 5% chance to get eventTicket
+                    isGetMarchReward && rewards.items.push(Game.marchManager.getRaidReward());
                 }
             } else {
                 let winLoot = user.isFreeAccount ? baseLoot.winnerLootFree : baseLoot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
                 if (Game.marchManager.eventIsInProgress()) {
-                    rewards.items.push(Game.marchManager.getRaidReward());
+                    const isGetMarchReward = Random.range(0, 1) < 0.30; // 30% chance to get eventTicket
+                    isGetMarchReward && rewards.items.push(Game.marchManager.getRaidReward());
                 }
             }
 

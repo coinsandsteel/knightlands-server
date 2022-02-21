@@ -92,7 +92,7 @@ export class MarchUser {
       this._events.flush();
     }
 
-    async collectDailyLunarReward() {
+    async collectDailyMarchReward() {
       const entry = this._state.dailyRewards[this.day - 1];
 
       if (entry.collected) {

@@ -106,7 +106,7 @@ export class MarchController {
   }
 
   async collectDailyReward(action) {
-    await this._marchUser.collectDailyLunarReward();
+    await this._marchUser.collectDailyMarchReward();
   }
 
   async testAction(action) {
