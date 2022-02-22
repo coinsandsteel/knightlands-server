@@ -48,7 +48,7 @@ export class MarchEvents {
       }
       this._events.sequence[this._sequence].cards[index] = updateValue
 
-      this._log('Card moved', [card._id, card.unitClass, 'hp:', card.hp, 'to:', index]);
+      this._log('Card moved', [card._id, card.unitClass, 'hp:', card.hp, 'from:', oldIndex, 'to:', index]);
     }
     
     cardHp(card: MarchCard, index: number) {
@@ -93,12 +93,12 @@ export class MarchEvents {
     
     petArmor(value: number) {
       this._events.pet = { ...this._events.pet, armor: value };
-      console.log('Pet armor', { armor: value });
+      //console.log('Pet armor', { armor: value });
     }
     
     stat(state: StatState) {
       this._events.stat = state;
-      console.log('Stat', state);
+      //console.log('Stat', state);
     }
     
     effect(unitClass: string, index: number, target: number[]) {
@@ -121,46 +121,46 @@ export class MarchEvents {
     }
 
     flush() {
-      console.log('Flush', this._events);
       game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
       this._events = {};
       this._sequence = 0;
+      console.log(' ');
     }
 
     balance(currency, balance) {
       this._events.balance = { 
         [currency]: balance
       };
-      console.log('Balance', { currency, balance });
+      //console.log('Balance', { currency, balance });
     }
 
     preGameBoosters(preGameBoosters) {
       this._events.preGameBoosters = preGameBoosters;
-      console.log('PreGameBoosters', { preGameBoosters: this._events.preGameBoosters });
+      //console.log('PreGameBoosters', { preGameBoosters: this._events.preGameBoosters });
     }
 
     miniGameReady() {
       this._events.miniGameReady = { 
         isReady: true
       };
-      console.log('MiniGameReady');
+      //console.log('MiniGameReady');
     }
 
     miniGameResult(isSuccess: boolean) {
       this._events.miniGameResult = { 
         isSuccess
       };
-      console.log('MiniGameResult', { isSuccess });
+      //console.log('MiniGameResult', { isSuccess });
     }
 
     dailyRewards(entries) {
       this._events.dailyRewards = entries;
-      console.log('marchDailyRewards', { entries });
+      //console.log('marchDailyRewards', { entries });
     }
 
     pets(entries) {
       this._events.pets = entries;
-      console.log('marchPets', { entries });
+      //console.log('marchPets', { entries });
     }
 
     _log(event, data, payload?) {

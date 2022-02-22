@@ -206,6 +206,10 @@ export class MarchMap {
   public touch(index: number) {
     // ###### THE MAIN ENTRY POINT ######
     const targetCard = this.cards[index];
+    if (!march.ADJACENT_CELLS[this.pet.index].includes(index)) {
+      console.log(`You cannot move card from ${this.pet.index} to ${index}`);
+      return;
+    }
     if (
       targetCard instanceof Container
       ||
@@ -215,6 +219,25 @@ export class MarchMap {
     } else {
       this.movePetTo(targetCard);
     }
+
+    const cell = function (unitClass) {
+      if ([
+        march.UNIT_CLASS_EXTRA_HP,
+        march.UNIT_CLASS_DRAGON_BREATH,
+        march.UNIT_CLASS_BALL_LIGHTNING,
+        march.UNIT_CLASS_ENEMY_BOSS
+      ].includes(unitClass)) {
+        return unitClass + "\t";
+      } else {
+        return unitClass + "\t\t";
+      }
+    }
+
+    console.log('Final cards:');
+    console.log(cell(this.cards[0].unitClass), cell(this.cards[1].unitClass), cell(this.cards[2].unitClass));
+    console.log(cell(this.cards[3].unitClass), cell(this.cards[4].unitClass), cell(this.cards[5].unitClass));
+    console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
+    console.log(' ');
   }
 
   protected moveCardTo(unit: Unit, index: number): void {
@@ -343,7 +366,7 @@ export class MarchMap {
     victims.forEach(victim => {
       const currentHpModifier = this._damage.getHpModifier(attacker, victim);
       victim.modifyHp(currentHpModifier);
-      console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
+      //console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
     })
   }
 
