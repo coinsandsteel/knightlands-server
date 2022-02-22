@@ -118,8 +118,7 @@ export class MarchUser {
         throw Errors.MarchPetUnlocked;
       }
 
-      // TODO retreive price
-      const price = 1000;
+      const price = march.PETS_PRICE[petClass][0];
       if (this.gold < price) {
         throw Errors.NotEnoughCurrency;
       }
@@ -139,16 +138,17 @@ export class MarchUser {
         throw Errors.MarchPetMaxLevel;
       }
 
-      // TODO retreive price
-      const price = 300;
+      const price = march.PETS_PRICE[petClass][pet.level];
       if (this.gold < price) {
         throw Errors.NotEnoughCurrency;
       }
       
       this.modifyBalance(march.CURRENCY_GOLD, -price);
 
+      const levelIndex = this._state.pets[index].level - 1;
+      const classIndex = petClass - 1;
       await this._user.inventory.addItemTemplates({
-        item: march.EVENT_REWARD_ITEM_ID[this._state.pets[index].level - 1][petClass - 1],
+        item: march.EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
         quantity: 1
       });
       

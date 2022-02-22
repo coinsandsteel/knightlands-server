@@ -31,13 +31,13 @@ export class Enemy extends Unit {
   }
 
   public replaceWithGold(): void {
-    // TODO sync bossesKilled stat
     const newUnit = new Loot({
       unitClass: march.UNIT_CLASS_GOLD,
       hp: this.maxHp,
     } as MarchCard, this.map);
     
     this.map.replaceCellWith(this, newUnit);
+    this.map.bossKilled();
   }
 
   public destroy(): void { 

@@ -25,8 +25,7 @@ export class MarchManager {
   }
 
   get raidRewardCount() {
-    // TODO get it from meta
-    return 1; //this._meta.raidReward;
+    return 1;
   }
 
   get shopMeta() {

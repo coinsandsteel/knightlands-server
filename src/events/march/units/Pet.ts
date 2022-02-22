@@ -6,9 +6,30 @@ import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
 import * as march from "../../../knightlands-shared/march";
 
 /*
+Pet class #1. 
+I no abilities.
+II Heath booster value +1
+III level Armor booster value +1
+
+Pet class #2. 
+I level Bow damage +1
+II level When two bows are stacked +2 damage 
+III level Bomb explosion does no damage
+
+Pet class #3. 
+I level MaxHP +1
+II level 50% Chance to Block 1 Damage
+III level Extra life at the start of the session
+
 Pet class #4. 
+I level gold +1 from gold card
 II level +20% extra Gold per session
-Upgrade gold after session.
+III level Chest opens without mini-game
+
+Pet class #5. 
+I level All barrels have only good content.
+II HP booster increases HP and maxHp. If 
+III level Turns armor into ball lightning
 */
 
 export class Pet extends Unit implements StepInterface {
@@ -125,8 +146,6 @@ export class Pet extends Unit implements StepInterface {
   public activate(): void { return; };
   public touch(): void { return; };
   public destroy(): void { 
-    // TODO Why is it here? 
-    // Duc: Because it is the end of the game
     this.map.gameOver();
   };
   public userStepCallback(): void { return; };

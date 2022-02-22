@@ -49,7 +49,6 @@ export class Unit extends HpClass implements StepInterface {
     this._maxHp = card.maxHp || card.hp;
     this._id = card._id || uuidv4().split('-').pop();
 
-    // TODO implement random opened state in the Croupier
     if (card.opened !== null) {
       this._opened = card.opened;
     }

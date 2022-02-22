@@ -371,4 +371,9 @@ export class MarchMap {
   public gameOver(): void {
     this._marchUser.flushStats(this.pet);
   }
+
+  public bossKilled(): void {
+    this._state.stat.bossesKilled++;
+    this._events.stat(this._state.stat);
+  }
 }

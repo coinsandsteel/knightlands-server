@@ -78,7 +78,10 @@ export class MarchCroupier {
       );
     }
     
-    const blueprint = { _id: null, unitClass, hp };
+    let blueprint = { _id: null, unitClass, hp, opened: null };
+    if (unitClass === march.UNIT_CLASS_TRAP) {
+      blueprint.opened = Random.intRange(0, 1);
+    }
 
     if (returnBlueprint) {
       return blueprint;
