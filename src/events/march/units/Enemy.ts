@@ -17,12 +17,12 @@ export class Enemy extends Unit {
     pet.handleDamage(this.hp);
 
     if (pet.isDead()) {
-      this.map.exit();
       return;
     }
 
     if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
       pet.upgradeHP(1);
+      this.map.bossKilled();
       this.map.croupier.upgradePool();
     }
 
@@ -31,10 +31,6 @@ export class Enemy extends Unit {
     }
 
     this.map.marchUser.addSessionGold(this.hp);
-
-    if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
-      this.map.bossKilled();
-    }
   }
 
   public replaceWithGold(): void {

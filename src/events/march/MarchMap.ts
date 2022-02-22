@@ -204,6 +204,11 @@ export class MarchMap {
   }
 
   public touch(index: number) {
+    if (this.pet.isDead()) {
+      console.log(`Pet is dead.`);
+      return;
+    }
+
     // ###### THE MAIN ENTRY POINT ######
     const targetCard = this.cards[index];
     if (!march.ADJACENT_CELLS[this.pet.index].includes(index)) {
@@ -385,10 +390,6 @@ export class MarchMap {
 
   public tryToOpenChest(keyNumber: number) {
     this.activeChest.tryToOpenChest(keyNumber);
-  }
-
-  public exit(): void {
-
   }
 
   public gameOver(): void {
