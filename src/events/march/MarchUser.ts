@@ -147,10 +147,10 @@ export class MarchUser {
 
       const levelIndex = this._state.pets[index].level - 1;
       const classIndex = petClass - 1;
-      await this._user.inventory.addItemTemplates({
+      /*await this._user.inventory.addItemTemplates({
         item: march.EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
         quantity: 1
-      });
+      });*/
       
       this._state.pets[index].level += 1;
       this._events.pets(this._state.pets);
