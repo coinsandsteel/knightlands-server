@@ -100,15 +100,13 @@ export class MarchController {
   }
 
   async startNewGame() {
-    // Debit one ticket
-    if (this._user.inventory.countItemsByTemplate(TICKET_ITEM_ID) <= 0) {
-      throw Errors.MarchNoTicket;
-    }
-    this._user.inventory.removeItemByTemplate(
-      TICKET_ITEM_ID,
-    );
-    // Start the card game from scratch
+    this._marchUser.debitTicket();
     this._marchMap.restart();
+    this._events.flush();
+  }
+
+  async exitGame() {
+    this._marchMap.exit();
     this._events.flush();
   }
 
@@ -117,7 +115,7 @@ export class MarchController {
     this._events.flush();
   }
 
-  async collectDailyReward(action) {
+  async collectDailyReward() {
     await this._marchUser.collectDailyMarchReward();
   }
 

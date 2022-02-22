@@ -171,6 +171,25 @@ export class MarchMap {
     );
   }
 
+  public exit() {
+    this.pet.reset();
+    this._marchUser.resetSessionGoldBalance();
+    
+    this._state.stat.stepsToNextBoss = 0;
+    this._state.stat.bossesKilled = 0;
+    this._state.stat.penaltySteps = 0;
+    
+    this.load({
+      stat: this._state.stat,
+      pet: this._state.pet,
+      cards: [] as MarchCard[]
+    } as MarchMapState);
+    
+    this._events.pet(this._state.pet);
+    this._events.stat(this._state.stat);
+    this._events.cards([]);
+  }
+
   public load(state: MarchMapState) {
     // Parse stat
     this.parseStat(state.stat);
@@ -215,6 +234,7 @@ export class MarchMap {
       console.log(`You cannot move card from ${this.pet.index} to ${index}`);
       return;
     }
+
     if (
       targetCard instanceof Container
       ||
@@ -243,6 +263,9 @@ export class MarchMap {
     console.log(cell(this.cards[3].unitClass), cell(this.cards[4].unitClass), cell(this.cards[5].unitClass));
     console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
     console.log(' ');
+
+    // Count a step
+    this._marchCroupier.increaseStepCounter();
   }
 
   protected moveCardTo(unit: Unit, index: number): void {
@@ -313,8 +336,6 @@ export class MarchMap {
       card.userStepCallback();
     });
     
-    // Count a step
-    this._marchCroupier.increaseStepCounter();
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     // Reduce penalty
     this.reducePenalty();

@@ -283,6 +283,7 @@ class PlayerController extends IPaymentListener {
         // March
         this._socket.on(Operations.MarchLoad, this._gameHandler(this._marchLoad.bind(this)));
         this._socket.on(Operations.MarchStartNewGame, this._gameHandler(this._marchStartNewGame.bind(this)));
+        this._socket.on(Operations.MarchExitGame, this._gameHandler(this._marchExitGame.bind(this)));
         this._socket.on(Operations.MarchTouch, this._gameHandler(this._marchTouch.bind(this)));
         this._socket.on(Operations.MarchCollectDailyReward, this._gameHandler(this._marchCollectDailyReward.bind(this)));
         this._socket.on(Operations.MarchTestAction, this._gameHandler(this._marchTestAction.bind(this)));
@@ -2061,6 +2062,10 @@ class PlayerController extends IPaymentListener {
 
     async _marchStartNewGame() {
         return this.march.startNewGame();
+    }
+
+    async _marchExitGame() {
+        return this.march.exitGame();
     }
 
     async _marchGameOver() {

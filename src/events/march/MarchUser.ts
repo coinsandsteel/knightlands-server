@@ -272,8 +272,8 @@ export class MarchUser {
   
       this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
       this.updateGoldStat(goldAmount, pet.petClass);
-      this.resetSessionGoldBalance();
 
+      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
       this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
       this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
       
@@ -311,5 +311,16 @@ export class MarchUser {
           break;
         }
       }
+    }
+
+    public debitTicket() {
+      if (!this._user.inventory.hasItems(march.TICKET_ITEM_ID, 1)) {
+        throw Errors.MarchNoTicket;
+      }
+      
+      // Debit one ticket
+      this._user.inventory.removeItemByTemplate(
+        march.TICKET_ITEM_ID
+      );
     }
 }
