@@ -142,7 +142,6 @@ export class MarchMap {
     this._marchUser.resetSessionGoldBalance();
 
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
-      this._marchUser.modifyPreGameBooster(march.BOOSTER_HP, -1);
       this.pet.modifyMaxHP(1);
     }
     
@@ -172,22 +171,14 @@ export class MarchMap {
   }
 
   public exit() {
-    this.pet.reset();
     this._marchUser.resetSessionGoldBalance();
+    this._marchUser.voidBoosters();
     
     this._state.stat.stepsToNextBoss = 0;
     this._state.stat.bossesKilled = 0;
     this._state.stat.penaltySteps = 0;
-    
-    this.load({
-      stat: this._state.stat,
-      pet: this._state.pet,
-      cards: [] as MarchCard[]
-    } as MarchMapState);
-    
-    this._events.pet(this._state.pet);
-    this._events.stat(this._state.stat);
-    this._events.cards([]);
+
+    this._state.cards = [];
   }
 
   public load(state: MarchMapState) {
@@ -414,6 +405,7 @@ export class MarchMap {
   }
 
   public gameOver(): void {
+    this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
   }
 

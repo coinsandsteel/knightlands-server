@@ -272,16 +272,19 @@ export class MarchUser {
   
       this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
       this.updateGoldStat(goldAmount, pet.petClass);
-
-      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
-      this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
-      this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
+      this.voidBoosters();
       
       Game.marchManager.updateRank(
         this._user.id, 
         pet.petClass, 
         this.getGoldStat(pet.petClass)
       );
+    }
+
+    public voidBoosters(): void {
+      this.modifyPreGameBooster(march.BOOSTER_HP, -1);
+      this.modifyPreGameBooster(march.BOOSTER_KEY, -1);
+      this.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
     }
 
     public canUsePreGameBooster(type: string): boolean {

@@ -43,6 +43,7 @@ export class MarchController {
   }
 
   async dispose() {
+    this._marchMap.exit();
     await this._save();
   }
 
