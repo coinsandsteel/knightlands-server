@@ -2102,7 +2102,7 @@ class PlayerController extends IPaymentListener {
 
     async _marchRanking(user, data) {
         if (data.personal) {
-            return Game.marchManager.getUserRank(this.user.id, data.petClass);
+            return Game.marchManager.getUserRank(user.id, data.petClass);
         }
 
         if (!isNumber(data.page)) {
@@ -2111,6 +2111,10 @@ class PlayerController extends IPaymentListener {
 
         if (data.total) {
             return Game.marchManager.totalPlayers();
+        }
+
+        if (!isNumber(data.petClass) || data.petClass <= 0 || data.petClass > 5) {
+            throw Errors.IncorrectArguments;
         }
 
         return Game.marchManager.getRankings(data.page, data.petClass);
