@@ -6,6 +6,8 @@ import { MarchUser } from "./MarchUser";
 import { MarchMap } from "./MarchMap";
 import { MarchEvents } from "./MarchEvents";
 import { MarchSaveData } from "./types";
+import { TICKET_ITEM_ID } from '../../knightlands-shared/march';
+import Errors from '../../knightlands-shared/errors';
 
 export class MarchController {
   private _user: User;
@@ -99,7 +101,12 @@ export class MarchController {
 
   async startNewGame() {
     // Debit one ticket
-
+    if (this._user.inventory.countItemsByTemplate(TICKET_ITEM_ID) <= 0) {
+      throw Errors.MarchNoTicket;
+    }
+    this._user.inventory.removeItemByTemplate(
+      TICKET_ITEM_ID,
+    );
     // Start the card game from scratch
     this._marchMap.restart();
     this._events.flush();
