@@ -18,15 +18,22 @@ export class Enemy extends Unit {
 
     if (pet.isDead()) {
       this.map.exit();
-    } else {
-      if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
-        pet.upgradeHP(1);
-        this.map.croupier.upgradePool();
-      }
-      if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
-        this.map.enablePenalty(this.hp);
-      }
-      this.map.marchUser.addSessionGold(this.hp);
+      return;
+    }
+
+    if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      pet.upgradeHP(1);
+      this.map.croupier.upgradePool();
+    }
+
+    if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
+      this.map.enablePenalty(this.hp);
+    }
+
+    this.map.marchUser.addSessionGold(this.hp);
+
+    if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      this.map.bossKilled();
     }
   }
 
@@ -37,7 +44,6 @@ export class Enemy extends Unit {
     } as MarchCard, this.map);
     
     this.map.replaceCellWith(this, newUnit);
-    this.map.bossKilled();
   }
 
   public destroy(): void { 

@@ -115,7 +115,7 @@ export class MarchController {
   }
 
   async testAction(action) {
-    //await this._marchUser.testAction(action);
+    await this._marchUser.testAction(action);
   }
 
   async unlockPet(petClass: number) {

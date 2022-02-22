@@ -286,13 +286,12 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.MarchTouch, this._gameHandler(this._marchTouch.bind(this)));
         this._socket.on(Operations.MarchCollectDailyReward, this._gameHandler(this._marchCollectDailyReward.bind(this)));
         this._socket.on(Operations.MarchTestAction, this._gameHandler(this._marchTestAction.bind(this)));
-        this._socket.on(Operations.MarchPurchase, this._gameHandler(this._marchPurchase.bind(this)));
+        this._socket.on(Operations.MarchPurchaseGold, this._gameHandler(this._marchPurchaseGold.bind(this)));
         this._socket.on(Operations.MarchOpenChest, this._gameHandler(this._marchOpenChest.bind(this)));
         this._socket.on(Operations.MarchPurchasePreGameBooster, this._gameHandler(this._marchPurchasePreGameBooster.bind(this)));
         this._socket.on(Operations.MarchUnlockPet, this._gameHandler(this._marchUnlockPet.bind(this)));
         this._socket.on(Operations.MarchUpgradePet, this._gameHandler(this._marchUpgradePet.bind(this)));
         this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
-        this._socket.on(Operations.MarchPurchaseCurrency, this._gameHandler(this._marchPurchaseCurrency.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2094,13 +2093,6 @@ class PlayerController extends IPaymentListener {
         return this.march.upgradePet(data.petClass);
     }
 
-    async _marchPurchase(_, data) {
-      /*if (data.shopIndex === undefined || data.shopIndex === null || !data.itemsCount || !data.currency) {
-        throw Errors.IncorrectArguments;
-      }*/
-      return this.march.purchase(data);
-    }
-
     async _marchOpenChest(_, data) {
         if (!isNumber(data.keyNumber)) {
             throw Errors.IncorrectArguments;
@@ -2124,8 +2116,12 @@ class PlayerController extends IPaymentListener {
         return Game.marchManager.getRankings(data.page, data.petClass);
     }
 
-    async _marchPurchaseCurrency(user, data) {
-        if (!isNumber(data.amount)) {
+    async _marchPurchaseGold(user, data) {
+        if (
+          !isNumber(data.shopIndex) 
+          || 
+          !['hard', 'dkt'].includes(data.currency)
+        ) {
             throw Errors.IncorrectArguments;
         }
 

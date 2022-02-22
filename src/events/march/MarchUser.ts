@@ -100,10 +100,10 @@ export class MarchUser {
         throw Errors.DailyMarchRewardCollected;
       }
 
-      await this._user.inventory.addItemTemplates({
+      await this._user.inventory.addItemTemplates([{
         item: march.TICKET_ITEM_ID,
         quantity: entry.quantity
-      });
+      }]);
 
       this._state.dailyRewards[this.day - 1].collected = true;
       this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
@@ -118,7 +118,8 @@ export class MarchUser {
         throw Errors.MarchPetUnlocked;
       }
 
-      const price = march.PETS_PRICE[petClass][0];
+      const classIndex = petClass - 1;
+      const price = march.PETS_PRICE[classIndex][0];
       if (this.gold < price) {
         throw Errors.NotEnoughCurrency;
       }
@@ -138,7 +139,8 @@ export class MarchUser {
         throw Errors.MarchPetMaxLevel;
       }
 
-      const price = march.PETS_PRICE[petClass][pet.level];
+      const classIndex = petClass - 1;
+      const price = march.PETS_PRICE[classIndex][pet.level];
       if (this.gold < price) {
         throw Errors.NotEnoughCurrency;
       }
@@ -146,11 +148,10 @@ export class MarchUser {
       this.modifyBalance(march.CURRENCY_GOLD, -price);
 
       const levelIndex = this._state.pets[index].level - 1;
-      const classIndex = petClass - 1;
-      /*await this._user.inventory.addItemTemplates({
+      /*await this._user.inventory.addItemTemplates([{
         item: march.EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
         quantity: 1
-      });*/
+      }]);*/
       
       this._state.pets[index].level += 1;
       this._events.pets(this._state.pets);
@@ -214,27 +215,57 @@ export class MarchUser {
       return this._state.pets[index].goldCollected;
     }
 
-    public async purchaseGold(currency: string, amount: number) {
-      // TODO add meta conversionRate
-      // const conversionRate = Game.marchManager.getMeta().purchase[currency];
+    async purchaseGold(shopIndex, currency) {
+      // Retrieve meta
+      // let meta = [{ quantity: 100, hard: 10, flesh: 5 }]
+      //let shopMeta = Game.marchManager.shopMeta;
+      let shopMeta = Game.marchManager.shopMeta;
+      let choosedShopOption = shopMeta[shopIndex];
 
-      // TODO this logic doesn't make sense, should be re-implemented
-      /*const conversionRate = 1;
-      const price = amount * conversionRate;
-      if (price > this.gold) {
-        throw Errors.NotEnoughCurrency;
+      // Wrong metadata protection
+      if (!choosedShopOption || !choosedShopOption.hard || !choosedShopOption.flesh) {
+        throw Errors.IncorrectArguments;
       }
-      this.modifyBalance(march.CURRENCY_GOLD, amount * price);
-      switch(currency) {
-        case 'hard': 
-          await this._user.addHardCurrency(amount);
-          break;
-        case 'dkt': 
-          await this._user.addDkt(amount);
-          break;
-      }*/
-    }
 
+      // check balance
+      let balance = 0;
+      let price = Infinity;
+      switch (currency) {
+        case "hard": {
+          balance = this._user.hardCurrency;
+          price = choosedShopOption.hard;
+          break;
+        }
+        case "flesh": {
+          balance = this._user.dkt;
+          price = choosedShopOption.flesh;
+          break;
+        }
+        default: {
+          return;
+        }
+      }
+      if (balance < price) {
+        throw Errors.IncorrectArguments;
+      }
+
+      // change balance
+      if (currency === "hard") {
+        this._user.addHardCurrency(-price);
+      } else if (currency === "flesh") {
+        this._user.addDkt(-price);
+      }
+
+      const addItems = [{
+        item: march.TICKET_ITEM_ID,
+        quantity: choosedShopOption.quantity
+      }]
+
+      await this._user.inventory.addItemTemplates(addItems);
+
+      return addItems;
+    }
+    
     public flushStats(pet: Pet): void {
       let goldModifier = pet.checkClassAndLevel(4, 2) ? 1.2 : 1;
       let goldAmount = this._state.balance.sessionGold * goldModifier;
@@ -255,5 +286,30 @@ export class MarchUser {
 
     public canUsePreGameBooster(type: string): boolean {
       return this._state.preGameBoosters[type] > 0;
+    }
+
+    public async testAction(action) {
+      switch (action) {
+        case 'addTicket':{
+          await this._user.inventory.addItemTemplates([
+            { 
+              item: march.TICKET_ITEM_ID,
+              quantity: 1
+            }
+          ]);
+          break;
+        }
+        case 'resetDailyRewards':{
+          this.day = 1;
+          this._state.dailyRewards = this.getInitialDailyrewards();
+          this.setActiveReward();
+          break;
+        }
+        case 'plus1Day':{
+          this.day++;
+          this.setActiveReward();
+          break;
+        }
+      }
     }
 }
