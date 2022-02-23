@@ -268,7 +268,7 @@ export class MarchUser {
     
     public flushStats(pet: Pet): void {
       let goldModifier = pet.checkClassAndLevel(4, 2) ? 1.2 : 1;
-      let goldAmount = this._state.balance.sessionGold * goldModifier;
+      let goldAmount = Math.round(this._state.balance.sessionGold * goldModifier);
   
       this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
       this.updateGoldStat(goldAmount, pet.petClass);
