@@ -43,7 +43,7 @@ export class MarchController {
   }
 
   async dispose() {
-    this._marchMap.exit();
+    this._marchMap.exit(false);
     await this._save();
   }
 
@@ -107,7 +107,7 @@ export class MarchController {
   }
 
   async exitGame() {
-    this._marchMap.exit();
+    this._marchMap.exit(true);
     this._events.flush();
   }
 
@@ -132,9 +132,5 @@ export class MarchController {
   async upgradePet(petClass: number) {
     await this._marchUser.upgradePet(petClass);
     this._events.flush();
-  }
-  
-  async purchase(data) {
-    
   }
 }

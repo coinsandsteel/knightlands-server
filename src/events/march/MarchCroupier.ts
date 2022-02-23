@@ -4,6 +4,7 @@ import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import { MarchCard } from "./types";
 import { Container } from "./units/Container";
+import Game from "../../game";
 
 export class MarchCroupier {
   protected _map: MarchMap;
@@ -15,26 +16,7 @@ export class MarchCroupier {
     this._map = map;
     this._poolNumber = 0;
     this._stepCounter = 0;
-    this._queue = [
-      /*march.UNIT_CLASS_EXTRA_HP,
-      march.UNIT_CLASS_CHEST,
-      march.UNIT_CLASS_BALL_LIGHTNING,
-      march.UNIT_CLASS_DRAGON_BREATH,
-      march.UNIT_CLASS_BOMB,
-      march.UNIT_CLASS_HP,
-      march.UNIT_CLASS_BOW,
-      march.UNIT_CLASS_ENEMY,
-      march.UNIT_CLASS_ENEMY,
-      march.UNIT_CLASS_BOW,
-      march.UNIT_CLASS_ENEMY,
-      march.UNIT_CLASS_ENEMY,
-      march.UNIT_CLASS_TRAP,
-      march.UNIT_CLASS_ARMOR,
-      march.UNIT_CLASS_BOMB,
-      march.UNIT_CLASS_HP,
-      march.UNIT_CLASS_ARMOR,
-      march.UNIT_CLASS_BOW,*/
-    ];
+    this._queue = [];
   }
 
   get pool() {

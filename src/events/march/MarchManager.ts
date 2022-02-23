@@ -31,6 +31,10 @@ export class MarchManager {
     return this._meta.shop;
   }
 
+  get pools() {
+    return this._meta.pools;
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "march_meta" });
     this._rankCollection = Game.db.collection(Collections.MarchRanks);

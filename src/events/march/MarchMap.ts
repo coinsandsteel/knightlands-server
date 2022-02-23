@@ -170,7 +170,7 @@ export class MarchMap {
     );
   }
 
-  public exit() {
+  public exit(sendEvents: boolean) {
     this._marchUser.resetSessionGoldBalance();
     this._marchUser.voidBoosters();
     
@@ -179,6 +179,11 @@ export class MarchMap {
     this._state.stat.penaltySteps = 0;
 
     this._state.cards = [];
+
+    if (sendEvents) {
+      this._events.stat(this._state.stat);
+      this._events.cards([]);
+    }
   }
 
   public load(state: MarchMapState) {
