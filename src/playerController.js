@@ -2060,8 +2060,14 @@ class PlayerController extends IPaymentListener {
         return this.march.purchasePreGameBooster(data.type);
     }
 
-    async _marchStartNewGame() {
-        return this.march.startNewGame();
+    async _marchStartNewGame(_, data) {
+        if (!isNumber(data.petClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        if (!isNumber(data.level)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.march.startNewGame(data.petClass, data.level);
     }
 
     async _marchExitGame() {

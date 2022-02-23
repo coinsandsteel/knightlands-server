@@ -100,9 +100,9 @@ export class MarchController {
     this._events.flush();
   }
 
-  async startNewGame() {
+  async startNewGame(petClass: number, level: number) {
     this._marchUser.debitTicket();
-    this._marchMap.restart();
+    this._marchMap.restart(petClass, level);
     this._events.flush();
   }
 

@@ -137,13 +137,16 @@ export class MarchMap {
   }
 
   // Start the card game from scratch
-  public restart() {
+  public restart(petClass: number, level: number) {
     this.pet.reset();
     this._marchUser.resetSessionGoldBalance();
 
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
       this.pet.modifyMaxHP(1);
     }
+
+    this._state.pet.petClass = petClass;
+    this._state.pet.level = level;
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
@@ -192,6 +195,7 @@ export class MarchMap {
     // Parse cards
     this.parseCards(state.cards);
     // Set pet attributes
+    console.log("🚀 ~ file: MarchMap.ts ~ line 199 ~ MarchMap ~ load ~ state.pet", state.pet)
     this.parsePet(state.pet);
   }
 
@@ -410,6 +414,7 @@ export class MarchMap {
   }
 
   public gameOver(): void {
+    console.log("🚀 ~ file: MarchMap.ts ~ line 418 ~ MarchMap ~ gameOver ~ this.pet", this.pet.petClass)
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
   }
