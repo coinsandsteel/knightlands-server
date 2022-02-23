@@ -3,9 +3,8 @@ import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
 import Game from "../../game";
 import { TICKET_ITEM_ID } from "../../knightlands-shared/march";
-import { MarchItem } from "./types";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 export class MarchManager {
   private _meta: any;
   private _saveCollection: Collection;
@@ -17,11 +16,11 @@ export class MarchManager {
   }
   
   get eventStartDate() {
-    return this._meta.eventStartDate * 1000 || '2022-03-08 00:00:00';
+    return '2021-03-08 00:00:00';
   }
   
   get eventEndDate() {
-    return this._meta.eventEndDate * 1000 || '2022-03-14 23:59:59';
+    return '2022-03-14 23:59:59';
   }
 
   get raidRewardCount() {
@@ -45,9 +44,12 @@ export class MarchManager {
 
   async updateRank(userId: ObjectId, petClass: number, points: number) {
     const scorePetStr = 'score' + petClass;
+    const setOnInsert = { score1: 0, score2: 0, score3: 0, score4: 0, score5: 0 };
+    delete setOnInsert[scorePetStr];
     await this._rankCollection.updateOne(
         { _id: userId },
         {
+            $setOnInsert: setOnInsert,
             $set: {
                 order: Game.now,
                 [scorePetStr]: points
@@ -57,20 +59,25 @@ export class MarchManager {
     );
   }
 
-  async getUserRank(userId: ObjectId, petClass: number) {
+  async getUserRank(userId: ObjectId) {
     let userRecord = await this._rankCollection.findOne({ _id: userId });
-    const scorePetStr = 'score' + petClass;
-    let score = userRecord ? userRecord[scorePetStr] : null;
-    if (!score) {
-        return null;
+    const ranks = []
+    const scores = []
+    for (var i = 1; i <= 5; i++) {
+        const scorePetStr = 'score' + i;
+        const score = userRecord ? userRecord[scorePetStr] : null;
+        if (!score) {
+            scores.push(0);
+            ranks.push(await this.totalPlayers());
+        } else {
+            scores.push(score);
+            ranks.push(await this._rankCollection.find({ [scorePetStr]: { $gt: score } }).count() + 1);
+        }
     }
-
-    let rank = await this._rankCollection.find({ [scorePetStr]: { $gt: score } }).count() + 1;
     return {
-        rank,
+        ranks,
         id: userId.toString(),
-        score: score.toString(),
-        b: userRecord.b
+        scores,
     };
   }
 
@@ -78,9 +85,18 @@ export class MarchManager {
     return this._rankCollection.find({}).count();
   }
 
-  async getRankings(page: number, petClass: number) {
-    const total = await this.totalPlayers();
+  async getRankings() {
+    const result = [];
+    for (var i = 1; i <= 5; i++) {
+      result.push(await this.getRanking(i));
+    }
+
+    return result;
+  }
+
+  async getRanking(petClass: number) {
     const scorePetStr = 'score' + petClass;
+    const page = 0;
 
     const records = await this._rankCollection.aggregate([
         { $sort: { [scorePetStr]: -1, order: 1 } },
@@ -104,10 +120,7 @@ export class MarchManager {
         }
     ]).toArray();
 
-    return {
-        records,
-        finished: total <= page * PAGE_SIZE + PAGE_SIZE
-    };
+    return records;
   }
 
   getRaidReward() {

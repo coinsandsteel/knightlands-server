@@ -27,6 +27,11 @@ export class MarchUser {
           this.setInitialState();
         }
     }
+   
+    public async init() {
+      this.setEventDay();
+      this.setActiveReward();
+    }
       
     public setInitialState() {
       this._state = {
@@ -159,11 +164,6 @@ export class MarchUser {
     
     public getState(): MarchUserState {
       return this._state;
-    }
-    
-    public async init() {
-      this.setEventDay();
-      this.setActiveReward();
     }
 
     public modifyBalance(currency: string, amount: number) {
