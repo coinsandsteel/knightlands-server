@@ -140,6 +140,7 @@ export class MarchMap {
   public restart(petClass: number, level: number) {
     this.pet.reset();
     this._marchUser.resetSessionGoldBalance();
+    this._marchCroupier.reset();
 
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
       this.pet.modifyMaxHP(1);
@@ -417,6 +418,7 @@ export class MarchMap {
     console.log("🚀 ~ file: MarchMap.ts ~ line 418 ~ MarchMap ~ gameOver ~ this.pet", this.pet.petClass)
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
+    this._marchCroupier.reset();
   }
 
   public bossKilled(): void {

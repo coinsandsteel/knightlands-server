@@ -282,6 +282,12 @@ export class MarchCroupier {
     }
   }
 
+  public reset(): void {
+    this._queue = [];
+    this._poolNumber = 0;
+    this.resetStepCounter();
+  }
+
   protected resetStepCounter(): void {
     this._stepCounter = 0;
   }
