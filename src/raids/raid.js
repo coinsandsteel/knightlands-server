@@ -565,7 +565,7 @@ class Raid extends EventEmitter {
                     rewards.items.push(...Game.lunarManager.getRaidReward());
                 }
                 if (Game.marchManager.eventIsInProgress()) {
-                    const isGetMarchReward = Random.range(0, 1) < (0.05 * chosenLoot.damageThreshold / raidStage.maxSlots);
+                    const isGetMarchReward = Random.range(0, 1) < 0.05;
                     isGetMarchReward && rewards.items.push(Game.marchManager.getRaidReward());
                 }
             } else {
