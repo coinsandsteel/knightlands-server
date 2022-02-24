@@ -7,6 +7,13 @@ import Game from "../../game";
 import * as march from "../../knightlands-shared/march";
 import { Pet } from "./units/Pet";
 
+// TODO update
+export const EVENT_REWARD_ITEM_ID = [
+  [1000, 1001, 1002, 1003, 1004], // level 2: frame
+  [2000, 2001, 2002, 2003, 2004]  // level 3: headwear
+];
+
+
 export class MarchUser {
     private _state: MarchUserState;
     private _events: MarchEvents;
@@ -154,7 +161,7 @@ export class MarchUser {
 
       const levelIndex = this._state.pets[index].level - 1;
       /*await this._user.inventory.addItemTemplates([{
-        item: march.EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
+        item: EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
         quantity: 1
       }]);*/
       

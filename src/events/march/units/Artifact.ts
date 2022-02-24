@@ -4,6 +4,8 @@ import * as march from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
 import { MarchMap } from "../MarchMap";
 
+export const BOMB_TIMER = 10;
+
 export class Artifact extends Unit {
   private timer: number;
 
@@ -11,7 +13,7 @@ export class Artifact extends Unit {
     super(card, map);
 
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.timer = march.BOMB_TIMER;
+      this.timer = BOMB_TIMER;
     }
   }
 
