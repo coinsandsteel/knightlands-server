@@ -2113,8 +2113,7 @@ class PlayerController extends IPaymentListener {
 
     async _marchRanking(user, data) {
         return {
-            rankings: await Game.marchManager.getRankings(), 
-            myRanking: await Game.marchManager.getUserRank(user.id, data.petClass)
+            rankings: await Game.marchManager.getRankings()
         };
     }
 

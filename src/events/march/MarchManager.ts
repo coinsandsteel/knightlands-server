@@ -63,28 +63,6 @@ export class MarchManager {
     );
   }
 
-  async getUserRank(userId: ObjectId) {
-    let userRecord = await this._rankCollection.findOne({ _id: userId });
-    const ranks = []
-    const scores = []
-    for (var i = 1; i <= 5; i++) {
-        const scorePetStr = 'score' + i;
-        const score = userRecord ? userRecord[scorePetStr] : null;
-        if (!score) {
-            scores.push(0);
-            ranks.push(await this.totalPlayers());
-        } else {
-            scores.push(score);
-            ranks.push(await this._rankCollection.find({ [scorePetStr]: { $gt: score } }).count() + 1);
-        }
-    }
-    return {
-        ranks,
-        id: userId.toString(),
-        scores,
-    };
-  }
-
   async totalPlayers() {
     return this._rankCollection.find({}).count();
   }
