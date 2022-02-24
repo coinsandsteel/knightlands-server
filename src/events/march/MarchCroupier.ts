@@ -293,12 +293,12 @@ export class MarchCroupier {
   }
 
   public upgradePool(): void {
-    if (this._poolNumber >= UNIT_POOL.length) {
+    this.resetStepCounter();
+    if (this._poolNumber >= UNIT_POOL.length - 1) {
       return;
     }
-    this._queue.push(UNIT_CLASS_CHEST);
     this._poolNumber++;
-    this.resetStepCounter();
+    this._queue.push(UNIT_CLASS_CHEST);
   }
 
   public getContainerLoot(container: Container, positive: boolean): Unit {
