@@ -72,6 +72,28 @@ export class MarchEvents {
 
       this._log('Card HP', [card._id, card.unitClass, 'hp:', card.hp, 'index:', index]);
     }
+
+    trapOpened(card: MarchCard, index: number) {
+      this._initSequence();
+
+      // Check if card was moved
+      const newIndex = this.sequenceCards.findIndex(item => item && item._id === card._id);
+      index = newIndex === -1 ? index : newIndex;
+
+      if (!this.sequenceCards[index]) {
+        this._events.sequence[this._sequence].cards[index] = { 
+          _id: card._id,
+          opened: card.opened
+        };
+      } else {
+        this._events.sequence[this._sequence].cards[index] = {
+          ...this._events.sequence[this._sequence].cards[index],
+          opened: card.opened
+        }
+      }
+
+      this._log('Trap opened/closed', [card._id, card.unitClass, 'opened:', card.opened, 'index:', index]);
+    }
     
     newCard(card: MarchCard, index: number) {
       this._initSequence();

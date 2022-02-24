@@ -49,7 +49,7 @@ export class Unit extends HpClass implements StepInterface {
     this._maxHp = card.maxHp || card.hp;
     this._id = card._id || uuidv4().split('-').pop();
 
-    if (card.opened !== null) {
+    if (this.unitClass === march.UNIT_CLASS_TRAP) {
       this._opened = card.opened;
     }
   }
@@ -60,6 +60,7 @@ export class Unit extends HpClass implements StepInterface {
 
   public setOpened(opened: boolean): void {
     this._opened = opened;
+    this.map.events.trapOpened(this.serialize(), this.index);
   };
 
   public activate(): void {};
