@@ -2061,13 +2061,22 @@ class PlayerController extends IPaymentListener {
     }
 
     async _marchStartNewGame(_, data) {
-        if (!isNumber(data.petClass)) {
+        if (
+            !isNumber(data.petClass)
+            ||
+            !isNumber(data.level)
+            ||
+            !data.boosters
+            ||
+            !isNumber(data.boosters.maxHealth)
+            ||
+            !isNumber(data.boosters.extraLife)
+            ||
+            !isNumber(data.boosters.key)
+        ) {
             throw Errors.IncorrectArguments;
         }
-        if (!isNumber(data.level)) {
-            throw Errors.IncorrectArguments;
-        }
-        return this.march.startNewGame(data.petClass, data.level);
+        return this.march.startNewGame(data.petClass, data.level, data.boosters);
     }
 
     async _marchExitGame() {

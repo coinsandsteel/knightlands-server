@@ -5,7 +5,7 @@ import Game from "../../game";
 import { MarchUser } from "./MarchUser";
 import { MarchMap } from "./MarchMap";
 import { MarchEvents } from "./MarchEvents";
-import { MarchSaveData } from "./types";
+import { MarchBoosters, MarchSaveData } from "./types";
 import { TICKET_ITEM_ID } from '../../knightlands-shared/march';
 import Errors from '../../knightlands-shared/errors';
 
@@ -100,9 +100,9 @@ export class MarchController {
     this._events.flush();
   }
 
-  async startNewGame(petClass: number, level: number) {
+  async startNewGame(petClass: number, level: number, boosters: MarchBoosters) {
     this._marchUser.debitTicket();
-    this._marchMap.restart(petClass, level);
+    this._marchMap.restart(petClass, level, boosters);
     this._events.flush();
   }
 

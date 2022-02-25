@@ -8,13 +8,15 @@ export interface MarchUserState {
     sessionGold: number;
     gold: number;
   };
-  preGameBoosters: {
-    maxHealth: number;
-    extraLife: number;
-    key: number;
-  };
+  preGameBoosters: MarchBoosters;
   dailyRewards: MarchRewardDayData[];
   pets: MarchPetData[];
+}
+
+export interface MarchBoosters {
+  maxHealth: number;
+  extraLife: number;
+  key: number;
 }
 
 export interface MarchPetData {

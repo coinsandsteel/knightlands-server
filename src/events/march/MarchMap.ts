@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { MarchCard, MarchMapState, PetState, StatState } from "./types";
+import { MarchBoosters, MarchCard, MarchMapState, PetState, StatState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
@@ -137,9 +137,9 @@ export class MarchMap {
   }
 
   // Start the card game from scratch
-  public restart(petClass: number, level: number) {
+  public restart(petClass: number, level: number, boosters: MarchBoosters) {
     this.pet.reset();
-    this._marchUser.resetSessionGoldBalance();
+    this._marchUser.resetSessionGoldAndBoosters(boosters);
     this._marchCroupier.reset();
 
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
@@ -175,7 +175,7 @@ export class MarchMap {
   }
 
   public exit(sendEvents: boolean) {
-    this._marchUser.resetSessionGoldBalance();
+    this._marchUser.resetSessionGoldAndBoosters();
     this._marchUser.voidBoosters();
     
     this._state.stat.stepsToNextBoss = 0;

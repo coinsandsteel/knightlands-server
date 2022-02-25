@@ -2,7 +2,7 @@ import _ from "lodash";
 import { ObjectId } from "mongodb";
 import game from "../../game";
 import events from "../../knightlands-shared/events";
-import { MarchCard, PetState, StatState } from "./types";
+import { MarchBoosters, MarchCard, PetState, StatState } from "./types";
 
 const CARDS_ARRAY = [
   null, null, null, 
@@ -156,8 +156,8 @@ export class MarchEvents {
       //console.log('Balance', { currency, balance });
     }
 
-    preGameBoosters(preGameBoosters) {
-      this._events.preGameBoosters = preGameBoosters;
+    preGameBoosters(boosters: MarchBoosters) {
+      this._events.preGameBoosters = boosters;
       //console.log('PreGameBoosters', { preGameBoosters: this._events.preGameBoosters });
     }
 

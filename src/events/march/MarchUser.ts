@@ -1,6 +1,6 @@
 import _ from "lodash";
 import User from "../../user";
-import { MarchPetData, MarchRewardDayData, MarchUserState } from "./types";
+import { MarchBoosters, MarchPetData, MarchRewardDayData, MarchUserState } from "./types";
 import { MarchEvents } from "./MarchEvents";
 import Errors from "../../knightlands-shared/errors";
 import Game from "../../game";
@@ -182,9 +182,14 @@ export class MarchUser {
       this.modifyBalance(march.CURRENCY_SESSION_GOLD, amount);
     }
   
-    public resetSessionGoldBalance() {
+    public resetSessionGoldAndBoosters(boosters?: MarchBoosters) {
+      this._state.preGameBoosters[march.BOOSTER_HP] = boosters ? boosters[march.BOOSTER_HP] : 0;
+      this._state.preGameBoosters[march.BOOSTER_KEY] = boosters ? boosters[march.BOOSTER_KEY] : 0;
+      this._state.preGameBoosters[march.BOOSTER_LIFE] = boosters ? boosters[march.BOOSTER_LIFE] : 0;
       this._state.balance[march.CURRENCY_SESSION_GOLD] = 0;
+
       this._events.balance(march.CURRENCY_SESSION_GOLD, 0);
+      this._events.preGameBoosters(this._state.preGameBoosters);
     }
 
     public purchasePreGameBooster(type: string) {

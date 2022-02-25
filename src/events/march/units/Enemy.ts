@@ -14,7 +14,10 @@ export class Enemy extends Unit {
 
   private fight(): void {
     const pet = this.map.pet;
-    pet.handleDamage(this.hp);
+
+    if (!(this.unitClass === march.UNIT_CLASS_TRAP && !this.opened)) {
+      pet.handleDamage(this.hp);
+    }
 
     if (pet.isDead()) {
       return;
