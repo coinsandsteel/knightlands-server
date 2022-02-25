@@ -303,8 +303,8 @@ export class MarchMap {
         const isMoveDown = petIndex === 5;
         const factor = isMoveDown ? 1 : -1;
         this.moveCardTo(this._pet, targetIndex);
-        this.moveCardTo(this.cards[petIndex + 3 * factor], petIndex);
-        this.addCard(petIndex + 3 * factor);
+        this.moveCardTo(this.cards[petIndex - 3 * factor], petIndex);
+        this.addCard(petIndex - 3 * factor);
       }
     } else {
       if ([1, 7].includes(petIndex)) {
