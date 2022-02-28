@@ -25,7 +25,7 @@ export class Enemy extends Unit {
 
     if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
       pet.upgradeHP(1);
-      this.bosskilled();
+      this.bossKilled();
     }
 
     if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
@@ -44,7 +44,8 @@ export class Enemy extends Unit {
     this.map.replaceCellWith(this, newUnit);
   }
 
-  public destroy(): void { 
+  public destroy(): void {
+    this.map.bossKilled();
     this.replaceWithGold();
   };
 
@@ -54,7 +55,7 @@ export class Enemy extends Unit {
     }
   };
 
-  protected bosskilled(): void {
+  protected bossKilled(): void {
     this.map.bossKilled();
     this.map.croupier.upgradePool();
   }
