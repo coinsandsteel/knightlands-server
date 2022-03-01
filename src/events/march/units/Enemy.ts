@@ -46,7 +46,7 @@ export class Enemy extends Unit {
 
   public destroy(): void {
     if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
-      this.map.bossKilled();
+      this.bossKilled();
     }
     this.replaceWithGold();
   };
