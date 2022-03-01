@@ -50,7 +50,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 11,
+    stepsToBoss: 12,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 5 },
@@ -69,7 +69,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 12,
+    stepsToBoss: 14,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 6 },
@@ -88,7 +88,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 13,
+    stepsToBoss: 18,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 7 },
@@ -107,7 +107,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 10,
+    stepsToBoss: 22,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 8 },
@@ -126,7 +126,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 14,
+    stepsToBoss: 26,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 9 },
@@ -145,7 +145,7 @@ export const UNIT_POOL = [
     }
   },
   {
-    stepsToBoss: 15,
+    stepsToBoss: 30,
     unitStat: {
       // Enemies
       [UNIT_CLASS_ENEMY]: { min: 1, max: 10 },
