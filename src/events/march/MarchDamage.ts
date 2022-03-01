@@ -79,7 +79,7 @@ export class MarchDamage {
             }
             case march.UNIT_CLASS_BOW:{
               let stackBonus = this._pet.checkClassAndLevel(2, 2) ? 2 : 0;
-              return attacker.hp + bonus + stackBonus;
+              return attacker.hp + stackBonus;
             }
           }
           break;
