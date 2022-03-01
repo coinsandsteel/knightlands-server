@@ -194,7 +194,7 @@ export class MarchUser {
 
     public purchasePreGameBooster(type: string) {
       // TODO retreive price
-      const price = 100;
+      const price = march.BOOSTERS[type];
       if (price > this.gold) {
         throw Errors.NotEnoughCurrency;
       }
