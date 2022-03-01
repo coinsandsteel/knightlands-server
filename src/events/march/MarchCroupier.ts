@@ -295,10 +295,9 @@ export class MarchCroupier {
   public upgradePool(): void {
     this.resetStepCounter();
     this._queue.push(UNIT_CLASS_CHEST);
-    if (this._poolNumber >= UNIT_POOL.length - 1) {
-      return;
+    if (this._poolNumber < UNIT_POOL.length - 1) {
+      this._poolNumber++;
     }
-    this._poolNumber++;
   }
 
   public getContainerLoot(container: Container, positive: boolean): Unit {
