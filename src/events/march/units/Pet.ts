@@ -78,6 +78,7 @@ export class Pet extends Unit implements StepInterface {
 
   public modifyMaxHP(value): void {
     this._maxHp += value;
+    this.map.events.cardHp(this.serialize(), this.index);
   };
   
   public modifyArmor(value): void {

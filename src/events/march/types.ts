@@ -41,6 +41,7 @@ export interface MarchCard {
   _id: string;
   unitClass: string;
   hp: number;
+  previousHp?: number;
   maxHp?: number;
   opened?: boolean;
 }

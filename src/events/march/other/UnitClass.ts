@@ -72,6 +72,7 @@ export class Unit extends HpClass implements StepInterface {
       _id: this._id,
       hp: this._hp,
       maxHp: this._maxHp,
+      previousHp: this._previousHp,
       unitClass: this.unitClass
     } as MarchCard;
 
@@ -100,5 +101,13 @@ export class Unit extends HpClass implements StepInterface {
     if (hpModifier) {
       this.map.events.cardHp(this.serialize(), this.index);
     }
+  };
+
+  public capturePreviousHp(): void {
+    this._previousHp = this._hp;
+  };
+  
+  public voidPreviousHp(): void {
+    this._previousHp = null;
   };
 }

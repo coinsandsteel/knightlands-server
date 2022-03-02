@@ -1,5 +1,6 @@
 export class HpClass {
   protected _hp: number;
+  protected _previousHp: number;
   protected _maxHp: number;
 
   get hp(): number {

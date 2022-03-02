@@ -61,16 +61,20 @@ export class MarchEvents {
       if (!this.sequenceCards[index]) {
         this._events.sequence[this._sequence].cards[index] = { 
           _id: card._id, 
-          hp: card.hp
+          hp: card.hp,
+          maxHp: card.maxHp,
+          previousHp: card.previousHp
         };
       } else {
         this._events.sequence[this._sequence].cards[index] = {
           ...this._events.sequence[this._sequence].cards[index],
-          hp: card.hp
+          hp: card.hp,
+          maxHp: card.maxHp,
+          previousHp: card.previousHp
         }
       }
 
-      this._log('Card HP', [card._id, card.unitClass, 'hp:', card.hp, 'index:', index]);
+      this._log('Card HP', [card._id, card.unitClass, 'hp:', card.hp, 'previousHp:', card.hp, 'maxHp:', card.maxHp, 'index:', index]);
     }
 
     trapOpened(card: MarchCard, index: number) {

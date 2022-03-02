@@ -24,7 +24,9 @@ export class Enemy extends Unit {
     }
 
     if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      pet.capturePreviousHp();
       pet.upgradeHP(1);
+      pet.voidPreviousHp();
       this.bossKilled();
     }
 
