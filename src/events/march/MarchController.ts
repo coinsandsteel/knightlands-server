@@ -89,11 +89,6 @@ export class MarchController {
     this._marchUser.purchaseGold(currency, amount);
     this._events.flush();
   }
-  
-  async purchasePreGameBooster(type: string) {
-    this._marchUser.purchasePreGameBooster(type);
-    this._events.flush();
-  }
 
   async tryToOpenChest(keyNumber: number) {
     this._marchMap.tryToOpenChest(keyNumber);

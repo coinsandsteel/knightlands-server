@@ -139,6 +139,7 @@ export class MarchMap {
   // Start the card game from scratch
   public restart(petClass: number, level: number, boosters: MarchBoosters) {
     this.pet.reset();
+    this._marchUser.purchasePreGameBoosters(boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
     this._marchCroupier.reset();
 

@@ -192,15 +192,22 @@ export class MarchUser {
       this._events.preGameBoosters(this._state.preGameBoosters);
     }
 
-    public purchasePreGameBooster(type: string) {
-      // TODO retreive price
-      const price = march.BOOSTERS[type];
-      if (price > this.gold) {
+    public purchasePreGameBoosters(boosters: MarchBoosters) {
+      var totalPrice = 0;
+      for (var key in boosters) {
+        if (boosters[key]) {
+          totalPrice += march.BOOSTERS[key];
+        }
+      }
+      if (totalPrice > this.gold) {
         throw Errors.NotEnoughCurrency;
       }
-
-      this.modifyBalance(march.CURRENCY_GOLD, -price);
-      this.modifyPreGameBooster(type, 1);
+      for (var key in boosters) {
+        if (boosters[key]) {
+          this.modifyBalance(march.CURRENCY_GOLD, -march.BOOSTERS[key]);
+          this.modifyPreGameBooster(key, 1);
+        }
+      }
     }
 
     public modifyPreGameBooster(type: string, value: number) {
