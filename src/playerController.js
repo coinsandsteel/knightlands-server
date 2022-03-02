@@ -2130,7 +2130,7 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
 
-        return this.march.purchaseCurrency(data.currency, data.amount);
+        return this.march.purchaseGold(data.currency, data.amount);
     }
 }
 
