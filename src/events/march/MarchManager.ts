@@ -1,21 +1,22 @@
 import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
-import { threadId } from "worker_threads";
 import { Collections } from "../../database/database";
 import Game from "../../game";
 import { TICKET_ITEM_ID } from "../../knightlands-shared/march";
 
 const PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 60 * 15 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 10000; //60 * 15 * 1000;
 
 export class MarchManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
+  private _lastRankingsResetTimestamp: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.MarchUsers);
     this._rankCollection = Game.db.collection(Collections.MarchRanks);
+    this._lastRankingsResetTimestamp = this.currentDayStart;
   }
   
   get eventStartDate() {
@@ -38,10 +39,6 @@ export class MarchManager {
     return this._meta.pools;
   }
 
-  get lastReset() {
-    return this._meta.lastReset || this.currentDayStart;
-  }
-
   get currentDayStart() {
     let currentDayStart = new Date();
     currentDayStart.setHours(0,0,0,0);
@@ -59,9 +56,11 @@ export class MarchManager {
     this._rankCollection.createIndex({ score5: 1 });
     this._rankCollection.createIndex({ order: 1 });
 
-    await Game.dbClient.withTransaction(async db => {
-      await this.commitResetRankings(db);
-    });
+    if (!this._meta.lastReset) {
+      await this.setLastRankingsResetTimestamp(
+        this.currentDayStart
+      );
+    }
 
     this.watchResetRankings();
   }
@@ -86,24 +85,32 @@ export class MarchManager {
   }
 
   watchResetRankings() {
-    setInterval(async function() {
-      await Game.dbClient.withTransaction(async function(db) {
-          await this.commitResetRankings(db);
-      })
+    setInterval(async () => {
+      await this.commitResetRankings();
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
-  async commitResetRankings(db) {
-    if (this.currentDayStart === this.lastReset) {
-      return;
-    }
+  async commitResetRankings() {
+    const currentDayStart = this.currentDayStart;
+    await Game.dbClient.withTransaction(async (db) => {
+      if (currentDayStart <= this._lastRankingsResetTimestamp) {
+        return;
+      }
+      await db.collection(Collections.MarchRanks).deleteMany({});
+      await this.setLastRankingsResetTimestamp(currentDayStart);
+    });
+  }
 
-    await db.collection(Collections.MarchRanks).deleteMany({});
-    await db.collection(Collections.Meta).updateOne(
-      { _id: 'march_meta' },
-      { $set: { lastReset: this.currentDayStart } },
-      { upsert: true }
-    );
+  async setLastRankingsResetTimestamp(value: number) {
+    this._lastRankingsResetTimestamp = value;
+
+    await Game.dbClient.withTransaction(async db => {
+      await db.collection(Collections.Meta).updateOne(
+        { _id: 'march_meta' },
+        { $set: { lastReset: value } },
+        { upsert: true }
+      );
+    });
   }
 
   async totalPlayers() {
