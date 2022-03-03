@@ -303,7 +303,7 @@ export class MarchUser {
       Game.marchManager.updateRank(
         this._user.id, 
         pet.petClass, 
-        this.getGoldStat(pet.petClass)
+        goldAmount
       );
     }
 

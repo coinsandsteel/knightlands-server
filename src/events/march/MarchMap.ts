@@ -201,7 +201,6 @@ export class MarchMap {
     // Parse cards
     this.parseCards(state.cards);
     // Set pet attributes
-    console.log("🚀 ~ file: MarchMap.ts ~ line 199 ~ MarchMap ~ load ~ state.pet", state.pet)
     this.parsePet(state.pet);
   }
 
@@ -420,7 +419,6 @@ export class MarchMap {
   }
 
   public gameOver(): void {
-    console.log("🚀 ~ file: MarchMap.ts ~ line 418 ~ MarchMap ~ gameOver ~ this.pet", this.pet.petClass)
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
     this._marchCroupier.reset();
