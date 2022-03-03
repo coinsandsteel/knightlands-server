@@ -99,8 +99,19 @@ export class Pet extends Unit implements StepInterface {
 
   public reset(): void {
     const hpBonus = this.checkClassAndLevel(3, 1) ? 1 : 0;
-    const extraLifeBonus = this.checkClassAndLevel(3, 3) ? 1 : 0;
+    if (hpBonus) {
+      console.log('[Pet C3/L1] PASSED. MaxHP +1');
+    } else {
+      console.log('[Pet C3/L1] FAILED. MaxHP +0');
+    }
 
+    const extraLifeBonus = this.checkClassAndLevel(3, 3) ? 1 : 0;
+    if (extraLifeBonus) {
+      console.log('[Pet C3/L3] PASSED. Extra life +1');
+    } else {
+      console.log('[Pet C3/L3] FAILED. Extra life +0');
+    }
+    
     this._armor = 0;
     this._extraLife = extraLifeBonus;
     this._maxHp = 10 + hpBonus;
@@ -112,13 +123,33 @@ export class Pet extends Unit implements StepInterface {
   }
   
   public modifyHp(hpModifier: number): void {
-    if (hpModifier < 0 && this.checkClassAndLevel(3, 2)) {
-      hpModifier += Random.intRange(0, 1);
+    const blockingDamage = this.map.pet.checkClassAndLevel(3, 2);
+    if (hpModifier < 0) {
+      if (blockingDamage) {
+        console.log(`[Pet C3/L2] PASSED. There's 50% chance to block 1 damage.`);
+      } else {
+        console.log(`[Pet C3/L2] FAILED. There's 0% chance to block 1 damage.`);
+      }
+    }
+
+    if (hpModifier < 0 && blockingDamage) {
+      const damageBlocked = Random.intRange(0, 1);
+      console.log(`[Pet C3/L2] PASSED. ${damageBlocked} damage blocked.`);
+      hpModifier += damageBlocked;
     }
     
-    if (this.checkClassAndLevel(5, 2)) {
+    const hpOveflowBonus = this.checkClassAndLevel(5, 2);
+    if (hpOveflowBonus) {
+      console.log(`[Pet C5/L2] PASSED. HP overflow bonus is working.`);
+    } else {
+      console.log(`[Pet C5/L2] FAILED. HP overflow bonus is not working.`);
+    }
+  
+    if (hpOveflowBonus) {
       if (this._hp <= this._maxHp) {
+        const oldHp = this._hp;
         this._hp += hpModifier;
+        console.log(`[Pet C5/L2] PASSED. HP overflow bonus activated HP: ${oldHp} + ${hpModifier} = ${this._hp}.`);
       }
     } else {
       this._hp += hpModifier;

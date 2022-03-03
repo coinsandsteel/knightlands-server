@@ -229,7 +229,10 @@ export class MarchCroupier {
       &&
       unitClass === UNIT_CLASS_ARMOR
     ) {
+      console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
       unitClass = UNIT_CLASS_BALL_LIGHTNING;
+    } else {
+      console.log('[Pet C5/L3] FAILED. Armor spawn.');
     }
 
     let hp = 0;
@@ -309,7 +312,10 @@ export class MarchCroupier {
       &&
       unitClass === UNIT_CLASS_ARMOR
     ) {
+      console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
       unitClass = UNIT_CLASS_BALL_LIGHTNING;
+    } else {
+      console.log('[Pet C5/L3] FAILED. Armor spawn.');
     }
     
     let hp = container.hp;

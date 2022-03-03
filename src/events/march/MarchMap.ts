@@ -140,16 +140,19 @@ export class MarchMap {
   public restart(petClass: number, level: number, boosters: MarchBoosters) {
     this._marchUser.purchasePreGameBoosters(boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
+    
+    this._state.pet.petClass = petClass;
+    this._state.pet.level = level;
+    this._state.pet.armor = 0;
 
+    this.pet.setAttributes(this._state.pet);
     this.pet.reset();
+
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
       this.pet.upgradeHP(1);
     }
 
     this._marchCroupier.reset();
-
-    this._state.pet.petClass = petClass;
-    this._state.pet.level = level;
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;

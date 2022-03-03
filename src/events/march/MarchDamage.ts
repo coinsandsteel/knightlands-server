@@ -75,10 +75,20 @@ export class MarchDamage {
             case march.UNIT_CLASS_TRAP:
             case march.UNIT_CLASS_HP:
             case march.UNIT_CLASS_ARMOR: {
+              if (bonus) {
+                console.log('[Pet C2/L1] PASSED. Bow damage +1');
+              } else {
+                console.log('[Pet C2/L1] FAILED. Bow damage +0');
+              }
               return -(attacker.hp + bonus);
             }
             case march.UNIT_CLASS_BOW:{
               let stackBonus = this._pet.checkClassAndLevel(2, 2) ? 2 : 0;
+              if (stackBonus) {
+                console.log('[Pet C2/L2] PASSED. Bow stack +2');
+              } else {
+                console.log('[Pet C2/L2] FAILED. Bow stack +0');
+              }
               return attacker.hp + stackBonus;
             }
           }
@@ -105,7 +115,13 @@ export class MarchDamage {
         case march.UNIT_CLASS_BOMB: {
           switch(victim.unitClass) {
             case march.UNIT_CLASS_PET:{
-              return this._pet.checkClassAndLevel(2, 3) ? 0 : -attacker.hp;
+              const bombProtected = this._pet.checkClassAndLevel(2, 3);
+              if (bombProtected) {
+                console.log('[Pet C2/L3] PASSED. Bomb damage = 0.');
+              } else {
+                console.log(`[Pet C2/L3] FAILED. Bomb damage = ${-attacker.hp}.`);
+              }
+              return bombProtected ? 0 : -attacker.hp;
             }
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:

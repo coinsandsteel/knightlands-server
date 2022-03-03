@@ -286,9 +286,16 @@ export class MarchUser {
     }
     
     public flushStats(pet: Pet): void {
-      let goldModifier = pet.checkClassAndLevel(4, 2) ? 1.2 : 1;
+      let moreGold = pet.checkClassAndLevel(4, 2);
+      let goldModifier = moreGold ? 1.2 : 1;
       let goldAmount = Math.round(this._state.balance.sessionGold * goldModifier);
   
+      if (moreGold) {
+        console.log(`[Pet C4/L2] PASSED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
+      } else {
+        console.log(`[Pet C4/L2] FAILED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
+      }
+
       this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
       this.updateGoldStat(goldAmount, pet.petClass);
       this.voidBoosters();
