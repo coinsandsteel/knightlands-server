@@ -155,6 +155,7 @@ export class MarchEvents {
 
     balance(currency, balance) {
       this._events.balance = { 
+        ...this._events.balance,
         [currency]: balance
       };
       //console.log('Balance', { currency, balance });
