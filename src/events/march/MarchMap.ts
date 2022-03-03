@@ -138,6 +138,10 @@ export class MarchMap {
 
   // Start the card game from scratch
   public restart(petClass: number, level: number, boosters: MarchBoosters) {
+    console.log("");
+    console.log("");
+    console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
+
     this._marchUser.purchasePreGameBoosters(boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
     
@@ -380,6 +384,7 @@ export class MarchMap {
   public addCard(newCardIndex: number) {
     // Insert a new card via croupier
     const newCard = this._marchCroupier.getCard() as Unit;
+    //console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
     this.cards[newCardIndex] = newCard;
     this._events.newCard(newCard.serialize(), newCardIndex);
   }

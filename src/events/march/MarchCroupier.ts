@@ -255,6 +255,8 @@ export class MarchCroupier {
       blueprint.opened = Random.intRange(0, 1);
     }
 
+    console.log('[New card]', blueprint);
+
     if (returnBlueprint) {
       return blueprint;
     } else {
