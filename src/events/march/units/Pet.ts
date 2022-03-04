@@ -155,12 +155,13 @@ export class Pet extends Unit implements StepInterface {
       }
     }
 
-
     if (this.isDead()) {
       if (this.map.marchUser.canUsePreGameBooster(march.BOOSTER_LIFE)) {
+        console.log(`[Pet is dead] Pre-game booster used. Pet is alive.`);
         this._hp = this.maxHp;
         this.map.marchUser.modifyPreGameBooster(march.BOOSTER_LIFE, -1);
       } else if (this._extraLife) {
+        console.log(`[Pet is dead] Pet C3L3 ability used. Pet is alive.`);
         this._hp = this.maxHp;
         this._extraLife = 0;
       } else {
