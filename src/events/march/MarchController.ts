@@ -85,8 +85,8 @@ export class MarchController {
     return this.getState();
   }
 
-  async purchaseGold(currency: string, amount: number) {
-    this._marchUser.purchaseGold(currency, amount);
+  async purchaseGold(shopIndex: number,currency: string) {
+    this._marchUser.purchaseGold(shopIndex, currency);
     this._events.flush();
   }
 

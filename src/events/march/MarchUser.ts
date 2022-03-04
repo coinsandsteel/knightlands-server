@@ -235,29 +235,21 @@ export class MarchUser {
     }
 
     async purchaseGold(shopIndex, currency) {
-      // Retrieve meta
-      // let meta = [{ quantity: 100, hard: 10, flesh: 5 }]
-      //let shopMeta = Game.marchManager.shopMeta;
-      let shopMeta = Game.marchManager.shopMeta;
-      let choosedShopOption = shopMeta[shopIndex];
-
-      // Wrong metadata protection
-      if (!choosedShopOption || !choosedShopOption.hard || !choosedShopOption.flesh) {
-        throw Errors.IncorrectArguments;
-      }
+      let choosedShopOption = march.SHOP[shopIndex];
 
       // check balance
       let balance = 0;
       let price = Infinity;
+      let goldAmount = choosedShopOption.quantity;
       switch (currency) {
         case "hard": {
           balance = this._user.hardCurrency;
-          price = choosedShopOption.hard;
+          price = choosedShopOption.hardPrice;
           break;
         }
         case "flesh": {
           balance = this._user.dkt;
-          price = choosedShopOption.flesh;
+          price = choosedShopOption.fleshPrice;
           break;
         }
         default: {
@@ -275,14 +267,9 @@ export class MarchUser {
         this._user.addDkt(-price);
       }
 
-      const addItems = [{
-        item: march.TICKET_ITEM_ID,
-        quantity: choosedShopOption.quantity
-      }]
+      this.modifyBalance(march.CURRENCY_GOLD, goldAmount);
 
-      await this._user.inventory.addItemTemplates(addItems);
-
-      return addItems;
+      return goldAmount;
     }
     
     public flushStats(pet: Pet): void {
