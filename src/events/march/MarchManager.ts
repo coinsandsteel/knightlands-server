@@ -92,25 +92,27 @@ export class MarchManager {
 
   async commitResetRankings() {
     const currentDayStart = this.currentDayStart;
+    if (currentDayStart <= this._lastRankingsResetTimestamp) {
+      return;
+    }
     await Game.dbClient.withTransaction(async (db) => {
-      if (currentDayStart <= this._lastRankingsResetTimestamp) {
-        return;
-      }
       await db.collection(Collections.MarchRanks).deleteMany({});
-      await this.setLastRankingsResetTimestamp(currentDayStart);
+      await db.collection(Collections.Meta).updateOne(
+        { _id: 'march_meta' },
+        { $set: { lastReset: currentDayStart } },
+        { upsert: true }
+      );
     });
   }
 
   async setLastRankingsResetTimestamp(value: number) {
     this._lastRankingsResetTimestamp = value;
 
-    await Game.dbClient.withTransaction(async db => {
-      await db.collection(Collections.Meta).updateOne(
-        { _id: 'march_meta' },
-        { $set: { lastReset: value } },
-        { upsert: true }
-      );
-    });
+    await Game.db.collection(Collections.Meta).updateOne(
+      { _id: 'march_meta' },
+      { $set: { lastReset: value } },
+      { upsert: true }
+    );
   }
 
   async totalPlayers() {
