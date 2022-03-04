@@ -7,21 +7,19 @@ import { MarchMap } from "../MarchMap";
 export const BOMB_TIMER = 10;
 
 export class Artifact extends Unit {
-  private timer: number;
-
   constructor(card: MarchCard, map: MarchMap) {
     super(card, map);
 
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.timer = BOMB_TIMER;
+      this._timer = BOMB_TIMER;
     }
   }
 
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.timer--;
-      this.map.events.bombCounter(this.serialize(), this.index);
-      if (this.timer <= 0) {
+      this._timer--;
+      this.map.events.bombTimer(this.serialize(), this.index);
+      if (this._timer <= 0) {
         this.activate();
       }
     }

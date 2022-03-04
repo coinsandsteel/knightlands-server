@@ -44,7 +44,7 @@ export interface MarchCard {
   previousHp?: number;
   maxHp?: number;
   opened?: boolean;
-  counter?: number;
+  timer?: number;
 }
 
 export interface StatState {

@@ -10,6 +10,7 @@ export class Unit extends HpClass implements StepInterface {
   protected _map: MarchMap;
   protected _unitClass: string;
   protected _opened: boolean|null = null;
+  protected _timer: number|null = null;
   protected _capturedIndex: number|null = null;
 
   get map(): MarchMap {
@@ -76,6 +77,10 @@ export class Unit extends HpClass implements StepInterface {
       unitClass: this.unitClass
     } as MarchCard;
 
+    if (this._timer !== null) {
+      card.timer = this._timer;
+    }
+    
     if (this.opened !== null) {
       card.opened = this.opened;
     }

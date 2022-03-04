@@ -99,7 +99,7 @@ export class MarchEvents {
       this._log('Trap opened/closed', [card._id, card.unitClass, 'opened:', card.opened, 'index:', index]);
     }
     
-    bombCounter(card: MarchCard, index: number) {
+    bombTimer(card: MarchCard, index: number) {
       this._initSequence();
 
       // Check if card was moved
@@ -109,16 +109,16 @@ export class MarchEvents {
       if (!this.sequenceCards[index]) {
         this._events.sequence[this._sequence].cards[index] = { 
           _id: card._id,
-          counter: card.counter
+          timer: card.timer
         };
       } else {
         this._events.sequence[this._sequence].cards[index] = {
           ...this._events.sequence[this._sequence].cards[index],
-          counter: card.counter
+          timer: card.timer
         }
       }
 
-      this._log('Bomb counter', [card._id, card.unitClass, 'counter:', card.counter, 'index:', index]);
+      this._log('Bomb timer', [card._id, card.unitClass, 'timer:', card.timer, 'index:', index]);
     }
     
     newCard(card: MarchCard, index: number) {
