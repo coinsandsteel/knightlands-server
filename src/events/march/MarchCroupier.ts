@@ -302,6 +302,7 @@ export class MarchCroupier {
     this._queue.push(UNIT_CLASS_CHEST);
     if (this._poolNumber < UNIT_POOL.length - 1) {
       this._poolNumber++;
+      console.log(`[Pool] Pool upgraded to ${this._poolNumber}`);
     }
   }
 

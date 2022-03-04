@@ -275,6 +275,7 @@ export class MarchMap {
 
     // Count a step
     this._marchCroupier.increaseStepCounter();
+    this._events.stat(this._state.stat);
   }
 
   protected moveCardTo(unit: Unit, index: number): void {
@@ -348,7 +349,6 @@ export class MarchMap {
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     // Reduce penalty
     this.reducePenalty();
-    this._events.stat(this._state.stat);
   }
 
   public reducePenalty(): void {
