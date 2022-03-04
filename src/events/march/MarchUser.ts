@@ -247,7 +247,7 @@ export class MarchUser {
           price = choosedShopOption.hardPrice;
           break;
         }
-        case "flesh": {
+        case "dkt": {
           balance = this._user.dkt;
           price = choosedShopOption.fleshPrice;
           break;
@@ -263,7 +263,7 @@ export class MarchUser {
       // change balance
       if (currency === "hard") {
         this._user.addHardCurrency(-price);
-      } else if (currency === "flesh") {
+      } else if (currency === "dkt") {
         this._user.addDkt(-price);
       }
 
