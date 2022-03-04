@@ -21,12 +21,12 @@ import {
 
 export const UNIT_PROBABILITIES = {
   [UNIT_CLASS_ENEMY]: 0.37,
-  [UNIT_CLASS_TRAP]: 0.074,
-  [UNIT_CLASS_HP]: 0.37 / 3,
-  [UNIT_CLASS_ARMOR]: 0.37 / 3,
-  [UNIT_CLASS_BOW]: 0.37 / 3,
+  [UNIT_CLASS_TRAP]: 0.075,
+  [UNIT_CLASS_HP]: 0.123, // 0.37 / 3,
+  [UNIT_CLASS_ARMOR]: 0.123, // 0.37 / 3,
+  [UNIT_CLASS_BOW]: 0.123, // 0.37 / 3,
   [UNIT_CLASS_BARREL]: 0.111,
-  [UNIT_CLASS_GOLD]: 0.074
+  [UNIT_CLASS_GOLD]: 0.075
 }
 
 export const UNIT_POOL = [
@@ -299,6 +299,7 @@ export class MarchCroupier {
 
   public upgradePool(): void {
     this.resetStepCounter();
+    console.log("🚀 ~ file: MarchCroupier.ts ~ line 303 ~ MarchCroupier ~ upgradePool ~ this._queue", this._queue)
     this._queue.push(UNIT_CLASS_CHEST);
     if (this._poolNumber < UNIT_POOL.length - 1) {
       this._poolNumber++;
