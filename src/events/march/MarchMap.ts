@@ -82,14 +82,20 @@ export class MarchMap {
   }
 
   public init() {
-    // HP = 1 because we need to ensure that it will be reset to 10+ later
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
-    this._pet.reset();
-    
+    this.createPet();
+
     this._damage = new MarchDamage(this.cards, this);
     this._marchCroupier = new MarchCroupier(this);
 
-    this.load(this._state);
+    this.wakeUp(this._state);
+  }
+
+  public createPet() {
+    if (this._pet) {
+      return;
+    }
+    // HP = 1 because we need to ensure that it will be reset to 10+ later
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
   }
 
   protected setCardByIndex(card: Unit, index: number): void {
@@ -160,20 +166,8 @@ export class MarchMap {
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
     
-    const initialCardList = Array.from(
-      { length: 9 }, 
-      (_, i) => i == 4 ? 
-        this.pet.serialize() 
-        : 
-        this._marchCroupier.getCard(true)
-    ) as MarchCard[];
-    
-    this.load({
-      stat: this._state.stat,
-      pet: this._state.pet,
-      cards: initialCardList,
-    } as MarchMapState);
-    
+    this.spawnCards();
+
     this._events.pet(this._state.pet);
     this._events.stat(this._state.stat);
     this._events.cards(
@@ -196,23 +190,26 @@ export class MarchMap {
     }
   }
 
-  public load(state: MarchMapState) {
+  public wakeUp(state: MarchMapState) {
     // Parse stat
     this.parseStat(state.stat);
-    // Parse cards
-    this.parseCards(state.cards);
     // Set pet attributes
     this.parsePet(state.pet);
   }
 
-  protected parseCards(cards: MarchCard[]) {
-    cards.forEach((unit: MarchCard, index: number) => {
+  protected spawnCards() {
+    const initialCardList = Array.from(
+      { length: 9 }, 
+      (_, i) => i == 4 ? 
+        this.pet.serialize() 
+        : 
+        this._marchCroupier.getCard(true)
+    ) as MarchCard[];
+    
+    initialCardList.forEach((unit: MarchCard, index: number) => {
       const newUnit = this.makeUnit(unit);
-      if (newUnit.unitClass === march.UNIT_CLASS_PET) {
-        this._pet = newUnit as Pet;
-      }
       this.setCardByIndex(newUnit, index);
-    });
+    });;
   }
 
   protected parsePet(state: PetState): void {
