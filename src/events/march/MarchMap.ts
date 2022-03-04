@@ -50,8 +50,7 @@ export class MarchMap {
     this._state = {
       stat: {
         stepsToNextBoss: null,
-        bossesKilled: 0,
-        penaltySteps: 0
+        bossesKilled: 0
       },
       pet: {
         petClass: 1,
@@ -87,7 +86,7 @@ export class MarchMap {
     this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
     this._pet.reset();
     
-    this._damage = new MarchDamage(this.cards, this.pet);
+    this._damage = new MarchDamage(this.cards, this);
     this._marchCroupier = new MarchCroupier(this);
 
     this.load(this._state);
@@ -160,7 +159,6 @@ export class MarchMap {
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
-    this._state.stat.penaltySteps = 0;
     
     const initialCardList = Array.from(
       { length: 9 }, 
@@ -189,7 +187,6 @@ export class MarchMap {
     
     this._state.stat.stepsToNextBoss = 0;
     this._state.stat.bossesKilled = 0;
-    this._state.stat.penaltySteps = 0;
 
     this._state.cards = [];
 
@@ -228,7 +225,6 @@ export class MarchMap {
   protected parseStat(state: StatState): void {
     this._state.stat.stepsToNextBoss = state.stepsToNextBoss;
     this._state.stat.bossesKilled = state.bossesKilled;
-    this._state.stat.penaltySteps = state.penaltySteps;
   }
 
   public touch(index: number) {
@@ -273,13 +269,23 @@ export class MarchMap {
     console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
     console.log(' ');
 
+    this.stepCallback();
+  }
+
+  public stepCallback() {
     // Count a step
     this._marchCroupier.increaseStepCounter();
 
+    // Update stat
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._events.stat(this._state.stat);
-  }
 
+    // Callbacks
+    this.cards.forEach(card => {
+      card.userStepCallback();
+    });
+  }
+  
   protected moveCardTo(unit: Unit, index: number): void {
     this.cards[index] = unit;
     this._events.cardMoved(unit.serialize(), index);
@@ -288,6 +294,9 @@ export class MarchMap {
   public movePetTo(target: Unit) {
     target.captureIndex();
 
+    // Touch card
+    target.touch();
+    
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
@@ -339,28 +348,6 @@ export class MarchMap {
         this.addCard(petIndex - difference);
       }
     }
-
-    // Touch card
-    target.touch();
-    
-    // Callbacks
-    this.cards.forEach(card => {
-      card.userStepCallback();
-    });
-    
-    // Reduce penalty
-    this.reducePenalty();
-  }
-
-  public reducePenalty(): void {
-    this._state.stat.penaltySteps--;
-    if (this._state.stat.penaltySteps <= 0) {
-      this._state.stat.penaltySteps = 0;
-    }
-  };
-
-  public enablePenalty(steps): void {
-    this._state.stat.penaltySteps = steps;
   }
 
   public swapPetCellTo(unit: Unit) {

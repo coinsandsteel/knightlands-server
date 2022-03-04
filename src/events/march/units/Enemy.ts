@@ -30,10 +30,6 @@ export class Enemy extends Unit {
       this.bossKilled();
     }
 
-    if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
-      this.map.enablePenalty(this.hp);
-    }
-
     this.map.marchUser.addSessionGold(this.hp);
   }
 

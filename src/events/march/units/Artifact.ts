@@ -20,6 +20,7 @@ export class Artifact extends Unit {
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
       this.timer--;
+      this.map.events.bombCounter(this.serialize(), this.index);
       if (this.timer <= 0) {
         this.activate();
       }

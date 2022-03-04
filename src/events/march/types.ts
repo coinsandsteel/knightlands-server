@@ -44,12 +44,12 @@ export interface MarchCard {
   previousHp?: number;
   maxHp?: number;
   opened?: boolean;
+  counter?: number;
 }
 
 export interface StatState {
   stepsToNextBoss: number|null;
   bossesKilled: number;
-  penaltySteps: number;
 }
 
 export interface PetState {

@@ -1,15 +1,15 @@
 import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import Random from "../../random";
-import { Pet } from "./units/Pet";
+import { MarchMap } from "./MarchMap";
 
 export class MarchDamage {
     private _cards: Unit[];
-    private _pet: Pet;
+    private _map: MarchMap;
 
-    constructor(cards: Unit[], pet: Pet) {
+    constructor(cards: Unit[], map: MarchMap) {
       this._cards = cards;
-      this._pet = pet;
+      this._map = map;
     }
 
     public getVictims(attacker: Unit, direction: string): Unit[] {
@@ -68,7 +68,7 @@ export class MarchDamage {
           break;
         }
         case march.UNIT_CLASS_BOW: {
-          let bonus = this._pet.checkClassAndLevel(2, 1) ? 1 : 0;
+          let bonus = this._map.pet.checkClassAndLevel(2, 1) ? 1 : 0;
           switch(victim.unitClass) {
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:
@@ -83,7 +83,7 @@ export class MarchDamage {
               return -(attacker.hp + bonus);
             }
             case march.UNIT_CLASS_BOW:{
-              let stackBonus = this._pet.checkClassAndLevel(2, 2) ? 2 : 0;
+              let stackBonus = this._map.pet.checkClassAndLevel(2, 2) ? 2 : 0;
               if (stackBonus) {
                 console.log('[Pet C2/L2] PASSED. Bow stack +2');
               } else {
@@ -115,7 +115,7 @@ export class MarchDamage {
         case march.UNIT_CLASS_BOMB: {
           switch(victim.unitClass) {
             case march.UNIT_CLASS_PET:{
-              const bombProtected = this._pet.checkClassAndLevel(2, 3);
+              const bombProtected = this._map.pet.checkClassAndLevel(2, 3);
               if (bombProtected) {
                 console.log('[Pet C2/L3] PASSED. Bomb damage = 0.');
               } else {

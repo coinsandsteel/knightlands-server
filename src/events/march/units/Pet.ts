@@ -2,7 +2,6 @@ import Random from "../../../random";
 import { Unit } from "../other/UnitClass";
 import { StepInterface } from "../other/StepInterface";
 import { PetState } from "../types";
-import { BOOSTER_KEY, BOOSTER_LIFE } from "../../../knightlands-shared/march";
 import * as march from "../../../knightlands-shared/march";
 
 /*
@@ -28,7 +27,7 @@ III level Chest opens without mini-game
 
 Pet class #5. 
 I level All barrels have only good content.
-II HP booster increases HP and maxHp. If 
+II HP booster increases HP over maxHp one time.
 III level Turns armor into ball lightning
 */
 
@@ -145,18 +144,17 @@ export class Pet extends Unit implements StepInterface {
       console.log(`[Pet C5/L2] FAILED. HP overflow bonus is not working.`);
     }
   
-    if (hpOveflowBonus) {
-      if (this._hp <= this._maxHp) {
+    if (hpOveflowBonus && hpModifier > 0 && this._hp <= this._maxHp) {
         const oldHp = this._hp;
         this._hp += hpModifier;
         console.log(`[Pet C5/L2] PASSED. HP overflow bonus activated HP: ${oldHp} + ${hpModifier} = ${this._hp}.`);
-      }
     } else {
       this._hp += hpModifier;
       if (this._hp > this._maxHp) {
         this._hp = this._maxHp;
       }
     }
+
 
     if (this.isDead()) {
       if (this.map.marchUser.canUsePreGameBooster(march.BOOSTER_LIFE)) {

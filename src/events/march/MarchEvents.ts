@@ -99,6 +99,28 @@ export class MarchEvents {
       this._log('Trap opened/closed', [card._id, card.unitClass, 'opened:', card.opened, 'index:', index]);
     }
     
+    bombCounter(card: MarchCard, index: number) {
+      this._initSequence();
+
+      // Check if card was moved
+      const newIndex = this.sequenceCards.findIndex(item => item && item._id === card._id);
+      index = newIndex === -1 ? index : newIndex;
+
+      if (!this.sequenceCards[index]) {
+        this._events.sequence[this._sequence].cards[index] = { 
+          _id: card._id,
+          counter: card.counter
+        };
+      } else {
+        this._events.sequence[this._sequence].cards[index] = {
+          ...this._events.sequence[this._sequence].cards[index],
+          counter: card.counter
+        }
+      }
+
+      this._log('Bomb counter', [card._id, card.unitClass, 'counter:', card.counter, 'index:', index]);
+    }
+    
     newCard(card: MarchCard, index: number) {
       this._initSequence();
       // Only one card could be inserted to a position
