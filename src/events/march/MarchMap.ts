@@ -275,6 +275,8 @@ export class MarchMap {
 
     // Count a step
     this._marchCroupier.increaseStepCounter();
+
+    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._events.stat(this._state.stat);
   }
 
@@ -346,7 +348,6 @@ export class MarchMap {
       card.userStepCallback();
     });
     
-    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     // Reduce penalty
     this.reducePenalty();
   }
