@@ -17,11 +17,11 @@ export class MarchManager {
   }
   
   get eventStartDate() {
-    return '2021-03-08 00:00:00';
+    return this._meta.eventStartDate * 1000 || '2021-03-08 00:00:00';
   }
   
   get eventEndDate() {
-    return '2022-03-14 23:59:59';
+    return this._meta.eventEndDate * 1000 || '2022-03-22 23:59:59';
   }
 
   get raidRewardCount() {
