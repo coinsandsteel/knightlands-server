@@ -198,6 +198,7 @@ export class MarchCroupier {
   protected _poolNumber: number;
   protected _stepCounter: number;
   protected _queue: string[];
+  protected _chestProvided: boolean;
 
   constructor(map: MarchMap) {
     this._map = map;
@@ -332,12 +333,12 @@ export class MarchCroupier {
     return loot;
   }
 
+  public chestProvided(value: boolean) {
+    this._chestProvided = value;
+  }
+
   public puchChestIntoQueue() {
-    const chestInQueue = this._queue.findIndex(
-      (unitClass) => unitClass === UNIT_CLASS_CHEST
-    ) !== -1;
-    
-    if (!chestInQueue) {
+    if (!this._chestProvided) {
       this._queue.push(UNIT_CLASS_CHEST);
     }
   }

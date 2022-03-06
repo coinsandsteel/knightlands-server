@@ -294,6 +294,7 @@ export class MarchMap {
     if (target.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
       if (this.pet.canKillBoss(target)) {
         this._marchCroupier.puchChestIntoQueue();
+        this._marchCroupier.chestProvided(true);
       } else {
         target.touch();
         return;
@@ -354,6 +355,8 @@ export class MarchMap {
 
     // Touch card
     target.touch();
+
+    this._marchCroupier.chestProvided(false);
   }
 
   public swapPetCellTo(unit: Unit) {
