@@ -54,5 +54,6 @@ export class Enemy extends Unit {
   protected bossKilled(): void {
     this.map.bossKilled();
     this.map.croupier.upgradePool();
+    this.map.croupier.puchChestIntoQueue();
   }
 }

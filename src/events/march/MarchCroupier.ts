@@ -333,6 +333,12 @@ export class MarchCroupier {
   }
 
   public puchChestIntoQueue() {
-    this._queue.push(UNIT_CLASS_CHEST);
+    const chestInQueue = this._queue.findIndex(
+      (unitClass) => unitClass === UNIT_CLASS_CHEST
+    ) !== -1;
+    
+    if (!chestInQueue) {
+      this._queue.push(UNIT_CLASS_CHEST);
+    }
   }
 }

@@ -129,4 +129,9 @@ export class MarchController {
     this._events.flush();
     return items;
   }
+
+  async claimRewards() {
+    const items = await Game.marchManager.claimRewards(this._user);
+    return items;
+  }
 }

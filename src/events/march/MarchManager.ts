@@ -2,9 +2,11 @@ import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
 import Game from "../../game";
-import { TICKET_ITEM_ID } from "../../knightlands-shared/march";
+import { TICKET_ITEM_ID, EVENT_REWARDS } from "../../knightlands-shared/march";
+import User from "../../user";
+import errors from "../../knightlands-shared/errors";
 
-const PAGE_SIZE = 10;
+const RANKS_PAGE_SIZE = 10;
 
 export class MarchManager {
   private _meta: any;
@@ -21,7 +23,7 @@ export class MarchManager {
   }
   
   get eventEndDate() {
-    return this._meta.eventEndDate * 1000 || '2022-03- 23:59:59';
+    return this._meta.eventEndDate * 1000 || '2022-03-23 00:00:00';
   }
 
   get raidRewardCount() {
@@ -72,14 +74,104 @@ export class MarchManager {
     return result;
   }
 
+  async getUserRank(userId: string, petClass: number) {
+    let userRecord = await this._rankCollection.findOne({ _id: userId });
+    let classKey = `score${petClass}`;
+    let score = userRecord ? userRecord[classKey] : null;
+    if (!score) {
+        return null;
+    }
+
+    let rank = await this._rankCollection.find({ 
+      [classKey]: { $gt: score } 
+    }).count() + 1;
+
+    return rank;
+  }
+
+  async userHasRewards(user: User) {
+    if (!this.eventFinished()) {
+      return false;
+    }
+    
+    let userRecord = await this._rankCollection.findOne({ _id: user.id });
+    let rewardClaimed = userRecord ? !!userRecord.claimed : false;
+    let hasRewards = false;
+
+    for (let petClass = 1; petClass <= 5; petClass++) {
+      const userClassRank = await Game.marchManager.getUserRank(user.id, petClass);
+      if (userClassRank === null) {
+        continue;
+      }
+
+      if (userClassRank >= 1 && userClassRank <= 10) {
+        hasRewards = true;
+        break;
+      }
+    }
+
+    return !rewardClaimed && hasRewards;
+  }
+
+  async rewardClaimed(user: User) {
+    let userRecord = await this._rankCollection.findOne({ _id: user.id });
+    return userRecord ? !!userRecord.claimed : false;
+  }
+
+  public async claimRewards(user: User) {
+    if (!this.eventFinished()) {
+      throw errors.IncorrectArguments;
+    }
+
+    const rewardClaimed = await this.rewardClaimed(user);
+    if (rewardClaimed) {
+      throw errors.IncorrectArguments;
+    }
+
+    const eventRewards = EVENT_REWARDS;
+    let receivedItems = [];
+
+    for (let petClass = 1; petClass <= 5; petClass++) {
+      const userClassRank = await Game.marchManager.getUserRank(user.id, petClass);
+      if (userClassRank === null) {
+        continue;
+      }
+
+      let rewardIndex = null;
+      if (userClassRank >= 1 && userClassRank <= 4) {
+        rewardIndex = userClassRank - 1;
+      } else if (userClassRank >= 5 && userClassRank <= 10) {
+        rewardIndex = 4;
+      } else {
+        continue;
+      }
+
+      const rewardItems = eventRewards[rewardIndex].items;
+      await user.inventory.addItemTemplates(rewardItems);
+      
+      rewardItems.forEach((itemEntry) => {
+        let receivedItemIndex = receivedItems.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
+        if (receivedItemIndex === -1) {
+          receivedItems.push(itemEntry);
+        } else {
+          receivedItems[receivedItemIndex].quantity += itemEntry.quantity;
+        }
+      });
+    }
+
+    await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
+
+    return receivedItems;
+  }
+
   async getRankingsByPetClass(petClass: number) {
     const scorePetStr = 'score' + petClass;
     const page = 0;
 
     const records = await this._rankCollection.aggregate([
         { $sort: { [scorePetStr]: -1, order: 1 } },
-        { $skip: page * PAGE_SIZE },
-        { $limit: PAGE_SIZE },
+        { $skip: page * RANKS_PAGE_SIZE },
+        { $limit: RANKS_PAGE_SIZE },
         { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } },
         {
             $project: {
@@ -114,6 +206,12 @@ export class MarchManager {
     let start = new Date(this.eventStartDate);
     let end = new Date(this.eventEndDate);
     return now >= start && now <= end;
+  }
+
+  public eventFinished() {
+    let now = new Date();
+    let end = new Date(this.eventEndDate);
+    return now > end;
   }
 
   async loadProgress(userId: ObjectId) {

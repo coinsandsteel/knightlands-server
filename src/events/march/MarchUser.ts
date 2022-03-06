@@ -182,7 +182,7 @@ export class MarchUser {
       const levelRewards = PET_UPGRADE_REWARDS;
       const rewardItems = levelRewards[classIndex][`level${newLevel}`];
       await this._user.inventory.addItemTemplates(rewardItems);
-      
+
       return rewardItems;
     }
     

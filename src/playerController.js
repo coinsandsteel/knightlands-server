@@ -292,6 +292,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.MarchUnlockPet, this._gameHandler(this._marchUnlockPet.bind(this)));
         this._socket.on(Operations.MarchUpgradePet, this._gameHandler(this._marchUpgradePet.bind(this)));
         this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
+        this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2113,8 +2114,13 @@ class PlayerController extends IPaymentListener {
 
     async _marchRanking(user, data) {
         return {
-            rankings: await Game.marchManager.getRankings()
+            rankings: await Game.marchManager.getRankings(),
+            hasRewards: await Game.marchManager.userHasRewards(user),
         };
+    }
+
+    async _marchClaimRewards(user, data) {
+        return this.march.claimRewards();
     }
 
     async _marchPurchaseGold(user, data) {
