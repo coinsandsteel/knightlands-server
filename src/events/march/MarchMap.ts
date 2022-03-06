@@ -293,7 +293,7 @@ export class MarchMap {
 
     if (target.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
       if (this.pet.canKillBoss(target)) {
-        this._marchCroupier.puchChestIntoQueue(target);
+        this._marchCroupier.puchChestIntoQueue();
       } else {
         target.touch();
         return;

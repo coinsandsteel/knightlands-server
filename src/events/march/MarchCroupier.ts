@@ -332,7 +332,7 @@ export class MarchCroupier {
     return loot;
   }
 
-  public puchChestIntoQueue(boss: Unit) {
+  public puchChestIntoQueue() {
     this._queue.push(UNIT_CLASS_CHEST);
   }
 }
