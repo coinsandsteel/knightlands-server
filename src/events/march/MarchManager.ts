@@ -59,7 +59,7 @@ export class MarchManager {
             $set: {
                 order: Game.now
             },
-            $inc: {
+            $max: {
                 [scorePetStr]: points
             },
         },
