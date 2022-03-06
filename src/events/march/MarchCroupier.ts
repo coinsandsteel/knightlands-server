@@ -300,7 +300,6 @@ export class MarchCroupier {
   public upgradePool(): void {
     this.resetStepCounter();
     console.log("🚀 ~ file: MarchCroupier.ts ~ line 303 ~ MarchCroupier ~ upgradePool ~ this._queue", this._queue)
-    this._queue.push(UNIT_CLASS_CHEST);
     if (this._poolNumber < UNIT_POOL.length - 1) {
       this._poolNumber++;
       console.log(`[Pool] Pool upgraded to ${this._poolNumber}`);
@@ -331,5 +330,9 @@ export class MarchCroupier {
     }
     const loot = this._map.makeUnit({ _id: null, unitClass, hp });
     return loot;
+  }
+
+  public puchChestIntoQueue(boss: Unit) {
+    this._queue.push(UNIT_CLASS_CHEST);
   }
 }

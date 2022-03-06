@@ -5,10 +5,6 @@ import { MarchCard } from "../types";
 
 export class Enemy extends Unit {
   public touch(){
-    this.activate();
-  }  
-  
-  public activate(){
     this.fight();
   }  
 

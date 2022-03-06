@@ -64,10 +64,11 @@ export class Pet extends Unit implements StepInterface {
   }
 
   public handleDamage(value): void {
-    if (value > this._armor) {
-      this.modifyHp(-(value - this._armor));
-    }
+    const oldArmor = this._armor;
     this.modifyArmor(-value);
+    if (value > oldArmor) {
+      this.modifyHp(-(value - oldArmor));
+    }
   };
 
   public upgradeHP(value): void {
@@ -173,6 +174,36 @@ export class Pet extends Unit implements StepInterface {
       this.map.events.cardHp(this.serialize(), this.index);
     }
   };
+  
+  public canKillBoss(boss: Unit): boolean {
+    let bossKilled = true;
+    let hpModifier = -boss.hp;
+    let petHp = this.hp;
+    let petArmor = this._armor;
+
+    hpModifier += petArmor;
+
+    const blockingDamage = this.map.pet.checkClassAndLevel(3, 2);
+    if (blockingDamage) {
+      const damageBlocked = Random.intRange(0, 1);
+      hpModifier += damageBlocked;
+    }
+    
+    petHp += hpModifier;
+
+    if (
+      petHp <= 0
+      &&
+      !this.map.marchUser.canUsePreGameBooster(march.BOOSTER_LIFE)
+      &&
+      !this._extraLife
+    ) {
+      bossKilled = false;
+    }
+
+    return bossKilled;
+  }
+
   
   public activate(): void { return; };
   public touch(): void { return; };

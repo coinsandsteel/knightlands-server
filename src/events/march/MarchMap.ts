@@ -291,9 +291,15 @@ export class MarchMap {
   public movePetTo(target: Unit) {
     target.captureIndex();
 
-    // Touch card
-    target.touch();
-    
+    if (target.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      if (this.pet.canKillBoss(target)) {
+        this._marchCroupier.puchChestIntoQueue(target);
+      } else {
+        target.touch();
+        return;
+      }
+    }
+
     // Move pet
     // Move cards in a row
     // Determine a new card index > addCard(newCardIndex)
@@ -345,6 +351,9 @@ export class MarchMap {
         this.addCard(petIndex - difference);
       }
     }
+
+    // Touch card
+    target.touch();
   }
 
   public swapPetCellTo(unit: Unit) {

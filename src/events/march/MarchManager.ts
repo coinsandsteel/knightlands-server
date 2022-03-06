@@ -21,19 +21,11 @@ export class MarchManager {
   }
   
   get eventEndDate() {
-    return this._meta.eventEndDate * 1000 || '2022-03-22 23:59:59';
+    return this._meta.eventEndDate * 1000 || '2022-03- 23:59:59';
   }
 
   get raidRewardCount() {
-    return 1;
-  }
-
-  get shopMeta() {
-    return this._meta.shop;
-  }
-
-  get pools() {
-    return this._meta.pools;
+    return this._meta.raidRewardCount || 1;
   }
 
   async init() {
@@ -73,14 +65,14 @@ export class MarchManager {
 
   async getRankings() {
     const result = [];
-    for (var i = 1; i <= 5; i++) {
-      result.push(await this.getRanking(i));
+    for (let petClass = 1; petClass <= 5; petClass++) {
+      result.push(await this.getRankingsByPetClass(petClass));
     }
 
     return result;
   }
 
-  async getRanking(petClass: number) {
+  async getRankingsByPetClass(petClass: number) {
     const scorePetStr = 'score' + petClass;
     const page = 0;
 
@@ -109,7 +101,7 @@ export class MarchManager {
     return records;
   }
 
-  getRaidReward() {
+  public getRaidReward() {
     return {
       item: TICKET_ITEM_ID,
       quantity: this.raidRewardCount,
