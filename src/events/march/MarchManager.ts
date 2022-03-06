@@ -19,11 +19,19 @@ export class MarchManager {
   }
   
   get eventStartDate() {
-    return this._meta.eventStartDate * 1000 || '2021-03-08 00:00:00';
+    return new Date(this._meta.eventStartDate*1000 || '2021-03-08 00:00:00');
   }
   
   get eventEndDate() {
-    return this._meta.eventEndDate * 1000 || '2022-03-23 00:00:00';
+    return new Date(this._meta.eventEndDate*1000 || '2022-03-23 00:00:00');
+  }
+
+  get timeLeft() {
+    let secondsLeft = this.eventEndDate.getTime()/1000 - Game.nowSec;
+    if (secondsLeft < 0) {
+      secondsLeft = 0;
+    }
+    return secondsLeft;
   }
 
   get raidRewardCount() {
@@ -203,14 +211,14 @@ export class MarchManager {
 
   public eventIsInProgress() {
     let now = new Date();
-    let start = new Date(this.eventStartDate);
-    let end = new Date(this.eventEndDate);
+    let start = this.eventStartDate;
+    let end = this.eventEndDate;
     return now >= start && now <= end;
   }
 
   public eventFinished() {
     let now = new Date();
-    let end = new Date(this.eventEndDate);
+    let end = this.eventEndDate;
     return now > end;
   }
 

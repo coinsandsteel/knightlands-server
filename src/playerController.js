@@ -2116,6 +2116,7 @@ class PlayerController extends IPaymentListener {
         return {
             rankings: await Game.marchManager.getRankings(),
             hasRewards: await Game.marchManager.userHasRewards(user),
+            timeLeft: Game.marchManager.timeLeft,
         };
     }
 

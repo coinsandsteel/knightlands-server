@@ -145,17 +145,16 @@ export class Pet extends Unit implements StepInterface {
       console.log(`[Pet C5/L2] FAILED. HP overflow bonus is not working.`);
     }
   
-    if (hpOveflowBonus && hpModifier > 0) {
-        if (this._hp <= this._maxHp) {
-          const oldHp = this._hp;
-          this._hp += hpModifier;
-          console.log(`[Pet C5/L2] PASSED. HP overflow bonus activated HP: ${oldHp} + ${hpModifier} = ${this._hp}.`);
-        }
-    } else {
+    if (hpOveflowBonus && this._hp <= this._maxHp) {
       this._hp += hpModifier;
-      if (this._hp > this._maxHp) {
-        this._hp = this._maxHp;
-      }
+    }
+
+    if (!hpOveflowBonus) {
+      this._hp += hpModifier;
+    }
+
+    if (!hpOveflowBonus && this._hp > this._maxHp) {
+      this._hp = this._maxHp;
     }
 
     if (this.isDead()) {
