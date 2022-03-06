@@ -209,7 +209,7 @@ export class MarchMap {
     initialCardList.forEach((unit: MarchCard, index: number) => {
       const newUnit = this.makeUnit(unit);
       this.setCardByIndex(newUnit, index);
-    });;
+    });
   }
 
   protected parsePet(state: PetState): void {

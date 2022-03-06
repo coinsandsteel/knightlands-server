@@ -193,18 +193,10 @@ export class MarchUser {
     }
 
     public purchasePreGameBoosters(boosters: MarchBoosters) {
-      var totalPrice = 0;
       for (var key in boosters) {
-        if (boosters[key]) {
-          totalPrice += march.BOOSTERS[key];
-        }
-      }
-      if (totalPrice > this.gold) {
-        throw Errors.NotEnoughCurrency;
-      }
-      for (var key in boosters) {
-        if (boosters[key]) {
-          this.modifyBalance(march.CURRENCY_GOLD, -march.BOOSTERS[key]);
+        let boosterPrice = march.BOOSTERS[key];
+        if (boosters[key] && boosterPrice <= this.gold) {
+          this.modifyBalance(march.CURRENCY_GOLD, -boosterPrice);
           this.modifyPreGameBooster(key, 1);
         }
       }

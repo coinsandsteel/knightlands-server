@@ -5,18 +5,15 @@ import Game from "../../game";
 import { TICKET_ITEM_ID } from "../../knightlands-shared/march";
 
 const PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 10000; //60 * 15 * 1000;
 
 export class MarchManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
-  private _lastRankingsResetTimestamp: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.MarchUsers);
     this._rankCollection = Game.db.collection(Collections.MarchRanks);
-    this._lastRankingsResetTimestamp = this.currentDayStart;
   }
   
   get eventStartDate() {
@@ -39,12 +36,6 @@ export class MarchManager {
     return this._meta.pools;
   }
 
-  get currentDayStart() {
-    let currentDayStart = new Date();
-    currentDayStart.setHours(0,0,0,0);
-    return currentDayStart.getTime();
-  }
-
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "march_meta" });
 
@@ -55,14 +46,6 @@ export class MarchManager {
     this._rankCollection.createIndex({ score4: 1 });
     this._rankCollection.createIndex({ score5: 1 });
     this._rankCollection.createIndex({ order: 1 });
-
-    if (!this._meta.lastReset) {
-      await this.setLastRankingsResetTimestamp(
-        this.currentDayStart
-      );
-    }
-
-    this.watchResetRankings();
   }
 
   async updateRank(userId: ObjectId, petClass: number, points: number) {
@@ -81,37 +64,6 @@ export class MarchManager {
             },
         },
         { upsert: true }
-    );
-  }
-
-  watchResetRankings() {
-    setInterval(async () => {
-      await this.commitResetRankings();
-    }, RANKING_WATCHER_PERIOD_MILSECONDS);
-  }
-
-  async commitResetRankings() {
-    const currentDayStart = this.currentDayStart;
-    if (currentDayStart <= this._lastRankingsResetTimestamp) {
-      return;
-    }
-    await Game.dbClient.withTransaction(async (db) => {
-      await db.collection(Collections.MarchRanks).deleteMany({});
-      await db.collection(Collections.Meta).updateOne(
-        { _id: 'march_meta' },
-        { $set: { lastReset: currentDayStart } },
-        { upsert: true }
-      );
-    });
-  }
-
-  async setLastRankingsResetTimestamp(value: number) {
-    this._lastRankingsResetTimestamp = value;
-
-    await Game.db.collection(Collections.Meta).updateOne(
-      { _id: 'march_meta' },
-      { $set: { lastReset: value } },
-      { upsert: true }
     );
   }
 
