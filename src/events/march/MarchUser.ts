@@ -7,12 +7,28 @@ import Game from "../../game";
 import * as march from "../../knightlands-shared/march";
 import { Pet } from "./units/Pet";
 
-// TODO update
-export const EVENT_REWARD_ITEM_ID = [
-  [1000, 1001, 1002, 1003, 1004], // level 2: frame
-  [2000, 2001, 2002, 2003, 2004]  // level 3: headwear
+const PET_UPGRADE_REWARDS = [
+  {
+    "level2":[{"item":3463,"quantity":1}],
+    "level3":[{"item":3468,"quantity":1}]
+  },
+  {
+    "level2":[{"item":3464,"quantity":1}],
+    "level3":[{"item":3469,"quantity":1}]
+  },
+  {
+    "level2":[{"item":3465,"quantity":1}],
+    "level3":[{"item":3470,"quantity":1}]
+  },
+  {
+    "level2":[{"item":3466,"quantity":1}],
+    "level3":[{"item":3471,"quantity":1}]
+  },
+  {
+    "level2":[{"item":3467,"quantity":1}],
+    "level3":[{"item":3472,"quantity":1}]
+  }
 ];
-
 
 export class MarchUser {
     private _state: MarchUserState;
@@ -158,15 +174,16 @@ export class MarchUser {
       }
       
       this.modifyBalance(march.CURRENCY_GOLD, -price);
-
-      const levelIndex = this._state.pets[index].level - 1;
-      /*await this._user.inventory.addItemTemplates([{
-        item: EVENT_REWARD_ITEM_ID[levelIndex][classIndex],
-        quantity: 1
-      }]);*/
       
       this._state.pets[index].level += 1;
       this._events.pets(this._state.pets);
+      
+      const newLevel = this._state.pets[index].level;
+      const levelRewards = PET_UPGRADE_REWARDS;
+      const rewardItems = levelRewards[classIndex][`level${newLevel}`];
+      await this._user.inventory.addItemTemplates(rewardItems);
+      
+      return rewardItems;
     }
     
     public getState(): MarchUserState {

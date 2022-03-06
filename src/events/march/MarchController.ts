@@ -125,7 +125,8 @@ export class MarchController {
   }
 
   async upgradePet(petClass: number) {
-    await this._marchUser.upgradePet(petClass);
+    const items = await this._marchUser.upgradePet(petClass);
     this._events.flush();
+    return items;
   }
 }

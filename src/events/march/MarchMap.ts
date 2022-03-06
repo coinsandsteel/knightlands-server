@@ -90,7 +90,7 @@ export class MarchMap {
     this.wakeUp(this._state);
   }
 
-  public createPet() {
+  public createPet(): void {
     if (this._pet) {
       return;
     }
