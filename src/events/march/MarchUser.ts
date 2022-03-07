@@ -186,8 +186,24 @@ export class MarchUser {
       this._events.preGameBoosters(this._state.preGameBoosters);
     }
 
-    public purchasePreGameBoosters(boosters: MarchBoosters) {
+    public purchasePreGameBoosters(pet: Pet, boosters: MarchBoosters) {
       for (var key in boosters) {
+        if (
+          pet.checkClassAndLevel(3, 3)
+          &&
+          (key == march.BOOSTER_LIFE || key == march.BOOSTER_HP)
+        ) {
+          continue;
+        }
+        
+        if (
+          pet.checkClassAndLevel(4, 3)
+          &&
+          key == march.BOOSTER_KEY
+        ) {
+          continue;
+        }
+
         let boosterPrice = march.BOOSTERS[key];
         if (boosters[key] && boosterPrice <= this.gold) {
           this.modifyBalance(march.CURRENCY_GOLD, -boosterPrice);
