@@ -147,7 +147,7 @@ export class MarchMap {
     //console.log("");
     //console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
 
-    this._marchUser.purchasePreGameBoosters(boosters);
+    this._marchUser.purchasePreGameBoosters(this.pet, boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
     
     this._state.pet.petClass = petClass;
