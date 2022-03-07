@@ -177,7 +177,7 @@ export class MarchManager {
       rewardItems.forEach((itemEntry) => {
         let receivedItemIndex = receivedItems.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
         if (receivedItemIndex === -1) {
-          receivedItems.push(itemEntry);
+          receivedItems.push(_.cloneDeep(itemEntry));
         } else {
           receivedItems[receivedItemIndex].quantity += itemEntry.quantity;
         }
