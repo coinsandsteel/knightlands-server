@@ -22,6 +22,7 @@ const DktFactorUpdateInterval = 1800000; // every 30 minutes
 // const DktFactorUpdateInterval = 10000; // every 10 seconds
 const DKT_RESTORE_FACTOR = 0.05;
 const RAIDS_PER_PAGE = 20;
+const RAIDS_ACTIVE_LIMIT = 25;
 const FINISHED_RAID_CACHE_TTL = 3600000; // 1 hour
 
 class RaidManager {
@@ -75,6 +76,8 @@ class RaidManager {
     }
 
     async joinRaid(userId, raidId) {
+        await this.isEnoughSpaceInActiveList(userId);
+
         let raid = this.getRaid(raidId);
         if (!raid || raid.free) {
             throw Errors.InvalidRaid;
@@ -137,6 +140,8 @@ class RaidManager {
             throw Errors.NotEnoughLevel;
         }
 
+        await this.isEnoughSpaceInActiveList(summoner.id);
+
         // check if there is enough crafting materials
         let data = (free || summoner.isFreeAccount) ? raitTemplate.soloData : raitTemplate.data;
 
@@ -171,6 +176,12 @@ class RaidManager {
         return {
             raid: raid.id
         };
+    }
+
+    async isEnoughSpaceInActiveList(id) {
+        if (await this.activeRaidsCount(id) >= RAIDS_ACTIVE_LIMIT) {
+            throw Errors.IncorrectArguments;
+        }
     }
 
     async fetchPublicRaids(userId, userLevel, page) {

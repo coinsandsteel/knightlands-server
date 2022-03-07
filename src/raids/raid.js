@@ -561,18 +561,12 @@ class Raid extends EventEmitter {
                 let winLoot = baseLoot.winnerLootFree;
                 let addLoot = await Game.lootGenerator.getLootFromTable(winLoot);
                 rewards.items.push(...addLoot);
-                if (Game.lunarManager.eventIsInProgress()) {
-                    rewards.items.push(...Game.lunarManager.getRaidReward());
-                }
-                if (Game.marchManager.eventIsInProgress()) {
-                    rewards.items.push(Game.marchManager.getRaidReward());
-                }
+                // if (Game.lunarManager.eventIsInProgress()) {
+                //     rewards.items.push(...Game.lunarManager.getRaidReward());
+                // }
             } else {
                 let winLoot = user.isFreeAccount ? baseLoot.winnerLootFree : baseLoot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
-                if (Game.marchManager.eventIsInProgress()) {
-                    rewards.items.push(Game.marchManager.getRaidReward());
-                }
             }
 
             // evaluate challenges
@@ -619,7 +613,7 @@ class Raid extends EventEmitter {
         } else {
             rewards.rp = await user.getBonusRP(rewards.rp);
         }
-        
+
         await this._updateLoot(userId, rewards);
 
         return rewards;
