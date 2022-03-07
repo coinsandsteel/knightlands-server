@@ -74,7 +74,8 @@ export class Unit extends HpClass implements StepInterface {
       hp: this._hp,
       maxHp: this._maxHp,
       previousHp: this._previousHp,
-      unitClass: this.unitClass
+      unitClass: this.unitClass,
+      respawn: this._respawn
     } as MarchCard;
 
     if (this._timer !== null) {

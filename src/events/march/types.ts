@@ -45,6 +45,7 @@ export interface MarchCard {
   maxHp?: number;
   opened?: boolean;
   timer?: number;
+  respawn?: boolean;
 }
 
 export interface StatState {

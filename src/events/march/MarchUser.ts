@@ -307,6 +307,7 @@ export class MarchUser {
     }
 
     public async testAction(action) {
+      return;
       switch (action) {
         case 'addTicket':{
           await this._user.inventory.addItemTemplates([

@@ -63,14 +63,16 @@ export class MarchEvents {
           _id: card._id, 
           hp: card.hp,
           maxHp: card.maxHp,
-          previousHp: card.previousHp
+          previousHp: card.previousHp,
+          respawn: card.respawn
         };
       } else {
         this._events.sequence[this._sequence].cards[index] = {
           ...this._events.sequence[this._sequence].cards[index],
           hp: card.hp,
           maxHp: card.maxHp,
-          previousHp: card.previousHp
+          previousHp: card.previousHp,
+          respawn: card.respawn
         }
       }
 
