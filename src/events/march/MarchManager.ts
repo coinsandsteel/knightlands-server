@@ -183,8 +183,9 @@ export class MarchManager {
         }
       });
     }
-
+    
     await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
+    console.log('[User rewards]', user.id, receivedItems);
 
     return receivedItems;
   }
