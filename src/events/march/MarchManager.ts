@@ -135,12 +135,14 @@ export class MarchManager {
       }
     }
 
-    return !rewardClaimed && hasRewards;
+    return true;
+    //return !rewardClaimed && hasRewards;
   }
 
   async rewardClaimed(user: User) {
     let userRecord = await this._rankCollection.findOne({ _id: user.id });
-    return userRecord ? !!userRecord.claimed : false;
+    return false;
+    //return userRecord ? !!userRecord.claimed : false;
   }
 
   public async claimRewards(user: User) {
