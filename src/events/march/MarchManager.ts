@@ -109,7 +109,7 @@ export class MarchManager {
       [classKey]: { $gt: score } 
     }).count() + 1;
 
-    console.log('[User rank]', { userId, petClass, rank });
+    //console.log('[User rank]', { userId, petClass, rank });
 
     return rank;
   }
@@ -135,14 +135,12 @@ export class MarchManager {
       }
     }
 
-    return true;
-    //return !rewardClaimed && hasRewards;
+    return !rewardClaimed && hasRewards;
   }
 
   async rewardClaimed(user: User) {
     let userRecord = await this._rankCollection.findOne({ _id: user.id });
-    return false;
-    //return userRecord ? !!userRecord.claimed : false;
+    return userRecord ? !!userRecord.claimed : false;
   }
 
   public async claimRewards(user: User) {
@@ -187,7 +185,7 @@ export class MarchManager {
     }
     
     await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
-    console.log('[User rewards]', user.id, receivedItems);
+    //console.log('[User rewards]', user.id, receivedItems);
 
     return receivedItems;
   }
