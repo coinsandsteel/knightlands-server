@@ -37,7 +37,7 @@ export class MarchUser {
       this._state = {
         balance: {
           sessionGold: 0,
-          gold: 50000
+          gold: 0
         },
         preGameBoosters: {
           maxHealth: 0,
