@@ -38,6 +38,14 @@ export class MarchManager {
     return this._meta.raidRewardCount || 1;
   }
 
+  get eventRewards() {
+    return this._meta.eventRewards || [];
+  }
+
+  get levelRewards() {
+    return this._meta.levelRewards || [];
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "march_meta" });
 
@@ -136,7 +144,7 @@ export class MarchManager {
       throw errors.IncorrectArguments;
     }
 
-    const eventRewards = EVENT_REWARDS;
+    const eventRewards = this.eventRewards;
     let receivedItems = [];
 
     for (let petClass = 1; petClass <= 5; petClass++) {
