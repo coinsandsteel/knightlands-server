@@ -18,13 +18,19 @@ export class Container extends Unit {
 
   public activate(): void {
     if (this.unitClass === UNIT_CLASS_BARREL) {
-      this.open(this.map.pet.serial === 'C5L1');
+      const success = this.map.pet.checkClassAndLevel(5, 1);
+      if (success) {
+        //console.log(`[Pet C5/L1] PASSED. Enemy won't spawn from a barrel.`);
+      } else {
+        //console.log(`[Pet C5/L1] FAILED. Enemy could spawn from a barrel.`);
+      }
+      this.open(success);
     }
     if (this.unitClass === UNIT_CLASS_CHEST) {
       if(
-        this.map.canUsePreGameBooster(BOOSTER_KEY)
+        this.map.marchUser.canUsePreGameBooster(BOOSTER_KEY)
         ||
-        this.map.pet.serial === 'C4L3'
+        this.map.pet.checkClassAndLevel(4, 3)
       ) {
         this.open(true);
       } else {

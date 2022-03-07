@@ -4,21 +4,22 @@ import * as march from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
 import { MarchMap } from "../MarchMap";
 
-export class Artifact extends Unit {
-  private timer: number;
+export const BOMB_TIMER = 10;
 
+export class Artifact extends Unit {
   constructor(card: MarchCard, map: MarchMap) {
     super(card, map);
 
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.timer = march.BOMB_TIMER;
+      this._timer = BOMB_TIMER;
     }
   }
 
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this.timer--;
-      if (this.timer <= 0) {
+      this._timer--;
+      this.map.events.bombTimer(this.serialize(), this.index);
+      if (this._timer <= 0) {
         this.activate();
       }
     }

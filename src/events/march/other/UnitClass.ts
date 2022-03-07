@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { MarchMap } from "../MarchMap";
 import { HpClass } from "./HpClass";
 import { StepInterface } from "./StepInterface";
@@ -10,6 +11,7 @@ export class Unit extends HpClass implements StepInterface {
   protected _map: MarchMap;
   protected _unitClass: string;
   protected _opened: boolean|null = null;
+  protected _timer: number|null = null;
   protected _capturedIndex: number|null = null;
 
   get map(): MarchMap {
@@ -49,8 +51,7 @@ export class Unit extends HpClass implements StepInterface {
     this._maxHp = card.maxHp || card.hp;
     this._id = card._id || uuidv4().split('-').pop();
 
-    // TODO implement random opened state in the Croupier
-    if (card.opened !== null) {
+    if (this.unitClass === march.UNIT_CLASS_TRAP) {
       this._opened = card.opened;
     }
   }
@@ -61,6 +62,7 @@ export class Unit extends HpClass implements StepInterface {
 
   public setOpened(opened: boolean): void {
     this._opened = opened;
+    this.map.events.trapOpened(this.serialize(), this.index);
   };
 
   public activate(): void {};
@@ -72,14 +74,20 @@ export class Unit extends HpClass implements StepInterface {
       _id: this._id,
       hp: this._hp,
       maxHp: this._maxHp,
-      unitClass: this.unitClass
+      previousHp: this._previousHp,
+      unitClass: this.unitClass,
+      respawn: this._respawn
     } as MarchCard;
 
+    if (this._timer !== null) {
+      card.timer = this._timer;
+    }
+    
     if (this.opened !== null) {
       card.opened = this.opened;
     }
     
-    return card;
+    return _.cloneDeep(card);
   };
 
   public modifyHp(hpModifier: number): void {
@@ -100,5 +108,13 @@ export class Unit extends HpClass implements StepInterface {
     if (hpModifier) {
       this.map.events.cardHp(this.serialize(), this.index);
     }
+  };
+
+  public capturePreviousHp(): void {
+    this._previousHp = this._hp;
+  };
+  
+  public voidPreviousHp(): void {
+    this._previousHp = null;
   };
 }

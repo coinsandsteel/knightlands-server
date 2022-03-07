@@ -5,33 +5,28 @@ import { MarchCard } from "../types";
 
 export class Enemy extends Unit {
   public touch(){
-    this.activate();
-  }  
-  
-  public activate(){
     this.fight();
   }  
 
   private fight(): void {
     const pet = this.map.pet;
-    pet.handleDamage(this.hp);
+
+    if (!(this.unitClass === march.UNIT_CLASS_TRAP && !this.opened)) {
+      pet.handleDamage(this.hp);
+    }
 
     if (pet.isDead()) {
-      this.map.exit();
-    } else {
-      if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
-        pet.upgradeHP(1);
-        this.map.croupier.upgradePool();
-      }
-      if (this.unitClass === march.UNIT_CLASS_TRAP && this.opened) {
-        this.map.enablePenalty(this.hp);
-      }
-      this.map.addGold(this.hp);
+      return;
     }
+
+    if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      this.bossKilled();
+    }
+
+    this.map.marchUser.addSessionGold(this.hp);
   }
 
   public replaceWithGold(): void {
-    // TODO sync bossesKilled stat
     const newUnit = new Loot({
       unitClass: march.UNIT_CLASS_GOLD,
       hp: this.maxHp,
@@ -40,7 +35,10 @@ export class Enemy extends Unit {
     this.map.replaceCellWith(this, newUnit);
   }
 
-  public destroy(): void { 
+  public destroy(): void {
+    if (this.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      this.bossKilled();
+    }
     this.replaceWithGold();
   };
 
@@ -49,4 +47,13 @@ export class Enemy extends Unit {
       this.setOpened(!this.opened);
     }
   };
+
+  protected bossKilled(): void {
+    this.map.pet.capturePreviousHp();
+    this.map.pet.upgradeHP(1);
+    this.map.pet.voidPreviousHp();
+    this.map.bossKilled();
+    this.map.croupier.upgradePool();
+    this.map.croupier.puchChestIntoQueue();
+  }
 }

@@ -1,6 +1,8 @@
 export class HpClass {
   protected _hp: number;
+  protected _previousHp: number;
   protected _maxHp: number;
+  protected _respawn: boolean;
 
   get hp(): number {
     return this._hp;
@@ -21,6 +23,10 @@ export class HpClass {
     this._maxHp += value;
   };
 
+  public setRespawn(value: boolean): boolean {
+    return this._respawn = value;
+  };
+  
   public isDead(): boolean {
     return this._hp <= 0;
   };

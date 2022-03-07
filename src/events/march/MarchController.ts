@@ -5,7 +5,7 @@ import Game from "../../game";
 import { MarchUser } from "./MarchUser";
 import { MarchMap } from "./MarchMap";
 import { MarchEvents } from "./MarchEvents";
-import { MarchSaveData } from "./types";
+import { MarchBoosters, MarchSaveData } from "./types";
 
 export class MarchController {
   private _user: User;
@@ -23,7 +23,7 @@ export class MarchController {
   async init() {
     const saveData = await Game.marchManager.loadProgress(this._user.id);
     if (saveData) {
-      this._saveData = saveData as MarchSaveData;
+      this._saveData = saveData.state as MarchSaveData;
     }
     
     this.initPlayer();
@@ -41,6 +41,7 @@ export class MarchController {
   }
 
   async dispose() {
+    this._marchMap.exit(false);
     await this._save();
   }
 
@@ -82,8 +83,8 @@ export class MarchController {
     return this.getState();
   }
 
-  async purchasePreGameBooster(type: string) {
-    this._marchUser.setPreGameBooster(type, true);
+  async purchaseGold(shopIndex: number,currency: string) {
+    this._marchUser.purchaseGold(shopIndex, currency);
     this._events.flush();
   }
 
@@ -92,11 +93,14 @@ export class MarchController {
     this._events.flush();
   }
 
-  async startNewGame() {
-    // Debit one ticket
+  async startNewGame(petClass: number, level: number, boosters: MarchBoosters) {
+    this._marchUser.debitTicket();
+    this._marchMap.restart(petClass, level, boosters);
+    this._events.flush();
+  }
 
-    // Start the card game from scratch
-    this._marchMap.restart();
+  async exitGame() {
+    this._marchMap.exit(true);
     this._events.flush();
   }
 
@@ -105,23 +109,27 @@ export class MarchController {
     this._events.flush();
   }
 
-  async collectDailyReward(action) {
-    await this._marchUser.collectDailyLunarReward();
+  async collectDailyReward() {
+    await this._marchUser.collectDailyMarchReward();
   }
 
   async testAction(action) {
-    //await this._marchUser.testAction(action);
+    await this._marchUser.testAction(action);
   }
 
   async unlockPet(petClass: number) {
     await this._marchUser.unlockPet(petClass);
+    this._events.flush();
   }
 
   async upgradePet(petClass: number) {
-    await this._marchUser.upgradePet(petClass);
+    const items = await this._marchUser.upgradePet(petClass);
+    this._events.flush();
+    return items;
   }
 
-  async purchase(data) {
-    
+  async claimRewards() {
+    const items = await Game.marchManager.claimRewards(this._user);
+    return items;
   }
 }

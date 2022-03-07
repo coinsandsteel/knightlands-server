@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { MarchCard, MarchMapState, PetState, StatState } from "./types";
+import { MarchBoosters, MarchCard, MarchMapState, PetState, StatState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
@@ -50,8 +50,7 @@ export class MarchMap {
     this._state = {
       stat: {
         stepsToNextBoss: null,
-        bossesKilled: 0,
-        penaltySteps: 0
+        bossesKilled: 0
       },
       pet: {
         petClass: 1,
@@ -74,18 +73,29 @@ export class MarchMap {
     return this._pet;
   }
 
+  get marchUser(): MarchUser {
+    return this._marchUser;
+  }
+
   get croupier(): MarchCroupier {
     return this._marchCroupier;
   }
 
   public init() {
-    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 10 }) as Pet;
-    this._pet.reset();
-    
-    this._damage = new MarchDamage(this.cards, this.pet);
+    this.createPet();
+
+    this._damage = new MarchDamage(this.cards, this);
     this._marchCroupier = new MarchCroupier(this);
 
-    this.load(this._state);
+    this.wakeUp(this._state);
+  }
+
+  public createPet(): void {
+    if (this._pet) {
+      return;
+    }
+    // HP = 1 because we need to ensure that it will be reset to 10+ later
+    this._pet = this.makeUnit({ _id: null, unitClass: march.UNIT_CLASS_PET, hp: 1 }) as Pet;
   }
 
   protected setCardByIndex(card: Unit, index: number): void {
@@ -132,18 +142,62 @@ export class MarchMap {
   }
 
   // Start the card game from scratch
-  public restart() {
+  public restart(petClass: number, level: number, boosters: MarchBoosters) {
+    //console.log("");
+    //console.log("");
+    //console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
+
+    this._marchUser.purchasePreGameBoosters(this.pet, boosters);
+    this._marchUser.resetSessionGoldAndBoosters(boosters);
+    
+    this._state.pet.petClass = petClass;
+    this._state.pet.level = level;
+    this._state.pet.armor = 0;
+
+    this.pet.setAttributes(this._state.pet);
     this.pet.reset();
 
-    if (this.canUsePreGameBooster(march.BOOSTER_HP)) {
-      this.setPreGameBooster(march.BOOSTER_HP, false);
-      this.pet.modifyMaxHP(1);
+    if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
+      this.pet.upgradeHP(1);
     }
+
+    this._marchCroupier.reset();
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
-    this._state.stat.penaltySteps = 0;
     
+    this.spawnCards();
+
+    this._events.pet(this._state.pet);
+    this._events.stat(this._state.stat);
+    this._events.cards(
+      this.cards.map(card => card.serialize())
+    );
+  }
+
+  public exit(sendEvents: boolean) {
+    this._marchUser.resetSessionGoldAndBoosters();
+    this._marchUser.voidBoosters();
+    
+    this._state.stat.stepsToNextBoss = 0;
+    this._state.stat.bossesKilled = 0;
+
+    this._state.cards = [];
+
+    if (sendEvents) {
+      this._events.stat(this._state.stat);
+      this._events.cards([]);
+    }
+  }
+
+  public wakeUp(state: MarchMapState) {
+    // Parse stat
+    this.parseStat(state.stat);
+    // Set pet attributes
+    this.parsePet(state.pet);
+  }
+
+  protected spawnCards() {
     const initialCardList = Array.from(
       { length: 9 }, 
       (_, i) => i == 4 ? 
@@ -152,34 +206,8 @@ export class MarchMap {
         this._marchCroupier.getCard(true)
     ) as MarchCard[];
     
-    this.load({
-      stat: this._state.stat,
-      pet: this._state.pet,
-      cards: initialCardList,
-    } as MarchMapState);
-    
-    this._events.pet(this._state.pet);
-    this._events.stat(this._state.stat);
-    this._events.cards(
-      this.cards.map(card => card.serialize())
-    );
-  }
-
-  public load(state: MarchMapState) {
-    // Parse stat
-    this.parseStat(state.stat);
-    // Parse cards
-    this.parseCards(state.cards);
-    // Set pet attributes
-    this.parsePet(state.pet);
-  }
-
-  protected parseCards(cards: MarchCard[]) {
-    cards.forEach((unit: MarchCard, index: number) => {
+    initialCardList.forEach((unit: MarchCard, index: number) => {
       const newUnit = this.makeUnit(unit);
-      if (newUnit.unitClass === march.UNIT_CLASS_PET) {
-        this._pet = newUnit as Pet;
-      }
       this.setCardByIndex(newUnit, index);
     });
   }
@@ -194,12 +222,21 @@ export class MarchMap {
   protected parseStat(state: StatState): void {
     this._state.stat.stepsToNextBoss = state.stepsToNextBoss;
     this._state.stat.bossesKilled = state.bossesKilled;
-    this._state.stat.penaltySteps = state.penaltySteps;
   }
 
   public touch(index: number) {
+    if (this.pet.isDead()) {
+      //console.log(`Pet is dead.`);
+      return;
+    }
+
     // ###### THE MAIN ENTRY POINT ######
     const targetCard = this.cards[index];
+    if (!march.ADJACENT_CELLS[this.pet.index].includes(index)) {
+      //console.log(`You cannot move card from ${this.pet.index} to ${index}`);
+      return;
+    }
+
     if (
       targetCard instanceof Container
       ||
@@ -209,8 +246,43 @@ export class MarchMap {
     } else {
       this.movePetTo(targetCard);
     }
+
+    const cell = function (unitClass) {
+      if ([
+        march.UNIT_CLASS_EXTRA_HP,
+        march.UNIT_CLASS_DRAGON_BREATH,
+        march.UNIT_CLASS_BALL_LIGHTNING,
+        march.UNIT_CLASS_ENEMY_BOSS
+      ].includes(unitClass)) {
+        return unitClass + "\t";
+      } else {
+        return unitClass + "\t\t";
+      }
+    }
+
+    //console.log('Final cards:');
+    //console.log(cell(this.cards[0].unitClass), cell(this.cards[1].unitClass), cell(this.cards[2].unitClass));
+    //console.log(cell(this.cards[3].unitClass), cell(this.cards[4].unitClass), cell(this.cards[5].unitClass));
+    //console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
+    //console.log(' ');
+
+    this.stepCallback();
   }
 
+  public stepCallback() {
+    // Count a step
+    this._marchCroupier.increaseStepCounter();
+
+    // Update stat
+    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
+    this._events.stat(this._state.stat);
+
+    // Callbacks
+    this.cards.forEach(card => {
+      card.userStepCallback();
+    });
+  }
+  
   protected moveCardTo(unit: Unit, index: number): void {
     this.cards[index] = unit;
     this._events.cardMoved(unit.serialize(), index);
@@ -218,6 +290,16 @@ export class MarchMap {
 
   public movePetTo(target: Unit) {
     target.captureIndex();
+
+    if (target.unitClass === march.UNIT_CLASS_ENEMY_BOSS) {
+      if (this.pet.canKillBoss(target)) {
+        this._marchCroupier.puchChestIntoQueue();
+        this._marchCroupier.chestProvided(true);
+      } else {
+        target.touch();
+        return;
+      }
+    }
 
     // Move pet
     // Move cards in a row
@@ -245,8 +327,8 @@ export class MarchMap {
         const isMoveDown = petIndex === 5;
         const factor = isMoveDown ? 1 : -1;
         this.moveCardTo(this._pet, targetIndex);
-        this.moveCardTo(this.cards[petIndex + 3 * factor], petIndex);
-        this.addCard(petIndex + 3 * factor);
+        this.moveCardTo(this.cards[petIndex - 3 * factor], petIndex);
+        this.addCard(petIndex - 3 * factor);
       }
     } else {
       if ([1, 7].includes(petIndex)) {
@@ -273,29 +355,9 @@ export class MarchMap {
 
     // Touch card
     target.touch();
-    
-    // Callbacks
-    this.cards.forEach(card => {
-      card.userStepCallback();
-    });
-    
-    // Count a step
-    this._marchCroupier.increaseStepCounter();
-    this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
-    // Reduce penalty
-    this.reducePenalty();
-    this._events.stat(this._state.stat);
-  }
 
-  public reducePenalty(): void {
-    this._state.stat.penaltySteps--;
-    if (this._state.stat.penaltySteps <= 0) {
-      this._state.stat.penaltySteps = 0;
-    }
-  };
-
-  public enablePenalty(steps): void {
-    this._state.stat.penaltySteps = steps;
+    this._marchCroupier.chestProvided(false);
+    this.pet.setRespawn(false);
   }
 
   public swapPetCellTo(unit: Unit) {
@@ -320,6 +382,7 @@ export class MarchMap {
   public addCard(newCardIndex: number) {
     // Insert a new card via croupier
     const newCard = this._marchCroupier.getCard() as Unit;
+    //console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
     this.cards[newCardIndex] = newCard;
     this._events.newCard(newCard.serialize(), newCardIndex);
   }
@@ -337,7 +400,7 @@ export class MarchMap {
     victims.forEach(victim => {
       const currentHpModifier = this._damage.getHpModifier(attacker, victim);
       victim.modifyHp(currentHpModifier);
-      console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
+      //console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
     })
   }
 
@@ -358,30 +421,14 @@ export class MarchMap {
     this.activeChest.tryToOpenChest(keyNumber);
   }
 
-  public addGold(amount: number): void {
-    this._marchUser.collectGoldForPet(amount, this._state.pet.petClass);
-    this._marchUser.modifyBalance(march.CURRENCY_GOLD, amount);
-  }
-
-  public setPreGameBooster(type: string, hasItem: boolean): void {
-    this._marchUser.setPreGameBooster(type, hasItem);
-  }
-
-  public canUsePreGameBooster(type: string): boolean {
-    if (this._marchUser.getState().preGameBoosters[type] > 0) {
-      return true;
-    }
-    return false;
-  }
-
-  public exit(): void {
-
-  }
-
   public gameOver(): void {
-    this.setPreGameBooster(march.BOOSTER_KEY, false);
-    this.setPreGameBooster(march.BOOSTER_LIFE, false);
-    const petClass = this._state.pet.petClass
-    Game.marchManager.updateRank(this._user.id, petClass, this._marchUser.getCollectedGoldByPet(petClass));
+    this._marchUser.voidBoosters();
+    this._marchUser.flushStats(this.pet);
+    this._marchCroupier.reset();
+  }
+
+  public bossKilled(): void {
+    this._state.stat.bossesKilled++;
+    this._events.stat(this._state.stat);
   }
 }

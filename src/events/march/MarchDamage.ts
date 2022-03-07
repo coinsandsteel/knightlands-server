@@ -1,15 +1,15 @@
 import { Unit } from "./other/UnitClass";
 import * as march from "../../knightlands-shared/march";
 import Random from "../../random";
-import { Pet } from "./units/Pet";
+import { MarchMap } from "./MarchMap";
 
 export class MarchDamage {
     private _cards: Unit[];
-    private _pet: Pet;
+    private _map: MarchMap;
 
-    constructor(cards: Unit[], pet: Pet) {
+    constructor(cards: Unit[], map: MarchMap) {
       this._cards = cards;
-      this._pet = pet;
+      this._map = map;
     }
 
     public getVictims(attacker: Unit, direction: string): Unit[] {
@@ -68,18 +68,28 @@ export class MarchDamage {
           break;
         }
         case march.UNIT_CLASS_BOW: {
-          let bonus = this._pet.serial === 'C2L1' ? 1 : 0;
+          let bonus = this._map.pet.checkClassAndLevel(2, 1) ? 1 : 0;
           switch(victim.unitClass) {
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:
             case march.UNIT_CLASS_TRAP:
             case march.UNIT_CLASS_HP:
             case march.UNIT_CLASS_ARMOR: {
+              if (bonus) {
+                //console.log('[Pet C2/L1] PASSED. Bow damage +1');
+              } else {
+                //console.log('[Pet C2/L1] FAILED. Bow damage +0');
+              }
               return -(attacker.hp + bonus);
             }
             case march.UNIT_CLASS_BOW:{
-              let stackBonus = this._pet.serial === 'C2L2' ? 2 : 0;
-              return attacker.hp + bonus + stackBonus;
+              let stackBonus = this._map.pet.checkClassAndLevel(2, 2) ? 2 : 0;
+              if (stackBonus) {
+                //console.log('[Pet C2/L2] PASSED. Bow stack +2');
+              } else {
+                //console.log('[Pet C2/L2] FAILED. Bow stack +0');
+              }
+              return attacker.hp + stackBonus;
             }
           }
           break;
@@ -105,7 +115,13 @@ export class MarchDamage {
         case march.UNIT_CLASS_BOMB: {
           switch(victim.unitClass) {
             case march.UNIT_CLASS_PET:{
-              return this._pet.serial === 'C2L3' ? 0 : -attacker.hp;
+              const bombProtected = this._map.pet.checkClassAndLevel(2, 3);
+              if (bombProtected) {
+                //console.log('[Pet C2/L3] PASSED. Bomb damage = 0.');
+              } else {
+                //console.log(`[Pet C2/L3] FAILED. Bomb damage = ${-attacker.hp}.`);
+              }
+              return bombProtected ? 0 : -attacker.hp;
             }
             case march.UNIT_CLASS_ENEMY:
             case march.UNIT_CLASS_ENEMY_BOSS:

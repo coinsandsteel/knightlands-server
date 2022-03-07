@@ -5,16 +5,18 @@ export interface MarchSaveData {
 
 export interface MarchUserState {
   balance: {
-    tickets: number;
+    sessionGold: number;
     gold: number;
   };
-  preGameBoosters: {
-    maxHealth: number;
-    extraLife: number;
-    key: number;
-  };
+  preGameBoosters: MarchBoosters;
   dailyRewards: MarchRewardDayData[];
   pets: MarchPetData[];
+}
+
+export interface MarchBoosters {
+  maxHealth: number;
+  extraLife: number;
+  key: number;
 }
 
 export interface MarchPetData {
@@ -39,14 +41,16 @@ export interface MarchCard {
   _id: string;
   unitClass: string;
   hp: number;
+  previousHp?: number;
   maxHp?: number;
   opened?: boolean;
+  timer?: number;
+  respawn?: boolean;
 }
 
 export interface StatState {
   stepsToNextBoss: number|null;
   bossesKilled: number;
-  penaltySteps: number;
 }
 
 export interface PetState {
