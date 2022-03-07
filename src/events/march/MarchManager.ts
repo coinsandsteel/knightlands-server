@@ -62,6 +62,10 @@ export class MarchManager {
   }
 
   async updateRank(userId: ObjectId, petClass: number, points: number) {
+    if (this.eventFinished()) {
+      return;
+    }
+
     const scorePetStr = 'score' + petClass;
     const setOnInsert = { score1: 0, score2: 0, score3: 0, score4: 0, score5: 0 };
     delete setOnInsert[scorePetStr];
