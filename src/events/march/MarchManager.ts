@@ -105,6 +105,8 @@ export class MarchManager {
       [classKey]: { $gt: score } 
     }).count() + 1;
 
+    console.log('[User rank]', { userId, petClass, rank });
+
     return rank;
   }
 
