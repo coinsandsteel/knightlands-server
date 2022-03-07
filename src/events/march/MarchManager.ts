@@ -2,7 +2,6 @@ import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
 import Game from "../../game";
-import { TICKET_ITEM_ID, EVENT_REWARDS } from "../../knightlands-shared/march";
 import User from "../../user";
 import errors from "../../knightlands-shared/errors";
 
@@ -44,6 +43,10 @@ export class MarchManager {
 
   get levelRewards() {
     return this._meta.levelRewards || [];
+  }
+
+  get marchTicketId() {
+    return this._meta.marchTicket;
   }
 
   async init() {
@@ -211,7 +214,7 @@ export class MarchManager {
 
   public getRaidReward() {
     return {
-      item: TICKET_ITEM_ID,
+      item: this.marchTicketId,
       quantity: this.raidRewardCount,
       guaranteed: true
     };

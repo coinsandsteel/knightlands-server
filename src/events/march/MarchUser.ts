@@ -106,7 +106,7 @@ export class MarchUser {
       }
 
       await this._user.inventory.addItemTemplates([{
-        item: march.TICKET_ITEM_ID,
+        item: Game.marchManager.marchTicketId,
         quantity: entry.quantity
       }]);
 
@@ -295,7 +295,7 @@ export class MarchUser {
         case 'addTicket':{
           await this._user.inventory.addItemTemplates([
             { 
-              item: march.TICKET_ITEM_ID,
+              item: Game.marchManager.marchTicketId,
               quantity: 1
             }
           ]);
@@ -316,13 +316,13 @@ export class MarchUser {
     }
 
     public debitTicket() {
-      if (!this._user.inventory.hasItems(march.TICKET_ITEM_ID, 1)) {
+      if (!this._user.inventory.hasItems(Game.marchManager.marchTicketId, 1)) {
         throw Errors.MarchNoTicket;
       }
       
       // Debit one ticket
       this._user.inventory.removeItemByTemplate(
-        march.TICKET_ITEM_ID
+        Game.marchManager.marchTicketId
       );
     }
 }

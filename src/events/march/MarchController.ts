@@ -6,8 +6,6 @@ import { MarchUser } from "./MarchUser";
 import { MarchMap } from "./MarchMap";
 import { MarchEvents } from "./MarchEvents";
 import { MarchBoosters, MarchSaveData } from "./types";
-import { TICKET_ITEM_ID } from '../../knightlands-shared/march';
-import Errors from '../../knightlands-shared/errors';
 
 export class MarchController {
   private _user: User;
