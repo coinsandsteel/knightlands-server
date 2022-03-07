@@ -172,7 +172,7 @@ export class MarchEvents {
       game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
       this._events = {};
       this._sequence = 0;
-      console.log(' ');
+      //console.log(' ');
     }
 
     balance(currency, balance) {
@@ -213,6 +213,6 @@ export class MarchEvents {
     }
 
     _log(event, data, payload?) {
-      console.log(`[Seq #${this._sequence}] ${event} ` + data.join(' '), payload);
+      //console.log(`[Seq #${this._sequence}] ${event} ` + data.join(' '), payload);
     }
 }

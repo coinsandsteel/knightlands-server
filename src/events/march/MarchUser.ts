@@ -264,9 +264,9 @@ export class MarchUser {
       let goldAmount = Math.round(this._state.balance.sessionGold * goldModifier);
   
       if (moreGold) {
-        console.log(`[Pet C4/L2] PASSED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
+        //console.log(`[Pet C4/L2] PASSED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
       } else {
-        console.log(`[Pet C4/L2] FAILED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
+        //console.log(`[Pet C4/L2] FAILED. Gold amount is ${this._state.balance.sessionGold} * ${goldModifier}.`);
       }
 
       this.modifyBalance(march.CURRENCY_GOLD, goldAmount);

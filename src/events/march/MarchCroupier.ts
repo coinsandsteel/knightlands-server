@@ -230,10 +230,10 @@ export class MarchCroupier {
       &&
       unitClass === UNIT_CLASS_ARMOR
     ) {
-      console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
+      //console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
       unitClass = UNIT_CLASS_BALL_LIGHTNING;
     } else {
-      console.log('[Pet C5/L3] FAILED. Armor spawn.');
+      //console.log('[Pet C5/L3] FAILED. Armor spawn.');
     }
 
     let hp = 0;
@@ -256,7 +256,7 @@ export class MarchCroupier {
       blueprint.opened = Random.intRange(0, 1);
     }
 
-    console.log('[New card]', blueprint);
+    //console.log('[New card]', blueprint);
 
     if (returnBlueprint) {
       return blueprint;
@@ -300,10 +300,10 @@ export class MarchCroupier {
 
   public upgradePool(): void {
     this.resetStepCounter();
-    console.log("🚀 ~ file: MarchCroupier.ts ~ line 303 ~ MarchCroupier ~ upgradePool ~ this._queue", this._queue)
+    //console.log("🚀 ~ file: MarchCroupier.ts ~ line 303 ~ MarchCroupier ~ upgradePool ~ this._queue", this._queue)
     if (this._poolNumber < UNIT_POOL.length - 1) {
       this._poolNumber++;
-      console.log(`[Pool] Pool upgraded to ${this._poolNumber}`);
+      //console.log(`[Pool] Pool upgraded to ${this._poolNumber}`);
     }
   }
 
@@ -316,10 +316,10 @@ export class MarchCroupier {
       &&
       unitClass === UNIT_CLASS_ARMOR
     ) {
-      console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
+      //console.log('[Pet C5/L3] PASSED. Ball Lightning instead of Armor spawn.');
       unitClass = UNIT_CLASS_BALL_LIGHTNING;
     } else {
-      console.log('[Pet C5/L3] FAILED. Armor spawn.');
+      //console.log('[Pet C5/L3] FAILED. Armor spawn.');
     }
     
     let hp = container.hp;

@@ -20,9 +20,9 @@ export class Container extends Unit {
     if (this.unitClass === UNIT_CLASS_BARREL) {
       const success = this.map.pet.checkClassAndLevel(5, 1);
       if (success) {
-        console.log(`[Pet C5/L1] PASSED. Enemy won't spawn from a barrel.`);
+        //console.log(`[Pet C5/L1] PASSED. Enemy won't spawn from a barrel.`);
       } else {
-        console.log(`[Pet C5/L1] FAILED. Enemy could spawn from a barrel.`);
+        //console.log(`[Pet C5/L1] FAILED. Enemy could spawn from a barrel.`);
       }
       this.open(success);
     }

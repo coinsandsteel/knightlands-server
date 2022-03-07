@@ -143,9 +143,9 @@ export class MarchMap {
 
   // Start the card game from scratch
   public restart(petClass: number, level: number, boosters: MarchBoosters) {
-    console.log("");
-    console.log("");
-    console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
+    //console.log("");
+    //console.log("");
+    //console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
 
     this._marchUser.purchasePreGameBoosters(boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
@@ -226,14 +226,14 @@ export class MarchMap {
 
   public touch(index: number) {
     if (this.pet.isDead()) {
-      console.log(`Pet is dead.`);
+      //console.log(`Pet is dead.`);
       return;
     }
 
     // ###### THE MAIN ENTRY POINT ######
     const targetCard = this.cards[index];
     if (!march.ADJACENT_CELLS[this.pet.index].includes(index)) {
-      console.log(`You cannot move card from ${this.pet.index} to ${index}`);
+      //console.log(`You cannot move card from ${this.pet.index} to ${index}`);
       return;
     }
 
@@ -260,11 +260,11 @@ export class MarchMap {
       }
     }
 
-    console.log('Final cards:');
-    console.log(cell(this.cards[0].unitClass), cell(this.cards[1].unitClass), cell(this.cards[2].unitClass));
-    console.log(cell(this.cards[3].unitClass), cell(this.cards[4].unitClass), cell(this.cards[5].unitClass));
-    console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
-    console.log(' ');
+    //console.log('Final cards:');
+    //console.log(cell(this.cards[0].unitClass), cell(this.cards[1].unitClass), cell(this.cards[2].unitClass));
+    //console.log(cell(this.cards[3].unitClass), cell(this.cards[4].unitClass), cell(this.cards[5].unitClass));
+    //console.log(cell(this.cards[6].unitClass), cell(this.cards[7].unitClass), cell(this.cards[8].unitClass));
+    //console.log(' ');
 
     this.stepCallback();
   }
