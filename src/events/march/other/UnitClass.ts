@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { MarchMap } from "../MarchMap";
 import { HpClass } from "./HpClass";
 import { StepInterface } from "./StepInterface";
@@ -86,7 +87,7 @@ export class Unit extends HpClass implements StepInterface {
       card.opened = this.opened;
     }
     
-    return card;
+    return _.cloneDeep(card);
   };
 
   public modifyHp(hpModifier: number): void {
