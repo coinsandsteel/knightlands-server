@@ -66,6 +66,7 @@ export class MarchEvents {
           previousHp: card.previousHp,
           respawn: card.respawn
         };
+        //console.log('[Respawn in events]', `Seq #${this._sequence}`, card.respawn);
       } else {
         this._events.sequence[this._sequence].cards[index] = {
           ...this._events.sequence[this._sequence].cards[index],
@@ -74,6 +75,7 @@ export class MarchEvents {
           previousHp: card.previousHp,
           respawn: card.respawn
         }
+        //console.log('[Respawn in events]', `Seq #${this._sequence}`, card.respawn);
       }
 
       this._log('Card HP', [card._id, card.unitClass, 'hp:', card.hp, 'previousHp:', card.hp, 'maxHp:', card.maxHp, 'index:', index]);

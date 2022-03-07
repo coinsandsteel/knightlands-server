@@ -357,6 +357,7 @@ export class MarchMap {
     target.touch();
 
     this._marchCroupier.chestProvided(false);
+    this.pet.setRespawn(false);
   }
 
   public swapPetCellTo(unit: Unit) {
