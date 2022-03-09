@@ -65,7 +65,7 @@ export class MarchMap {
   }
 
   public getState(): MarchMapState {
-    if (this.pet.isDead()) {
+    if (this.pet && this.pet.isDead()) {
       this._state.cards = [];
       this.cards = [];
     }
