@@ -266,7 +266,7 @@ export class MarchMap {
       this.movePetTo(targetCard);
     }
 
-    const cell = function (unitClass) {
+    /*const cell = function (unitClass) {
       if ([
         march.UNIT_CLASS_EXTRA_HP,
         march.UNIT_CLASS_DRAGON_BREATH,
@@ -277,7 +277,7 @@ export class MarchMap {
       } else {
         return unitClass + "\t\t";
       }
-    }
+    }*/
 
     //console.log('Final cards:');
     //console.log(cell(this.cards[0].unitClass), cell(this.cards[1].unitClass), cell(this.cards[2].unitClass));
@@ -445,8 +445,6 @@ export class MarchMap {
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
     this._marchCroupier.reset();
-    this._state.cards = [];
-    this.cards = [];
   }
 
   public bossKilled(): void {
