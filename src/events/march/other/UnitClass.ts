@@ -5,6 +5,9 @@ import { StepInterface } from "./StepInterface";
 import { v4 as uuidv4 } from "uuid";
 import { MarchCard } from "../types";
 import * as march from "../../../knightlands-shared/march";
+import Random from "../../../random";
+
+export const BOMB_TIMER = 10;
 
 export class Unit extends HpClass implements StepInterface {
   protected _id: string;
@@ -52,11 +55,11 @@ export class Unit extends HpClass implements StepInterface {
     this._unitClass = card.unitClass;
 
     if (this.unitClass === march.UNIT_CLASS_TRAP) {
-      this._opened = card.opened;
+      this._opened = card.opened || !!Random.intRange(0, 1);
     }
 
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this._timer = card.timer;
+      this._timer = card.timer || BOMB_TIMER;
     }
   }
 
@@ -83,11 +86,11 @@ export class Unit extends HpClass implements StepInterface {
       respawn: this._respawn
     } as MarchCard;
 
-    if (this._timer !== null) {
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
       card.timer = this._timer;
     }
     
-    if (this.opened !== null) {
+    if (this.unitClass === march.UNIT_CLASS_TRAP) {
       card.opened = this.opened;
     }
     

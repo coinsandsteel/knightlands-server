@@ -2,19 +2,8 @@
 import { Loot } from "../units/Loot";
 import * as march from "../../../knightlands-shared/march";
 import { MarchCard } from "../types";
-import { MarchMap } from "../MarchMap";
-
-export const BOMB_TIMER = 10;
 
 export class Artifact extends Unit {
-  constructor(card: MarchCard, map: MarchMap) {
-    super(card, map);
-
-    if (this.unitClass === march.UNIT_CLASS_BOMB) {
-      this._timer = BOMB_TIMER;
-    }
-  }
-
   public userStepCallback() {
     if (this.unitClass === march.UNIT_CLASS_BOMB) {
       this._timer--;
