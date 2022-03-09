@@ -445,6 +445,8 @@ export class MarchMap {
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
     this._marchCroupier.reset();
+    this._state.cards = [];
+    this.cards = [];
   }
 
   public bossKilled(): void {
