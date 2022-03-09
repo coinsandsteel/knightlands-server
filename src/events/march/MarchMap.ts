@@ -44,6 +44,9 @@ export class MarchMap {
     } else {
       this.setInitialState();
     }
+
+    this._damage = new MarchDamage(this);
+    this._marchCroupier = new MarchCroupier(this);
   }
 
   public setInitialState() {
@@ -73,6 +76,10 @@ export class MarchMap {
     return this._pet;
   }
 
+  get cardsList(): Unit[] {
+    return this.cards;
+  }
+
   get marchUser(): MarchUser {
     return this._marchUser;
   }
@@ -82,11 +89,6 @@ export class MarchMap {
   }
 
   public init() {
-    this.createPet();
-
-    this._damage = new MarchDamage(this.cards, this);
-    this._marchCroupier = new MarchCroupier(this);
-
     this.wakeUp(this._state);
   }
 
@@ -147,15 +149,14 @@ export class MarchMap {
     //console.log("");
     //console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { petClass, level, boosters });
 
+    this.resetPet({
+      petClass,
+      level,
+      armor: 0
+    } as PetState);
+
     this._marchUser.purchasePreGameBoosters(this.pet, boosters);
     this._marchUser.resetSessionGoldAndBoosters(boosters);
-    
-    this._state.pet.petClass = petClass;
-    this._state.pet.level = level;
-    this._state.pet.armor = 0;
-
-    this.pet.setAttributes(this._state.pet);
-    this.pet.reset();
 
     if (this._marchUser.canUsePreGameBooster(march.BOOSTER_HP)) {
       this.pet.upgradeHP(1);
@@ -183,6 +184,7 @@ export class MarchMap {
     this._state.stat.bossesKilled = 0;
 
     this._state.cards = [];
+    this.cards = [];
 
     if (sendEvents) {
       this._events.stat(this._state.stat);
@@ -193,6 +195,8 @@ export class MarchMap {
   public wakeUp(state: MarchMapState) {
     // Parse stat
     this.parseStat(state.stat);
+    // Set cards
+    this.parseCards(state.cards);
     // Set pet attributes
     this.parsePet(state.pet);
   }
@@ -201,22 +205,37 @@ export class MarchMap {
     const initialCardList = Array.from(
       { length: 9 }, 
       (_, i) => i == 4 ? 
-        this.pet.serialize() 
+        this.pet
         : 
-        this._marchCroupier.getCard(true)
-    ) as MarchCard[];
+        this._marchCroupier.getCard()
+    ) as Unit[];
     
-    initialCardList.forEach((unit: MarchCard, index: number) => {
-      const newUnit = this.makeUnit(unit);
+    initialCardList.forEach((unit: Unit, index: number) => {
+      this.setCardByIndex(unit, index);
+    });
+  }
+
+  protected parseCards(cards: MarchCard[]) {
+    cards.forEach((card: MarchCard, index: number) => {
+      let newUnit = this.makeUnit(card);
+      if (newUnit instanceof Pet) {
+        this._pet = this.makeUnit(card) as Pet;
+      }
       this.setCardByIndex(newUnit, index);
     });
   }
 
   protected parsePet(state: PetState): void {
-    if (!this._pet) {
-      throw new Error("Pet is empty.");
-    }
+    this.createPet();
     this.pet.setAttributes(state);
+  }
+
+  protected resetPet(state: PetState): void {
+    this.parsePet(state);
+    this._state.pet.petClass = state.petClass;
+    this._state.pet.level = state.level;
+    this._state.pet.armor = 0;
+    this.pet.reset();
   }
 
   protected parseStat(state: StatState): void {
@@ -278,8 +297,9 @@ export class MarchMap {
     this._events.stat(this._state.stat);
 
     // Callbacks
-    this.cards.forEach(card => {
+    this.cards.forEach((card, index) => {
       card.userStepCallback();
+      this._state.cards[index] = card.serialize();
     });
   }
   

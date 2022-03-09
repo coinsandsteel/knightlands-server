@@ -45,14 +45,18 @@ export class Unit extends HpClass implements StepInterface {
   constructor(card: MarchCard, map: MarchMap) {
     super();
     
-    this._map = map;
-    this._unitClass = card.unitClass;
+    this._id = card._id || uuidv4().split('-').pop();
     this._hp = card.hp;
     this._maxHp = card.maxHp || card.hp;
-    this._id = card._id || uuidv4().split('-').pop();
+    this._map = map;
+    this._unitClass = card.unitClass;
 
     if (this.unitClass === march.UNIT_CLASS_TRAP) {
       this._opened = card.opened;
+    }
+
+    if (this.unitClass === march.UNIT_CLASS_BOMB) {
+      this._timer = card.timer;
     }
   }
 

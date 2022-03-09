@@ -32,8 +32,6 @@ export class MarchController {
     if (!this._saveData) {
       this.generate();
     }
-
-    await this._save();
   }
 
   async generate() {
@@ -41,7 +39,6 @@ export class MarchController {
   }
 
   async dispose() {
-    this._marchMap.exit(false);
     await this._save();
   }
 
@@ -54,7 +51,7 @@ export class MarchController {
       );
     }
   }
-
+  
   private initMap() {
     if (!this._marchMap) {
       this._marchMap = new MarchMap(
@@ -62,7 +59,7 @@ export class MarchController {
         this._events,
         this._marchUser,
         this._user
-      );
+        );
     }
   }
 
