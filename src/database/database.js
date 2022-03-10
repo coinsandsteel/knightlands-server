@@ -96,6 +96,8 @@ module.exports = {
         LunarUsers: "lunar_users",
         MarchUsers: "march_users",
         MarchRanks: "march_ranks",
+        AprilUsers: "april_users",
+        AprilRanks: "april_ranks",
     },
 
 
