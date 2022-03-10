@@ -4,11 +4,9 @@ import Random from "../../random";
 import { MarchMap } from "./MarchMap";
 
 export class MarchDamage {
-    private _cards: Unit[];
     private _map: MarchMap;
 
-    constructor(cards: Unit[], map: MarchMap) {
-      this._cards = cards;
+    constructor(map: MarchMap) {
       this._map = map;
     }
 
@@ -22,7 +20,7 @@ export class MarchDamage {
           do {
             const randomNumber = Random.pick(unitStack);
             const randomIndex = unitStack.indexOf(randomNumber);
-            const victim = this._cards[randomNumber];
+            const victim = this._map.cardsList[randomNumber];
             let damage = this.getHpModifier(attacker, victim);
             if (victim.isEnemy && damage !== 0) {
               victims.push(victim);
@@ -33,7 +31,7 @@ export class MarchDamage {
           break;
         }
         case march.DIRECTION_ALL: {
-          this._cards.forEach(victim => {
+          this._map.cardsList.forEach(victim => {
             let damage = this.getHpModifier(attacker, victim);
             if (damage !== 0) {
               victims.push(victim);
@@ -43,7 +41,7 @@ export class MarchDamage {
         }
         case march.DIRECTION_CROSS: {
           march.ADJACENT_CELLS[attacker.index].forEach(adjacentIndex => {
-            let victim = this._cards[adjacentIndex];
+            let victim = this._map.cardsList[adjacentIndex];
             let damage = this.getHpModifier(attacker, victim);
             if (damage !== 0) {
               victims.push(victim);
