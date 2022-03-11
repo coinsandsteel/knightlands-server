@@ -299,6 +299,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
         this._socket.on(Operations.AprilCollectDailyReward, this._gameHandler(this._aprilCollectDailyReward.bind(this)));
         this._socket.on(Operations.AprilRanking, this._gameHandler(this._aprilRanking.bind(this)));
+        this._socket.on(Operations.AprilClaimRewards, this._gameHandler(this._aprilClaimRewards.bind(this)));
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2169,6 +2170,10 @@ class PlayerController extends IPaymentListener {
             hasRewards: await Game.aprilManager.userHasRewards(user),
             timeLeft: Game.aprilManager.timeLeft,
         };
+    }
+
+    async _aprilClaimRewards(user, data) {
+        return this.april.claimRewards();
     }
 }
 

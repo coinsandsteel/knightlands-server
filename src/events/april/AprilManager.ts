@@ -25,6 +25,14 @@ export class AprilManager {
     return new Date(this._meta?.eventEndDate*1000 || '2022-04-14 00:00:00');
   }
 
+  get timeLeft() {
+    let secondsLeft = this.eventEndDate.getTime()/1000 - Game.nowSec;
+    if (secondsLeft < 0) {
+      secondsLeft = 0;
+    }
+    return secondsLeft;
+  }
+
   get eventRewards() {
     return this._meta.eventRewards || [];
   }
@@ -42,15 +50,15 @@ export class AprilManager {
   }
 
   public eventIsInProgress() {
-    let now = new Date();
-    let start = this.eventStartDate;
-    let end = this.eventEndDate;
+    const now = new Date();
+    const start = this.eventStartDate;
+    const end = this.eventEndDate;
     return now >= start && now <= end;
   }
 
   public eventFinished() {
-    let now = new Date();
-    let end = this.eventEndDate;
+    const now = new Date();
+    const end = this.eventEndDate;
     return now > end;
   }
 
@@ -64,58 +72,6 @@ export class AprilManager {
 
   getMeta() {
     return this._meta;
-  }
-
-  async rewardClaimed(user: User) {
-    let userRecord = await this._rankCollection.findOne({ _id: user.id });
-    return userRecord ? !!userRecord.claimed : false;
-  }
-
-  public async claimRewards(user: User) {
-    if (!this.eventFinished()) {
-      throw errors.IncorrectArguments;
-    }
-
-    const rewardClaimed = await this.rewardClaimed(user);
-    if (rewardClaimed) {
-      throw errors.IncorrectArguments;
-    }
-
-    const eventRewards = this.eventRewards;
-    let receivedItems = [];
-
-    for (let petClass = 1; petClass <= 5; petClass++) {
-      const userClassRank = await Game.marchManager.getUserRank(user.id, petClass);
-      if (userClassRank === null) {
-        continue;
-      }
-
-      let rewardIndex = null;
-      if (userClassRank >= 1 && userClassRank <= 4) {
-        rewardIndex = userClassRank - 1;
-      } else if (userClassRank >= 5 && userClassRank <= 10) {
-        rewardIndex = 4;
-      } else {
-        continue;
-      }
-
-      const rewardItems = eventRewards[rewardIndex].items;
-      await user.inventory.addItemTemplates(rewardItems);
-      
-      rewardItems.forEach((itemEntry) => {
-        let receivedItemIndex = receivedItems.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
-        if (receivedItemIndex === -1) {
-          receivedItems.push(_.cloneDeep(itemEntry));
-        } else {
-          receivedItems[receivedItemIndex].quantity += itemEntry.quantity;
-        }
-      });
-    }
-    
-    await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
-    //console.log('[User rewards]', user.id, receivedItems);
-
-    return receivedItems;
   }
 
   async updateRank(userId: ObjectId, points: number) {
@@ -184,22 +140,55 @@ export class AprilManager {
       return false;
     }
     
-    let userRecord = await this._rankCollection.findOne({ _id: user.id });
-    let rewardClaimed = userRecord ? !!userRecord.claimed : false;
-    let hasRewards = false;
+    const userRecord = await this._rankCollection.findOne({ _id: user.id });
+    const rewardClaimed = userRecord ? !!userRecord.claimed : false;
 
-    for (let petClass = 1; petClass <= 5; petClass++) {
-      const userClassRank = await Game.marchManager.getUserRank(user.id, petClass);
-      if (userClassRank === null) {
-        continue;
-      }
+    const userClassRank = await Game.aprilManager.getUserRank(user.id);
 
-      if (userClassRank >= 1 && userClassRank <= 10) {
-        hasRewards = true;
-        break;
-      }
+    if (userClassRank && userClassRank >= 1 && userClassRank <= 10) {
+      return !rewardClaimed;
     }
 
-    return !rewardClaimed && hasRewards;
+    return false;
+  }
+
+  async isClaimedReward(user: User) {
+    const userRecord = await this._rankCollection.findOne({ _id: user.id });
+    return userRecord ? !!userRecord.claimed : false;
+  }
+
+  public async claimRewards(user: User) {
+    if (!this.eventFinished()) {
+      throw errors.IncorrectArguments;
+    }
+
+    const rewardClaimed = await this.isClaimedReward(user);
+    if (rewardClaimed) {
+      throw errors.IncorrectArguments;
+    }
+
+    const eventRewards = this.eventRewards;
+
+    const userClassRank = await Game.aprilManager.getUserRank(user.id);
+    if (userClassRank === null) {
+      return [];
+    }
+
+    let rewardIndex = null;
+    if (userClassRank >= 1 && userClassRank <= 4) {
+      rewardIndex = userClassRank - 1;
+    } else if (userClassRank >= 5 && userClassRank <= 10) {
+      rewardIndex = 4;
+    } else {
+      return [];
+    }
+
+    const rewardItems = eventRewards[rewardIndex].items;
+    await user.inventory.addItemTemplates(rewardItems);
+    
+    await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
+    //console.log('[User rewards]', user.id, receivedItems);
+
+    return rewardItems;
   }
 }
