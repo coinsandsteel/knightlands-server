@@ -7,7 +7,7 @@ import { AprilEvents } from './AprilEvents';
 import { AprilSaveData } from './types';
 import { AprilUser } from './AprilUser';
 
-export class MarchController {
+export class AprilController {
   private _user: User;
   private _saveData: AprilSaveData;
   private _events: AprilEvents;
@@ -78,6 +78,10 @@ export class MarchController {
     await this._aprilUser.init();
     await this._aprilMap.init();
     return this.getState();
+  }
+
+  async collectDailyReward() {
+    await this._aprilUser.collectDailyAprilReward();
   }
 
   async claimRewards() {

@@ -29,6 +29,10 @@ export class AprilManager {
     return this._meta.eventRewards || [];
   }
 
+  get aprilTicketId() {
+    return this._meta.aprilTicket;
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
 

@@ -31,6 +31,7 @@ import { DungeonController } from "./events/simple-dungeon/DungeonController";
 import { XmasController } from "./events/xmas/XmasController";
 import { LunarController } from "./events/lunar/LunarController";
 import { MarchController } from "./events/march/MarchController";
+import { AprilController } from "./events/april/AprilController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -294,6 +295,10 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
         this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
 
+        // April
+        this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
+        this._socket.on(Operations.AprilCollectDailyReward, this._gameHandler(this._aprilCollectDailyReward.bind(this)));
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -342,6 +347,11 @@ class PlayerController extends IPaymentListener {
             this.march = null
         }
 
+        if (this.april) {
+            await this.april.dispose();
+            this.april = null
+        }
+
         return true;
     }
 
@@ -364,6 +374,9 @@ class PlayerController extends IPaymentListener {
 
         this.march = new MarchController(user);
         await this.march.init();
+
+        this.april = new AprilController(user);
+        await this.april.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -2138,6 +2151,15 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.march.purchaseGold(data.shopIndex, data.currency);
+    }
+
+    // April
+    async _aprilLoad() {
+        return this.april.load();
+    }
+
+    async _aprilCollectDailyReward() {
+        return this.april.collectDailyReward();
     }
 }
 

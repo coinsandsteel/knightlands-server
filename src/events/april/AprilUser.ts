@@ -1,3 +1,5 @@
+import game from "../../game";
+import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
@@ -79,5 +81,24 @@ export class AprilUser {
 
   public getState(): AprilUserState {
     return this._state;
+  }
+
+  async collectDailyAprilReward() {
+    const entry = this._state.dailyRewards[this.day - 1];
+
+    if (entry.collected) {
+      throw errors.DailyAprilRewardCollected;
+    }
+
+    await this._user.inventory.addItemTemplates([{
+      item: game.aprilManager.aprilTicketId,
+      quantity: entry.quantity
+    }]);
+
+    this._state.dailyRewards[this.day - 1].collected = true;
+    this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
+
+    this._events.dailyRewards(this._state.dailyRewards);
+    this._events.flush();
   }
 }
