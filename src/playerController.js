@@ -2164,7 +2164,7 @@ class PlayerController extends IPaymentListener {
         return this.april.collectDailyReward();
     }
 
-    async _marchRanking(user, data) {
+    async _aprilRanking(user, data) {
         return {
             rankings: await Game.aprilManager.getRankings(),
             hasRewards: await Game.aprilManager.userHasRewards(user),

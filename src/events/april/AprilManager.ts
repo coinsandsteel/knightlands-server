@@ -7,14 +7,18 @@ import User from "../../user";
 import errors from "../../knightlands-shared/errors";
 
 const RANKS_PAGE_SIZE = 10;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 10000; //60 * 15 * 1000;
+
 export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
+  private _lastRankingsResetTimestamp: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.AprilUsers);
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
+    this._lastRankingsResetTimestamp = this.currentDayStart;
   }
   
   get eventStartDate() {
@@ -41,12 +45,26 @@ export class AprilManager {
     return this._meta.aprilTicket;
   }
 
+  get currentDayStart() {
+    const currentDayStart = new Date();
+    currentDayStart.setHours(0,0,0,0);
+    return currentDayStart.getTime();
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
 
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
     this._rankCollection.createIndex({ maxSessionGold: 1 });
     this._rankCollection.createIndex({ order: 1 });
+
+    if (!this._meta.lastReset) {
+      await this.setLastRankingsResetTimestamp(
+        this.currentDayStart
+      );
+    }
+
+    this.watchResetRankings();
   }
 
   public eventIsInProgress() {
@@ -72,6 +90,38 @@ export class AprilManager {
 
   getMeta() {
     return this._meta;
+  }
+
+
+  watchResetRankings() {
+    setInterval(async () => {
+      await this.commitResetRankings();
+    }, RANKING_WATCHER_PERIOD_MILSECONDS);
+  }
+
+  async commitResetRankings() {
+    const currentDayStart = this.currentDayStart;
+    if (currentDayStart <= this._lastRankingsResetTimestamp) {
+      return;
+    }
+    await Game.dbClient.withTransaction(async (db) => {
+      await db.collection(Collections.AprilRanks).deleteMany({});
+      await db.collection(Collections.Meta).updateOne(
+        { _id: 'april_meta' },
+        { $set: { lastReset: currentDayStart } },
+        { upsert: true }
+      );
+    });
+  }
+
+  async setLastRankingsResetTimestamp(value: number) {
+    this._lastRankingsResetTimestamp = value;
+
+    await Game.db.collection(Collections.Meta).updateOne(
+      { _id: 'march_meta' },
+      { $set: { lastReset: value } },
+      { upsert: true }
+    );
   }
 
   async updateRank(userId: ObjectId, points: number) {
