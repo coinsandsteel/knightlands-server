@@ -81,7 +81,7 @@ export class AprilController {
   }
 
   async collectDailyReward() {
-    await this._aprilUser.collectDailyAprilReward();
+    await this._aprilUser.collectDailyReward();
   }
 
   async claimRewards() {

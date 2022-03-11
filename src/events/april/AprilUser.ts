@@ -88,7 +88,7 @@ export class AprilUser {
     return this._state;
   }
 
-  async collectDailyAprilReward() {
+  async collectDailyReward() {
     const entry = this._state.dailyRewards[this.day - 1];
 
     if (entry.collected) {
@@ -124,5 +124,4 @@ export class AprilUser {
       this._state.balance.sessionGold
     );
   }
-
 }

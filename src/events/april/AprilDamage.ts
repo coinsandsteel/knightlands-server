@@ -1,6 +1,6 @@
 import { AprilMap } from "./AprilMap";
 
-export class AprilHit {
+export class AprilDamage {
   private _map: AprilMap;
 
   constructor(map: AprilMap) {
