@@ -28,8 +28,7 @@ export class AprilUser {
     this._state = {
       balance: {
         sessionGold: 0,
-        gold: 0,
-        point: 0
+        gold: 0
       },
       dailyRewards: this.getInitialDailyrewards(),
     } as AprilUserState;

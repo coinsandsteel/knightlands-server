@@ -33,7 +33,7 @@ export class AprilManager {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
 
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
-    this._rankCollection.createIndex({ point: 1 });
+    this._rankCollection.createIndex({ maxSessionGold: 1 });
     this._rankCollection.createIndex({ order: 1 });
   }
 

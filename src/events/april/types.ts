@@ -7,7 +7,6 @@ export interface AprilUserState {
   balance: {
     sessionGold: number;
     gold: number;
-    point: number;
   };
   dailyRewards: AprilRewardDayData[];
 }
