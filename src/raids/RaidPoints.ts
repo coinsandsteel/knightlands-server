@@ -36,6 +36,7 @@ export class RaidPoints {
     }
 
     async rollbackRP() {
+        await this.tryClaimDkt();
         await Game.raidPoints.increaseTotalPoints(-this._data.score, -this._data.shares, this._user.isFreeAccount);
         this.reset();
     }
@@ -83,9 +84,11 @@ export class RaidPoints {
                 }
 
                 // const before = this._user.dkt;
-
-                await this._user.addDkt(dkt);
-
+                
+                if (dkt > 0) {
+                    await this._user.addDkt(dkt);
+                }
+                
                 // before reset - save it to the external collection for the debuggin purposes
                 // await Game.db.collection(`user_raid_points_${this._data.lastClaimed}`).insertOne({
                 //     user: this._user.id,
