@@ -18,11 +18,11 @@ export class AprilManager {
   }
   
   get eventStartDate() {
-    return new Date(this._meta.eventStartDate*1000 || '2021-04-01 00:00:00');
+    return new Date(this._meta?.eventStartDate*1000 || '2021-04-01 00:00:00');
   }
   
   get eventEndDate() {
-    return new Date(this._meta.eventEndDate*1000 || '2022-04-14 00:00:00');
+    return new Date(this._meta?.eventEndDate*1000 || '2022-04-14 00:00:00');
   }
 
   get eventRewards() {

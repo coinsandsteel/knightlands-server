@@ -17,7 +17,7 @@ export class AprilEvents {
   }
 
   flush() {
-    game.emitPlayerEvent(this._userId, events.MarchUpdate, this._events);
+    game.emitPlayerEvent(this._userId, events.AprilUpdate, this._events);
     this._events = {};
   }
 }
