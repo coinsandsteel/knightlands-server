@@ -6,6 +6,7 @@ import { AprilCroupier } from "./AprilCroupier";
 import Game from "../../game";
 import { AprilEvents } from "./AprilEvents";
 import { AprilUser } from "./AprilUser";
+import { AprilHit } from "./AprilHit";
 
 export class AprilMap {
   private _state: AprilMapState;
@@ -13,6 +14,7 @@ export class AprilMap {
   private _user: User;
   private _aprilUser: AprilUser;
   private _aprilCroupier: AprilCroupier;
+  private _aprilHit: AprilHit;
 
 
   constructor(state: AprilMapState | null, events: AprilEvents, aprilUser: AprilUser, user: User) {
@@ -26,6 +28,7 @@ export class AprilMap {
       this.setInitialState();
     }
 
+    this._aprilHit = new AprilHit(this);
     this._aprilCroupier = new AprilCroupier(this);
   }
 
