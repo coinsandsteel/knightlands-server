@@ -16,6 +16,14 @@ export class AprilEvents {
     this._events.dailyRewards = entries;
   }
 
+  balance(currency, balance) {
+    this._events.balance = { 
+      ...this._events.balance,
+      [currency]: balance
+    };
+    //console.log('Balance', { currency, balance });
+  }
+
   flush() {
     game.emitPlayerEvent(this._userId, events.AprilUpdate, this._events);
     this._events = {};

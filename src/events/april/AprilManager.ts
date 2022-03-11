@@ -117,4 +117,22 @@ export class AprilManager {
 
     return receivedItems;
   }
+
+  async updateRank(userId: ObjectId, points: number) {
+    if (this.eventFinished()) {
+      return;
+    }
+    await this._rankCollection.updateOne(
+        { _id: userId },
+        {
+            $set: {
+                order: Game.now
+            },
+            $max: {
+                maxSessionGold: points
+            },
+        },
+        { upsert: true }
+    );
+  }
 }

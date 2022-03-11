@@ -3,6 +3,7 @@ import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
+import * as april from "../../knightlands-shared/april";
 
 export class AprilUser {
   private _state: AprilUserState;
@@ -19,6 +20,10 @@ export class AprilUser {
     } else {
       this.setInitialState();
     }
+  }
+  
+  get gold(): number {
+    return this._state.balance.gold;
   }
   
   public async init() {
@@ -101,4 +106,23 @@ export class AprilUser {
     this._events.dailyRewards(this._state.dailyRewards);
     this._events.flush();
   }
+
+  public modifyBalance(currency: string, amount: number) {
+    this._state.balance[currency] += amount;
+    this._events.balance(currency, this._state.balance[currency]);
+  }
+
+  public addSessionGold(amount: number): void {
+    this.modifyBalance(april.CURRENCY_SESSION_GOLD, amount);
+  }
+
+  public flushStats(): void {
+    this.modifyBalance(april.CURRENCY_GOLD, this._state.balance.sessionGold);
+
+    game.aprilManager.updateRank(
+      this._user.id, 
+      this._state.balance.sessionGold
+    );
+  }
+
 }
