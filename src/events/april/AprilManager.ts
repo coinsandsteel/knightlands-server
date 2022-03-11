@@ -6,7 +6,7 @@ import { Collections } from "../../database/database";
 import User from "../../user";
 import errors from "../../knightlands-shared/errors";
 
-
+const RANKS_PAGE_SIZE = 10;
 export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
@@ -134,5 +134,72 @@ export class AprilManager {
         },
         { upsert: true }
     );
+  }
+
+  async getRankings() {
+    const page = 0;
+
+    const records = await this._rankCollection.aggregate([
+        { $sort: { maxSessionGold: -1, order: 1 } },
+        { $skip: page * RANKS_PAGE_SIZE },
+        { $limit: RANKS_PAGE_SIZE },
+        { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } },
+        {
+            $project: {
+                id: "$_id",
+                name: {
+                    $ifNull: [{ $arrayElemAt: ["$user.character.name.v", 0] }, ""]
+                },
+                avatar: {
+                    $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1]
+                },
+                score: { $convert: { input: "$maxSessionGold", to: "string" } }
+            }
+        },
+        {
+            $project: { _id: 0 }
+        }
+    ]).toArray();
+
+    return records;
+  }
+
+  async getUserRank(userId: string) {
+    let userRecord = await this._rankCollection.findOne({ _id: userId });
+    if (!userRecord || !userRecord.maxSessionGold) {
+        return null;
+    }
+
+    let rank = await this._rankCollection.find({ 
+      maxSessionGold: { $gt: userRecord.maxSessionGold } 
+    }).count() + 1;
+
+    //console.log('[User rank]', { userId, rank });
+
+    return rank;
+  }
+
+  async userHasRewards(user: User) {
+    if (!this.eventFinished()) {
+      return false;
+    }
+    
+    let userRecord = await this._rankCollection.findOne({ _id: user.id });
+    let rewardClaimed = userRecord ? !!userRecord.claimed : false;
+    let hasRewards = false;
+
+    for (let petClass = 1; petClass <= 5; petClass++) {
+      const userClassRank = await Game.marchManager.getUserRank(user.id, petClass);
+      if (userClassRank === null) {
+        continue;
+      }
+
+      if (userClassRank >= 1 && userClassRank <= 10) {
+        hasRewards = true;
+        break;
+      }
+    }
+
+    return !rewardClaimed && hasRewards;
   }
 }
