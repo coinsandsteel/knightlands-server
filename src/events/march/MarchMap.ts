@@ -176,7 +176,7 @@ export class MarchMap {
       this.pet.upgradeHP(1);
     }
 
-    this._marchCroupier.reset();
+    this.resetCroupier();
     
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._state.stat.bossesKilled = 0;
@@ -188,22 +188,6 @@ export class MarchMap {
     this._events.cards(
       this.cards.map(card => card.serialize())
     );
-  }
-
-  public exit(sendEvents: boolean) {
-    this._marchUser.resetSessionGoldAndBoosters();
-    this._marchUser.voidBoosters();
-    
-    this._state.stat.stepsToNextBoss = 0;
-    this._state.stat.bossesKilled = 0;
-
-    this._state.cards = [];
-    this.cards = [];
-
-    if (sendEvents) {
-      this._events.stat(this._state.stat);
-      this._events.cards([]);
-    }
   }
 
   public wakeUp(state: MarchMapState) {
@@ -464,10 +448,29 @@ export class MarchMap {
     this.activeChest.tryToOpenChest(keyNumber);
   }
 
+  public exit(sendEvents: boolean) {
+    this._marchUser.resetSessionGoldAndBoosters();
+    this._marchUser.voidBoosters();
+    
+    this._state.stat.stepsToNextBoss = 0;
+    this._state.stat.bossesKilled = 0;
+
+    this.resetCroupier();
+
+    this._state.cards = [];
+    this.cards = [];
+
+    if (sendEvents) {
+      this._events.stat(this._state.stat);
+      this._events.cards([]);
+    }
+  }
+
+  
   public gameOver(): void {
     this._marchUser.voidBoosters();
     this._marchUser.flushStats(this.pet);
-    this._marchCroupier.reset();
+    this.resetCroupier();
   }
 
   public bossKilled(): void {
@@ -478,5 +481,11 @@ export class MarchMap {
     this._events.stat(this._state.stat);
 
     this._state.croupier.poolNumber = this.croupier.poolNumber;
+  }
+
+  protected resetCroupier(){
+    this.croupier.reset();
+    this._state.croupier.poolNumber = 0;
+    this._state.croupier.stepCounter = 0;
   }
 }
