@@ -44,7 +44,8 @@ export class MarchMap {
       if (!this._state.croupier) {
         this._state.croupier = {
           poolNumber: 0,
-          stepCounter: 0
+          stepCounter: 0,
+          queue: []
         };
       }
     } else {
@@ -69,7 +70,8 @@ export class MarchMap {
       cards: [],
       croupier: {
         poolNumber: 0,
-        stepCounter: 0
+        stepCounter: 0,
+        queue: []
       }
     } as MarchMapState;
   }
@@ -246,6 +248,7 @@ export class MarchMap {
   protected parseCroupier(state: CroupierState): void {
     this._state.croupier.poolNumber = state.poolNumber;
     this._state.croupier.stepCounter = state.stepCounter;
+    this._state.croupier.queue = state.queue;
     this._marchCroupier.setState(state);
   }
 
@@ -298,6 +301,7 @@ export class MarchMap {
     // Count a step
     this._marchCroupier.increaseStepCounter();
     this._state.croupier.stepCounter = this.croupier.stepCounter;
+    this._state.croupier.queue = this.croupier.queue;
     
     // Update stat
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
@@ -477,15 +481,15 @@ export class MarchMap {
     this.pet.bossKilled();
     this.croupier.bossKilled();
 
+    this._state.croupier.poolNumber = this.croupier.poolNumber;
     this._state.stat.bossesKilled++;
     this._events.stat(this._state.stat);
-
-    this._state.croupier.poolNumber = this.croupier.poolNumber;
   }
 
   protected resetCroupier(){
     this.croupier.reset();
     this._state.croupier.poolNumber = 0;
     this._state.croupier.stepCounter = 0;
+    this._state.croupier.queue = [];
   }
 }

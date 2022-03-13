@@ -57,6 +57,7 @@ export interface StatState {
 export interface CroupierState {
   poolNumber: number;
   stepCounter: number;
+  queue: string[];
 }
 
 export interface PetState {

@@ -219,6 +219,10 @@ export class MarchCroupier {
     return this._stepCounter;
   }
 
+  get queue() {
+    return this._queue;
+  }
+
   get stepsToNextBoss(): number {
     const steps = this.pool.stepsToBoss - this._stepCounter;
     const result = steps < 0 ? 0 : steps;
@@ -229,6 +233,7 @@ export class MarchCroupier {
   public setState(state: CroupierState) {
     this._poolNumber = state.poolNumber;
     this._stepCounter = state.stepCounter;
+    this._queue = state.queue;
     console.log(`[MarchCroupier, pool #${this._poolNumber}] Initial state`, state);
   }
 
