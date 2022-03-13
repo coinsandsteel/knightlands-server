@@ -1,7 +1,7 @@
 import Random from "../../random";
 import { MarchMap } from "./MarchMap";
 import { Unit } from "./other/UnitClass";
-import { MarchCard } from "./types";
+import { CroupierState, MarchCard } from "./types";
 import { Container } from "./units/Container";
 import { 
   UNIT_CLASS_ENEMY,
@@ -211,9 +211,22 @@ export class MarchCroupier {
     return UNIT_POOL[this._poolNumber];
   }
 
+  get poolNumber() {
+    return this._poolNumber;
+  }
+
+  get stepCounter() {
+    return this._stepCounter;
+  }
+
   get stepsToNextBoss(): number {
     const steps = this.pool.stepsToBoss - this._stepCounter;
     return steps < 0 ? 0 : steps;
+  }
+
+  public setState(state: CroupierState) {
+    this._poolNumber = state.poolNumber;
+    this._stepCounter = state.stepCounter;
   }
 
   public getCard(returnBlueprint?: boolean): Unit|MarchCard {
@@ -341,5 +354,10 @@ export class MarchCroupier {
     if (!this._chestProvided) {
       this._queue.push(UNIT_CLASS_CHEST);
     }
+  }
+
+  public bossKilled(): void {
+    this.upgradePool();
+    this.puchChestIntoQueue();
   }
 }

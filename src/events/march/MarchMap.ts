@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { MarchBoosters, MarchCard, MarchMapState, PetState, StatState } from "./types";
+import { CroupierState, MarchBoosters, MarchCard, MarchMapState, PetState, StatState } from "./types";
 import { Container } from "./units/Container";
 import { Pet } from "./units/Pet";
 import { Unit } from "./other/UnitClass";
@@ -41,6 +41,12 @@ export class MarchMap {
 
     if (state) {
       this._state = state;
+      if (!this._state.croupier) {
+        this._state.croupier = {
+          poolNumber: 0,
+          stepCounter: 0
+        };
+      }
     } else {
       this.setInitialState();
     }
@@ -60,7 +66,11 @@ export class MarchMap {
         level: 1,
         armor: 0
       },
-      cards: []
+      cards: [],
+      croupier: {
+        poolNumber: 0,
+        stepCounter: 0
+      }
     } as MarchMapState;
   }
 
@@ -203,6 +213,8 @@ export class MarchMap {
     this.parseCards(state.cards);
     // Set pet attributes
     this.parsePet(state.pet);
+    // Set croupier attributes
+    this.parseCroupier(state.croupier);
   }
 
   protected spawnCards() {
@@ -245,6 +257,12 @@ export class MarchMap {
   protected parseStat(state: StatState): void {
     this._state.stat.stepsToNextBoss = state.stepsToNextBoss;
     this._state.stat.bossesKilled = state.bossesKilled;
+  }
+
+  protected parseCroupier(state: CroupierState): void {
+    this._state.croupier.poolNumber = state.poolNumber;
+    this._state.croupier.stepCounter = state.stepCounter;
+    this._marchCroupier.setState(state);
   }
 
   public touch(index: number) {
@@ -295,7 +313,8 @@ export class MarchMap {
   public stepCallback() {
     // Count a step
     this._marchCroupier.increaseStepCounter();
-
+    this._state.croupier.stepCounter = this.croupier.stepCounter;
+    
     // Update stat
     this._state.stat.stepsToNextBoss = this._marchCroupier.stepsToNextBoss;
     this._events.stat(this._state.stat);
@@ -452,7 +471,12 @@ export class MarchMap {
   }
 
   public bossKilled(): void {
+    this.pet.bossKilled();
+    this.croupier.bossKilled();
+
     this._state.stat.bossesKilled++;
     this._events.stat(this._state.stat);
+
+    this._state.croupier.poolNumber = this.croupier.poolNumber;
   }
 }
