@@ -88,4 +88,9 @@ export class AprilController {
     const items = await Game.aprilManager.claimRewards(this._user);
     return items;
   }
+
+  async claimPeriodicRewards() {
+    const items = await this._aprilUser.claimHourReward();
+    return items;
+  }
 }
