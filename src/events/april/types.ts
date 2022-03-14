@@ -9,6 +9,7 @@ export interface AprilUserState {
     gold: number;
   };
   dailyRewards: AprilRewardDayData[];
+  periodicRewards: AprilPeriodicRewardDayData[];
 }
 
 export interface AprilRewardDayData {
@@ -16,6 +17,11 @@ export interface AprilRewardDayData {
   quantity: number;
   active: boolean;
   date?: string;
+}
+
+export interface AprilPeriodicRewardDayData {
+  quantity: number;
+  timestamp: number;
 }
 
 export interface AprilMapState {

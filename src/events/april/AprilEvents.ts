@@ -16,6 +16,10 @@ export class AprilEvents {
     this._events.dailyRewards = entries;
   }
 
+  periodicRewards(entries) {
+    this._events.periodicRewards = entries;
+  }
+
   balance(currency, balance) {
     this._events.balance = { 
       ...this._events.balance,

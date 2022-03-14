@@ -5,11 +5,13 @@ import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
 
+const REWARD_PERIOD = 24 * 60 * 60 * 10000;
 export class AprilUser {
   private _state: AprilUserState;
   private _events: AprilEvents;
   private _user: User;
   private day = 1;
+  private period = 1;
 
   constructor(state: AprilUserState | null, events: AprilEvents, user: User) {
     this._events = events;
@@ -29,6 +31,9 @@ export class AprilUser {
   public async init() {
     this.setEventDay();
     this.setActiveReward();
+
+    this.setRewardPeriod();
+    this.flushPeriodicRewards();
   }
     
   public setInitialState() {
@@ -38,8 +43,18 @@ export class AprilUser {
         gold: 0
       },
       dailyRewards: this.getInitialDailyrewards(),
+      periodicRewards: []
     } as AprilUserState;
     this.setActiveReward();
+  }
+
+  private setRewardPeriod() {
+    this.period = this._state.periodicRewards.length + 1;
+  }
+
+  async flushPeriodicRewards() {
+    this._events.periodicRewards(this._state.periodicRewards);
+    this._events.flush();
   }
 
   private setEventDay() {
@@ -104,6 +119,30 @@ export class AprilUser {
     this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
     this._events.dailyRewards(this._state.dailyRewards);
+    this._events.flush();
+  }
+
+  async collectPeriodicallyReward() {
+    let lastTimestamp = 0, newQuantity = 1;
+
+    if (this._state.periodicRewards.length >= 1) {
+      const lastEntry = this._state.periodicRewards[this._state.periodicRewards.length - 1];
+      lastTimestamp = lastEntry.timestamp;
+      newQuantity = lastEntry.quantity + 1;
+    }
+
+    if (lastTimestamp + REWARD_PERIOD < new Date().getTime()) {
+      throw errors.PeriodicAprilRewardCollected;
+    }
+
+    await this._user.inventory.addItemTemplates([{
+      item: game.aprilManager.aprilTicketId,
+      quantity: newQuantity
+    }]);
+
+    this._state.periodicRewards.push({ timestamp: new Date().getTime(), quantity: newQuantity });
+
+    this._events.periodicRewards(this._state.periodicRewards);
     this._events.flush();
   }
 
