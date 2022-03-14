@@ -9,7 +9,7 @@ export interface AprilUserState {
     gold: number;
   };
   dailyRewards: AprilRewardDayData[];
-  periodicRewards: AprilPeriodicRewardDayData[];
+  lastPeriodicClaim: number;
 }
 
 export interface AprilRewardDayData {

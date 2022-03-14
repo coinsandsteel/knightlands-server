@@ -5,7 +5,8 @@ import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
 
-const REWARD_PERIOD = 60 * 60 * 10000;
+const REWARD_PERIOD = 60 * 60 * 1000; // 1 hour
+
 export class AprilUser {
   private _state: AprilUserState;
   private _events: AprilEvents;
@@ -41,13 +42,13 @@ export class AprilUser {
         gold: 0
       },
       dailyRewards: this.getInitialDailyrewards(),
-      periodicRewards: []
+      lastPeriodicClaim: 0
     } as AprilUserState;
     this.setActiveReward();
   }
 
   async flushPeriodicRewards() {
-    this._events.periodicRewards(this._state.periodicRewards);
+    this._events.lastPeriodicClaim(this._state.lastPeriodicClaim);
     this._events.flush();
   }
 
@@ -117,26 +118,18 @@ export class AprilUser {
   }
 
   async collectPeriodicallyReward() {
-    let lastTimestamp = 0, newQuantity = 1;
-
-    if (this._state.periodicRewards.length >= 1) {
-      const lastEntry = this._state.periodicRewards[this._state.periodicRewards.length - 1];
-      lastTimestamp = lastEntry.timestamp;
-      newQuantity = lastEntry.quantity + 1;
-    }
-
-    if (lastTimestamp + REWARD_PERIOD < new Date().getTime()) {
+    if (this._state.lastPeriodicClaim + REWARD_PERIOD < new Date().getTime()) {
       throw errors.PeriodicAprilRewardCollected;
     }
 
     await this._user.inventory.addItemTemplates([{
       item: game.aprilManager.aprilTicketId,
-      quantity: newQuantity
+      quantity: 1
     }]);
 
-    this._state.periodicRewards.push({ timestamp: new Date().getTime(), quantity: newQuantity });
+    this._state.lastPeriodicClaim = new Date().getTime();
 
-    this._events.periodicRewards(this._state.periodicRewards);
+    this._events.lastPeriodicClaim(this._state.lastPeriodicClaim);
     this._events.flush();
   }
 

@@ -16,8 +16,8 @@ export class AprilEvents {
     this._events.dailyRewards = entries;
   }
 
-  periodicRewards(entries) {
-    this._events.periodicRewards = entries;
+  lastPeriodicClaim(timestamp) {
+    this._events.lastPeriodicClaim = timestamp;
   }
 
   balance(currency, balance) {
