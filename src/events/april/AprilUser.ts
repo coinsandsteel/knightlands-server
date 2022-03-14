@@ -11,7 +11,6 @@ export class AprilUser {
   private _events: AprilEvents;
   private _user: User;
   private day = 1;
-  private period = 1;
 
   constructor(state: AprilUserState | null, events: AprilEvents, user: User) {
     this._events = events;
@@ -32,7 +31,6 @@ export class AprilUser {
     this.setEventDay();
     this.setActiveReward();
 
-    this.setRewardPeriod();
     this.flushPeriodicRewards();
   }
     
@@ -46,10 +44,6 @@ export class AprilUser {
       periodicRewards: []
     } as AprilUserState;
     this.setActiveReward();
-  }
-
-  private setRewardPeriod() {
-    this.period = this._state.periodicRewards.length + 1;
   }
 
   async flushPeriodicRewards() {
