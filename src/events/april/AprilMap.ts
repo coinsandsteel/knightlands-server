@@ -16,7 +16,6 @@ export class AprilMap {
   private _aprilCroupier: AprilCroupier;
   private _aprilDamage: AprilDamage;
 
-
   constructor(state: AprilMapState | null, events: AprilEvents, aprilUser: AprilUser, user: User) {
     this._events = events;
     this._user = user;
@@ -34,6 +33,11 @@ export class AprilMap {
 
   public setInitialState() {
     this._state = {
+      hp: 0,
+      actionPoints: 0,
+      cardsInQueue: 0,
+      units: [],
+      damage: [],
       cards: []
     } as AprilMapState;
   }

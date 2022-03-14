@@ -22,16 +22,23 @@ export interface AprilRewardDayData {
   date?: string;
 }
 
-export interface AprilPeriodicRewardDayData {
-  quantity: number;
-  timestamp: number;
+export interface AprilMapState {
+  hp: number;
+  actionPoints: number;
+  cardsInQueue: number;
+  units: AprilUnit[];
+  damage: number[];
+  cards: AprilCard[];
+  usedCards: AprilCard[];
 }
 
-export interface AprilMapState {
-  cards: AprilCard[];
+export interface AprilUnit {
+  id: string;
+  unitClass: string;
+  index: number;
 }
 
 export interface AprilCard {
-  _id: string;
-  unitClass: string;
+  cardClass: string;
+  nextCells: number[];
 }
