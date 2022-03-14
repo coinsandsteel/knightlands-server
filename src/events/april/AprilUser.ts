@@ -144,6 +144,22 @@ export class AprilUser {
     this.modifyBalance(april.CURRENCY_SESSION_GOLD, amount);
   }
 
+  public purchaseCharacter(characterIndex: number) {
+    const character = this._state.characters.find((index) => index === characterIndex);
+    if (character) {
+      throw errors.AprilCharacterUnlocked;
+    }
+
+    const price = april.HERO_CLASSES_PRICES[characterIndex];
+    if (this.gold < price) {
+      throw errors.NotEnoughCurrency;
+    }
+
+    this.modifyBalance(april.CURRENCY_GOLD, -price);
+    this._state.characters.push(characterIndex);
+    this._events.characters(this._state.characters);
+  }
+
   public flushStats(): void {
     this.modifyBalance(april.CURRENCY_GOLD, this._state.balance.sessionGold);
 

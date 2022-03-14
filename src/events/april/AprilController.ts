@@ -93,4 +93,9 @@ export class AprilController {
     const items = await this._aprilUser.claimHourReward();
     return items;
   }
+
+  async purchaseCharacter(characterIndex: number) {
+    const items = await this._aprilUser.purchaseCharacter(characterIndex);
+    return items;
+  }
 }

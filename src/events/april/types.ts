@@ -13,6 +13,7 @@ export interface AprilUserState {
   // "What" + "happened": "when"
   // If no value - set null. Zero is a "1970-01-01"
   hourRewardClaimed: number|null;
+  characters: number[]
 }
 
 export interface AprilRewardDayData {

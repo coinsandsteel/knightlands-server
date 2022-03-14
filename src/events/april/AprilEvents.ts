@@ -45,7 +45,12 @@ export class AprilEvents {
       ...this._events.balance,
       [currency]: balance
     };
-    //console.log('Balance', { currency, balance });
+    console.log('April Balance', { currency, balance });
+  }
+
+  characters(entries) {
+    this._events.characters = entries;
+    console.log('April Characters', { entries });
   }
 
   flush() {
