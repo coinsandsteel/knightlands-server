@@ -5,7 +5,7 @@ import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
 
-const REWARD_PERIOD = 24 * 60 * 60 * 10000;
+const REWARD_PERIOD = 60 * 60 * 10000;
 export class AprilUser {
   private _state: AprilUserState;
   private _events: AprilEvents;
