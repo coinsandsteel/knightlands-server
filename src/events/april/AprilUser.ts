@@ -1,11 +1,11 @@
-import game from "../../game";
 import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import { AprilEvents } from "./AprilEvents";
 import { AprilRewardDayData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
+import game from "../../game";
 
-const REWARD_PERIOD = 60 * 60 * 1000; // 1 hour
+const PERIODIC_REWARD_PERIOD = 60 * 60; // 1 hour
 
 export class AprilUser {
   private _state: AprilUserState;
@@ -31,8 +31,8 @@ export class AprilUser {
   public async init() {
     this.setEventDay();
     this.setActiveReward();
-
-    this.flushPeriodicRewards();
+    // events.flush shouldn't be here, because flush is an async way to pass data.
+    // hourRewardClaimed will be passed the frontend right after load().
   }
     
   public setInitialState() {
@@ -42,14 +42,10 @@ export class AprilUser {
         gold: 0
       },
       dailyRewards: this.getInitialDailyrewards(),
-      lastPeriodicClaim: 0
+      hourRewardClaimed: null
     } as AprilUserState;
-    this.setActiveReward();
-  }
 
-  async flushPeriodicRewards() {
-    this._events.lastPeriodicClaim(this._state.lastPeriodicClaim);
-    this._events.flush();
+    this.setActiveReward();
   }
 
   private setEventDay() {
@@ -117,9 +113,15 @@ export class AprilUser {
     this._events.flush();
   }
 
-  async collectPeriodicallyReward() {
-    if (this._state.lastPeriodicClaim + REWARD_PERIOD < new Date().getTime()) {
-      throw errors.PeriodicAprilRewardCollected;
+  async claimHourReward() {
+    if (
+      // We should allow claim if it's empty 
+      this._state.hourRewardClaimed
+      &&
+      // "Reward + 1" hr should be relatively lower (in the past) of "now" to allow claim.
+      this._state.hourRewardClaimed + PERIODIC_REWARD_PERIOD >= game.nowSec
+    ) {
+      throw errors.IncorrectArguments;
     }
 
     await this._user.inventory.addItemTemplates([{
@@ -127,10 +129,10 @@ export class AprilUser {
       quantity: 1
     }]);
 
-    this._state.lastPeriodicClaim = new Date().getTime();
-
-    this._events.lastPeriodicClaim(this._state.lastPeriodicClaim);
-    this._events.flush();
+    // Use seconds instead if msec
+    this._state.hourRewardClaimed = game.nowSec;
+    this._events.hourRewardClaimed(this._state.hourRewardClaimed);
+    // Call events.flush only in the controller!
   }
 
   public modifyBalance(currency: string, amount: number) {

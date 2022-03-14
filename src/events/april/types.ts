@@ -9,7 +9,10 @@ export interface AprilUserState {
     gold: number;
   };
   dailyRewards: AprilRewardDayData[];
-  lastPeriodicClaim: number;
+  // Naming formaula: 
+  // "What" + "happened": "when"
+  // If no value - set null. Zero is a "1970-01-01"
+  hourRewardClaimed: number|null;
 }
 
 export interface AprilRewardDayData {

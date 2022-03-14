@@ -16,8 +16,28 @@ export class AprilEvents {
     this._events.dailyRewards = entries;
   }
 
-  lastPeriodicClaim(timestamp) {
-    this._events.lastPeriodicClaim = timestamp;
+  hourRewardClaimed(timestamp) {
+    this._events.hourRewardClaimed = timestamp;
+  }
+  
+  sessionResult(value) {
+    this._events.sessionResult = value;
+  }
+
+  hp(value) {
+    this._events.hp = value;
+  }
+
+  actionPoints(value) {
+    this._events.actionPoints = value;
+  }
+
+  cells(value) {
+    this._events.cells = value;
+  }
+
+  deck(value) {
+    this._events.deck = value;
   }
 
   balance(currency, balance) {
