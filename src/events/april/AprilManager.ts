@@ -7,26 +7,25 @@ import User from "../../user";
 import errors from "../../knightlands-shared/errors";
 
 const RANKS_PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 900000; // 60 * 15 * 1000 (15 minutes)
+const RANKING_WATCHER_PERIOD_MILSECONDS = 15 * 60 * 1000;
 
 export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
-  private _lastRankingsResetTimestamp: number;
+  private _lastRankingsReset: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.AprilUsers);
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
-    this._lastRankingsResetTimestamp = this.currentDayStart;
   }
   
   get eventStartDate() {
-    return new Date(this._meta?.eventStartDate*1000 || '2021-04-01 00:00:00');
+    return new Date(this._meta.eventStartDate * 1000 || '2021-04-01 00:00:00');
   }
   
   get eventEndDate() {
-    return new Date(this._meta?.eventEndDate*1000 || '2022-04-14 00:00:00');
+    return new Date(this._meta.eventEndDate * 1000 || '2022-04-14 00:00:00');
   }
 
   get timeLeft() {
@@ -45,32 +44,27 @@ export class AprilManager {
     return this._meta.aprilTicket;
   }
 
-  get currentDayStart() {
-    const currentDayStart = new Date();
-    currentDayStart.setHours(0,0,0,0);
-    return currentDayStart.getTime();
+  get midnight() {
+    const midnight = new Date();
+    midnight.setHours(0,0,0,0);
+    return midnight.getTime();
   }
 
   get meta() {
     return this._meta;
   }
 
-  get lastReset() {
-    return this._meta.lastReset;
-  }
-
   async init() {
-    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
+    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" }) || {};
 
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
     this._rankCollection.createIndex({ maxSessionGold: 1 });
     this._rankCollection.createIndex({ order: 1 });
 
-    if (!this.lastReset) {
-      await this.setLastRankingsResetTimestamp(
-        this.currentDayStart
-      );
-    }
+    // Retrieve lastReset from meta. Once.
+    // Since this moment we'll be updating memory variable only.
+    this._lastRankingsReset = this._meta.lastReset || 0;
+    console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     this.watchResetRankings();
   }
@@ -103,33 +97,29 @@ export class AprilManager {
   }
 
   async commitResetRankings() {
-    const currentDayStart = this.currentDayStart;
-    if (currentDayStart <= this._lastRankingsResetTimestamp) {
+    const midnight = this.midnight;
+    // Last reset was in midnight or earlier? Skip reset then.
+    if (this._lastRankingsReset >= midnight) {
+      console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
 
+    console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
+    
+    // Last reset was more that day ago? Launch reset.
     await Game.dbClient.withTransaction(async (db) => {
       await db.collection(Collections.AprilRanks).deleteMany({});
       await db.collection(Collections.Meta).updateOne(
         { _id: 'april_meta' },
-        { $set: { lastReset: currentDayStart } },
+        { $set: { lastReset: midnight } },
         { upsert: true }
       );
     });
-    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
-    if (currentDayStart === this.lastReset) {
-      this._lastRankingsResetTimestamp = currentDayStart;
-    }
-  }
-
-  async setLastRankingsResetTimestamp(value: number) {
-    this._lastRankingsResetTimestamp = value;
-
-    await Game.db.collection(Collections.Meta).updateOne(
-      { _id: 'april_meta' },
-      { $set: { lastReset: value } },
-      { upsert: true }
-    );
+      
+    // Update reset time.
+    // Meta was updated already. It's nothing to do with meta.
+    this._lastRankingsReset = midnight;
+    console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
   }
 
   async updateRank(userId: ObjectId, points: number) {
