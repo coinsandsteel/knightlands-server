@@ -1,7 +1,7 @@
 import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import { AprilEvents } from "./AprilEvents";
-import { AprilRewardDayData, AprilThirdAction, AprilUserState } from "./types";
+import { AprilRewardDayData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
 import game from "../../game";
 
@@ -28,10 +28,6 @@ export class AprilUser {
     return this._state.balance.gold;
   }
 
-  get thirdAction(): AprilThirdAction {
-    return this._state.thirdAction;
-  }
-  
   public async init() {
     this.setEventDay();
     this.setActiveReward();
@@ -47,10 +43,6 @@ export class AprilUser {
       },
       dailyRewards: this.getInitialDailyrewards(),
       hourRewardClaimed: null,
-      thirdAction: {
-        isActive: false,
-        times: 0
-      }
     } as AprilUserState;
 
     this.setActiveReward();
@@ -166,23 +158,6 @@ export class AprilUser {
     this.modifyBalance(april.CURRENCY_GOLD, -price);
     this._state.characters.push(characterIndex);
     this._events.characters(this._state.characters);
-  }
-
-  public purchaseThirdAction() {
-    if (this.thirdAction.isActive) {
-      throw errors.IncorrectArguments;
-    }
-
-    // TODO: Use correct formula to calculate price
-    const price = (this.thirdAction.times + 1) * 100;
-    if (this.gold < price) {
-      throw errors.NotEnoughCurrency;
-    }
-
-    this.modifyBalance(april.CURRENCY_GOLD, -price);
-    this.thirdAction.isActive = true;
-    this.thirdAction.times += 1;
-    this._events.thirdAction(this.thirdAction);
   }
 
   public flushStats(): void {

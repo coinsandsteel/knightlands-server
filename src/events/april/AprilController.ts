@@ -95,11 +95,10 @@ export class AprilController {
   }
 
   async purchaseCharacter(characterIndex: number) {
-    const items = this._aprilUser.purchaseCharacter(characterIndex);
-    return items;
+    this._aprilUser.purchaseCharacter(characterIndex);
   }
 
   async purchaseThirdAction() {
-    this._aprilUser.purchaseThirdAction();
+    this._aprilMap.purchaseThirdAction();
   }
 }

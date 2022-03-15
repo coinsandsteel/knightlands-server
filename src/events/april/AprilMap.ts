@@ -3,10 +3,11 @@ import _ from "lodash";
 import { AprilMapState } from "./types";
 import User from "../../user";
 import { AprilCroupier } from "./AprilCroupier";
-import Game from "../../game";
 import { AprilEvents } from "./AprilEvents";
 import { AprilUser } from "./AprilUser";
 import { AprilDamage } from "./AprilDamage";
+import errors from "../../knightlands-shared/errors";
+import * as april from "../../knightlands-shared/april";
 
 export class AprilMap {
   private _state: AprilMapState;
@@ -38,7 +39,10 @@ export class AprilMap {
       cardsInQueue: 0,
       units: [],
       damage: [],
-      cards: []
+      cards: [],
+      usedCards: [],
+      timesThirdActionPurchased: 0,
+      canBuyThirdAction: false
     } as AprilMapState;
   }
 
@@ -69,5 +73,23 @@ export class AprilMap {
 
   public getState(): AprilMapState {
     return this._state;
+  }
+
+  public purchaseThirdAction() {
+    if (this._state.actionPoints === 3 || !this._state.canBuyThirdAction) {
+      throw errors.IncorrectArguments;
+    }
+
+    // TODO: Use correct formula to calculate price
+    const price = (this._state.timesThirdActionPurchased + 1) * 100;
+    if (this._aprilUser.gold < price) {
+      throw errors.NotEnoughCurrency;
+    }
+
+    this._aprilUser.modifyBalance(april.CURRENCY_GOLD, -price);
+    this._state.canBuyThirdAction = false;
+    this._state.actionPoints++;
+    this._state.timesThirdActionPurchased++;
+    this._events.actionPoints(this._state.actionPoints);
   }
 }

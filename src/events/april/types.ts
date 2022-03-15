@@ -14,12 +14,6 @@ export interface AprilUserState {
   // If no value - set null. Zero is a "1970-01-01"
   hourRewardClaimed: number|null;
   characters: number[];
-  thirdAction: AprilThirdAction;
-}
-
-export interface AprilThirdAction {
-  isActive: boolean;
-  times: number;
 }
 
 export interface AprilRewardDayData {
@@ -37,6 +31,8 @@ export interface AprilMapState {
   damage: number[];
   cards: AprilCard[];
   usedCards: AprilCard[];
+  timesThirdActionPurchased: number;
+  canBuyThirdAction: boolean;
 }
 
 export interface AprilUnit {
