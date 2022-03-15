@@ -53,6 +53,11 @@ export class AprilEvents {
     console.log('April Characters', { entries });
   }
 
+  thirdAction(obj) {
+    this._events.thirdAction = obj;
+    console.log('April third action', obj);
+  }
+
   flush() {
     game.emitPlayerEvent(this._userId, events.AprilUpdate, this._events);
     this._events = {};
