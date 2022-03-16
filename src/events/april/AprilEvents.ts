@@ -32,12 +32,24 @@ export class AprilEvents {
     this._events.actionPoints = value;
   }
 
-  cells(value) {
-    this._events.cells = value;
+  cardsInQueue(value) {
+    this._events.cardsInQueue = value;
   }
 
-  deck(value) {
-    this._events.deck = value;
+  usedCards(value) {
+    this._events.usedCards = value;
+  }
+
+  units(value) {
+    this._events.units = value;
+  }
+
+  damage(value) {
+    this._events.damage = value;
+  }
+ 
+  cards(value) {
+    this._events.cards = value;
   }
 
   balance(currency, balance) {

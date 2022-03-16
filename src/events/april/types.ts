@@ -24,6 +24,9 @@ export interface AprilRewardDayData {
 }
 
 export interface AprilMapState {
+  heroClass: string;
+  level: number;
+  sessionResult: string;
   hp: number;
   actionPoints: number;
   cardsInQueue: number;
@@ -42,6 +45,7 @@ export interface AprilUnit {
 }
 
 export interface AprilCard {
+  id: string;
   cardClass: string;
   nextCells: number[];
 }

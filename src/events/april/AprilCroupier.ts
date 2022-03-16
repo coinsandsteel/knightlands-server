@@ -9,4 +9,8 @@ export class AprilCroupier {
   constructor(map: AprilMap) {
     this._map = map;
   }
+
+  public reset() {
+    
+  }
 }

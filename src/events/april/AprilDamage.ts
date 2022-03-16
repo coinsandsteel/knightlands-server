@@ -6,4 +6,8 @@ export class AprilDamage {
   constructor(map: AprilMap) {
     this._map = map;
   }
+
+  public reset(): void {
+
+  }
 }
