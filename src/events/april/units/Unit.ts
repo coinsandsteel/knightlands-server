@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { AprilMap } from "../AprilMap";
-import { AprilUnit } from "../types";
+import { AprilUnitBlueprint } from "../types";
 import { v4 as uuidv4 } from "uuid";
 
 export const BOMB_TIMER = 10;
@@ -27,7 +27,7 @@ export class Unit {
     return this._unitClass;
   }
 
-  constructor(unit: AprilUnit, map: AprilMap) {
+  constructor(unit: AprilUnitBlueprint, map: AprilMap) {
     this._id = unit.id || uuidv4().split('-').pop();
     this._index = unit.index;
     this._unitClass = unit.unitClass;
@@ -37,12 +37,12 @@ export class Unit {
   public move(): void {};
   public userStepCallback(): void {};
 
-  public serialize(): AprilUnit {
+  public serialize(): AprilUnitBlueprint {
     const card = {
       id: this._id,
       unitClass: this.unitClass,
       index: this._index,
-    } as AprilUnit;
+    } as AprilUnitBlueprint;
     
     return _.cloneDeep(card);
   };

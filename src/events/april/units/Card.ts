@@ -2,7 +2,7 @@ import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import * as april from "../../../knightlands-shared/april";
 import { AprilMap } from "../AprilMap";
-import { AprilCard } from "../types";
+import { AprilCardBlueprint } from "../types";
 
 export class Card {
   protected _id: string;
@@ -22,21 +22,20 @@ export class Card {
     return this._cardClass;
   }
   
-  constructor(card: AprilCard, map: AprilMap) {
+  constructor(card: AprilCardBlueprint, map: AprilMap) {
     this._id = card.id || uuidv4().split('-').pop();
     this._cardClass = card.cardClass;
   }
 
   public activate(): void {};
-  public touch(): void {};
   public userStepCallback(): void {};
 
-  public serialize(): AprilCard {
+  public serialize(): AprilCardBlueprint {
     const card = {
       id: this._id,
       cardClass: this._cardClass,
       nextCells: this._nextCells
-    } as AprilCard;
+    } as AprilCardBlueprint;
     
     return _.cloneDeep(card);
   };

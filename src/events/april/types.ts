@@ -9,9 +9,6 @@ export interface AprilUserState {
     gold: number;
   };
   dailyRewards: AprilRewardDayData[];
-  // Naming formaula: 
-  // "What" + "happened": "when"
-  // If no value - set null. Zero is a "1970-01-01"
   hourRewardClaimed: number|null;
   heroes: string[];
 }
@@ -29,22 +26,29 @@ export interface AprilMapState {
   sessionResult: string;
   hp: number;
   actionPoints: number;
-  cardsInQueue: number;
-  units: AprilUnit[];
-  damage: number[];
-  cards: AprilCard[];
-  usedCards: AprilCard[];
   timesThirdActionPurchased: number;
-  canBuyThirdAction: boolean;
+  playground: AprilPlaygroundState;
+  croupier: AprilCroupierState;
 }
 
-export interface AprilUnit {
+export interface AprilPlaygroundState {
+  units: AprilUnitBlueprint[];
+  damage: number[];
+}
+
+export interface AprilCroupierState {
+  cardsInQueue: number;
+  cards: AprilCardBlueprint[];
+  usedCards: AprilCardBlueprint[];
+}
+
+export interface AprilUnitBlueprint {
   id: string;
   unitClass: string;
   index: number;
 }
 
-export interface AprilCard {
+export interface AprilCardBlueprint {
   id: string;
   cardClass: string;
   nextCells: number[];

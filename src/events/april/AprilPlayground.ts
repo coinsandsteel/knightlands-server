@@ -1,8 +1,125 @@
 import _ from "lodash";
+import { AprilDamage } from "./AprilDamage";
+import { AprilEvents } from "./AprilEvents";
+import { AprilMap } from "./AprilMap";
+import { AprilPlaygroundState, AprilUnitBlueprint } from "./types";
+import { Hero } from "./units/Hero";
+import { Unit } from "./units/Unit";
+import * as april from "../../knightlands-shared/april";
 
-import Game from "../../game";
+export class AprilPlayground {
+  protected _state: AprilPlaygroundState;
+  protected _map: AprilMap;
+  protected _units: Unit[] = [];
+  protected _hero: Hero;
+  protected _damage: AprilDamage;
+  
+  get events(): AprilEvents {
+    return this._map.events;
+  }
+  
+  get units(): Unit[] {
+    return this._units;
+  }
+  
+  get hero(): Hero {
+    return this._hero;
+  }
+  
+  get damage(): AprilDamage {
+    return this._damage;
+  }
+  
+  constructor(state: AprilPlaygroundState|null, map: AprilMap) {
+    this._map = map;
 
-export class AprilMover {
+    if (state) {
+      this._state = state;
+    } else {
+      this.setInitialState();
+    }
+  }
+
+  public setInitialState() {
+    this._state = {
+      units: [],
+      damage: []
+    } as AprilPlaygroundState;
+  }
+  
+  public getState(): AprilPlaygroundState {
+    return this._state;
+  }
+  
+  public wakeUp(state: AprilPlaygroundState) {
+    this._state.damage = state.damage;
+    this._state.units = state.units;
+    this.createUnits();
+  }
+
+  // TODO implement
+  protected createUnits(): void {
+    // this._units
+    // this._hero
+    // this._cards
+    // this._usedCards
+
+    /*cards.forEach((card: MarchCard, index: number) => {
+      let newUnit = this.makeUnit(card);
+      if (newUnit instanceof Pet) {
+        this._pet = this.makeUnit(card) as Pet;
+      }
+      this.setCardByIndex(newUnit, index);
+    });*/
+  }
+
+  public startSession() {
+    this.spawnUnits();
+    this.spawnDamageMap();
+  }
+  
+  // TODO implement
+  protected spawnUnits(): void {
+    // Spawn enemies according to level
+    this._units = [];
+    this._state.units = this.units.map(unit => unit.serialize());
+    this.events.units(this._state.units);
+  }
+  
+  // TODO implement
+  protected spawnDamageMap(): void {
+    // Spawn enemies according to level
+    this._state.damage = [];
+    this.events.damage(this._state.damage);
+  }
+  
+  public createHero(): void {
+    if (this._hero) {
+      return;
+    }
+    this._hero = this.makeUnit({ id: null, unitClass: april.UNIT_CLASS_HERO, index: 22 }) as Hero;
+  }
+  
+  public makeUnit(unit: AprilUnitBlueprint): Unit
+  {
+    let unitInstance = null;
+    switch (unit.unitClass) {
+      case april.UNIT_CLASS_HERO:{
+        unitInstance = new Hero(unit, this._map);
+        break;
+      }
+      case april.UNIT_CLASS_BOSS:
+      case april.UNIT_CLASS_HARLEQUIN:
+      case april.UNIT_CLASS_JACK:
+      case april.UNIT_CLASS_CLOWN:
+      case april.UNIT_CLASS_TEETH:{
+        unitInstance = new Unit(unit, this._map);
+        break;
+      }
+    }
+
+    return unitInstance;
+  }
 
   public move() {
     /*if (this.pet.isDead()) {
@@ -62,6 +179,23 @@ export class AprilMover {
       card.userStepCallback();
       this._state.cards[index] = card.serialize();
     });*/
+  }
+  
+  public handleDamage(): void {
+    // Choose cards to attack/heal
+    /*const victims = this._damage.getVictims(attacker, direction);
+    this._events.effect(
+      attacker.unitClass,
+      attacker.index,
+      victims.map(victim => victim.index)
+    );
+    
+    // Modify HP
+    victims.forEach(victim => {
+      const currentHpModifier = this._damage.getHpModifier(attacker, victim);
+      victim.modifyHp(currentHpModifier);
+      //console.log('Damage', { _id: victim.id, unitClass: victim.unitClass, hp: victim.hp, delta: currentHpModifier });
+    })*/
   }
   
   protected moveUnitTo(/*unit: Unit, index: number*/): void {
@@ -145,5 +279,25 @@ export class AprilMover {
     /*const index = oldUnit.index;
     this.cards[index] = newUnit;
     this._events.newCard(newUnit.serialize(), index);*/
+  }
+
+  public bossKilled(): void {
+    /*this._state.stat.bossesKilled++;
+    this._events.stat(this._state.stat);*/
+  }
+  
+  public gameOver(): void {
+    /*this._marchUser.voidBoosters();
+    this._marchUser.flushStats(this.pet);
+    this._marchCroupier.reset();*/
+  }
+  
+  public exit() {
+    this._units = [];
+    this._state.units = [];
+    this.events.units([]);
+    
+    this._state.damage = [];
+    this.events.damage([]);
   }
 }
