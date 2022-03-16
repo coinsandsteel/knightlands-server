@@ -6,6 +6,7 @@ import { AprilMap } from "./AprilMap";
 import { AprilEvents } from './AprilEvents';
 import { AprilSaveData } from './types';
 import { AprilUser } from './AprilUser';
+import * as april from "../../knightlands-shared/april";
 
 export class AprilController {
   private _user: User;
@@ -59,14 +60,14 @@ export class AprilController {
         this._events,
         this._aprilUser,
         this._user
-        );
+      );
     }
   }
 
   getState(): AprilSaveData {
     return {
       user: this._aprilUser.getState(),
-      map: this._aprilMap.getState(),
+      map: this._aprilMap.getState()
     };
   }
 
@@ -80,25 +81,50 @@ export class AprilController {
     return this.getState();
   }
 
-  async collectDailyReward() {
-    await this._aprilUser.collectDailyReward();
+  async claimReward(type: string) {
+    // Daily reward
+    switch (type) {
+      case april.REWARD_TYPE_HOUR: {
+        await this._aprilUser.claimHourReward();
+      }
+      case april.REWARD_TYPE_DAILY: {
+        await this._aprilUser.claimDailyReward();
+      }
+      case april.REWARD_TYPE_EVENT: {
+        return await Game.aprilManager.claimRewards(this._user);
+      }
+    }
   }
 
-  async claimRewards() {
-    const items = await Game.aprilManager.claimRewards(this._user);
-    return items;
+  async purchaseHero(heroClass: string) {
+    this._aprilUser.purchaseHero(heroClass);
   }
 
-  async claimPeriodicRewards() {
-    const items = await this._aprilUser.claimHourReward();
-    return items;
+  async restart(heroClass: string) {
+    this._aprilMap.restart(heroClass);
   }
 
-  async purchaseHero(heroStr: string) {
-    this._aprilUser.purchaseHero(heroStr);
+  async move(cardId: string, index: number) {
+    this._aprilMap.move(cardId, index);
   }
 
-  async purchaseThirdAction() {
-    this._aprilMap.purchaseThirdAction();
+  async skip() {
+    this._aprilMap.skip();
+  }
+
+  async purchaseAction() {
+    this._aprilMap.purchaseAction();
+  }
+
+  async enterLevel(booster: string) {
+    this._aprilMap.enterLevel(booster);
+  }
+
+  async resurrect() {
+    this._aprilMap.resurrect();
+  }
+
+  async exit() {
+    this._aprilMap.exit();
   }
 }

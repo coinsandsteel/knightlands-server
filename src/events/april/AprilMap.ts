@@ -12,6 +12,7 @@ import { AprilCroupier } from "./AprilCroupier";
 
 export class AprilMap {
   protected _state: AprilMapState;
+  protected _statePrevious: AprilMapState|null;
   protected _events: AprilEvents;
   protected _user: User;
   protected _aprilUser: AprilUser;
@@ -31,6 +32,8 @@ export class AprilMap {
     } else {
       this.setInitialState();
     }
+
+    this._statePrevious = null;
   }
 
   public setInitialState() {
@@ -40,18 +43,40 @@ export class AprilMap {
     this._state = {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
-      sessionResult: null,
       hp: 0,
       actionPoints: 0,
-      thirdActionPrice: 0,
-      timesThirdActionPurchased: 0,
+      sessionResult: null,
+      boosterCounters: {
+        thirdAction: 0,
+        resurrection: 0
+      },
       playground: playgroundState,
-      croupier: croupierState,
+      croupier: croupierState
     } as AprilMapState;
   }
 
   public getState(): AprilMapState {
-    return _.omit(this._state, ["timesThirdActionPurchased"]);
+    const state = _.cloneDeep(this._state);
+
+    delete state.boosterCounters;
+    state.prices = {
+      thirdAction: this.getThirdActionPrice(),
+      resurrection: this.getResurrectionPrice()
+    };
+
+    return state;
+  }
+  
+  public getPreviousState(): AprilMapState {
+    const state = _.cloneDeep(this._state);
+
+    delete state.boosterCounters;
+    state.prices = {
+      thirdAction: this.getThirdActionPrice(),
+      resurrection: this.getResurrectionPrice()
+    };
+
+    return state;
   }
   
   get events(): AprilEvents {
@@ -75,10 +100,10 @@ export class AprilMap {
     this._state.hp = this.getInitialHp();
     this._events.hp(this._state.hp);
 
-    this.startSession();
+    this.enterLevel();
   }
 
-  public startSession(booster?: string) {
+  public enterLevel(booster?: string) {
     console.log("");
     console.log("");
     console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { 
@@ -112,6 +137,8 @@ export class AprilMap {
   }
 
   public move(cardId: string, index: number): void {
+    this.backupState();
+    
     this._playground.moveHero(cardId, index);
     this._croupier.cardUsed(cardId);
     this.spendActionPoint();
@@ -126,6 +153,10 @@ export class AprilMap {
     this._events.sessionResult(result);
   }
   
+  public skip(): void {
+    this.moveEnded();
+  }
+
   public moveEnded(): void {
     this._playground.handleDamage();
 
@@ -162,19 +193,25 @@ export class AprilMap {
     this._state.sessionResult = state.sessionResult;
     this._state.hp = state.hp;
     this._state.actionPoints = state.actionPoints;
-    this._state.timesThirdActionPurchased = state.timesThirdActionPurchased;
 
     this._playground.wakeUp(state.playground);
     this._croupier.wakeUp(state.croupier);
   }
 
-  public purchaseThirdAction() {
+  protected getThirdActionPrice(): number {
+    return 100 * (this._state.boosterCounters.thirdAction + 1);
+  }
+
+  protected getResurrectionPrice(): number {
+    return 1000;
+  }
+
+  public purchaseAction() {
     if (this._state.actionPoints > 2) {
       throw errors.IncorrectArguments;
     }
 
-    // TODO: Use correct formula to calculate price
-    const price = (this._state.timesThirdActionPurchased + 1) * 100;
+    const price = this.getThirdActionPrice();
     if (this._aprilUser.gold < price) {
       throw errors.NotEnoughCurrency;
     }
@@ -182,9 +219,17 @@ export class AprilMap {
     this._aprilUser.modifyBalance(april.CURRENCY_GOLD, -price);
 
     this._state.actionPoints++;
-    this._state.timesThirdActionPurchased++;
+    this._state.boosterCounters.thirdAction++;
 
     this._events.actionPoints(this._state.actionPoints);
+  }
+
+  public backupState(): void {
+    this._statePrevious = _.cloneDeep(this._state);
+  }
+
+  public resurrect(): void {
+    this._state = _.cloneDeep(this._statePrevious);
   }
 
   public exit() {

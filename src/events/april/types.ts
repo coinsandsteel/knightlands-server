@@ -26,7 +26,14 @@ export interface AprilMapState {
   sessionResult: string;
   hp: number;
   actionPoints: number;
-  timesThirdActionPurchased: number;
+  prices?: {
+    thirdAction: number;
+    resurrection: number;
+  };
+  boosterCounters: {
+    thirdAction: number;
+    resurrection: number;
+  }
   playground: AprilPlaygroundState;
   croupier: AprilCroupierState;
 }

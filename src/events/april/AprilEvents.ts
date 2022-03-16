@@ -36,6 +36,14 @@ export class AprilEvents {
     this._events.actionPoints = value;
   }
 
+  thirdActionPrice(value) {
+    this._events.thirdActionPrice = value;
+  }
+
+  resurrectionPrice(value) {
+    this._events.resurrectionPrice = value;
+  }
+
   cardsInQueue(value) {
     this._events.cardsInQueue = value;
   }

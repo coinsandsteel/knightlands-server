@@ -31,8 +31,6 @@ export class AprilUser {
   public async init() {
     this.setEventDay();
     this.setActiveReward();
-    // events.flush shouldn't be here, because flush is an async way to pass data.
-    // hourRewardClaimed will be passed the frontend right after load().
   }
     
   public setInitialState() {
@@ -94,7 +92,7 @@ export class AprilUser {
     return this._state;
   }
 
-  async collectDailyReward() {
+  async claimDailyReward() {
     const entry = this._state.dailyRewards[this.day - 1];
 
     if (entry.collected) {
@@ -129,10 +127,8 @@ export class AprilUser {
       quantity: 1
     }]);
 
-    // Use seconds instead if msec
     this._state.hourRewardClaimed = game.nowSec;
     this._events.hourRewardClaimed(this._state.hourRewardClaimed);
-    // Call events.flush only in the controller!
   }
 
   public modifyBalance(currency: string, amount: number) {
@@ -144,19 +140,23 @@ export class AprilUser {
     this.modifyBalance(april.CURRENCY_SESSION_GOLD, amount);
   }
 
-  public purchaseHero(heroStr: string) {
-    const hero = this._state.heroes.find((hero) => hero === heroStr);
+  public purchaseHero(heroClass: string) {
+    const hero = this._state.heroes.find((entry) => entry === heroClass);
     if (hero) {
       throw errors.AprilHeroUnlocked;
     }
-
-    const price = april.HERO_PRICES[heroStr];
-    if (this.gold < price) {
+    
+    const targetHero = april.HEROES.find((entry) => entry.heroClass === heroClass);
+    if (!targetHero) {
+      throw errors.IncorrectArguments;
+    }
+    if (this.gold < targetHero.price) {
       throw errors.NotEnoughCurrency;
     }
 
-    this.modifyBalance(april.CURRENCY_GOLD, -price);
-    this._state.heroes.push(heroStr);
+    this.modifyBalance(april.CURRENCY_GOLD, -targetHero.price);
+
+    this._state.heroes.push(heroClass);
     this._events.heroes(this._state.heroes);
   }
 

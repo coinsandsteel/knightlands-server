@@ -297,12 +297,16 @@ class PlayerController extends IPaymentListener {
 
         // April
         this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
-        this._socket.on(Operations.AprilCollectDailyReward, this._gameHandler(this._aprilCollectDailyReward.bind(this)));
-        this._socket.on(Operations.AprilRanking, this._gameHandler(this._aprilRanking.bind(this)));
-        this._socket.on(Operations.AprilClaimRewards, this._gameHandler(this._aprilClaimRewards.bind(this)));
-        this._socket.on(Operations.AprilClaimPeriodicRewards, this._gameHandler(this._aprilClaimPeriodicRewards.bind(this)));
+        this._socket.on(Operations.AprilClaimReward, this._gameHandler(this._aprilClaimReward.bind(this)));
+        this._socket.on(Operations.AprilRankings, this._gameHandler(this._aprilRankings.bind(this)));
         this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
-        this._socket.on(Operations.AprilPurchaseThirdAction, this._gameHandler(this._aprilPurchaseThirdAction.bind(this)));
+        this._socket.on(Operations.AprilRestart, this._gameHandler(this._aprilRestart.bind(this)));
+        this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
+        this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
+        this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
+        this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
+        this._socket.on(Operations.AprilAprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
+        this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2163,11 +2167,11 @@ class PlayerController extends IPaymentListener {
         return this.april.load();
     }
 
-    async _aprilCollectDailyReward() {
-        return this.april.collectDailyReward();
+    async _aprilClaimReward(user, type) {
+        return this.april.claimReward(type);
     }
 
-    async _aprilRanking(user, data) {
+    async _aprilRankings(user, data) {
         return {
             rankings: await Game.aprilManager.getRankings(),
             hasRewards: await Game.aprilManager.userHasRewards(user),
@@ -2175,23 +2179,48 @@ class PlayerController extends IPaymentListener {
         };
     }
 
-    async _aprilClaimRewards(user, data) {
-        return this.april.claimRewards();
-    }
-
-    async _aprilClaimPeriodicRewards(user, data) {
-        return this.april.claimPeriodicRewards();
-    }
-
-    async _aprilPurchaseHero(user, data) {
-        if (!isString(data.hero)) {
+    async _aprilPurchaseHero(user, heroClass) {
+        if (!isString(heroClass)) {
             throw Errors.IncorrectArguments;
         }
-        return this.april.purchaseHero(data.hero);
+        return this.april.purchaseHero(heroClass);
     }
 
-    async _aprilPurchaseThirdAction(user, data) {
-        return this.april.purchaseThirdAction();
+    async _aprilRestart(user, heroClass) {
+        if (!isString(heroClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.restart(heroClass);
+    }
+
+    async _aprilMove(user, data) {
+        if (!isString(data.cardId)) {
+            throw Errors.IncorrectArguments;
+        }
+        if (!isNumber(data.index)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.move(data.cardId, data.index);
+    }
+
+    async _aprilSkip() {
+        return this.april.skip();
+    }
+
+    async _aprilPurchaseAction() {
+        return this.april.purchaseAction();
+    }
+
+    async _aprilEnterLevel() {
+        return this.april.enterLevel();
+    }
+
+    async _aprilResurrect() {
+        return this.april.resurrect();
+    }
+
+    async _aprilExit() {
+        return this.april.exit();
     }
 }
 
