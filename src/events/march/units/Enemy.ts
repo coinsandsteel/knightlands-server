@@ -49,11 +49,6 @@ export class Enemy extends Unit {
   };
 
   protected bossKilled(): void {
-    this.map.pet.capturePreviousHp();
-    this.map.pet.upgradeHP(1);
-    this.map.pet.voidPreviousHp();
     this.map.bossKilled();
-    this.map.croupier.upgradePool();
-    this.map.croupier.puchChestIntoQueue();
   }
 }

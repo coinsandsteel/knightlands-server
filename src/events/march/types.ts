@@ -35,6 +35,7 @@ export interface MarchMapState {
   stat: StatState;
   pet: PetState;
   cards: MarchCard[];
+  croupier?: CroupierState;
 }
 
 export interface MarchCard {
@@ -51,6 +52,12 @@ export interface MarchCard {
 export interface StatState {
   stepsToNextBoss: number|null;
   bossesKilled: number;
+}
+
+export interface CroupierState {
+  poolNumber: number;
+  stepCounter: number;
+  queue: string[];
 }
 
 export interface PetState {

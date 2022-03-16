@@ -217,4 +217,10 @@ export class Pet extends Unit implements StepInterface {
     this.map.gameOver();
   };
   public userStepCallback(): void { return; };
+
+  public bossKilled(): void {
+    this.capturePreviousHp();
+    this.upgradeHP(1);
+    this.voidPreviousHp();
+  }
 }

@@ -1,7 +1,7 @@
 import Random from "../../random";
 import { MarchMap } from "./MarchMap";
 import { Unit } from "./other/UnitClass";
-import { MarchCard } from "./types";
+import { CroupierState, MarchCard } from "./types";
 import { Container } from "./units/Container";
 import { 
   UNIT_CLASS_ENEMY,
@@ -211,9 +211,30 @@ export class MarchCroupier {
     return UNIT_POOL[this._poolNumber];
   }
 
+  get poolNumber() {
+    return this._poolNumber;
+  }
+
+  get stepCounter() {
+    return this._stepCounter;
+  }
+
+  get queue() {
+    return this._queue;
+  }
+
   get stepsToNextBoss(): number {
     const steps = this.pool.stepsToBoss - this._stepCounter;
-    return steps < 0 ? 0 : steps;
+    const result = steps < 0 ? 0 : steps;
+    //console.log(`[MarchCroupier, pool #${this._poolNumber}] stepsToNextBoss`, result);
+    return result;
+  }
+
+  public setState(state: CroupierState) {
+    this._poolNumber = state.poolNumber;
+    this._stepCounter = state.stepCounter;
+    this._queue = state.queue;
+    //console.log(`[MarchCroupier, pool #${this._poolNumber}] Initial state`, state);
   }
 
   public getCard(returnBlueprint?: boolean): Unit|MarchCard {
@@ -283,7 +304,11 @@ export class MarchCroupier {
 
   public increaseStepCounter(): void {
     this._stepCounter++;
+    //console.log(`[MarchCroupier, pool #${this._poolNumber}] Step increased`, { _stepCounter: this._stepCounter });
+    
+    //console.log(`[MarchCroupier, pool #${this._poolNumber}] Boss summon check: _stepCounter(${this._stepCounter}) == pool.stepsToBoss(${this.pool.stepsToBoss})?`);
     if (this._stepCounter == this.pool.stepsToBoss) {
+      //console.log(`[MarchCroupier, pool #${this._poolNumber}] Boss summon check PASSED. Boss pushed to the queue.`);
       this._queue.push(UNIT_CLASS_ENEMY_BOSS);
     }
   }
@@ -296,14 +321,14 @@ export class MarchCroupier {
 
   protected resetStepCounter(): void {
     this._stepCounter = 0;
+    //console.log(`[MarchCroupier, pool #${this._poolNumber}] Step counter reset`, { _stepCounter: this._stepCounter });
   }
 
   public upgradePool(): void {
     this.resetStepCounter();
-    //console.log("🚀 ~ file: MarchCroupier.ts ~ line 303 ~ MarchCroupier ~ upgradePool ~ this._queue", this._queue)
     if (this._poolNumber < UNIT_POOL.length - 1) {
       this._poolNumber++;
-      //console.log(`[Pool] Pool upgraded to ${this._poolNumber}`);
+      //console.log(`[MarchCroupier, pool #${this._poolNumber}] Pool upgraded to ${this._poolNumber}`);
     }
   }
 
@@ -340,6 +365,12 @@ export class MarchCroupier {
   public puchChestIntoQueue() {
     if (!this._chestProvided) {
       this._queue.push(UNIT_CLASS_CHEST);
+      //console.log(`[MarchCroupier, pool #${this._poolNumber}] Chest pushed into the queue`);
     }
+  }
+
+  public bossKilled(): void {
+    this.upgradePool();
+    this.puchChestIntoQueue();
   }
 }
