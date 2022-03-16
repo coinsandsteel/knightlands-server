@@ -150,7 +150,7 @@ export class AprilUser {
       throw errors.AprilHeroUnlocked;
     }
 
-    const price = april.HERO_CLASSES[heroStr];
+    const price = april.HERO_PRICES[heroStr];
     if (this.gold < price) {
       throw errors.NotEnoughCurrency;
     }
