@@ -253,7 +253,7 @@ export class MarchMap {
   }
 
   public touch(index: number) {
-    if (this.pet.isDead()) {
+    if (this.pet && this.pet.isDead()) {
       //console.log(`Pet is dead.`);
       return;
     }
