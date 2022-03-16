@@ -301,7 +301,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilRanking, this._gameHandler(this._aprilRanking.bind(this)));
         this._socket.on(Operations.AprilClaimRewards, this._gameHandler(this._aprilClaimRewards.bind(this)));
         this._socket.on(Operations.AprilClaimPeriodicRewards, this._gameHandler(this._aprilClaimPeriodicRewards.bind(this)));
-        this._socket.on(Operations.AprilPurchaseCharacter, this._gameHandler(this._aprilPurchaseCharacter.bind(this)));
+        this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
         this._socket.on(Operations.AprilPurchaseThirdAction, this._gameHandler(this._aprilPurchaseThirdAction.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
@@ -2183,11 +2183,11 @@ class PlayerController extends IPaymentListener {
         return this.april.claimPeriodicRewards();
     }
 
-    async _aprilPurchaseCharacter(user, data) {
-        if (!isNumber(data.characterIndex)) {
+    async _aprilPurchaseHero(user, data) {
+        if (!isString(data.hero)) {
             throw Errors.IncorrectArguments;
         }
-        return this.april.purchaseCharacter(data.characterIndex);
+        return this.april.purchaseHero(data.hero);
     }
 
     async _aprilPurchaseThirdAction(user, data) {

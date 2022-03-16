@@ -94,8 +94,8 @@ export class AprilController {
     return items;
   }
 
-  async purchaseCharacter(characterIndex: number) {
-    this._aprilUser.purchaseCharacter(characterIndex);
+  async purchaseHero(heroStr: string) {
+    this._aprilUser.purchaseHero(heroStr);
   }
 
   async purchaseThirdAction() {

@@ -60,9 +60,9 @@ export class AprilEvents {
     console.log('April Balance', { currency, balance });
   }
 
-  characters(entries) {
-    this._events.characters = entries;
-    console.log('April Characters', { entries });
+  heroes(entries) {
+    this._events.heroes = entries;
+    console.log('April heroes', { entries });
   }
 
   flush() {
