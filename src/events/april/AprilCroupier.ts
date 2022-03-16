@@ -1,4 +1,5 @@
 import _ from "lodash";
+import errors from "../../knightlands-shared/errors";
 import { AprilEvents } from "./AprilEvents";
 import { AprilMap } from "./AprilMap";
 import { AprilCroupierState } from "./types";
@@ -52,29 +53,56 @@ export class AprilCroupier {
   }
   
   // TODO implement
-  public createCards():void  {
+  public createCards(): void  {
+    // Make units from blueprints
+    // Store it in this._cards and this._state.usedCards
+  }
 
+  // TODO implement
+  public cardUsed(id: string): void {
+    // Remove card from this._state.cards, this._cards
+    // Add a "cards" event
+
+    // Add card to this._state.usedCards, this._usedCards
+    // Void card's nextCells (no need to store it in usedCards)
+    // Add a "usedCards" event
   }
 
   public startSession() {
     // TODO: calc it 
-    this._state.cardsInQueue = 5; // TODO verify this value
+    this._state.cardsInQueue = 5;
     this.events.cardsInQueue(this._state.cardsInQueue);
     
     this._state.usedCards = [];
-    this.events.usedCards(this._state.usedCards.length);
+    this.events.usedCards(0);
     
-    this.spawnCards();
+    this.spawnInitialCards();
   }
 
   // TODO implement
-  protected spawnCards(): void {
-    // Spawn according to: 
-    // - hero class
-    // - level
+  public spawnInitialCards(): void {
+    // Spawn 4 cards
     this._cards = [];
     this._state.cards = this.cards.map(card => card.serialize());
     this.events.cards(this._state.cards);
+  }
+
+  // TODO implement
+  public respawnCards(): void {
+    // Add all cards to this._state.usedCards, this._usedCards
+    // Void all card's nextCells (no need to store it in usedCards)
+    // Add a "usedCards" event
+    // Send a number, not a cards list!!!
+    this.events.usedCards(this._state.usedCards.length);
+
+    // Re-spawn cards (Rogue got 5 cards at the respawn)
+    this._cards = [];
+    this._state.cards = this.cards.map(card => card.serialize());
+    this.events.cards(this._state.cards);
+
+    // Set a proper value
+    this._state.cardsInQueue = 5;
+    this.events.cardsInQueue(this._state.cardsInQueue);
   }
 
   public exit() {

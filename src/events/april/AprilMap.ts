@@ -111,6 +111,51 @@ export class AprilMap {
     return 3;
   }
 
+  public move(cardId: string, index: number): void {
+    this._playground.moveHero(cardId, index);
+    this._croupier.cardUsed(cardId);
+    this.spendActionPoint();
+    
+    if (this._state.actionPoints === 0) {
+      this.moveEnded();
+    }
+  }
+  
+  public sessionEnd(result: string): void {
+    this._state.sessionResult = result;
+    this._events.sessionResult(result);
+  }
+  
+  public moveEnded(): void {
+    this._playground.handleDamage();
+
+    if (this._state.hp <= 0) {
+      this.sessionEnd("fail");
+      return;
+    }
+    
+    if (this._playground.allEnemiesKilled()) {
+      this.sessionEnd("success");
+      this._state.level++;
+      this._events.level(this._state.level);
+      return;
+    }
+    
+    this._playground.moveEnemies();
+    this._croupier.respawnCards();
+    this.resetActionPoints();
+  }
+  
+  protected spendActionPoint(): void {
+    this._state.actionPoints--;
+    this._events.actionPoints(this._state.actionPoints);
+  }
+  
+  protected resetActionPoints(): void {
+    this._state.actionPoints = 2;
+    this._events.actionPoints(2);
+  }
+  
   public wakeUp(state: AprilMapState) {
     this._state.heroClass = state.heroClass;
     this._state.level = state.level;
