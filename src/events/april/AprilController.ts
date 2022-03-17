@@ -22,7 +22,7 @@ export class AprilController {
   }
 
   async init() {
-    const saveData = await Game.marchManager.loadProgress(this._user.id);
+    const saveData = await Game.aprilManager.loadProgress(this._user.id);
     if (saveData) {
       this._saveData = saveData.state as AprilSaveData;
     }
@@ -82,7 +82,6 @@ export class AprilController {
   }
 
   async claimReward(type: string) {
-    // Daily reward
     switch (type) {
       case april.REWARD_TYPE_HOUR: {
         await this._aprilUser.claimHourReward();
@@ -94,37 +93,46 @@ export class AprilController {
         return await Game.aprilManager.claimRewards(this._user);
       }
     }
+    this._events.flush();
   }
 
   async purchaseHero(heroClass: string) {
     this._aprilUser.purchaseHero(heroClass);
+    this._events.flush();
   }
-
+  
   async restart(heroClass: string) {
     this._aprilMap.restart(heroClass);
+    this._events.flush();
   }
-
+  
   async move(cardId: string, index: number) {
     this._aprilMap.move(cardId, index);
+    this._events.flush();
   }
-
+  
   async skip() {
     this._aprilMap.skip();
+    this._events.flush();
   }
-
+  
   async purchaseAction() {
     this._aprilMap.purchaseAction();
+    this._events.flush();
   }
-
+  
   async enterLevel(booster: string) {
     this._aprilMap.enterLevel(booster);
+    this._events.flush();
   }
-
+  
   async resurrect() {
     this._aprilMap.resurrect();
+    this._events.flush();
   }
-
+  
   async exit() {
     this._aprilMap.exit();
+    this._events.flush();
   }
 }

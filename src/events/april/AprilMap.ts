@@ -138,7 +138,7 @@ export class AprilMap {
 
   public move(cardId: string, index: number): void {
     this.backupState();
-    
+
     this._playground.moveHero(cardId, index);
     this._croupier.cardUsed(cardId);
     this.spendActionPoint();
@@ -161,12 +161,12 @@ export class AprilMap {
     this._playground.handleDamage();
 
     if (this._state.hp <= 0) {
-      this.sessionEnd("fail");
+      this.sessionEnd(april.SESSION_RESULT_FAIL);
       return;
     }
     
     if (this._playground.allEnemiesKilled()) {
-      this.sessionEnd("success");
+      this.sessionEnd(april.SESSION_RESULT_SUCCESS);
       this._state.level++;
       this._events.level(this._state.level);
       return;
