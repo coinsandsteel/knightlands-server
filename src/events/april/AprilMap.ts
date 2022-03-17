@@ -74,6 +74,10 @@ export class AprilMap {
     return this._aprilUser;
   }
 
+  get playground(): AprilPlayground {
+    return this._playground;
+  }
+
   public init() {
     this.wakeUp(this._state);
   }
