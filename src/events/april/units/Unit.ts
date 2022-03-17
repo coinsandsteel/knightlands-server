@@ -34,7 +34,12 @@ export class Unit {
     this._map = map;
   }
 
-  public move(): void {};
+  public move(index: number): void {
+    this._index = index;
+    if (this._index > 24) {
+      this._index = 0;
+    }
+  };
   public userStepCallback(): void {};
 
   public serialize(): AprilUnitBlueprint {

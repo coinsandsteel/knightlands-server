@@ -46,6 +46,10 @@ export class AprilMap {
       hp: 0,
       actionPoints: 0,
       sessionResult: null,
+      prices: {
+        thirdAction: 0,
+        resurrection: 0
+      },
       boosterCounters: {
         thirdAction: 0,
         resurrection: 0
@@ -53,30 +57,13 @@ export class AprilMap {
       playground: playgroundState,
       croupier: croupierState
     } as AprilMapState;
+
+    this._state.prices.thirdAction = this.getThirdActionPrice();
+    this._state.prices.resurrection = this.getResurrectionPrice();
   }
 
   public getState(): AprilMapState {
-    const state = _.cloneDeep(this._state);
-
-    delete state.boosterCounters;
-    state.prices = {
-      thirdAction: this.getThirdActionPrice(),
-      resurrection: this.getResurrectionPrice()
-    };
-
-    return state;
-  }
-  
-  public getPreviousState(): AprilMapState {
-    const state = _.cloneDeep(this._state);
-
-    delete state.boosterCounters;
-    state.prices = {
-      thirdAction: this.getThirdActionPrice(),
-      resurrection: this.getResurrectionPrice()
-    };
-
-    return state;
+    return this._state;
   }
   
   get events(): AprilEvents {
@@ -232,6 +219,14 @@ export class AprilMap {
     this._state = _.cloneDeep(this._statePrevious);
   }
 
+  public modifyHp(value: number): void {
+    this._state.hp += value;
+    if (this._state.hp < 0) {
+      this._state.hp = 0;
+    }
+    this._events.hp(this._state.hp);
+  };
+  
   public exit() {
     this._state.level = 1;
     this._events.level(1);
