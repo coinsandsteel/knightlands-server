@@ -72,17 +72,17 @@ export class AprilPlayground {
 
   public startSession() {
     this.spawnUnits();
-    this.fillDamageMap();
+    this.updateDamageMap();
   }
   
   // TODO implement
   protected spawnUnits(): void {
     const demoUnits = [
       { unitClass: april.UNIT_CLASS_TEETH, index: 0 },
-      { unitClass: april.UNIT_CLASS_CLOWN, index: 1 },
-      { unitClass: april.UNIT_CLASS_JACK, index: 2 },
-      { unitClass: april.UNIT_CLASS_HARLEQUIN, index: 3 },
-      { unitClass: april.UNIT_CLASS_BOSS, index: 4 },
+      { unitClass: april.UNIT_CLASS_CLOWN, index: 3 },
+      { unitClass: april.UNIT_CLASS_JACK, index: 11 },
+      { unitClass: april.UNIT_CLASS_HARLEQUIN, index: 18 },
+      { unitClass: april.UNIT_CLASS_BOSS, index: 12 },
       { unitClass: april.UNIT_CLASS_HERO, index: 22 },
     ];
 
@@ -98,13 +98,8 @@ export class AprilPlayground {
     this.commitUnits();
   }
   
-  // TODO implement
-  protected fillDamageMap(): void {
-    // Fill damage map according to enemies classes and positions
-    this._state.damage = Array.from(
-      { length: 25 }, 
-      (_, i) => random.intRange(0, 1)
-    );
+  protected updateDamageMap(): void {
+    this._state.damage = this._damage.getDamageMap(this._units);
     this.events.damage(this._state.damage);
   }
   
@@ -170,9 +165,9 @@ export class AprilPlayground {
     if (enemyOnTheSpot && enemyOnTheSpot.unitClass !== april.UNIT_CLASS_BOSS) {
       this.killUnitByIndex(this.hero.index);
     }
-
+    
     // Update damage map (no enemy = no damage around)
-    this.fillDamageMap();
+    this.updateDamageMap();
 
     // Spawn more enemies if a box was killed
 
@@ -190,12 +185,19 @@ export class AprilPlayground {
     // Update enemies positions
     this._units.forEach((unit) => {
       if (unit.unitClass !== april.UNIT_CLASS_HERO) {
-        unit.move(unit.index + 1);
+        unit.move();
       }
     });
 
     // Update damage map (enemy moved = damage zone moved). Boss runs a damage sequence.
+    this.updateDamageMap();
     this.commitUnits();
+
+    this._units.forEach((unit) => {
+      if (unit.unitClass === april.UNIT_CLASS_BOSS) {
+        unit.switchSequence();
+      }
+    });
   }
 
   // TODO implement

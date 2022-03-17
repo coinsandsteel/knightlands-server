@@ -9,6 +9,7 @@ import { AprilEvents } from "./AprilEvents";
 import { AprilUser } from "./AprilUser";
 import { AprilPlayground } from "./AprilPlayground";
 import { AprilCroupier } from "./AprilCroupier";
+import { AprilMovement } from "./AprilMovement";
 
 export class AprilMap {
   protected _state: AprilMapState;
@@ -18,6 +19,7 @@ export class AprilMap {
   protected _aprilUser: AprilUser;
   protected _croupier: AprilCroupier;
   protected _playground: AprilPlayground;
+  protected _movement: AprilMovement;
   
   constructor(state: AprilMapState | null, events: AprilEvents, aprilUser: AprilUser, user: User) {
     this._events = events;
@@ -76,6 +78,10 @@ export class AprilMap {
 
   get playground(): AprilPlayground {
     return this._playground;
+  }
+
+  get movement(): AprilMovement {
+    return this._movement;
   }
 
   public init() {
