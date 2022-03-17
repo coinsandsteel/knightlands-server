@@ -41,6 +41,7 @@ export class AprilUser {
       },
       dailyRewards: this.getInitialDailyrewards(),
       hourRewardClaimed: null,
+      heroes: []
     } as AprilUserState;
 
     this.setActiveReward();
