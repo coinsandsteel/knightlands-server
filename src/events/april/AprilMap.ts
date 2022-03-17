@@ -36,6 +36,7 @@ export class AprilMap {
     }
 
     this._statePrevious = null;
+    this._movement = new AprilMovement();
   }
 
   public setInitialState() {
@@ -137,7 +138,7 @@ export class AprilMap {
     this.backupState();
 
     this._playground.moveHero(cardId, index);
-    this._croupier.cardUsed(cardId);
+    //this._croupier.cardUsed(cardId);
     this.spendActionPoint();
     
     if (this._state.actionPoints === 0) {
@@ -170,7 +171,7 @@ export class AprilMap {
     }
     
     this._playground.moveEnemies();
-    this._croupier.respawnCards();
+    //this._croupier.respawnCards();
     this.resetActionPoints();
   }
   

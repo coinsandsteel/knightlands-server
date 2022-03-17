@@ -82,9 +82,9 @@ export class AprilPlayground {
     const demoUnits = [
       { unitClass: april.UNIT_CLASS_TEETH, index: 0 },
       { unitClass: april.UNIT_CLASS_CLOWN, index: 3 },
-      { unitClass: april.UNIT_CLASS_JACK, index: 11 },
-      { unitClass: april.UNIT_CLASS_HARLEQUIN, index: 18 },
-      { unitClass: april.UNIT_CLASS_BOSS, index: 12 },
+      { unitClass: april.UNIT_CLASS_JACK, index: 6 },
+      { unitClass: april.UNIT_CLASS_HARLEQUIN, index: 12 },
+      //{ unitClass: april.UNIT_CLASS_BOSS, index: 12 },
       { unitClass: april.UNIT_CLASS_HERO, index: 22 },
     ];
 
@@ -164,12 +164,15 @@ export class AprilPlayground {
     
     // Enemy killed
     const enemyOnTheSpot = this.findUnitByIndex(this.hero.index);
-    if (enemyOnTheSpot && enemyOnTheSpot.unitClass !== april.UNIT_CLASS_BOSS) {
+    if (
+      enemyOnTheSpot 
+      && 
+      ![april.UNIT_CLASS_BOSS, april.UNIT_CLASS_HERO].includes(enemyOnTheSpot.unitClass)
+    ) {
       this.killUnitByIndex(this.hero.index);
+      // Update damage map (no enemy = no damage around)
+      this.updateDamageMap();
     }
-    
-    // Update damage map (no enemy = no damage around)
-    this.updateDamageMap();
 
     // Spawn more enemies if a box was killed
 

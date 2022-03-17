@@ -42,12 +42,13 @@ export class AprilMovement {
   }
 
   public getFirstPathIndex(enemyIndex: number, heroIndex: number) {
-    const path = this.route.path(enemyIndex, heroIndex);
-    return path[0];
+    const path = this.route.path(`${enemyIndex}`, `${heroIndex}`);
+    return +path[1];
   }
 
   public getRandomNeighborIndex(enemyIndex: number) {
-    return _.sample(Object.keys(GRAPH[enemyIndex]));
+    const index = _.sample(Object.keys(GRAPH[enemyIndex]));
+    return +index;
   }
 
   public getRandomQueenishIndex(enemyIndex: number) {
