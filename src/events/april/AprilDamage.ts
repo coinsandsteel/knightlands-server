@@ -8,7 +8,7 @@ export class AprilDamage {
     this._map = map;
   }
 
-  public reset(): void {
-
+  public getDamageBlueprint(unit: Unit): void {
+    
   }
 }

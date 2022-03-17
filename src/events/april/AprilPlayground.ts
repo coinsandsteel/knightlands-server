@@ -59,20 +59,15 @@ export class AprilPlayground {
     this.createUnits();
   }
 
-  // TODO implement
   protected createUnits(): void {
-    // this._units
-    // this._hero
-    // this._cards
-    // this._usedCards
-
-    /*cards.forEach((card: MarchCard, index: number) => {
-      let newUnit = this.makeUnit(card);
-      if (newUnit instanceof Pet) {
-        this._pet = this.makeUnit(card) as Pet;
+    this._units = [];
+    this._state.units.forEach((unit: AprilUnitBlueprint) => {
+      const unitInstance = this.makeUnit(unit);
+      if (unitInstance.unitClass === april.UNIT_CLASS_HERO) {
+        this._hero = unitInstance;
       }
-      this.setCardByIndex(newUnit, index);
-    });*/
+      this._units.push(unitInstance);
+    });
   }
 
   public startSession() {
@@ -206,7 +201,7 @@ export class AprilPlayground {
   // TODO implement
   public handleDamage(): void {
     // Handle damage if hero is on a damage spot:
-    const dmgValue = this._damage[this.hero.index];
+    const dmgValue = this._state.damage[this.hero.index];
     this._map.modifyHp(-dmgValue);
   }
   
