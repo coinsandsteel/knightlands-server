@@ -79,9 +79,12 @@ export class AprilCroupier {
   }
 
   public cardUsed(id: string): void {
-    [ this._cards, this._usedCards ] = this.transferCard(this._cards, this._usedCards, this._cards.length);
-    this._state.cards = [];
-    this.events.cards(0);
+    const cardIndex = this._state.cards.findIndex(card => card.id === id);
+    this.usedCards.push(this.cards[cardIndex]);
+    this.cards.splice(cardIndex, 1);
+
+    this._state.cards = this.cards.map(card => card.serialize());
+    this.events.cards(this._state.cards);
 
     this._state.usedCards = this.usedCards.map(card => card.serialize());
     this.events.usedCards(this._state.usedCards.length);
@@ -109,9 +112,9 @@ export class AprilCroupier {
       }
     ) as Card[];
 
+    this._deck.push(...deckCardList);
+    this._cardsInQueue = this._deck;
     // Spawn 4 cards
-    this._deck = deckCardList;
-    this._cardsInQueue = deckCardList;
     [ this._cardsInQueue, this._cards ] = this.transferCard(random.shuffle(this._cardsInQueue), this._cards, 4);
 
     this._state.cardsInQueue = this._cardsInQueue.map(card => card.serialize());
@@ -138,9 +141,12 @@ export class AprilCroupier {
   }
 
   public respawnCards(): void {
+    [ this._cards, this._usedCards ] = this.transferCard(this._cards, this._usedCards, this._cards.length);
+
     if (this._cardsInQueue.length < this._cardHandNumber) {
       [ this._usedCards, this._cardsInQueue ] = this.transferCard(this._usedCards, this._cardsInQueue, this._usedCards.length);
     }
+
     [ this._cardsInQueue, this._cards ] = this.transferCard(this._cardsInQueue, this._cards, this._cardHandNumber);
 
     this._state.cardsInQueue = this._cardsInQueue.map(card => card.serialize());
