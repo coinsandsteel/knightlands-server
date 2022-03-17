@@ -44,7 +44,8 @@ export interface AprilPlaygroundState {
 }
 
 export interface AprilCroupierState {
-  cardsInQueue: number;
+  deck: AprilCardBlueprint[];
+  cardsInQueue: AprilCardBlueprint[];
   cards: AprilCardBlueprint[];
   usedCards: AprilCardBlueprint[];
 }
