@@ -40,6 +40,8 @@ export class AprilPlayground {
     } else {
       this.setInitialState();
     }
+
+    this._damage = new AprilDamage(map);
   }
 
   public setInitialState() {

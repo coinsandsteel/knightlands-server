@@ -117,8 +117,8 @@ export class AprilMap {
     this._events.actionPoints(this._state.actionPoints);
 
     // ##### Subsystems #####
-    this._croupier.startSession();
     this._playground.startSession();
+    this._croupier.startSession();
   }
   
   // TODO implement
