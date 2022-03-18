@@ -151,8 +151,8 @@ export class AprilCroupier {
     this._state.cards = this.cards.map(card => card.serialize());
     this.events.cards(this._state.cards);
 
-    this._state.usedCards = this.usedCards.map(card => card.serialize());
-    this.events.cards(this._state.usedCards.length);
+    this._state.usedCards = this.usedCards.map(card => card && card.serialize());
+    this.events.usedCards(this._state.usedCards.length);
   }
 
   public exit() {
