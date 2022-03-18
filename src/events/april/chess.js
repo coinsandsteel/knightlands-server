@@ -581,6 +581,7 @@ var Chess = function (fen) {
         /* single square, non-capturing */
         var square = i + PAWN_OFFSETS[us][0]
         if (board[square] == null) {
+          //console.log("🚀 ~ file: chess.js ~ line 582 ~ generate_moves ~ board", board)
           add_move(board, moves, i, square, BITS.NORMAL)
 
           /* double square */
@@ -602,31 +603,28 @@ var Chess = function (fen) {
           }
         }
       } else if (piece_type === true || piece_type === piece.type) {
-        for (var j = 0, len = PIECE_OFFSETS[piece.type].length; j < len; j++) 
-        {
+        for (var j = 0, len = PIECE_OFFSETS[piece.type].length; j < len; j++) {
           len = PIECE_OFFSETS[piece.type].length
           var offset = PIECE_OFFSETS[piece.type][j]
           var square = i
-
-            while ((((square + offset) & 0xf0) <= 0x40) && (((square + offset) & 0x0f) <= 0x04)) {
-              const oldSquare = square;
-              square += offset
-              if (piece.type === 'n' || piece.type === 'k') {
+          while ((((square + offset) & 0xf0) <= 0x40) && (((square + offset) & 0x0f) <= 0x04)) {
+            const oldSquare = square;
+            square += offset
+            if (piece.type === 'n' || piece.type === 'k') {
+              break
+            }
+            if (board[square] != null) {
+              if (board[square].color === us) {
+                add_move(board, moves, i, oldSquare, BITS.CAPTURE)
                 break
               }
-              if (board[square] != null) {
-                if (board[square].color === us) {
-                  add_move(board, moves, i, oldSquare, BITS.CAPTURE)
-                  break
-                }
-                add_move(board, moves, i, square, BITS.CAPTURE)
-                break
-              }
+              add_move(board, moves, i, square, BITS.CAPTURE)
+              break
             }
-
-            if (board[square] == null && piece.type !== 'n' || piece.type !== 'k') {
-              add_move(board, moves, i, square, BITS.NORMAL)
-            }
+          }
+          
+          if (board[square] == null && piece.type !== 'n' || piece.type !== 'k') {
+            add_move(board, moves, i, square, BITS.NORMAL)
           }
         }
       }
