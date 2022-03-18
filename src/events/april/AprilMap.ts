@@ -21,6 +21,7 @@ export class AprilMap {
   protected _croupier: AprilCroupier;
   protected _playground: AprilPlayground;
   protected _movement: AprilMovement;
+  protected _paladinHp: number;
   
   constructor(state: AprilMapState | null, events: AprilEvents, aprilUser: AprilUser, user: User) {
     this._events = events;
@@ -48,6 +49,7 @@ export class AprilMap {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
       hp: 0,
+      maxHp: 0,
       actionPoints: 0,
       sessionResult: null,
       prices: {
@@ -94,6 +96,10 @@ export class AprilMap {
     return this._croupier.deck;
   }
 
+  get heroClass(): string {
+    return this._state.heroClass;
+  }
+
   public init() {
     this.wakeUp(this._state);
   }
@@ -104,9 +110,11 @@ export class AprilMap {
     this._state.level = 1;
     this._events.level(1);
 
-    this._state.hp = this.getInitialHp();
+    this._state.hp = 3;
+    this._state.maxHp = 3;
     this._events.hp(this._state.hp);
 
+    this._croupier.resetFullDeck();
     this.enterLevel();
   }
 
@@ -117,32 +125,33 @@ export class AprilMap {
       heroClass: this._state.heroClass
     });
     
-    // ##### Stat #####
-    this.handleBooster(booster);
     
-    this._state.sessionResult = null;
-    this._events.sessionResult(null);
+    if (this._state.sessionResult === april.SESSION_RESULT_SUCCESS) {
+      this._state.level++;
+      this._events.level(this._state.level);
+    }
+    
+    this.sessionResult(null);
     
     this._state.actionPoints = 2; // TODO verify this value
     this._events.actionPoints(this._state.actionPoints);
+    
+    // ##### Stat #####
+    if (this._state.level > 1 && booster === april.BOOSTER_HP) {
+      this.upgradeHp();
+    }
 
     // ##### Subsystems #####
     this._playground.startSession();
-    this._croupier.startSession();
+    this._croupier.startSession(booster === april.BOOSTER_CARD);
   }
   
-  // TODO implement
-  protected handleBooster(booster: string): void {
-    // Verify class and level
-    // Add hp or card
+  protected upgradeHp(): void {
+    this._state.maxHp++;
+    this._state.hp = this._state.maxHp;
+    this._events.hp(this._state.hp);
   }
   
-  // TODO implement
-  protected getInitialHp(): number {
-    // TODO calc according to the balance table
-    return 3;
-  }
-
   public move(cardId: string, index: number): void {
     this.backupState();
 
@@ -152,9 +161,8 @@ export class AprilMap {
     }
 
     if (this._playground.allEnemiesKilled(true)) {
-      this.sessionEnd(april.SESSION_RESULT_SUCCESS);
-      this._state.level++;
-      this._events.level(this._state.level);
+      this._croupier.proposeNewCard();
+      this.sessionResult(april.SESSION_RESULT_SUCCESS);
       return;
     }
     
@@ -166,7 +174,7 @@ export class AprilMap {
     }
   }
   
-  public sessionEnd(result: string): void {
+  public sessionResult(result: string): void {
     this._state.sessionResult = result;
     this._events.sessionResult(result);
   }
@@ -176,13 +184,23 @@ export class AprilMap {
   }
 
   public moveEnded(): void {
-    this._playground.handleDamage();
+    const damage = this._playground.handleDamage();
+    if (
+      this.heroClass === april.HERO_CLASS_PALADIN
+      &&
+      !damage
+      &&
+      !this._playground.enemyWasKilled
+    ) {
+      this.modifyHp(1);
+    }
 
     if (this._state.hp <= 0) {
-      this.sessionEnd(april.SESSION_RESULT_FAIL);
+      this.sessionResult(april.SESSION_RESULT_FAIL);
       return;
     }
     
+    this._playground.resetKillTracker();
     this._playground.moveEnemies();
     this._croupier.respawnCards();
     this.resetActionPoints();
@@ -203,6 +221,7 @@ export class AprilMap {
     this._state.level = state.level;
     this._state.sessionResult = state.sessionResult;
     this._state.hp = state.hp;
+    this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
 
     this._playground.wakeUp(state.playground);
@@ -248,6 +267,9 @@ export class AprilMap {
     if (this._state.hp < 0) {
       this._state.hp = 0;
     }
+    if (this._state.hp > this._state.maxHp) {
+      this._state.hp = this._state.maxHp;
+    }
     this._events.hp(this._state.hp);
   };
   
@@ -255,10 +277,10 @@ export class AprilMap {
     this._state.level = 1;
     this._events.level(1);
     
-    this._state.sessionResult = null;
-    this._events.sessionResult(null);
+    this.sessionResult(null);
     
     this._state.hp = 3;
+    this._state.maxHp = 3;
     this._events.hp(3);
     
     this._state.actionPoints = 2;

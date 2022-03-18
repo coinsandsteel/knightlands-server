@@ -25,6 +25,7 @@ export interface AprilMapState {
   level: number;
   sessionResult: string;
   hp: number;
+  maxHp: number;
   actionPoints: number;
   prices?: {
     thirdAction: number;
@@ -39,11 +40,13 @@ export interface AprilMapState {
 }
 
 export interface AprilPlaygroundState {
+  enemyWasKilled: boolean;
   units: AprilUnitBlueprint[];
   damage: number[];
 }
 
 export interface AprilCroupierState {
+  newCard: string;
   deck: AprilCardBlueprint[];
   cardsInQueue: AprilCardBlueprint[];
   cards: AprilCardBlueprint[];

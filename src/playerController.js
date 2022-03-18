@@ -2211,8 +2211,11 @@ class PlayerController extends IPaymentListener {
         return this.april.purchaseAction();
     }
 
-    async _aprilEnterLevel() {
-        return this.april.enterLevel();
+    async _aprilEnterLevel(user, booster) {
+        if (!isString(booster)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.enterLevel(booster);
     }
 
     async _aprilResurrect() {

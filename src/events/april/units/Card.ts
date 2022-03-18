@@ -4,6 +4,15 @@ import * as april from "../../../knightlands-shared/april";
 import { AprilMap } from "../AprilMap";
 import { AprilCardBlueprint } from "../types";
 
+const CARD_RANKS = {
+  [april.CARD_CLASS_PAWN]: 0,
+  [april.CARD_CLASS_KNIGHT]: 1,
+  [april.CARD_CLASS_KING]: 2,
+  [april.CARD_CLASS_BISHOP]: 3,
+  [april.CARD_CLASS_ROOK]: 4,
+  [april.CARD_CLASS_QUEEN]: 5
+};
+
 export class Card {
   protected _id: string;
   protected _cardClass: string;
@@ -20,6 +29,10 @@ export class Card {
 
   get cardClass(): string {
     return this._cardClass;
+  }
+  
+  get rank(): number {
+    return CARD_RANKS[this._cardClass];
   }
   
   constructor(card: AprilCardBlueprint, map: AprilMap) {

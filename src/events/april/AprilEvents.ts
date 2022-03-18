@@ -77,6 +77,10 @@ export class AprilEvents {
     console.log('April heroes', { entries });
   }
 
+  newCard(value) {
+    this._events.newCard = value;
+  }
+
   flush() {
     game.emitPlayerEvent(this._userId, events.AprilUpdate, this._events);
     this._events = {};

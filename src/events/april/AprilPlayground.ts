@@ -47,6 +47,10 @@ export class AprilPlayground {
     return this._damage;
   }
   
+  get enemyWasKilled(): boolean {
+    return this._state.enemyWasKilled;
+  }
+  
   constructor(state: AprilPlaygroundState|null, map: AprilMap) {
     this._map = map;
 
@@ -61,6 +65,7 @@ export class AprilPlayground {
 
   public setInitialState() {
     this._state = {
+      enemyWasKilled: false,
       units: [],
       damage: []
     } as AprilPlaygroundState;
@@ -71,6 +76,7 @@ export class AprilPlayground {
   }
   
   public wakeUp(state: AprilPlaygroundState) {
+    this._state.enemyWasKilled = state.enemyWasKilled;
     this._state.damage = state.damage;
     this._state.units = state.units;
     this.createUnits();
@@ -88,6 +94,7 @@ export class AprilPlayground {
   }
 
   public startSession() {
+    this._state.enemyWasKilled = false;
     this.spawnUnits();
     this.updateDamageMap();
   }
@@ -225,6 +232,10 @@ export class AprilPlayground {
     return fen + '/8/8/8 w KQkq - 0 1';
   }
 
+  public resetKillTracker() {
+    this._state.enemyWasKilled = false;
+  }
+
   // TODO implement
   public moveHero(cardId: string, index: number): boolean {
     // Decide if hero can go there depending on card class
@@ -241,9 +252,11 @@ export class AprilPlayground {
       &&
       !this.allEnemiesKilled(false)
     ) {
-      return;
+      return false;
     }
 
+    this._map.croupier.tryToSpawnQueen(cardId, this.hero.index, index);
+    
     // Update hero index
     this.hero.move(index);
 
@@ -253,6 +266,7 @@ export class AprilPlayground {
       this.killEnemy(enemyOnTheSpot);
       // Update damage map (no enemy = no damage around)
       this.updateDamageMap();
+      this._state.enemyWasKilled = false;
     }
 
     this.commitUnits();
@@ -291,10 +305,11 @@ export class AprilPlayground {
   }
 
   // TODO implement
-  public handleDamage(): void {
+  public handleDamage(): number {
     // Handle damage if hero is on a damage spot:
     const dmgValue = this._state.damage[this.hero.index];
     this._map.modifyHp(-dmgValue);
+    return dmgValue;
   }
   
   // TODO implement
