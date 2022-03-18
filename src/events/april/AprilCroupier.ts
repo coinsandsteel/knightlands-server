@@ -94,7 +94,7 @@ export class AprilCroupier {
     this.events.usedCards(0);
     
     this.spawnInitialCards();
-    if (this.hero.unitClass === april.HERO_CLASS_ROGUE) {
+    if (this.hero && this.hero.unitClass === april.HERO_CLASS_ROGUE) {
       this._cardHandNumber = 5;
     }
   }
