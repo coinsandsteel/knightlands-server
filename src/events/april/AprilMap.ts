@@ -10,6 +10,7 @@ import { AprilUser } from "./AprilUser";
 import { AprilPlayground } from "./AprilPlayground";
 import { AprilCroupier } from "./AprilCroupier";
 import { AprilMovement } from "./AprilMovement";
+import { Card } from "./units/Card";
 
 export class AprilMap {
   protected _state: AprilMapState;
@@ -85,6 +86,10 @@ export class AprilMap {
     return this._movement;
   }
 
+  get deck(): Card[] {
+    return this._croupier.deck;
+  }
+
   public init() {
     this.wakeUp(this._state);
   }
@@ -137,7 +142,10 @@ export class AprilMap {
   public move(cardId: string, index: number): void {
     this.backupState();
 
-    this._playground.moveHero(cardId, index);
+    const validMove = this._playground.moveHero(cardId, index);
+    if (!validMove) {
+      return;
+    }
     this._croupier.cardUsed(cardId);
     this.spendActionPoint();
     
