@@ -189,7 +189,11 @@ export class AprilPlayground {
     // Re-calc enemies positions
     // Update enemies positions
     this._units.forEach((unit) => {
-      if (unit.unitClass !== april.UNIT_CLASS_HERO) {
+      if (
+        unit.unitClass !== april.UNIT_CLASS_HERO
+        &&
+        unit.unitClass !== april.UNIT_CLASS_BOSS
+      ) {
         unit.move();
       }
     });

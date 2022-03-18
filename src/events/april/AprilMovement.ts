@@ -43,7 +43,7 @@ export class AprilMovement {
 
   public getFirstPathIndex(enemyIndex: number, heroIndex: number) {
     const path = this.route.path(`${enemyIndex}`, `${heroIndex}`);
-    return +path[1];
+    return path ? +path[1] : enemyIndex;
   }
 
   public getRandomNeighborIndex(enemyIndex: number) {
