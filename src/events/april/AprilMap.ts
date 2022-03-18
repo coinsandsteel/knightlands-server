@@ -37,7 +37,7 @@ export class AprilMap {
     }
 
     this._statePrevious = null;
-    this._movement = new AprilMovement();
+    this._movement = new AprilMovement(this);
   }
 
   public setInitialState() {

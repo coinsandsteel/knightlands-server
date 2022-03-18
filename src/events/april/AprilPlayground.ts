@@ -320,23 +320,20 @@ export class AprilPlayground {
   }
 
   protected killEnemy(enemy: Unit): void {
+    // Spawn 1-4 clowns
     if (enemy.unitClass === april.UNIT_CLASS_JACK) {
-      const indexes = this._map.movement.getIndex(enemy.index);
-
-      let nextEnemies = [
-        [indexes.horizontal - 1, indexes.vertical - 1, enemy.index - 6],
-        [indexes.horizontal - 1, indexes.vertical + 1, enemy.index - 4],
-        [indexes.horizontal + 1, indexes.vertical - 1, enemy.index + 4],
-        [indexes.horizontal + 1, indexes.vertical + 1, enemy.index + 6],
-      ]
-      .filter(entry => entry[0] >= 0 && entry[0] <= 4 && entry[1] >= 0 && entry[1] <= 4)
-      .map(entry => this.makeUnit({
+      const nextEnemiesRelativeMap = [
+        [-1, -1],
+        [-1,  1],
+        [ 1, -1],
+        [ 1,  1],
+      ];
+      const nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemy, nextEnemiesRelativeMap);
+      const nextEnemies = nextEnemiesIndexes.map(entry => this.makeUnit({
         id: null, unitClass: april.UNIT_CLASS_CLOWN, index: entry[2] 
       }));
-
       this._units.push(...nextEnemies);
     }
-
     this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
   }
 
