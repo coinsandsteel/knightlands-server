@@ -226,14 +226,12 @@ export class AprilPlayground {
   // TODO implement
   public moveHero(cardId: string, index: number): boolean {
     // Decide if hero can go there depending on card class
-    // Also, Hero is not allowed to attack boss if minions are alive
-    // const canKillBoss = all the enemies are dead except the boss
-    const card = this._map.croupier.getCardById(cardId);
-    if (!card || !card.hasNextCell(index)) {
+    if (!this.canMoveTo(cardId, index)) {
       return false;
     }
-
-    const enemyOnTheSpot = this.findUnitByIndex(this.hero.index);
+    
+    // Hero is not allowed to attack boss if minions are alive
+    const enemyOnTheSpot = this.findUnitByIndex(index);
     if (
       enemyOnTheSpot 
       && 
@@ -325,24 +323,21 @@ export class AprilPlayground {
     if (enemy.unitClass === april.UNIT_CLASS_JACK) {
       const indexes = this._map.movement.getIndex(enemy.index);
 
-      let nextEnemiesIndexes = [
+      let nextEnemies = [
         [indexes.horizontal - 1, indexes.vertical - 1, enemy.index - 6],
         [indexes.horizontal - 1, indexes.vertical + 1, enemy.index - 4],
         [indexes.horizontal + 1, indexes.vertical - 1, enemy.index + 4],
         [indexes.horizontal + 1, indexes.vertical + 1, enemy.index + 6],
-      ].filter(entry => entry[0] >= 0 && entry[0] <= 4 && entry[1] >= 0 && entry[1] <= 4);
-
-      const nextEnemies = Array.from(
-        { length: 4 }, 
-        (_, i) => {
-          return this.makeUnit({ id: null, unitClass: april.UNIT_CLASS_CLOWN, index: nextEnemiesIndexes[i][2] })
-        }
-      )
+      ]
+      .filter(entry => entry[0] >= 0 && entry[0] <= 4 && entry[1] >= 0 && entry[1] <= 4)
+      .map(entry => this.makeUnit({
+        id: null, unitClass: april.UNIT_CLASS_CLOWN, index: entry[2] 
+      }));
 
       this._units.push(...nextEnemies);
     }
 
-    this._units = this.units.filter((unit) => unit.index === enemy.index);
+    this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
   }
 
   protected findUnitByIndex(index: number): Unit|undefined {
