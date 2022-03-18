@@ -148,9 +148,11 @@ export class AprilPlayground {
     return unitInstance;
   }
 
-  // TODO implement
-  public allEnemiesKilled(): boolean  {
-    return false;
+  public allEnemiesKilled(includingBoss: boolean): boolean  {
+    const unitsLast = this._units.filter(
+      unit => unit.unitClass !== april.UNIT_CLASS_HERO && (includingBoss || unit.unitClass !== april.UNIT_CLASS_BOSS)
+    );
+    return !unitsLast.length;
   }
 
   // TODO implement
@@ -237,7 +239,7 @@ export class AprilPlayground {
       && 
       enemyOnTheSpot.unitClass === april.UNIT_CLASS_BOSS
       &&
-      !this.allEnemiesKilled()
+      !this.allEnemiesKilled(false)
     ) {
       return;
     }
@@ -328,21 +330,26 @@ export class AprilPlayground {
         [ 1, -1],
         [ 1,  1],
       ];
-      const nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemy, nextEnemiesRelativeMap);
-      const nextEnemies = nextEnemiesIndexes.map(entry => this.makeUnit({
-        id: null, unitClass: april.UNIT_CLASS_CLOWN, index: entry[2] 
+      const nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemy.index, nextEnemiesRelativeMap);
+      console.log('Add 4 clowns', nextEnemiesIndexes);
+      const nextEnemies = nextEnemiesIndexes.map(index => this.makeUnit({
+        id: null, unitClass: april.UNIT_CLASS_CLOWN, index 
       }));
       this._units.push(...nextEnemies);
     }
     this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
   }
 
-  protected findUnitByIndex(index: number): Unit|undefined {
+  public findUnitByIndex(index: number): Unit|undefined {
     return this.units.find((unit) => unit.index === index);
   }
 
   protected commitUnits(): void {
     this._state.units = this.units.map(unit => unit.serialize());
     this.events.units(this._state.units);
+  }
+
+  public getBusyIndexes() {
+    return this._units.map(unit => unit.index);
   }
 }

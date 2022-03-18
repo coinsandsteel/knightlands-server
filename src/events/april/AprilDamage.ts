@@ -92,7 +92,7 @@ export class AprilDamage {
     }
 
     if (relativeDmgMap) {
-      let visibleDmg = this._map.movement.getVisibleIndexes(unit, relativeDmgMap);
+      let visibleDmg = this._map.movement.getVisibleIndexes(unit.index, relativeDmgMap);
       matrixFunc = (_, i) => {
         if (visibleDmg.includes(i)) return 1;
         return 0;

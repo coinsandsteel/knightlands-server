@@ -39,16 +39,9 @@ const GRAPH = {
 export class AprilMovement {
   protected _map: AprilMap;
   protected route;
-  protected matrix = [
-    [0, 1, 2, 3, 4],
-    [5, 6, 7, 8, 9],
-    [10,11,12,13,14],
-    [15,16,17,18,19],
-    [20,21,22,23,24],
-  ];
 
   constructor (map: AprilMap){
-    this._map =map;
+    this._map = map;
     this.route = new Graph(GRAPH);
   }
 
@@ -56,66 +49,80 @@ export class AprilMovement {
     const path = this.route.path(`${enemyIndex}`, `${heroIndex}`);
     let index = enemyIndex;
     if (path) {
-      index = path.length < 3 ? enemyIndex : +path[1];
+      index = path.length <= 2 ? enemyIndex : +path[1];
+    }
+    if (this._map.playground.findUnitByIndex(index)) {
+      index = enemyIndex;
     }
     return index;
   }
 
   public getRandomNeighborIndex(enemyIndex: number) {
-    const index = _.sample(Object.keys(GRAPH[enemyIndex]));
+    let neighbors = Object.keys(GRAPH[enemyIndex]);
+    let busyCells = this._map.playground.getBusyIndexes();
+    let freeNeighbors = neighbors.filter(x => !busyCells.includes(+x));
+    let index = freeNeighbors.length ? _.sample(freeNeighbors) : enemyIndex;
     return +index;
   }
 
   public getRandomQueenishIndex(enemyIndex: number) {
-    const indexes = this.getIndex(enemyIndex);
-    const currentHorizontalIndex = indexes.horizontal;
-    const nextHorizontalIndex = random.intRange(0,4);
-    
-    if (currentHorizontalIndex === nextHorizontalIndex) {
-      const subMatrix = this.matrix[nextHorizontalIndex].filter(index => index !== enemyIndex)
-      return _.sample(subMatrix);
-    } else {
-      const horizontalIndexDiff = Math.abs(currentHorizontalIndex - nextHorizontalIndex);
-      const currentVerticalIndex = indexes.vertical;
-      
-      const options = [
-        currentVerticalIndex + horizontalIndexDiff,
-        currentVerticalIndex - horizontalIndexDiff,
-        currentVerticalIndex
-      ].filter(option => option >= 0 && option <= 4);
-      const choosedOption = _.sample(options);
+    const relativeMap = [
+      // Up
+      [-4, 0], [-3, 0], [-2, 0], [-1, 0],
+      // Down
+      [1, 0], [2, 0], [3, 0], [4, 0],
+      // Left
+      [0, -1], [0, -2], [0, -3], [0, -4],
+      // Right
+      [0, 1], [0, 2], [0, 3], [0, 4],
+      // Top-left
+      [-4, -4], [-3, -3], [-2, -2], [-1, -1],
+      // Top-right
+      [-4, 4], [-3, 3], [-2, 2], [-1, 1],
+      // Bottom-left
+      [4, -4], [3, -3], [2, -2], [1, -1],
+      // Bottom-right
+      [4, 4], [3, 3], [2, 2], [1, 1],
+    ];
 
-      return _.clone(this.matrix[nextHorizontalIndex][choosedOption]);
-    }
+    let possibleIndexes = this.getVisibleIndexes(enemyIndex, relativeMap);
+    let busyCells = this._map.playground.getBusyIndexes();
+    let freeIndexes = possibleIndexes.filter(x => !busyCells.includes(x));
+    let index = freeIndexes.length ? _.sample(freeIndexes) : enemyIndex;
+    
+    return index;
   }
 
   public getIndex(index: number) {
-    const horizontal = this.matrix.findIndex(arr => arr.includes(index));
-    const vertical = this.matrix[horizontal].findIndex(i => i === index);
+    const horizontal = (index / 5) << 0;
+    const vertical = (index + 5) % 5;
     return {
       vertical,
       horizontal
     };
   }
 
-  public getVisibleIndexes(unit: Unit, relativeIndexes: number[][]): number[] {
-    const indexes = this._map.movement.getIndex(unit.index);
+  public getVisibleIndexes(unitIndex: number, relativeIndexes: number[][]): number[] {
+    const indexes = this._map.movement.getIndex(unitIndex);
     const absoluteIndexes = relativeIndexes.map(row => {
-      return [
-        indexes.horizontal + row[0],
-        indexes.vertical + row[1],
-        this.getOneDimensionIndex(unit.index, indexes.horizontal, indexes.vertical)
-      ];
+      const relativeIndexH = indexes.horizontal + row[0];
+      const relativeIndexV = indexes.vertical + row[1];
+      const absoluteIndex = this.getAbsoluteIndex(relativeIndexH, relativeIndexV);
+      return {
+        h: relativeIndexH, 
+        v: relativeIndexV, 
+        a: absoluteIndex
+      };
     })
     
     const visibleIndexes = absoluteIndexes
-      .filter(entry => entry[0] >= 0 && entry[0] <= 4 && entry[1] >= 0 && entry[1] <= 4)
-      .map(entry => entry[2]);
-    
+      .filter(entry => entry.h >= 0 && entry.h <= 4 && entry.v >= 0 && entry.v <= 4)
+      .map(entry => entry.a);
+
     return visibleIndexes;
   }
 
-  public getOneDimensionIndex(index: number, hIndex: number, vIndex: number) {
-    return index + (hIndex * 5) + vIndex;
+  public getAbsoluteIndex(hIndex: number, vIndex: number) {
+    return (hIndex * 5) + vIndex;
   }
 }

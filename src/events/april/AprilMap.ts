@@ -150,6 +150,14 @@ export class AprilMap {
     if (!validMove) {
       return;
     }
+
+    if (this._playground.allEnemiesKilled(true)) {
+      this.sessionEnd(april.SESSION_RESULT_SUCCESS);
+      this._state.level++;
+      this._events.level(this._state.level);
+      return;
+    }
+    
     this._croupier.cardUsed(cardId);
     this.spendActionPoint();
     
@@ -172,13 +180,6 @@ export class AprilMap {
 
     if (this._state.hp <= 0) {
       this.sessionEnd(april.SESSION_RESULT_FAIL);
-      return;
-    }
-    
-    if (this._playground.allEnemiesKilled()) {
-      this.sessionEnd(april.SESSION_RESULT_SUCCESS);
-      this._state.level++;
-      this._events.level(this._state.level);
       return;
     }
     
