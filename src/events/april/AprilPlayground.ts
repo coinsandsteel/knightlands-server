@@ -228,35 +228,35 @@ export class AprilPlayground {
     // Decide if hero can go there depending on card class
     // Also, Hero is not allowed to attack boss if minions are alive
     // const canKillBoss = all the enemies are dead except the boss
-    if (!this.canMoveTo(cardId, index)) {
+    const card = this._map.croupier.getCardById(cardId);
+    if (!card || !card.hasNextCell(index)) {
       return false;
+    }
+
+    const enemyOnTheSpot = this.findUnitByIndex(this.hero.index);
+    if (
+      enemyOnTheSpot 
+      && 
+      enemyOnTheSpot.unitClass === april.UNIT_CLASS_BOSS
+      &&
+      !this.allEnemiesKilled()
+    ) {
+      return;
     }
 
     // Update hero index
     this.hero.move(index);
 
-    // Handle kill if there's an enemy
-    // if (boss) {
-      // Boss killed
-      // Provide bonus??? Check the doc.
-      // return
-    // }
-    
     // Enemy killed
-    const enemyOnTheSpot = this.findUnitByIndex(this.hero.index);
-    if (
-      enemyOnTheSpot 
-      && 
-      ![april.UNIT_CLASS_BOSS, april.UNIT_CLASS_HERO].includes(enemyOnTheSpot.unitClass)
-    ) {
-      this.killUnitByIndex(this.hero.index);
+    if (enemyOnTheSpot) {
+      // Spawn more enemies if a box was killed
+      this.killEnemy(enemyOnTheSpot);
       // Update damage map (no enemy = no damage around)
       this.updateDamageMap();
     }
 
-    // Spawn more enemies if a box was killed
-
     this.commitUnits();
+    
     return true;
   }
 
@@ -321,8 +321,28 @@ export class AprilPlayground {
     this.events.damage([]);
   }
 
-  protected killUnitByIndex(index: number): void {
-    this._units = this.units.filter((unit) => unit.index === index);
+  protected killEnemy(enemy: Unit): void {
+    if (enemy.unitClass === april.UNIT_CLASS_JACK) {
+      const indexes = this._map.movement.getIndex(enemy.index);
+
+      let nextEnemiesIndexes = [
+        [indexes.horizontal - 1, indexes.vertical - 1, enemy.index - 6],
+        [indexes.horizontal - 1, indexes.vertical + 1, enemy.index - 4],
+        [indexes.horizontal + 1, indexes.vertical - 1, enemy.index + 4],
+        [indexes.horizontal + 1, indexes.vertical + 1, enemy.index + 6],
+      ].filter(entry => entry[0] >= 0 && entry[0] <= 4 && entry[1] >= 0 && entry[1] <= 4);
+
+      const nextEnemies = Array.from(
+        { length: 4 }, 
+        (_, i) => {
+          return this.makeUnit({ id: null, unitClass: april.UNIT_CLASS_CLOWN, index: nextEnemiesIndexes[i][2] })
+        }
+      )
+
+      this._units.push(...nextEnemies);
+    }
+
+    this._units = this.units.filter((unit) => unit.index === enemy.index);
   }
 
   protected findUnitByIndex(index: number): Unit|undefined {

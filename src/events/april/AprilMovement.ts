@@ -36,6 +36,13 @@ const GRAPH = {
 
 export class AprilMovement {
   protected route;
+  protected matrix = [
+    [0, 1, 2, 3, 4],
+    [5, 6, 7, 8, 9],
+    [10,11,12,13,14],
+    [15,16,17,18,19],
+    [20,21,22,23,24],
+  ];
 
   constructor (){
     this.route = new Graph(GRAPH);
@@ -52,23 +59,16 @@ export class AprilMovement {
   }
 
   public getRandomQueenishIndex(enemyIndex: number) {
-    const matrix = [
-      [0, 1, 2, 3, 4],
-      [5, 6, 7, 8, 9],
-      [10,11,12,13,14],
-      [15,16,17,18,19],
-      [20,21,22,23,24],
-    ];
-
-    const currentHorizontalIndex = matrix.findIndex(arr => arr.includes(enemyIndex));
+    const indexes = this.getIndex(enemyIndex);
+    const currentHorizontalIndex = indexes.horizontal;
     const nextHorizontalIndex = random.intRange(0,4);
     
     if (currentHorizontalIndex === nextHorizontalIndex) {
-      const subMatrix = matrix[nextHorizontalIndex].filter(index => index !== enemyIndex)
+      const subMatrix = this.matrix[nextHorizontalIndex].filter(index => index !== enemyIndex)
       return _.sample(subMatrix);
     } else {
       const horizontalIndexDiff = Math.abs(currentHorizontalIndex - nextHorizontalIndex);
-      const currentVerticalIndex = matrix[currentHorizontalIndex].findIndex(index => index === enemyIndex);
+      const currentVerticalIndex = indexes.vertical;
       
       const options = [
         currentVerticalIndex + horizontalIndexDiff,
@@ -77,7 +77,23 @@ export class AprilMovement {
       ].filter(option => option >= 0 && option <= 4);
       const choosedOption = _.sample(options);
 
-      return matrix[nextHorizontalIndex][choosedOption];
+      return _.clone(this.matrix[nextHorizontalIndex][choosedOption]);
     }
+  }
+
+  public getIndex(index: number) {
+    const matrix = [
+      [0, 1, 2, 3, 4],
+      [5, 6, 7, 8, 9],
+      [10,11,12,13,14],
+      [15,16,17,18,19],
+      [20,21,22,23,24],
+    ];
+    const horizontal = matrix.findIndex(arr => arr.includes(index));
+    const vertical = matrix[horizontal].findIndex(i => i === index);
+    return {
+      vertical,
+      horizontal
+    };
   }
 }

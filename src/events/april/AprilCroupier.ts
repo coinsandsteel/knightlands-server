@@ -171,4 +171,9 @@ export class AprilCroupier {
     this._state.usedCards = [];
     this.events.usedCards(0);
   }
+
+  public getCardById(cardId: string): Card|null {
+    const card = this._cards.find(entry => entry.id === cardId);
+    return card || null;
+  }
 }

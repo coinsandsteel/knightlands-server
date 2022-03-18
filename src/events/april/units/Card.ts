@@ -39,4 +39,8 @@ export class Card {
     
     return _.cloneDeep(card);
   };
+
+  public hasNextCell(index: number): boolean {
+    return this._nextCells.includes(index);
+  }
 }

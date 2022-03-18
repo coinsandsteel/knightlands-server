@@ -82,6 +82,10 @@ export class AprilMap {
     return this._playground;
   }
 
+  get croupier(): AprilCroupier {
+    return this._croupier;
+  }
+
   get movement(): AprilMovement {
     return this._movement;
   }
