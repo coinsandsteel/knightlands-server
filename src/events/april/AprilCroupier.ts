@@ -41,6 +41,10 @@ export class AprilCroupier {
     return this._usedCards;
   }
 
+  get deck(): Card[] {
+    return this._deck;
+  }
+
   get hero(): Unit {
     return this._map.playground.hero;
   }
@@ -109,7 +113,7 @@ export class AprilCroupier {
     ) as Card[];
 
     this._deck.push(...deckCardList);
-    this._cardsInQueue = this._deck;
+    this._cardsInQueue = _.cloneDeep(this._deck);
     // Spawn 4 cards
     [ this._cardsInQueue, this._cards ] = this.transferCard(random.shuffle(this._cardsInQueue), this._cards, 4);
 
