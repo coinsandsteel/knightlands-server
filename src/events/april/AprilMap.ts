@@ -137,6 +137,7 @@ export class AprilMap {
     this._events.actionPoints(this._state.actionPoints);
     
     // ##### Stat #####
+    // TODO is there a limit of HP?
     if (this._state.level > 1 && booster === april.BOOSTER_HP) {
       this.upgradeHp();
     }
@@ -166,7 +167,7 @@ export class AprilMap {
       return;
     }
     
-    this._croupier.cardUsed(cardId);
+    this._croupier.heroMoveCallback(cardId);
     this.spendActionPoint();
     
     if (this._state.actionPoints === 0) {

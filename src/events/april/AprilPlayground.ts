@@ -236,7 +236,6 @@ export class AprilPlayground {
     this._state.enemyWasKilled = false;
   }
 
-  // TODO implement
   public moveHero(cardId: string, index: number): boolean {
     // Decide if hero can go there depending on card class
     if (!this.canMoveTo(cardId, index)) {

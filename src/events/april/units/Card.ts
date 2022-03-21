@@ -36,12 +36,16 @@ export class Card {
   }
   
   constructor(card: AprilCardBlueprint, map: AprilMap) {
+    this._map = map;
     this._id = card.id || uuidv4().split('-').pop();
     this._cardClass = card.cardClass;
+    this.setNextCells();
   }
 
-  public activate(): void {};
-  public userStepCallback(): void {};
+  // TODO implement
+  public setNextCells(): void {
+    this._nextCells = [];
+  };
 
   public serialize(): AprilCardBlueprint {
     const card = {

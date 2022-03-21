@@ -100,6 +100,18 @@ export class AprilCroupier {
     this.updateCardsEvent();
   }
 
+  public heroMoveCallback(id: string): void {
+    this.cardUsed(id);
+    this.updateNextCells();
+    this.updateCardsEvent();
+  }
+
+  public updateNextCells(): void {
+    this._cards.forEach((card: Card) => {
+      card.setNextCells();
+    })
+  }
+
   public resetFullDeck(): void {
     this._fullDeck = FULL_DECK;
   }
