@@ -2168,8 +2168,8 @@ class PlayerController extends IPaymentListener {
         return this.april.load();
     }
 
-    async _aprilClaimReward(user, type) {
-        return this.april.claimReward(type);
+    async _aprilClaimReward(user, { type, heroClass }) {
+        return this.april.claimReward(type, heroClass);
     }
 
     async _aprilRankings(user, data) {

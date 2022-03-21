@@ -81,7 +81,7 @@ export class AprilController {
     return this.getState();
   }
 
-  async claimReward(type: string) {
+  async claimReward(type: string, heroClass?: string) {
     switch (type) {
       case april.REWARD_TYPE_HOUR: {
         await this._aprilUser.claimHourReward();
@@ -89,13 +89,16 @@ export class AprilController {
       case april.REWARD_TYPE_DAILY: {
         await this._aprilUser.claimDailyReward();
       }
-      case april.REWARD_TYPE_EVENT: {
+      case april.REWARD_TYPE_RANKING: {
         return await Game.aprilManager.claimRewards(this._user);
+      }
+      case april.REWARD_TYPE_HERO: {
+        // TODO claim hero reward
       }
     }
     this._events.flush();
   }
-
+  
   async purchaseHero(heroClass: string) {
     this._aprilUser.purchaseHero(heroClass);
     this._events.flush();
