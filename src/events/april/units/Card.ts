@@ -2,6 +2,8 @@ import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import * as april from "../../../knightlands-shared/april";
 import { AprilMap } from "../AprilMap";
+import { INVERT_SQUARES, SQUARES } from "../AprilPlayground";
+import { Chess } from "../chess";
 import { AprilCardBlueprint } from "../types";
 
 const CARD_RANKS = {
@@ -44,7 +46,14 @@ export class Card {
 
   // TODO implement
   public setNextCells(): void {
-    this._nextCells = [];
+    const fen = this._map.playground.generate_fen(this.cardClass);
+    const chess = Chess(fen);
+    const moves = chess.moves({
+      square: INVERT_SQUARES[this._map.playground.hero.index],
+      verbose: true,
+      legal: false
+    });
+    this._nextCells = moves.map(move => SQUARES[move.to]);
   };
 
   public serialize(): AprilCardBlueprint {

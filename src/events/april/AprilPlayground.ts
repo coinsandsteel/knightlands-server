@@ -6,17 +6,15 @@ import { AprilPlaygroundState, AprilUnitBlueprint } from "./types";
 import { Hero } from "./units/Hero";
 import { Unit } from "./units/Unit";
 import * as april from "../../knightlands-shared/april";
-import errors from "../../knightlands-shared/errors";
-import { Chess } from "./chess";
 
-const SQUARES = {
+export const SQUARES = {
   a8:   0, b8:   1, c8:   2, d8:   3, e8:   4, 
   a7:   5, b7:   6, c7:   7, d7:   8, e7:   9, 
   a6:  10, b6:  11, c6:  12, d6:  13, e6:  14, 
   a5:  15, b5:  16, c5:  17, d5:  18, e5:  19, 
   a4:  20, b4:  21, c4:  22, d4:  23, e4:  24, 
 };
-const INVERT_SQUARES =
+export const INVERT_SQUARES =
 {
   '0' : 'a8',  '1': 'b8', '2' : 'c8', '3' : 'd8', '4' : 'e8',
   '5' : 'a7',  '6': 'b7', '7' : 'c7', '8' : 'd7', '9' : 'e7',
@@ -165,22 +163,10 @@ export class AprilPlayground {
   // TODO implement
   public canMoveTo(cardId: string, index: number): boolean  {
     const card = this._map.deck.find(card => card.id === cardId);
-    if (card) {
-      const fen = this.generate_fen(card.cardClass);
-      const chess = Chess(fen);
-      const moves = chess.moves({
-        square: INVERT_SQUARES[this.hero.index],
-        verbose: true,
-        legal: false
-      });
-      //console.log(chess.ascii())
-      return moves.some(move => SQUARES[move.to] === index);
-    }
-    return false;
+    return card && card.hasNextCell(index);
   }
 
-
-  private generate_fen(cardClass: string) {
+  public generate_fen(cardClass: string) {
     var empty = 0
     var fen = ''
 
