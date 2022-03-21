@@ -338,6 +338,7 @@ export class AprilPlayground {
       this._units.push(...nextEnemies);
     }
     this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
+    this._map.aprilUser.updateHeroScore(this._map.heroClass, 1);
   }
 
   public findUnitByIndex(index: number): Unit|undefined {

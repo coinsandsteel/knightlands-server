@@ -82,7 +82,7 @@ export class AprilUser {
       entries.push({
         collected: false,
         active: false,
-        quantity: day,
+        quantity: 3,
       });
     }
     return entries;
@@ -147,6 +147,24 @@ export class AprilUser {
   public modifyBalance(currency: string, amount: number) {
     this._state.balance[currency] += amount;
     this._events.balance(currency, this._state.balance[currency]);
+  }
+
+  public updateHeroScore(heroClass: string, amount: number) {
+    this._state.rewards.heroRewards[heroClass].score += amount;
+  }
+
+  async claimHeroReward(heroClass: string) {
+    const targetHero = april.HEROES.find((entry) => entry.heroClass === heroClass);
+    if (!targetHero) {
+      throw errors.IncorrectArguments;
+    }
+    if (this._state.rewards.heroRewards[heroClass].score < targetHero.rewardGoal) {
+      throw errors.NotEnoughResource;
+    }
+    await this._user.inventory.addItemTemplates(targetHero.rewardItems);
+
+    this._state.rewards.heroRewards[heroClass].claimed = true;
+    this._events.heroRewards(this._state.rewards.heroRewards);
   }
 
   public addSessionGold(amount: number): void {

@@ -93,7 +93,7 @@ export class AprilController {
         return await Game.aprilManager.claimRewards(this._user);
       }
       case april.REWARD_TYPE_HERO: {
-        // TODO claim hero reward
+        await this._aprilUser.claimHeroReward(heroClass);
       }
     }
     this._events.flush();

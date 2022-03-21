@@ -19,7 +19,11 @@ export class AprilEvents {
   hourRewardClaimed(timestamp) {
     this._events.hourRewardClaimed = timestamp;
   }
-  
+
+  heroRewards(entries) {
+    this._events.heroRewards = entries
+  }
+
   level(value) {
     this._events.level = value;
   }
