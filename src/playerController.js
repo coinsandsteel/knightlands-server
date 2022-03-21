@@ -299,13 +299,14 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
         this._socket.on(Operations.AprilClaimReward, this._gameHandler(this._aprilClaimReward.bind(this)));
         this._socket.on(Operations.AprilRankings, this._gameHandler(this._aprilRankings.bind(this)));
+        this._socket.on(Operations.AprilHeroStat, this._gameHandler(this._aprilHeroStat.bind(this)));
         this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
         this._socket.on(Operations.AprilRestart, this._gameHandler(this._aprilRestart.bind(this)));
         this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
         this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
         this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
         this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
-        this._socket.on(Operations.AprilAprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
+        this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
         this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
@@ -2177,6 +2178,13 @@ class PlayerController extends IPaymentListener {
             hasRewards: await Game.aprilManager.userHasRewards(user),
             timeLeft: Game.aprilManager.timeLeft,
         };
+    }
+
+    async _aprilHeroStat(user, data) {
+        if (!isString(heroClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.heroStat(heroClass);
     }
 
     async _aprilPurchaseHero(user, heroClass) {

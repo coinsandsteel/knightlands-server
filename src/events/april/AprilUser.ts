@@ -1,7 +1,7 @@
 import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import { AprilEvents } from "./AprilEvents";
-import { AprilRewardDayData, AprilUserState } from "./types";
+import { AprilRewardDayData, AprilRewardHeroesData, AprilUserState } from "./types";
 import * as april from "../../knightlands-shared/april";
 import game from "../../game";
 
@@ -39,8 +39,20 @@ export class AprilUser {
         sessionGold: 0,
         gold: 0
       },
-      dailyRewards: this.getInitialDailyrewards(),
-      hourRewardClaimed: null,
+      rewards: {
+        dailyRewards: this.getInitialDailyrewards(),
+        heroRewards: {
+          [april.HERO_CLASS_KNIGHT]: { score: 0, claimed: false },
+          [april.HERO_CLASS_PALADIN]: { score: 0, claimed: false },
+          [april.HERO_CLASS_ROGUE]: { score: 0, claimed: false }
+        },
+        hourReward: {
+          // First hour starts after daily reward was received
+          // nextClaim resets after user claim hour reward
+          nextRewardAvailable: null, // timestamp, sec
+          left: 3
+        }
+      },
       heroes: []
     } as AprilUserState;
 
@@ -49,7 +61,7 @@ export class AprilUser {
 
   private setEventDay() {
     const currentDate = new Date().toISOString().split("T")[0];
-    const currentDayIndex = this._state.dailyRewards.findIndex(
+    const currentDayIndex = this._state.rewards.dailyRewards.findIndex(
       entry => entry.date && entry.date === currentDate
     );
 
@@ -58,7 +70,7 @@ export class AprilUser {
       return;
     }
 
-    const firstUncollectedDayIndex = this._state.dailyRewards.findIndex(
+    const firstUncollectedDayIndex = this._state.rewards.dailyRewards.findIndex(
       entry => !entry.date && !entry.collected
     );
     this.day = firstUncollectedDayIndex + 1;
@@ -75,9 +87,9 @@ export class AprilUser {
     }
     return entries;
   }
-
+  
   async setActiveReward() {
-    this._state.dailyRewards = this._state.dailyRewards.map((entry, index) => {
+    this._state.rewards.dailyRewards = this._state.rewards.dailyRewards.map((entry, index) => {
       const isCurrentDay = index+1 === this.day;
       const newEntry = {
         ...entry,
@@ -85,7 +97,7 @@ export class AprilUser {
       };
       return newEntry;
     });
-    this._events.dailyRewards(this._state.dailyRewards);
+    this._events.dailyRewards(this._state.rewards.dailyRewards);
     this._events.flush();
   }
 
@@ -94,7 +106,7 @@ export class AprilUser {
   }
 
   async claimDailyReward() {
-    const entry = this._state.dailyRewards[this.day - 1];
+    const entry = this._state.rewards.dailyRewards[this.day - 1];
 
     if (entry.collected) {
       throw errors.DailyAprilRewardCollected;
@@ -105,10 +117,10 @@ export class AprilUser {
       quantity: entry.quantity
     }]);
 
-    this._state.dailyRewards[this.day - 1].collected = true;
-    this._state.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
+    this._state.rewards.dailyRewards[this.day - 1].collected = true;
+    this._state.rewards.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
-    this._events.dailyRewards(this._state.dailyRewards);
+    this._events.dailyRewards(this._state.rewards.dailyRewards);
     this._events.flush();
   }
 
@@ -168,5 +180,10 @@ export class AprilUser {
       this._user.id, 
       this._state.balance.sessionGold
     );
+  }
+
+  // TODO add goal number
+  public getHeroStat(): AprilRewardHeroesData {
+    return this._state.rewards.heroRewards;
   }
 }

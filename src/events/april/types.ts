@@ -1,3 +1,5 @@
+import * as april from "../../knightlands-shared/april";
+
 export interface AprilSaveData {
   user: AprilUserState;
   map: AprilMapState;
@@ -8,9 +10,31 @@ export interface AprilUserState {
     sessionGold: number;
     gold: number;
   };
-  dailyRewards: AprilRewardDayData[];
+  rewards: {
+    dailyRewards: AprilRewardDayData[];
+    heroRewards: AprilRewardHeroesData;
+    hourReward: {
+      // nextRewardAvailable = 
+      //   daily reward received + 1 hr,
+      //   then
+      //   hour reward claimed + 1 hr
+      nextRewardAvailable: number|null;
+      left: number;
+    };
+  }
   hourRewardClaimed: number|null;
   heroes: string[];
+}
+
+export interface AprilRewardHeroesData {
+  [april.HERO_CLASS_KNIGHT]: AprilRewardHeroData,
+  [april.HERO_CLASS_PALADIN]: AprilRewardHeroData,
+  [april.HERO_CLASS_ROGUE]: AprilRewardHeroData
+}
+
+export interface AprilRewardHeroData {
+  score: number;
+  claimed: boolean;
 }
 
 export interface AprilRewardDayData {

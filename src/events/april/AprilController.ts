@@ -101,6 +101,10 @@ export class AprilController {
     this._events.flush();
   }
   
+  async heroStat() {
+    this._aprilUser.getHeroStat();
+  }
+  
   async restart(heroClass: string) {
     this._aprilMap.restart(heroClass);
     this._events.flush();
