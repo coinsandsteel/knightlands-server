@@ -163,6 +163,12 @@ export class AprilUser {
     if (!targetHero) {
       throw errors.IncorrectArguments;
     }
+
+    const canPurchase = heroClass !== april.HERO_CLASS_ROGUE || this._state.heroes.some(hero => hero === april.HERO_CLASS_PALADIN);
+    if (!canPurchase) {
+      throw errors.IncorrectArguments;
+    }
+
     if (this.gold < targetHero.price) {
       throw errors.NotEnoughCurrency;
     }
