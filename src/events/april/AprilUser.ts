@@ -188,7 +188,6 @@ export class AprilUser {
     );
   }
 
-  // TODO add goal number
   public getHeroStat(): AprilRewardHeroesData {
     return this._state.rewards.heroRewards;
   }

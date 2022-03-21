@@ -98,7 +98,7 @@ export class AprilController {
     }
     this._events.flush();
   }
-  
+
   async purchaseHero(heroClass: string) {
     this._aprilUser.purchaseHero(heroClass);
     this._events.flush();
