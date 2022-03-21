@@ -97,13 +97,13 @@ export class AprilCroupier {
     const cardIndex = this._state.cards.findIndex(card => card.id === id);
     this.usedCards.push(this.cards[cardIndex]);
     this.cards.splice(cardIndex, 1);
-    this.updateCardsEvent();
+    this.commitCards();
   }
 
   public heroMoveCallback(id: string): void {
     this.cardUsed(id);
     this.updateNextCells();
-    this.updateCardsEvent();
+    this.commitCards();
   }
 
   public updateNextCells(): void {
@@ -130,7 +130,7 @@ export class AprilCroupier {
     }
 
     this.resetTable();
-    this.updateCardsEvent();
+    this.commitCards();
   }
   
   public respawnCards(): void {
@@ -143,7 +143,7 @@ export class AprilCroupier {
     } else {
       this.resetTable();
     }
-    this.updateCardsEvent();
+    this.commitCards();
   }
   
   protected resetTable() {
@@ -208,7 +208,7 @@ export class AprilCroupier {
     }
   }
 
-  protected updateCardsEvent() {
+  protected commitCards() {
     this._state.cardsInQueue = this._cardsInQueue.map(card => card.serialize());
     this.events.cardsInQueue(this._state.cardsInQueue.length);
 
