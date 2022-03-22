@@ -120,6 +120,9 @@ export class AprilUser {
     this._state.rewards.dailyRewards[this.day - 1].collected = true;
     this._state.rewards.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
+    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIOD;
+    this._state.rewards.hourReward.left = 3;
+
     this._events.dailyRewards(this._state.rewards.dailyRewards);
     this._events.flush();
   }
@@ -127,10 +130,14 @@ export class AprilUser {
   async claimHourReward() {
     if (
       // We should allow claim if it's empty 
-      this._state.hourRewardClaimed
-      &&
-      // "Reward + 1" hr should be relatively lower (in the past) of "now" to allow claim.
-      this._state.hourRewardClaimed + PERIODIC_REWARD_PERIOD >= game.nowSec
+      (
+        this._state.rewards.hourReward.nextRewardAvailable
+        &&
+        // "Reward + 1" hr should be relatively lower (in the past) of "now" to allow claim.
+        this._state.rewards.hourReward.nextRewardAvailable >= game.nowSec
+      )
+      ||
+      this._state.rewards.hourReward.left <= 0
     ) {
       throw errors.IncorrectArguments;
     }
@@ -140,8 +147,9 @@ export class AprilUser {
       quantity: 1
     }]);
 
-    this._state.hourRewardClaimed = game.nowSec;
-    this._events.hourRewardClaimed(this._state.hourRewardClaimed);
+    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIOD;
+    this._state.rewards.hourReward.left--;
+    this._events.hourReward(this._state.rewards.hourReward);
   }
 
   public modifyBalance(currency: string, amount: number) {

@@ -16,8 +16,8 @@ export class AprilEvents {
     this._events.dailyRewards = entries;
   }
 
-  hourRewardClaimed(timestamp) {
-    this._events.hourRewardClaimed = timestamp;
+  hourReward(entry) {
+    this._events.hourReward = entry;
   }
 
   heroRewards(entries) {
