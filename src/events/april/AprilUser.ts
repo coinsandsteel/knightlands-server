@@ -5,7 +5,7 @@ import { AprilRewardDayData, AprilRewardHeroesData, AprilUserState } from "./typ
 import * as april from "../../knightlands-shared/april";
 import game from "../../game";
 
-const PERIODIC_REWARD_PERIOD = 60 * 60; // 1 hour
+const PERIODIC_REWARD_PERIODS = [10 * 60, 60 * 60, 60 * 60 * 3]; // 10 mins, 1 hour, 3 hour
 
 export class AprilUser {
   private _state: AprilUserState;
@@ -78,11 +78,11 @@ export class AprilUser {
 
   getInitialDailyrewards(): AprilRewardDayData[] {
     const entries = [];
-    for (let day = 1; day <= 15; day++) {
+    for (let day = 1; day <= 10; day++) {
       entries.push({
         collected: false,
         active: false,
-        quantity: 3,
+        quantity: Math.ceil(day/2),
       });
     }
     return entries;
@@ -120,8 +120,8 @@ export class AprilUser {
     this._state.rewards.dailyRewards[this.day - 1].collected = true;
     this._state.rewards.dailyRewards[this.day - 1].date = new Date().toISOString().split("T")[0];
 
-    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIOD;
     this._state.rewards.hourReward.left = 3;
+    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIODS[0];
 
     this._events.dailyRewards(this._state.rewards.dailyRewards);
     this._events.flush();
@@ -147,8 +147,8 @@ export class AprilUser {
       quantity: 1
     }]);
 
-    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIOD;
     this._state.rewards.hourReward.left--;
+    this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIODS[3 - this._state.rewards.hourReward.left];
     this._events.hourReward(this._state.rewards.hourReward);
   }
 
