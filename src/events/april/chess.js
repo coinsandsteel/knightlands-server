@@ -610,9 +610,6 @@ var Chess = function (fen) {
           while ((((square + offset) & 0xf0) <= 0x40) && (((square + offset) & 0x0f) <= 0x04)) {
             const oldSquare = square;
             square += offset
-            if (piece.type === 'n' || piece.type === 'k') {
-              break
-            }
             if (board[square] != null) {
               if (board[square].color === us) {
                 add_move(board, moves, i, oldSquare, BITS.CAPTURE)
@@ -621,9 +618,12 @@ var Chess = function (fen) {
               add_move(board, moves, i, square, BITS.CAPTURE)
               break
             }
+            if (piece.type === 'n' || piece.type === 'k') {
+              break
+            }
           }
           
-          if (board[square] == null && piece.type !== 'n' || piece.type !== 'k') {
+          if (board[square] == null) {
             add_move(board, moves, i, square, BITS.NORMAL)
           }
         }
