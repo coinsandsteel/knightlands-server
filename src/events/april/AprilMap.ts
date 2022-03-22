@@ -96,6 +96,10 @@ export class AprilMap {
     return this._state.heroClass;
   }
 
+  get level(): number {
+    return this._state.level;
+  }
+
   public init() {
     this.wakeUp(this._state);
   }
@@ -159,7 +163,7 @@ export class AprilMap {
     
     const oldHeroIndex = this._playground.hero.index;
     console.log('[Move start]', { oldHeroIndex, newHeroIndex: index});
-    const validMove = this._playground.moveHero(cardId, index);
+    const validMove = this._playground.moveHero(index);
     if (!validMove) {
       return;
     }

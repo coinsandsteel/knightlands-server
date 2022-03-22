@@ -7,6 +7,123 @@ import { Hero } from "./units/Hero";
 import { Unit } from "./units/Unit";
 import * as april from "../../knightlands-shared/april";
 
+const LEVELS = [
+  // Level 1
+  [
+    { t: 1, c: 1, indexes: [6, 12] }
+  ],
+  // Level 2
+  [
+    { t: 0, c: 3 },
+    { t: 3, c: 0 },
+    { t: 1, c: 2 },
+    { t: 2, c: 1 },
+  ],
+  // Level 3
+  [
+    { t: 1, c: 1, j: 1 },
+    { t: 0, c: 2, j: 1 },
+    { t: 2, c: 0, j: 1 },
+  ],
+  // Level 4
+  [
+    { t: 1, c: 1, j: 2, h: 0 },
+    { t: 2, c: 0, j: 2, h: 0 },
+    { t: 0, c: 2, j: 2, h: 0 },
+    { t: 1, c: 1, j: 1, h: 1 },
+    { t: 2, c: 0, j: 1, h: 1 },
+    { t: 0, c: 2, j: 1, h: 1 },
+    { t: 0, c: 2, j: 0, h: 2 },
+    { t: 2, c: 0, j: 0, h: 2 },
+    { t: 1, c: 1, j: 0, h: 2 },
+  ],
+  // Level 5
+  [
+    { t: 2, c: 0, j: 2, h: 1 },
+    { t: 0, c: 2, j: 2, h: 1 },
+    { t: 2, c: 0, j: 3, h: 0 },
+    { t: 0, c: 2, j: 3, h: 0 },
+    { t: 2, c: 0, j: 0, h: 3 },
+    { t: 0, c: 2, j: 0, h: 3 },
+    { t: 0, c: 2, j: 1, h: 2 },
+    { t: 2, c: 0, j: 1, h: 2 },
+  ],
+  // Level 6
+  [
+    { t: 2, c: 1, j: 2, h: 1 },
+    { t: 1, c: 2, j: 2, h: 1 },
+    { t: 2, c: 1, j: 3, h: 0 },
+    { t: 1, c: 2, j: 3, h: 0 },
+    { t: 2, c: 1, j: 0, h: 3 },
+    { t: 1, c: 2, j: 0, h: 3 },
+    { t: 1, c: 2, j: 1, h: 2 },
+    { t: 2, c: 1, j: 1, h: 2 },
+    { t: 0, c: 3, j: 2, h: 1 },
+    { t: 3, c: 0, j: 2, h: 1 },
+    { t: 3, c: 0, j: 3, h: 0 },
+    { t: 0, c: 3, j: 3, h: 0 },
+    { t: 3, c: 0, j: 0, h: 3 },
+    { t: 0, c: 3, j: 0, h: 3 },
+    { t: 0, c: 3, j: 1, h: 2 },
+    { t: 3, c: 0, j: 1, h: 2 },
+  ],
+  // Level 7
+  [
+    { t: 2, c: 2, j: 2, h: 1 },
+    { t: 2, c: 2, j: 1, h: 2 },
+    { t: 3, c: 1, j: 2, h: 1 },
+    { t: 1, c: 3, j: 2, h: 1 },
+    { t: 3, c: 1, j: 1, h: 2 },
+    { t: 1, c: 3, j: 1, h: 2 },
+    { t: 4, c: 0, j: 2, h: 1 },
+    { t: 4, c: 0, j: 1, h: 2 },
+    { t: 0, c: 4, j: 2, h: 1 },
+    { t: 0, c: 4, j: 1, h: 2 },
+    { t: 0, c: 4, j: 3, h: 0 },
+    { t: 4, c: 0, j: 3, h: 0 },
+    { t: 3, c: 1, j: 3, h: 0 },
+    { t: 2, c: 2, j: 3, h: 0 },
+    { t: 1, c: 3, j: 3, h: 0 },
+    { t: 3, c: 1, j: 0, h: 3 },
+    { t: 2, c: 2, j: 0, h: 3 },
+    { t: 1, c: 3, j: 0, h: 3 },
+    { t: 0, c: 4, j: 0, h: 3 },
+    { t: 4, c: 0, j: 0, h: 3 },
+  ],
+  // Level 8
+  [
+    { t: 4, c: 0, j: 0, h: 4 },
+    { t: 3, c: 1, j: 0, h: 4 },
+    { t: 2, c: 2, j: 0, h: 4 },
+    { t: 1, c: 3, j: 0, h: 4 },
+    { t: 0, c: 4, j: 0, h: 4 },
+    { t: 4, c: 0, j: 4, h: 0 },
+    { t: 3, c: 1, j: 4, h: 0 },
+    { t: 2, c: 2, j: 4, h: 0 },
+    { t: 1, c: 3, j: 4, h: 0 },
+    { t: 0, c: 4, j: 4, h: 0 },
+    { t: 4, c: 0, j: 2, h: 2 },
+    { t: 3, c: 1, j: 2, h: 2 },
+    { t: 2, c: 2, j: 2, h: 2 },
+    { t: 1, c: 3, j: 2, h: 2 },
+    { t: 0, c: 4, j: 2, h: 2 },
+    { t: 0, c: 4, j: 1, h: 3 },
+    { t: 1, c: 3, j: 1, h: 3 },
+    { t: 2, c: 2, j: 1, h: 3 },
+    { t: 3, c: 1, j: 1, h: 3 },
+    { t: 4, c: 0, j: 1, h: 3 },
+    { t: 0, c: 4, j: 3, h: 1 },
+    { t: 1, c: 3, j: 3, h: 1 },
+    { t: 2, c: 2, j: 3, h: 1 },
+    { t: 3, c: 1, j: 3, h: 1 },
+    { t: 4, c: 0, j: 3, h: 1 },
+  ],
+  // Level 9
+  [
+    { j: 2, h: 2, b: 1 },
+  ],
+];
+
 export class AprilPlayground {
   protected _state: AprilPlaygroundState;
   protected _map: AprilMap;
@@ -79,21 +196,54 @@ export class AprilPlayground {
     this.updateDamageMap();
   }
   
-  // TODO implement
   protected spawnUnits(): void {
-    const demoUnits = [
-      //{ unitClass: april.UNIT_CLASS_TEETH, index: 0 },
-      { unitClass: april.UNIT_CLASS_CLOWN, index: 17 },
-      //{ unitClass: april.UNIT_CLASS_JACK, index: 6 },
-      //{ unitClass: april.UNIT_CLASS_HARLEQUIN, index: 12 },
-      //{ unitClass: april.UNIT_CLASS_BOSS, index: 12 },
-      { unitClass: april.UNIT_CLASS_HERO, index: 22 },
-    ];
+    this._units = [];
+    const levelPool = _.cloneDeep(_.sample(LEVELS[this._map.level - 1]));
+    
+    let indexes = _.shuffle(
+      levelPool.indexes 
+      ||
+      Array.from({ length: 25 }, (_, i) => i)
+      )
+      .filter(index => index !== 22 && (!levelPool.b || index !== 12));
+      
+    //console.log('[Spawn pool]', levelPool);
 
-    // Spawn enemies according to level
-    this._units = demoUnits.map((entry): Unit => {
-      return this.makeUnit({ id: null, ...entry });
-    });
+    for (let index in levelPool) {
+      let quantity = levelPool[index];
+      let unitClass = {
+        t: april.UNIT_CLASS_TEETH,
+        c: april.UNIT_CLASS_CLOWN,
+        j: april.UNIT_CLASS_JACK,
+        h: april.UNIT_CLASS_HARLEQUIN,
+        b: april.UNIT_CLASS_BOSS,
+      }[index];
+
+      if (!unitClass) {
+        continue;
+      }
+
+      //console.log('[Spawn class]', { unitClass, quantity });
+      
+      for (let i = 0; i < quantity; i++) {
+        let unitIndex = unitClass === april.UNIT_CLASS_BOSS ? 12 : indexes.pop();
+        let unit = this.makeUnit({ 
+          id: null, 
+          unitClass, 
+          index: unitIndex
+        });
+        //console.log('[Spawn unit]', unit.serialize());
+        this._units.push(unit);
+      }
+    }
+
+    this._units.push(
+      this.makeUnit({ 
+        id: null, 
+        unitClass: april.UNIT_CLASS_HERO, 
+        index: 22
+      })
+    );
 
     this.commitUnits();
   }
@@ -107,10 +257,7 @@ export class AprilPlayground {
   {
     let unitInstance = null;
     switch (unit.unitClass) {
-      case april.UNIT_CLASS_HERO:{
-        unitInstance = new Hero(unit, this._map);
-        break;
-      }
+      case april.UNIT_CLASS_HERO:
       case april.UNIT_CLASS_BOSS:
       case april.UNIT_CLASS_HARLEQUIN:
       case april.UNIT_CLASS_JACK:
@@ -135,7 +282,7 @@ export class AprilPlayground {
     this._state.enemyWasKilled = false;
   }
 
-  public moveHero(cardId: string, index: number): boolean {
+  public moveHero(index: number): boolean {
     // Hero is not allowed to attack boss if minions are alive
     const enemyOnTheSpot = this.findUnitByIndex(index);
     if (
@@ -165,12 +312,6 @@ export class AprilPlayground {
     return true;
   }
 
-  // TODO implement
-  public heroDied(): boolean {
-    return false;
-  }
-
-  // TODO implement
   public moveEnemies() {
     // Re-calc enemies positions
     // Update enemies positions
