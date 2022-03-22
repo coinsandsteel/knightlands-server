@@ -73,7 +73,7 @@ export class AprilPlayground {
     });
   }
 
-  public startSession() {
+  public enterLevel() {
     this._state.enemyWasKilled = false;
     this.spawnUnits();
     this.updateDamageMap();
@@ -82,10 +82,10 @@ export class AprilPlayground {
   // TODO implement
   protected spawnUnits(): void {
     const demoUnits = [
-      { unitClass: april.UNIT_CLASS_TEETH, index: 0 },
-      { unitClass: april.UNIT_CLASS_CLOWN, index: 3 },
-      { unitClass: april.UNIT_CLASS_JACK, index: 6 },
-      { unitClass: april.UNIT_CLASS_HARLEQUIN, index: 12 },
+      //{ unitClass: april.UNIT_CLASS_TEETH, index: 0 },
+      { unitClass: april.UNIT_CLASS_CLOWN, index: 17 },
+      //{ unitClass: april.UNIT_CLASS_JACK, index: 6 },
+      //{ unitClass: april.UNIT_CLASS_HARLEQUIN, index: 12 },
       //{ unitClass: april.UNIT_CLASS_BOSS, index: 12 },
       { unitClass: april.UNIT_CLASS_HERO, index: 22 },
     ];

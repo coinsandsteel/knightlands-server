@@ -49,10 +49,6 @@ export class AprilCroupier {
     return this._usedCards;
   }
 
-  get deck(): Card[] {
-    return this._deck;
-  }
-  
   constructor(state: AprilCroupierState|null, map: AprilMap) {
     this._map = map;
 
@@ -105,14 +101,17 @@ export class AprilCroupier {
     })
   }
 
-  public startSession(extendDeck: boolean) {
+  public enterLevel(extendDeck: boolean) {
     this._queenProvided = false;
-    this._deck = Array.from(
-      { length: STARTING_DECK.length }, 
-      (_, i) => { 
-        return this.makeCard({ id: null, cardClass: STARTING_DECK[i], nextCells: [] });
-      }
-    ) as Card[];
+
+    if (!this._deck.length) {
+      this._deck = Array.from(
+        { length: STARTING_DECK.length }, 
+        (_, i) => { 
+          return this.makeCard({ id: null, cardClass: STARTING_DECK[i], nextCells: [] });
+        }
+      ) as Card[];
+    }
 
     if (extendDeck && this._state.newCard) {
       this.extendDeck();
@@ -134,22 +133,13 @@ export class AprilCroupier {
     }
 
     this.updateNextCells();
-
-    /*this._cardsInQueue.forEach(card => {
-      console.log('[Map check] _cardsInQueue', { mapEqual: this._map === card.map});
-    });
-
-    this._cards.forEach(card => {
-      console.log('[Map check] _cards', { mapEqual: this._map === card.map});
-    });
-
-    this._usedCards.forEach(card => {
-      console.log('[Map check] _usedCards', { mapEqual: this._map === card.map});
-    });*/
-
     this.commitCards();
   }
   
+  public reset() {
+    this._deck = [];
+  }
+
   protected resetTable() {
     this._cardsInQueue = _.clone(this._deck);
     this.refreshCards();

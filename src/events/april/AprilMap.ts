@@ -92,10 +92,6 @@ export class AprilMap {
     return this._movement;
   }
 
-  get deck(): Card[] {
-    return this._croupier.deck;
-  }
-
   get heroClass(): string {
     return this._state.heroClass;
   }
@@ -114,6 +110,7 @@ export class AprilMap {
     this._state.maxHp = 3;
     this._events.hp(this._state.hp);
 
+    this._croupier.reset();
     this.enterLevel();
   }
 
@@ -142,8 +139,8 @@ export class AprilMap {
     }
 
     // ##### Subsystems #####
-    this._playground.startSession();
-    this._croupier.startSession(booster === april.BOOSTER_CARD);
+    this._playground.enterLevel();
+    this._croupier.enterLevel(booster === april.BOOSTER_CARD);
   }
   
   protected upgradeHp(): void {
