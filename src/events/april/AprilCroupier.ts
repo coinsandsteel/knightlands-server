@@ -83,10 +83,8 @@ export class AprilCroupier {
     this._state.usedCards = state.usedCards;
   }
 
-  public cardUsed(card: Card, storeInUsed: boolean): void {
-    if (storeInUsed) {
-      this._usedCards.push(card);
-    }
+  public cardUsed(card: Card): void {
+    this._usedCards.push(card);
     this._cards = this._cards.filter(
       entry => entry.id !== card.id
     );
@@ -94,7 +92,9 @@ export class AprilCroupier {
 
   public heroMoveCallback(card: Card, oldHeroIndex: number, newHeroIndex: number): void {
     const queenSpawned = this.spawnQueen(card, oldHeroIndex, newHeroIndex);
-    this.cardUsed(card, !queenSpawned);
+    if (!queenSpawned) {
+      this.cardUsed(card);
+    }
     this.updateNextCells();
     this.commitCards();
   }
@@ -204,9 +204,12 @@ export class AprilCroupier {
       &&
       !this._queenProvided
     ) {
-      const queenCard = this.makeCard({ id: null, cardClass: april.CARD_CLASS_QUEEN, nextCells: [] });
-      this._deck.push(queenCard);
-      this._cards.push(queenCard);
+      const deckCardIndex = this._deck.findIndex(entry => entry.id === card.id);
+      this._deck[deckCardIndex].setCardClass(april.CARD_CLASS_QUEEN);
+
+      const cardIndex = this._cards.findIndex(entry => entry.id === card.id);
+      this._cards[cardIndex].setCardClass(april.CARD_CLASS_QUEEN);
+
       this._queenProvided = true;
       return true;
     }

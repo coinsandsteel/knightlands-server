@@ -87,6 +87,11 @@ export class Card {
     return this._nextCells.includes(index);
   }
 
+  public setCardClass(cardClass: string): void {
+    this._cardClass = cardClass;
+    this.setNextCells();
+  }
+
   public generateFen() {
     let empty = 0;
     let fen = '';
