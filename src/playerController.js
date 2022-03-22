@@ -2181,10 +2181,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _aprilHeroStat(user, data) {
-        if (!isString(heroClass)) {
-            throw Errors.IncorrectArguments;
-        }
-        return this.april.heroStat(heroClass);
+        return this.april.heroStat();
     }
 
     async _aprilPurchaseHero(user, heroClass) {

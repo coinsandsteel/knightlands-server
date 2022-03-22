@@ -111,7 +111,7 @@ export class AprilController {
   }
   
   async heroStat() {
-    this._aprilUser.getHeroStat();
+    return this._aprilUser.getHeroStat();
   }
   
   async restart(heroClass: string) {
