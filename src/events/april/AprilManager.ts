@@ -7,7 +7,7 @@ import User from "../../user";
 import errors from "../../knightlands-shared/errors";
 
 const RANKS_PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 10000; //60 * 15 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 900000; // 60 * 15 * 1000 (15 minutes)
 
 export class AprilManager {
   private _meta: any;
@@ -51,6 +51,14 @@ export class AprilManager {
     return currentDayStart.getTime();
   }
 
+  get meta() {
+    return this._meta;
+  }
+
+  get lastReset() {
+    return this._meta.lastReset;
+  }
+
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
 
@@ -58,7 +66,7 @@ export class AprilManager {
     this._rankCollection.createIndex({ maxSessionGold: 1 });
     this._rankCollection.createIndex({ order: 1 });
 
-    if (!this._meta.lastReset) {
+    if (!this.lastReset) {
       await this.setLastRankingsResetTimestamp(
         this.currentDayStart
       );
@@ -88,11 +96,6 @@ export class AprilManager {
     return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
   }
 
-  getMeta() {
-    return this._meta;
-  }
-
-
   watchResetRankings() {
     setInterval(async () => {
       await this.commitResetRankings();
@@ -104,6 +107,7 @@ export class AprilManager {
     if (currentDayStart <= this._lastRankingsResetTimestamp) {
       return;
     }
+
     await Game.dbClient.withTransaction(async (db) => {
       await db.collection(Collections.AprilRanks).deleteMany({});
       await db.collection(Collections.Meta).updateOne(
@@ -112,13 +116,17 @@ export class AprilManager {
         { upsert: true }
       );
     });
+    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" });
+    if (currentDayStart === this.lastReset) {
+      this._lastRankingsResetTimestamp = currentDayStart;
+    }
   }
 
   async setLastRankingsResetTimestamp(value: number) {
     this._lastRankingsResetTimestamp = value;
 
     await Game.db.collection(Collections.Meta).updateOne(
-      { _id: 'march_meta' },
+      { _id: 'april_meta' },
       { $set: { lastReset: value } },
       { upsert: true }
     );
@@ -202,7 +210,7 @@ export class AprilManager {
     return false;
   }
 
-  async isClaimedReward(user: User) {
+  async hasClaimedReward(user: User) {
     const userRecord = await this._rankCollection.findOne({ _id: user.id });
     return userRecord ? !!userRecord.claimed : false;
   }
@@ -212,7 +220,7 @@ export class AprilManager {
       throw errors.IncorrectArguments;
     }
 
-    const rewardClaimed = await this.isClaimedReward(user);
+    const rewardClaimed = await this.hasClaimedReward(user);
     if (rewardClaimed) {
       throw errors.IncorrectArguments;
     }
