@@ -114,7 +114,6 @@ export class AprilMap {
     this._state.maxHp = 3;
     this._events.hp(this._state.hp);
 
-    this._croupier.resetFullDeck();
     this.enterLevel();
   }
 
@@ -156,20 +155,28 @@ export class AprilMap {
   public move(cardId: string, index: number): void {
     this.backupState();
 
+    const card = this._croupier.getCardById(cardId);
+    if (!card || !card.hasNextCell(index)) {
+      return;
+    }
+    
+    const oldHeroIndex = this._playground.hero.index;
+    console.log('[Move start]', { oldHeroIndex, newHeroIndex: index});
     const validMove = this._playground.moveHero(cardId, index);
     if (!validMove) {
       return;
     }
-
+    
     if (this._playground.allEnemiesKilled(true)) {
       this._croupier.proposeNewCard();
       this.sessionResult(april.SESSION_RESULT_SUCCESS);
       return;
     }
     
-    this._croupier.heroMoveCallback(cardId);
+    this._croupier.heroMoveCallback(card, oldHeroIndex, index);
     this.spendActionPoint();
     
+    console.log('[Move end]', { oldHeroIndex, newHeroIndex: this._playground.hero.index});
     if (this._state.actionPoints === 0) {
       this.moveEnded();
     }

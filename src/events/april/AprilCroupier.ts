@@ -1,9 +1,7 @@
-import { throws } from "assert";
 import _ from "lodash";
 
 import * as april from "../../knightlands-shared/april";
 import { CARD_CLASS_BISHOP, CARD_CLASS_KNIGHT, CARD_CLASS_PAWN, CARD_CLASS_ROOK, CARD_CLASS_KING, CARD_CLASS_QUEEN } from "../../knightlands-shared/april";
-import random from "../../random";
 import { AprilEvents } from "./AprilEvents";
 import { AprilMap } from "./AprilMap";
 import { AprilCardBlueprint, AprilCroupierState } from "./types";
@@ -20,12 +18,13 @@ export const STARTING_DECK = [
   CARD_CLASS_PAWN,
 ];
 
-export const FULL_DECK = [
+export const EXTEND_DECK = [
+  CARD_CLASS_PAWN,
   CARD_CLASS_KNIGHT,
-  CARD_CLASS_KING,
-  CARD_CLASS_BISHOP,
   CARD_CLASS_ROOK,
-  CARD_CLASS_QUEEN
+  CARD_CLASS_BISHOP,
+  CARD_CLASS_QUEEN,
+  CARD_CLASS_KING
 ];
 
 export class AprilCroupier {
@@ -37,7 +36,6 @@ export class AprilCroupier {
   protected _usedCards: Card[] = [];
   protected _handSize: number = 4;
   protected _queenProvided: boolean;
-  protected _fullDeck: string[];
   
   get events(): AprilEvents {
     return this._map.events;
@@ -85,19 +83,18 @@ export class AprilCroupier {
     this._state.usedCards = state.usedCards;
   }
 
-  public addCardToDeck(card: Card): void {
-    this._deck.push(card);
+  public cardUsed(card: Card, storeInUsed: boolean): void {
+    if (storeInUsed) {
+      this._usedCards.push(card);
+    }
+    this._cards = this._cards.filter(
+      entry => entry.id !== card.id
+    );
   }
 
-  public cardUsed(id: string): void {
-    const cardIndex = this._state.cards.findIndex(card => card.id === id);
-    this.usedCards.push(this.cards[cardIndex]);
-    this.cards.splice(cardIndex, 1);
-    this.commitCards();
-  }
-
-  public heroMoveCallback(id: string): void {
-    this.cardUsed(id);
+  public heroMoveCallback(card: Card, oldHeroIndex: number, newHeroIndex: number): void {
+    const queenSpawned = this.spawnQueen(card, oldHeroIndex, newHeroIndex);
+    this.cardUsed(card, !queenSpawned);
     this.updateNextCells();
     this.commitCards();
   }
@@ -106,10 +103,6 @@ export class AprilCroupier {
     this._cards.forEach((card: Card) => {
       card.setNextCells();
     })
-  }
-
-  public resetFullDeck(): void {
-    this._fullDeck = FULL_DECK;
   }
 
   public startSession(extendDeck: boolean) {
@@ -139,11 +132,26 @@ export class AprilCroupier {
     } else {
       this.resetTable();
     }
+
+    this.updateNextCells();
+
+    /*this._cardsInQueue.forEach(card => {
+      console.log('[Map check] _cardsInQueue', { mapEqual: this._map === card.map});
+    });
+
+    this._cards.forEach(card => {
+      console.log('[Map check] _cards', { mapEqual: this._map === card.map});
+    });
+
+    this._usedCards.forEach(card => {
+      console.log('[Map check] _usedCards', { mapEqual: this._map === card.map});
+    });*/
+
     this.commitCards();
   }
   
   protected resetTable() {
-    this._cardsInQueue = _.cloneDeep(this._deck);
+    this._cardsInQueue = _.clone(this._deck);
     this.refreshCards();
     this._usedCards = [];
   }
@@ -151,7 +159,7 @@ export class AprilCroupier {
   // Queue => Cards
   protected refreshCards() {
     // Take 4 cards from queue
-    this._cards = _.cloneDeep(_.sampleSize(this._cardsInQueue, this._handSize));
+    this._cards = _.sampleSize(this._cardsInQueue, this._handSize);
     // Remove those cards from queue
     this._cardsInQueue = this._cardsInQueue.filter(
       queueCard => this._cards.findIndex(card => card.id === queueCard.id) === -1
@@ -160,7 +168,7 @@ export class AprilCroupier {
 
   // Cards => Used cards
   protected purgeCards() {
-    this._usedCards.push(..._.cloneDeep(this._cards));
+    this._usedCards.push(...this._cards);
     this._cards = [];
   }
 
@@ -171,7 +179,7 @@ export class AprilCroupier {
       return card2.rank - card1.rank;
     });
     // Choose the strongest card in a used heap
-    const returnedUsedCard = _.cloneDeep(this._usedCards[0]);
+    const returnedUsedCard = this._usedCards[0];
     // Lay it on the table 
     this._cards.push(returnedUsedCard);
     // Remove that card from a used heap
@@ -184,8 +192,7 @@ export class AprilCroupier {
     return new Card(card, this._map);
   }
 
-  public tryToSpawnQueen(cardId: string, oldHeroIndex: number, newHeroIndex: number) {
-    const card = this.getCardById(cardId);
+  public spawnQueen(card: Card, oldHeroIndex: number, newHeroIndex: number): boolean {
     if (
       this._map.heroClass === april.HERO_CLASS_KNIGHT
       &&
@@ -201,7 +208,9 @@ export class AprilCroupier {
       this._deck.push(queenCard);
       this._cards.push(queenCard);
       this._queenProvided = true;
+      return true;
     }
+    return false;
   }
 
   protected commitCards() {
@@ -241,7 +250,7 @@ export class AprilCroupier {
   }
 
   public proposeNewCard(): void {
-    this._state.newCard = this._fullDeck.shift();
+    this._state.newCard = _.sample(EXTEND_DECK);
     this.events.newCard(this._state.newCard);
   }
 }
