@@ -18,6 +18,7 @@ export class AprilEvents {
 
   hourReward(entry) {
     this._events.hourReward = entry;
+    this._events.hourReward.nextRewardTimeLeft = this._events.hourReward.nextRewardAvailable - game.nowSec;
   }
 
   heroRewards(entries) {
