@@ -159,6 +159,7 @@ export class AprilUser {
 
   public updateHeroScore(heroClass: string, amount: number) {
     this._state.rewards.heroRewards[heroClass].score += amount;
+    this._events.heroRewards(this._state.rewards.heroRewards);
   }
 
   async claimHeroReward(heroClass: string) {
@@ -168,6 +169,9 @@ export class AprilUser {
     }
     if (this._state.rewards.heroRewards[heroClass].score < targetHero.rewardGoal) {
       throw errors.NotEnoughResource;
+    }
+    if (this._state.rewards.heroRewards[heroClass].claimed) {
+      throw errors.AlreadyClaimed;
     }
     await this._user.inventory.addItemTemplates(targetHero.rewardItems);
 
