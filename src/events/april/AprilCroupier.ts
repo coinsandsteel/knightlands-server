@@ -118,6 +118,7 @@ export class AprilCroupier {
     }
 
     this.resetTable();
+    this.updateNextCells();
     this.commitCards();
   }
   

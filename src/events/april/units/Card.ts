@@ -63,19 +63,21 @@ export class Card {
     const fen = this.generateFen();
     const chess = Chess(fen);
     const heroIndex = this.map.playground.hero.index;
-    
+
     const moves = chess.moves({
       square: INVERT_SQUARES[heroIndex],
       verbose: true,
       legal: false
     });
-
+    
     this._nextCells = moves
       .map(move => SQUARES[move.to])
       .filter(index => index !== heroIndex);
-
+    
     // Exclude boss cell if minions are alive
     if (
+      this.map.level === 9
+      &&
       this._nextCells.includes(12)
       &&
       !this.map.playground.allEnemiesKilled(false)
