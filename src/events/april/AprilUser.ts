@@ -128,7 +128,6 @@ export class AprilUser {
   }
 
   async claimHourReward() {
-    console.log("🚀 ~ file: AprilUser.ts ~ line 135 ~ AprilUser ~ claimHourReward ~ this._state.rewards.hourReward", this._state.rewards.hourReward)
     if (
       // We should allow claim if it's empty 
       (
