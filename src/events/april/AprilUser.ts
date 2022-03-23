@@ -50,7 +50,7 @@ export class AprilUser {
           // First hour starts after daily reward was received
           // nextClaim resets after user claim hour reward
           nextRewardAvailable: null, // timestamp, sec
-          left: 3
+          left: 0
         }
       },
       heroes: []
@@ -132,8 +132,6 @@ export class AprilUser {
       this._state.rewards.hourReward.left <= 0
       ||
       !this._state.rewards.dailyRewards[this.day - 1].collected
-      ||
-      this._state.rewards.hourReward.nextRewardAvailable === null
       ||
       this._state.rewards.hourReward.nextRewardAvailable >= game.nowSec
     ) {
