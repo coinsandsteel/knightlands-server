@@ -124,20 +124,18 @@ export class AprilUser {
     this._state.rewards.hourReward.nextRewardAvailable = game.nowSec + PERIODIC_REWARD_PERIODS[0];
 
     this._events.dailyRewards(this._state.rewards.dailyRewards);
-    this._events.flush();
+    this._events.hourReward(this._state.rewards.hourReward);
   }
 
   async claimHourReward() {
     if (
-      // We should allow claim if it's empty 
-      (
-        this._state.rewards.hourReward.nextRewardAvailable
-        &&
-        // "Reward + 1" hr should be relatively lower (in the past) of "now" to allow claim.
-        this._state.rewards.hourReward.nextRewardAvailable >= game.nowSec
-      )
-      ||
       this._state.rewards.hourReward.left <= 0
+      ||
+      !this._state.rewards.dailyRewards[this.day - 1].collected
+      ||
+      this._state.rewards.hourReward.nextRewardAvailable === null
+      ||
+      this._state.rewards.hourReward.nextRewardAvailable >= game.nowSec
     ) {
       throw errors.IncorrectArguments;
     }
