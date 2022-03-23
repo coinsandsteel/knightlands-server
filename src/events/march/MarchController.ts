@@ -91,6 +91,7 @@ export class MarchController {
   }
 
   async startNewGame(petClass: number, level: number, boosters: MarchBoosters) {
+    return;
     this._marchUser.debitTicket();
     this._marchMap.restart(petClass, level, boosters);
     this._events.flush();
