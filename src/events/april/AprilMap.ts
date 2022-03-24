@@ -215,8 +215,13 @@ export class AprilMap {
     this.resetActionPoints();
   }
   
-  protected spendActionPoint(): void {
+  public spendActionPoint(): void {
     this._state.actionPoints--;
+    this._events.actionPoints(this._state.actionPoints);
+  }
+  
+  public addActionPoint(): void {
+    this._state.actionPoints++;
     this._events.actionPoints(this._state.actionPoints);
   }
   

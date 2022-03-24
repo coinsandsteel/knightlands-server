@@ -85,6 +85,7 @@ export interface AprilUnitBlueprint {
 
 export interface AprilCardBlueprint {
   id: string;
+  hash: string;
   cardClass: string;
   nextCells: number[];
 }

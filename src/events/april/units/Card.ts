@@ -32,6 +32,7 @@ const INVERT_SQUARES = {
 
 export class Card {
   protected _id: string;
+  protected _hash: string;
   protected _cardClass: string;
   protected _nextCells: number[];
   protected _map: AprilMap;
@@ -55,6 +56,7 @@ export class Card {
   constructor(card: AprilCardBlueprint, map: AprilMap) {
     this._map = map;
     this._id = card.id || uuidv4().split('-').pop();
+    this._hash = card.hash || uuidv4().split('-').pop();
     this._cardClass = card.cardClass;
     this.setNextCells();
   }
@@ -89,6 +91,7 @@ export class Card {
   public serialize(): AprilCardBlueprint {
     const card = {
       id: this._id,
+      hash: this._hash,
       cardClass: this._cardClass,
       nextCells: this._nextCells
     } as AprilCardBlueprint;
@@ -98,6 +101,15 @@ export class Card {
 
   public hasNextCell(index: number): boolean {
     return this._nextCells.includes(index);
+  }
+
+  public cardSpawnCallback(): void {
+    this.setNextCells();
+    this.regenerateHash();
+  }
+
+  public regenerateHash(): void {
+    this._hash = uuidv4().split('-').pop();
   }
 
   public setCardClass(cardClass: string): void {

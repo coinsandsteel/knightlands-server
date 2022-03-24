@@ -19,7 +19,6 @@ export const STARTING_DECK = [
 ];
 
 export const EXTEND_DECK = [
-  CARD_CLASS_PAWN,
   CARD_CLASS_KNIGHT,
   CARD_CLASS_ROOK,
   CARD_CLASS_BISHOP,
@@ -90,14 +89,16 @@ export class AprilCroupier {
     const queenSpawned = this.spawnQueen(card, oldHeroIndex, newHeroIndex);
     if (!queenSpawned) {
       this.cardUsed(card);
+    } else {
+      this._map.addActionPoint();
     }
-    this.updateNextCells();
+    this.cardsSpawnCallback();
     this.commitCards();
   }
 
-  public updateNextCells(): void {
+  public cardsSpawnCallback(): void {
     this._cards.forEach((card: Card) => {
-      card.setNextCells();
+      card.cardSpawnCallback();
     })
   }
 
@@ -108,7 +109,7 @@ export class AprilCroupier {
       this._deck = Array.from(
         { length: STARTING_DECK.length }, 
         (_, i) => { 
-          return this.makeCard({ id: null, cardClass: STARTING_DECK[i], nextCells: [] });
+          return this.makeCard({ id: null, hash: null, cardClass: STARTING_DECK[i], nextCells: [] });
         }
       ) as Card[];
     }
@@ -118,7 +119,7 @@ export class AprilCroupier {
     }
 
     this.resetTable();
-    this.updateNextCells();
+    this.cardsSpawnCallback();
     this.commitCards();
   }
   
@@ -133,7 +134,7 @@ export class AprilCroupier {
       this.resetTable();
     }
 
-    this.updateNextCells();
+    this.cardsSpawnCallback();
     this.commitCards();
   }
   
@@ -238,7 +239,7 @@ export class AprilCroupier {
 
   public extendDeck(): void {
     this._deck.push(
-      this.makeCard({ id: null, cardClass: this._state.newCard, nextCells: [] })
+      this.makeCard({ id: null, hash: null, cardClass: this._state.newCard, nextCells: [] })
     );
     this._state.newCard = null;
   }
