@@ -49,7 +49,6 @@ export class AprilMap {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
       hp: 0,
-      maxHp: 0,
       actionPoints: 0,
       sessionResult: null,
       prices: {
@@ -111,7 +110,6 @@ export class AprilMap {
     this._events.level(1);
 
     this._state.hp = 3;
-    this._state.maxHp = 3;
     this._events.hp(this._state.hp);
 
     this._croupier.reset();
@@ -139,18 +137,12 @@ export class AprilMap {
     // ##### Stat #####
     // TODO is there a limit of HP?
     if (this._state.level > 1 && booster === april.BOOSTER_HP) {
-      this.upgradeHp();
+      this.modifyHp(1);
     }
 
     // ##### Subsystems #####
     this._playground.enterLevel();
     this._croupier.enterLevel(booster === april.BOOSTER_CARD);
-  }
-  
-  protected upgradeHp(): void {
-    this._state.maxHp++;
-    this._state.hp = this._state.maxHp;
-    this._events.hp(this._state.hp);
   }
   
   public move(cardId: string, index: number): void {
@@ -235,7 +227,6 @@ export class AprilMap {
     this._state.level = state.level;
     this._state.sessionResult = state.sessionResult;
     this._state.hp = state.hp;
-    this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
 
     this._playground.wakeUp(state.playground);
@@ -281,9 +272,6 @@ export class AprilMap {
     if (this._state.hp < 0) {
       this._state.hp = 0;
     }
-    if (this._state.hp > this._state.maxHp) {
-      this._state.hp = this._state.maxHp;
-    }
     this._events.hp(this._state.hp);
   };
   
@@ -294,7 +282,6 @@ export class AprilMap {
     this.sessionResult(null);
     
     this._state.hp = 3;
-    this._state.maxHp = 3;
     this._events.hp(3);
     
     this._state.actionPoints = 2;
