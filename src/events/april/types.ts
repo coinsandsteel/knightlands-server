@@ -67,6 +67,7 @@ export interface AprilPlaygroundState {
   enemyWasKilled: boolean;
   units: AprilUnitBlueprint[];
   damage: number[];
+  hasVictory: boolean;
 }
 
 export interface AprilCroupierState {

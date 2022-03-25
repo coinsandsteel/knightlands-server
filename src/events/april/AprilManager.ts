@@ -5,6 +5,7 @@ import Game from "../../game";
 import { Collections } from "../../database/database";
 import User from "../../user";
 import errors from "../../knightlands-shared/errors";
+import * as april from "../../knightlands-shared/april";
 
 const RANKS_PAGE_SIZE = 10;
 const RANKING_WATCHER_PERIOD_MILSECONDS = 15 * 60 * 1000;
@@ -122,18 +123,28 @@ export class AprilManager {
     console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
   }
 
-  async updateRank(userId: ObjectId, points: number) {
+  async updateRank(userId: ObjectId, heroClass: string, points: number) {
     if (this.eventFinished()) {
       return;
     }
+
+    const setOnInsert = april.HEROES.reduce(
+      (previousValue, currentValue) => {
+        previousValue[currentValue.heroClass] = 0
+        return previousValue;
+      },
+      { }
+    );
+    delete setOnInsert[heroClass];
     await this._rankCollection.updateOne(
         { _id: userId },
         {
+            $setOnInsert: setOnInsert,
             $set: {
                 order: Game.now
             },
             $max: {
-                maxSessionGold: points
+                [heroClass]: points
             },
         },
         { upsert: true }
@@ -141,10 +152,19 @@ export class AprilManager {
   }
 
   async getRankings() {
+    const result = [];
+    for (let i = 0; i < april.HEROES.length; i++) {
+      result.push(await this.getRankingsByHeroClass(april.HEROES[i].heroClass));
+    }
+
+    return result;
+  }
+
+  async getRankingsByHeroClass(heroClass: string) {
     const page = 0;
 
     const records = await this._rankCollection.aggregate([
-        { $sort: { maxSessionGold: -1, order: 1 } },
+        { $sort: { [heroClass]: -1, order: 1 } },
         { $skip: page * RANKS_PAGE_SIZE },
         { $limit: RANKS_PAGE_SIZE },
         { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } },
@@ -157,7 +177,7 @@ export class AprilManager {
                 avatar: {
                     $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1]
                 },
-                score: { $convert: { input: "$maxSessionGold", to: "string" } }
+                score: { $convert: { input: "$" + heroClass, to: "string" } }
             }
         },
         {

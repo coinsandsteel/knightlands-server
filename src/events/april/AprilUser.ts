@@ -28,6 +28,10 @@ export class AprilUser {
     return this._state.balance.gold;
   }
 
+  get sessionGold(): number {
+    return this._state.balance.sessionGold;
+  }
+
   public async init() {
     this.setEventDay();
     this.setActiveReward();
@@ -181,6 +185,11 @@ export class AprilUser {
     this.modifyBalance(april.CURRENCY_SESSION_GOLD, amount);
   }
 
+  public resetSessionGold(): void {
+    this._state.balance[april.CURRENCY_SESSION_GOLD] = 0;
+    this._events.balance(april.CURRENCY_SESSION_GOLD, 0);
+  }
+
   public purchaseHero(heroClass: string) {
     const hero = this._state.heroes.find((entry) => entry === heroClass);
     if (hero) {
@@ -205,15 +214,6 @@ export class AprilUser {
 
     this._state.heroes.push(heroClass);
     this._events.heroes(this._state.heroes);
-  }
-
-  public flushStats(): void {
-    this.modifyBalance(april.CURRENCY_GOLD, this._state.balance.sessionGold);
-
-    game.aprilManager.updateRank(
-      this._user.id, 
-      this._state.balance.sessionGold
-    );
   }
 
   public getHeroStat(): AprilRewardHeroesData {

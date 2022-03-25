@@ -149,6 +149,10 @@ export class AprilPlayground {
   get enemyWasKilled(): boolean {
     return this._state.enemyWasKilled;
   }
+
+  get hasVictory(): boolean {
+    return this._state.hasVictory;
+  }
   
   constructor(state: AprilPlaygroundState|null, map: AprilMap) {
     this._map = map;
@@ -165,6 +169,7 @@ export class AprilPlayground {
   public setInitialState() {
     this._state = {
       enemyWasKilled: false,
+      hasVictory: false,
       units: [],
       damage: []
     } as AprilPlaygroundState;
@@ -178,6 +183,7 @@ export class AprilPlayground {
     this._state.enemyWasKilled = state.enemyWasKilled;
     this._state.damage = state.damage;
     this._state.units = state.units;
+    this._state.hasVictory = state.hasVictory;
     this.createUnits();
   }
 
@@ -369,6 +375,31 @@ export class AprilPlayground {
     }
     this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
     this._map.aprilUser.updateHeroScore(this._map.heroClass, 1);
+    this.updateSessionGoldByUnitClass(enemy.unitClass);
+    if (enemy.unitClass === april.UNIT_CLASS_BOSS) {
+      this._state.hasVictory = true;
+    }
+  }
+
+  private updateSessionGoldByUnitClass(unitClass: string) {
+    let goldReward = 0;
+    switch(unitClass) {
+      case april.UNIT_CLASS_TEETH:
+      case april.UNIT_CLASS_CLOWN:
+        goldReward = 1;
+        break;
+      case april.UNIT_CLASS_JACK:
+      case april.UNIT_CLASS_HARLEQUIN:
+        goldReward = 2;
+        break;
+      case april.UNIT_CLASS_BOSS:
+        goldReward = 10;
+        break;
+      default:
+        goldReward = 0;
+        break;
+    }
+    this._map.aprilUser.addSessionGold(goldReward);
   }
 
   public findUnitByIndex(index: number): Unit|undefined {

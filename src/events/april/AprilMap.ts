@@ -3,6 +3,7 @@ import _ from "lodash";
 import * as april from "../../knightlands-shared/april";
 import errors from "../../knightlands-shared/errors";
 import User from "../../user";
+import game from "../../game";
 
 import { AprilMapState } from "./types";
 import { AprilEvents } from "./AprilEvents";
@@ -10,7 +11,6 @@ import { AprilUser } from "./AprilUser";
 import { AprilPlayground } from "./AprilPlayground";
 import { AprilCroupier } from "./AprilCroupier";
 import { AprilMovement } from "./AprilMovement";
-import { Card } from "./units/Card";
 
 export class AprilMap {
   protected _state: AprilMapState;
@@ -111,6 +111,8 @@ export class AprilMap {
 
     this._state.hp = 3;
     this._events.hp(this._state.hp);
+    
+    this._aprilUser.resetSessionGold();
 
     this._croupier.reset();
     this.enterLevel();
@@ -198,6 +200,7 @@ export class AprilMap {
 
     if (this._state.hp <= 0) {
       this.sessionResult(april.SESSION_RESULT_FAIL);
+      this.gameOver();
       return;
     }
     
@@ -274,8 +277,21 @@ export class AprilMap {
     }
     this._events.hp(this._state.hp);
   };
+
+  public gameOver() {
+    this._aprilUser.modifyBalance(april.CURRENCY_GOLD, this._aprilUser.sessionGold);
+
+    if (this._playground.hasVictory) {
+      game.aprilManager.updateRank(
+        this._user.id,
+        this._state.heroClass,
+        this._aprilUser.sessionGold
+      );
+    }
+  }
   
   public exit() {
+    this.gameOver();
     this._state.level = 1;
     this._events.level(1);
     
@@ -286,6 +302,8 @@ export class AprilMap {
     
     this._state.actionPoints = 2;
     this._events.actionPoints(2);
+
+    this._aprilUser.resetSessionGold();
 
     this._croupier.exit();
     this._playground.exit();
