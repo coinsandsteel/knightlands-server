@@ -10,117 +10,39 @@ import * as april from "../../knightlands-shared/april";
 const LEVELS = [
   // Level 1
   [
-    { t: 1, c: 1, indexes: [6, 12] }
+    { c: 1, indexes: [16] }
   ],
   // Level 2
   [
-    { t: 0, c: 3 },
-    { t: 3, c: 0 },
-    { t: 1, c: 2 },
-    { t: 2, c: 1 },
+    { c: 1, indexes: [16] }
   ],
   // Level 3
   [
-    { t: 1, c: 1, j: 1 },
-    { t: 0, c: 2, j: 1 },
-    { t: 2, c: 0, j: 1 },
+    { c: 1, indexes: [16] }
   ],
   // Level 4
   [
-    { t: 1, c: 1, j: 2, h: 0 },
-    { t: 2, c: 0, j: 2, h: 0 },
-    { t: 0, c: 2, j: 2, h: 0 },
-    { t: 1, c: 1, j: 1, h: 1 },
-    { t: 2, c: 0, j: 1, h: 1 },
-    { t: 0, c: 2, j: 1, h: 1 },
-    { t: 0, c: 2, j: 0, h: 2 },
-    { t: 2, c: 0, j: 0, h: 2 },
-    { t: 1, c: 1, j: 0, h: 2 },
+    { c: 1, indexes: [16] }
   ],
   // Level 5
   [
-    { t: 2, c: 0, j: 2, h: 1 },
-    { t: 0, c: 2, j: 2, h: 1 },
-    { t: 2, c: 0, j: 3, h: 0 },
-    { t: 0, c: 2, j: 3, h: 0 },
-    { t: 2, c: 0, j: 0, h: 3 },
-    { t: 0, c: 2, j: 0, h: 3 },
-    { t: 0, c: 2, j: 1, h: 2 },
-    { t: 2, c: 0, j: 1, h: 2 },
+    { c: 1, indexes: [16] }
   ],
   // Level 6
   [
-    { t: 2, c: 1, j: 2, h: 1 },
-    { t: 1, c: 2, j: 2, h: 1 },
-    { t: 2, c: 1, j: 3, h: 0 },
-    { t: 1, c: 2, j: 3, h: 0 },
-    { t: 2, c: 1, j: 0, h: 3 },
-    { t: 1, c: 2, j: 0, h: 3 },
-    { t: 1, c: 2, j: 1, h: 2 },
-    { t: 2, c: 1, j: 1, h: 2 },
-    { t: 0, c: 3, j: 2, h: 1 },
-    { t: 3, c: 0, j: 2, h: 1 },
-    { t: 3, c: 0, j: 3, h: 0 },
-    { t: 0, c: 3, j: 3, h: 0 },
-    { t: 3, c: 0, j: 0, h: 3 },
-    { t: 0, c: 3, j: 0, h: 3 },
-    { t: 0, c: 3, j: 1, h: 2 },
-    { t: 3, c: 0, j: 1, h: 2 },
+    { c: 1, indexes: [16] }
   ],
   // Level 7
   [
-    { t: 2, c: 2, j: 2, h: 1 },
-    { t: 2, c: 2, j: 1, h: 2 },
-    { t: 3, c: 1, j: 2, h: 1 },
-    { t: 1, c: 3, j: 2, h: 1 },
-    { t: 3, c: 1, j: 1, h: 2 },
-    { t: 1, c: 3, j: 1, h: 2 },
-    { t: 4, c: 0, j: 2, h: 1 },
-    { t: 4, c: 0, j: 1, h: 2 },
-    { t: 0, c: 4, j: 2, h: 1 },
-    { t: 0, c: 4, j: 1, h: 2 },
-    { t: 0, c: 4, j: 3, h: 0 },
-    { t: 4, c: 0, j: 3, h: 0 },
-    { t: 3, c: 1, j: 3, h: 0 },
-    { t: 2, c: 2, j: 3, h: 0 },
-    { t: 1, c: 3, j: 3, h: 0 },
-    { t: 3, c: 1, j: 0, h: 3 },
-    { t: 2, c: 2, j: 0, h: 3 },
-    { t: 1, c: 3, j: 0, h: 3 },
-    { t: 0, c: 4, j: 0, h: 3 },
-    { t: 4, c: 0, j: 0, h: 3 },
+    { c: 1, indexes: [16] }
   ],
   // Level 8
   [
-    { t: 4, c: 0, j: 0, h: 4 },
-    { t: 3, c: 1, j: 0, h: 4 },
-    { t: 2, c: 2, j: 0, h: 4 },
-    { t: 1, c: 3, j: 0, h: 4 },
-    { t: 0, c: 4, j: 0, h: 4 },
-    { t: 4, c: 0, j: 4, h: 0 },
-    { t: 3, c: 1, j: 4, h: 0 },
-    { t: 2, c: 2, j: 4, h: 0 },
-    { t: 1, c: 3, j: 4, h: 0 },
-    { t: 0, c: 4, j: 4, h: 0 },
-    { t: 4, c: 0, j: 2, h: 2 },
-    { t: 3, c: 1, j: 2, h: 2 },
-    { t: 2, c: 2, j: 2, h: 2 },
-    { t: 1, c: 3, j: 2, h: 2 },
-    { t: 0, c: 4, j: 2, h: 2 },
-    { t: 0, c: 4, j: 1, h: 3 },
-    { t: 1, c: 3, j: 1, h: 3 },
-    { t: 2, c: 2, j: 1, h: 3 },
-    { t: 3, c: 1, j: 1, h: 3 },
-    { t: 4, c: 0, j: 1, h: 3 },
-    { t: 0, c: 4, j: 3, h: 1 },
-    { t: 1, c: 3, j: 3, h: 1 },
-    { t: 2, c: 2, j: 3, h: 1 },
-    { t: 3, c: 1, j: 3, h: 1 },
-    { t: 4, c: 0, j: 3, h: 1 },
+    { c: 1, indexes: [16] }
   ],
   // Level 9
   [
-    { j: 2, h: 2, b: 1 },
+    { h: 1, b: 1, indexes: [16, 12] },
   ],
 ];
 
@@ -374,32 +296,32 @@ export class AprilPlayground {
       this._units.push(...nextEnemies);
     }
     this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
-    this._map.aprilUser.updateHeroScore(this._map.heroClass, 1);
-    this.updateSessionGoldByUnitClass(enemy.unitClass);
+    this.updateSessionGoldAndScoreByUnitClass(enemy.unitClass);
     if (enemy.unitClass === april.UNIT_CLASS_BOSS) {
       this._state.hasVictory = true;
     }
   }
 
-  private updateSessionGoldByUnitClass(unitClass: string) {
-    let goldReward = 0;
+  private updateSessionGoldAndScoreByUnitClass(unitClass: string) {
+    let goldScore = 0;
     switch(unitClass) {
       case april.UNIT_CLASS_TEETH:
       case april.UNIT_CLASS_CLOWN:
-        goldReward = 1;
+        goldScore = 1;
         break;
       case april.UNIT_CLASS_JACK:
       case april.UNIT_CLASS_HARLEQUIN:
-        goldReward = 2;
+        goldScore = 2;
         break;
       case april.UNIT_CLASS_BOSS:
-        goldReward = 10;
+        goldScore = 10;
         break;
       default:
-        goldReward = 0;
+        goldScore = 0;
         break;
     }
-    this._map.aprilUser.addSessionGold(goldReward);
+    this._map.aprilUser.addSessionGold(goldScore);
+    this._map.aprilUser.updateHeroScore(this._map.heroClass, goldScore);
   }
 
   public findUnitByIndex(index: number): Unit|undefined {
