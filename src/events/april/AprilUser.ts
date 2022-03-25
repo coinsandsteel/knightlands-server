@@ -152,6 +152,44 @@ export class AprilUser {
     this._events.hourReward(this._state.rewards.hourReward);
   }
 
+  async purchaseGold(shopIndex: number, currency: string) {
+    let choosedShopOption = april.SHOP[shopIndex];
+
+    // check balance
+    let balance = 0;
+    let price = Infinity;
+    let goldAmount = choosedShopOption.quantity;
+    switch (currency) {
+      case "hard": {
+        balance = this._user.hardCurrency;
+        price = choosedShopOption.hardPrice;
+        break;
+      }
+      case "dkt": {
+        balance = this._user.dkt;
+        price = choosedShopOption.fleshPrice;
+        break;
+      }
+      default: {
+        return;
+      }
+    }
+    if (balance < price) {
+      throw errors.IncorrectArguments;
+    }
+
+    // change balance
+    if (currency === "hard") {
+      this._user.addHardCurrency(-price);
+    } else if (currency === "dkt") {
+      this._user.addDkt(-price);
+    }
+
+    this.modifyBalance(april.CURRENCY_GOLD, goldAmount);
+
+    return goldAmount;
+  }
+
   public modifyBalance(currency: string, amount: number) {
     this._state.balance[currency] += amount;
     this._events.balance(currency, this._state.balance[currency]);

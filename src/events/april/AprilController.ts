@@ -109,6 +109,11 @@ export class AprilController {
     this._aprilUser.purchaseHero(heroClass);
     this._events.flush();
   }
+
+  async purchaseGold(shopIndex: number,currency: string) {
+    this._aprilUser.purchaseGold(shopIndex, currency);
+    this._events.flush();
+  }
   
   async heroStat() {
     return this._aprilUser.getHeroStat();

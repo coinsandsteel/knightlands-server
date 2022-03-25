@@ -305,6 +305,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
         this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
         this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
+        this._socket.on(Operations.AprilPurchaseGold, this._gameHandler(this._aprilPurchaseGold.bind(this)));
         this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
         this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
         this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
@@ -2189,6 +2190,22 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
         return this.april.purchaseHero(heroClass);
+    }
+
+    async _aprilPurchaseGold(user, data) {
+        if (
+            !isNumber(data.shopIndex) 
+            || 
+            !['hard', 'dkt'].includes(data.currency)
+          ) {
+              throw Errors.IncorrectArguments;
+          }
+  
+          if (!isString(data.currency) && ['hard', 'dkt'].includes(data.currency)) {
+              throw Errors.IncorrectArguments;
+          }
+  
+          return this.april.purchaseGold(data.shopIndex, data.currency);
     }
 
     async _aprilRestart(user, heroClass) {
