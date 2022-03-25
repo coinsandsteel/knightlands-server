@@ -109,10 +109,12 @@ export class AprilCroupier {
       this._deck = Array.from(
         { length: STARTING_DECK.length }, 
         (_, i) => { 
-          return this.makeCard({ id: null, hash: null, cardClass: STARTING_DECK[i], nextCells: [] });
+          return this.makeCardByClass(STARTING_DECK[i]);
         }
       ) as Card[];
     }
+
+    this._deck.forEach(card => card.swapToPawn());
 
     if (extendDeck && this._state.newCard) {
       this.extendDeck();
@@ -152,6 +154,7 @@ export class AprilCroupier {
   protected refreshCards() {
     // Take 4 cards from queue
     this._cards = _.sampleSize(this._cardsInQueue, this._handSize);
+    this._cards.forEach(card => card.regenerateHash());
     // Remove those cards from queue
     this._cardsInQueue = this._cardsInQueue.filter(
       queueCard => this._cards.findIndex(card => card.id === queueCard.id) === -1
@@ -180,8 +183,15 @@ export class AprilCroupier {
     );
   }
 
-  protected makeCard(card: AprilCardBlueprint): Card {
-    return new Card(card, this._map);
+  protected makeCardByClass(cardClass: string): Card {
+    const newCard = {
+      id: null,
+      hash: null,
+      cardClass,
+      nextCells: [],
+      werewolf: false
+    } as AprilCardBlueprint;
+    return new Card(newCard, this._map);
   }
 
   public spawnQueen(card: Card, oldHeroIndex: number, newHeroIndex: number): boolean {
@@ -239,7 +249,7 @@ export class AprilCroupier {
 
   public extendDeck(): void {
     this._deck.push(
-      this.makeCard({ id: null, hash: null, cardClass: this._state.newCard, nextCells: [] })
+      this.makeCardByClass(this._state.newCard)
     );
     this._state.newCard = null;
   }

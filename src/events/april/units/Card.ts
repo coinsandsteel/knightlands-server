@@ -36,6 +36,7 @@ export class Card {
   protected _cardClass: string;
   protected _nextCells: number[];
   protected _map: AprilMap;
+  protected _werewolf: boolean;
 
   get map(): AprilMap {
     return this._map;
@@ -45,6 +46,10 @@ export class Card {
     return this._id;
   }
 
+  get werewolf(): boolean {
+    return this._werewolf;
+  }
+  
   get cardClass(): string {
     return this._cardClass;
   }
@@ -58,6 +63,7 @@ export class Card {
     this._id = card.id || uuidv4().split('-').pop();
     this._hash = card.hash || uuidv4().split('-').pop();
     this._cardClass = card.cardClass;
+    this._werewolf = card.werewolf || false;
     this.setNextCells();
   }
 
@@ -93,7 +99,8 @@ export class Card {
       id: this._id,
       hash: this._hash,
       cardClass: this._cardClass,
-      nextCells: this._nextCells
+      nextCells: this._nextCells,
+      werewolf: this._werewolf
     } as AprilCardBlueprint;
     
     return _.cloneDeep(card);
@@ -105,7 +112,6 @@ export class Card {
 
   public cardSpawnCallback(): void {
     this.setNextCells();
-    this.regenerateHash();
   }
 
   public regenerateHash(): void {
@@ -113,8 +119,22 @@ export class Card {
   }
 
   public setCardClass(cardClass: string): void {
+    if (
+      this._cardClass === april.CARD_CLASS_PAWN
+      &&
+      cardClass === april.CARD_CLASS_QUEEN
+    ) {
+      this._werewolf = true;
+    }
     this._cardClass = cardClass;
     this.setNextCells();
+  }
+
+  public swapToPawn(): void {
+    if (this._werewolf) {
+      this._cardClass = april.CARD_CLASS_PAWN;
+      this.setNextCells();
+    }
   }
 
   public generateFen() {

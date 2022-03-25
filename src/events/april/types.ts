@@ -89,4 +89,5 @@ export interface AprilCardBlueprint {
   hash: string;
   cardClass: string;
   nextCells: number[];
+  werewolf: boolean;
 }
