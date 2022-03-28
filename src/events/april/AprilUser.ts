@@ -153,6 +153,9 @@ export class AprilUser {
   }
 
   async purchaseGold(shopIndex: number, currency: string) {
+    if (shopIndex >= april.SHOP.length) {
+      throw errors.IncorrectArguments;
+    }
     let choosedShopOption = april.SHOP[shopIndex];
 
     // check balance
@@ -175,7 +178,7 @@ export class AprilUser {
       }
     }
     if (balance < price) {
-      throw errors.IncorrectArguments;
+      throw errors.NotEnoughResource;
     }
 
     // change balance
