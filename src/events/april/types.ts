@@ -49,6 +49,7 @@ export interface AprilMapState {
   level: number;
   sessionResult: string;
   hp: number;
+  healing: number;
   maxHp: number;
   actionPoints: number;
   prices?: {

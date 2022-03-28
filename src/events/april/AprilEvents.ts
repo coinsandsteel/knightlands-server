@@ -36,6 +36,10 @@ export class AprilEvents {
     this._events.hp = value;
   }
 
+  healing(value) {
+    this._events.healing = value;
+  }
+
   actionPoints(value) {
     this._events.actionPoints = value;
   }

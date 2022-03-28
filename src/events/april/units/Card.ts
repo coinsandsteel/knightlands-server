@@ -125,8 +125,9 @@ export class Card {
     this._werewolf = true;
     this._cardClass = april.CARD_CLASS_QUEEN;
     this.setNextCells();
+    console.log('[Card swapped to queen]', this.serialize());
   }
-
+  
   public swapToPawn(): void {
     if (!this._werewolf || this._cardClass !== april.CARD_CLASS_QUEEN) {
       return;
@@ -134,6 +135,7 @@ export class Card {
     this._werewolf = false;
     this._cardClass = april.CARD_CLASS_PAWN;
     this.setNextCells();
+    console.log('[Card swapped to pawn]', this.serialize());
   }
 
   public generateFen() {

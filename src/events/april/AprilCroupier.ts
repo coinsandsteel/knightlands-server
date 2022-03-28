@@ -123,6 +123,8 @@ export class AprilCroupier {
     this.resetTable();
     this.cardsSpawnCallback();
     this.commitCards();
+
+    console.log('[Croupier] Deck', _.cloneDeep(this._deck).map(card => card.serialize()));
   }
   
   public respawnCards(): void {
@@ -181,6 +183,7 @@ export class AprilCroupier {
     this._usedCards = this._usedCards.filter(
       usedCard => usedCard.id !== returnedUsedCard.id
     );
+    console.log('[Croupier] A card was took from used deck', returnedUsedCard.serialize());
   }
 
   protected makeCardByClass(cardClass: string): Card {
@@ -248,14 +251,15 @@ export class AprilCroupier {
   }
 
   public extendDeck(): void {
-    this._deck.push(
-      this.makeCardByClass(this._state.newCard)
-    );
+    const newCard = this.makeCardByClass(this._state.newCard);
+    this._deck.push(newCard);
     this._state.newCard = null;
+    console.log('[Croupier] Deck extended by 1 card', newCard.serialize());
   }
 
   public proposeNewCard(): void {
     this._state.newCard = _.sample(EXTEND_DECK);
     this.events.newCard(this._state.newCard);
+    console.log('[Croupier] Card proposed', this._state.newCard);
   }
 }

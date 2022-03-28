@@ -49,6 +49,7 @@ export class AprilMap {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
       hp: 0,
+      healing: 0,
       actionPoints: 0,
       sessionResult: null,
       prices: {
@@ -194,8 +195,12 @@ export class AprilMap {
       !damage
       &&
       !this._playground.enemyWasKilled
+      &&
+      !this._state.healing
     ) {
       this.modifyHp(1);
+      this.modifyHealing(1);
+      console.log('[Map] Paladin healed: hp = ', this._state.hp);
     }
 
     if (this._state.hp <= 0) {
@@ -212,11 +217,13 @@ export class AprilMap {
   public spendActionPoint(): void {
     this._state.actionPoints--;
     this._events.actionPoints(this._state.actionPoints);
+    console.log('[Map] -1 action point: ', this._state.actionPoints);
   }
   
   public addActionPoint(): void {
     this._state.actionPoints++;
     this._events.actionPoints(this._state.actionPoints);
+    console.log('[Map] +1 action point: ', this._state.actionPoints);
   }
   
   protected resetActionPoints(): void {
@@ -277,6 +284,11 @@ export class AprilMap {
     this._events.hp(this._state.hp);
   };
 
+  public modifyHealing(value: number): void {
+    this._state.healing += value;
+    this._events.healing(this._state.healing);
+  };
+
   public gameOver() {
     this._aprilUser.modifyBalance(april.CURRENCY_GOLD, this._aprilUser.sessionGold);
 
@@ -298,6 +310,9 @@ export class AprilMap {
     
     this._state.hp = 3;
     this._events.hp(3);
+    
+    this._state.healing = 0;
+    this._events.healing(0);
     
     this._state.actionPoints = 2;
     this._events.actionPoints(2);
