@@ -200,7 +200,6 @@ export class AprilMap {
     ) {
       this.modifyHp(1);
       this.modifyHealing(1);
-      console.log('[Map] Paladin healed: hp = ', this._state.hp);
     }
 
     if (this._state.hp <= 0) {
@@ -285,8 +284,13 @@ export class AprilMap {
   };
 
   public modifyHealing(value: number): void {
+    if (this._state.healing >= 3) {
+      console.log('[Map] Paladin healing already used.');
+      return;
+    }
     this._state.healing += value;
     this._events.healing(this._state.healing);
+    console.log('[Map] Paladin healed: hp = ', this._state.hp);
   };
 
   public gameOver() {
