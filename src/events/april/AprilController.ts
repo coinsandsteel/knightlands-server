@@ -120,6 +120,7 @@ export class AprilController {
   }
   
   async restart(heroClass: string) {
+    this._aprilUser.debitTicket();
     this._aprilMap.restart(heroClass);
     this._events.flush();
   }
