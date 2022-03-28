@@ -118,23 +118,22 @@ export class Card {
     this._hash = uuidv4().split('-').pop();
   }
 
-  public setCardClass(cardClass: string): void {
-    if (
-      this._cardClass === april.CARD_CLASS_PAWN
-      &&
-      cardClass === april.CARD_CLASS_QUEEN
-    ) {
-      this._werewolf = true;
+  public swapToQueen(): void {
+    if (this._werewolf || this._cardClass !== april.CARD_CLASS_PAWN) {
+      return;
     }
-    this._cardClass = cardClass;
+    this._werewolf = true;
+    this._cardClass = april.CARD_CLASS_QUEEN;
     this.setNextCells();
   }
 
   public swapToPawn(): void {
-    if (this._werewolf) {
-      this._cardClass = april.CARD_CLASS_PAWN;
-      this.setNextCells();
+    if (!this._werewolf || this._cardClass !== april.CARD_CLASS_QUEEN) {
+      return;
     }
+    this._werewolf = false;
+    this._cardClass = april.CARD_CLASS_PAWN;
+    this.setNextCells();
   }
 
   public generateFen() {

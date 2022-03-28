@@ -207,10 +207,10 @@ export class AprilCroupier {
       !this._queenProvided
     ) {
       const deckCardIndex = this._deck.findIndex(entry => entry.id === card.id);
-      this._deck[deckCardIndex].setCardClass(april.CARD_CLASS_QUEEN);
+      this._deck[deckCardIndex].swapToQueen();
 
       const cardIndex = this._cards.findIndex(entry => entry.id === card.id);
-      this._cards[cardIndex].setCardClass(april.CARD_CLASS_QUEEN);
+      this._cards[cardIndex].swapToQueen();
 
       this._queenProvided = true;
       return true;
