@@ -149,6 +149,11 @@ export class AprilController {
     this._aprilMap.resurrect();
     this._events.flush();
   }
+
+  async testAction(action) {
+    await this._aprilUser.testAction(action);
+    this._events.flush();
+  }
   
   async exit() {
     this._aprilMap.exit();

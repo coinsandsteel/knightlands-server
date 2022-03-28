@@ -309,6 +309,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
         this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
         this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
+        this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2242,6 +2243,10 @@ class PlayerController extends IPaymentListener {
 
     async _aprilResurrect() {
         return this.april.resurrect();
+    }
+
+    async _aprilTestAction(_, data) {
+        return this.april.testAction(data.action);
     }
 
     async _aprilExit() {

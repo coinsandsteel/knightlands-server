@@ -271,4 +271,42 @@ export class AprilUser {
       game.aprilManager.aprilTicketId
     );
   }
+
+  public async testAction(action) {
+    switch (action) {
+      case 'addTicket':{
+        await this._user.inventory.addItemTemplates([
+          { 
+            item: game.aprilManager.aprilTicketId,
+            quantity: 1
+          }
+        ]);
+        break;
+      }
+      case 'resetDailyRewards':{
+        this.day = 1;
+        this._state.rewards.dailyRewards = this.getInitialDailyrewards();
+        this.setActiveReward();
+        break;
+      }
+      case 'plus1Day':{
+        this.day++;
+        this.setActiveReward();
+        break;
+      }
+      case 'addGold':{
+        this.modifyBalance(april.CURRENCY_GOLD, 100);
+        break;
+      }
+      case 'resetCharacters':{
+        this._state.heroes = [];
+        this._state.rewards.heroRewards = {
+          [april.HERO_CLASS_KNIGHT]: { score: 0, claimed: false },
+          [april.HERO_CLASS_PALADIN]: { score: 0, claimed: false },
+          [april.HERO_CLASS_ROGUE]: { score: 0, claimed: false }
+        };
+        break;
+      }
+    }
+  }
 }
