@@ -260,4 +260,15 @@ export class AprilUser {
   public getHeroStat(): AprilRewardHeroesData {
     return this._state.rewards.heroRewards;
   }
+
+  public debitTicket() {
+    if (!this._user.inventory.hasItems(game.aprilManager.aprilTicketId, 1)) {
+      throw errors.AprilNoTicket;
+    }
+    
+    // Debit one ticket
+    this._user.inventory.removeItemByTemplate(
+      game.aprilManager.aprilTicketId
+    );
+  }
 }
