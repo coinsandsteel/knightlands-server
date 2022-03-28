@@ -361,13 +361,7 @@ export class AprilPlayground {
   protected killEnemy(enemy: Unit): void {
     // Spawn 1-4 clowns
     if (enemy.unitClass === april.UNIT_CLASS_JACK) {
-      const nextEnemiesRelativeMap = [
-        [-1, -1],
-        [-1,  1],
-        [ 1, -1],
-        [ 1,  1],
-      ];
-      const nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemy.index, nextEnemiesRelativeMap);
+      const nextEnemiesIndexes = this._map.movement.getCornerPositions(enemy.index);
       const nextEnemies = nextEnemiesIndexes.map(index => this.makeUnit({
         id: null, unitClass: april.UNIT_CLASS_CLOWN, index 
       }));

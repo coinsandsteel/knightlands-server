@@ -1,7 +1,5 @@
 import _ from "lodash";
-import random from "../../random";
 import { AprilMap } from "./AprilMap";
-import { Unit } from "./units/Unit";
 const Graph = require('node-dijkstra');
 
 const GRAPH = {
@@ -45,7 +43,7 @@ export class AprilMovement {
     this.route = new Graph(GRAPH);
   }
 
-  public getFirstPathIndex(enemyIndex: number, heroIndex: number) {
+  public getFirstPathIndex(enemyIndex: number, heroIndex: number): number {
     const path = this.route.path(`${enemyIndex}`, `${heroIndex}`);
     let index = enemyIndex;
     if (path) {
@@ -57,15 +55,44 @@ export class AprilMovement {
     return index;
   }
 
-  public getRandomNeighborIndex(enemyIndex: number) {
-    let neighbors = Object.keys(GRAPH[enemyIndex]);
-    let busyCells = this._map.playground.getBusyIndexes();
-    let freeNeighbors = neighbors.filter(x => !busyCells.includes(+x));
+  public getRandomNeighborIndex(enemyIndex: number): number {
+    let freeNeighbors = this.getFreeNeigbors(enemyIndex);
     let index = freeNeighbors.length ? _.sample(freeNeighbors) : enemyIndex;
     return +index;
   }
 
-  public getRandomQueenishIndex(enemyIndex: number) {
+  public getCornerPositions(enemyIndex: number): number[] {
+    const relativeMap = [
+      [-1, -1],
+      [-1,  1],
+      [ 1, -1],
+      [ 1,  1],
+    ];
+
+    let busyCells = this._map.playground.getBusyIndexes();
+    let freeNeighbors = this.getFreeNeigbors(enemyIndex);
+    let nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemyIndex, relativeMap);
+    
+    freeNeighbors = _.shuffle(
+      freeNeighbors.filter(index => !nextEnemiesIndexes.includes(index))
+    );
+    nextEnemiesIndexes = nextEnemiesIndexes.map(
+      index => busyCells.includes(index) ? freeNeighbors.pop() : index
+    );
+
+    return nextEnemiesIndexes;
+  }
+
+  protected getFreeNeigbors(index: number): number[] {
+    let neighbors = Object.keys(GRAPH[index]);
+    let busyCells = this._map.playground.getBusyIndexes();
+    let freeNeighbors = neighbors
+      .map(i => +i)
+      .filter(x => !busyCells.includes(+x));
+    return freeNeighbors;
+  }
+
+  public getRandomQueenishIndex(enemyIndex: number): number {
     const relativeMap = [
       // Up
       [-4, 0], [-3, 0], [-2, 0], [-1, 0],
@@ -93,7 +120,7 @@ export class AprilMovement {
     return index;
   }
 
-  public getIndex(index: number) {
+  public getIndex(index: number): { vertical: number, horizontal: number } {
     const horizontal = (index / 5) << 0;
     const vertical = (index + 5) % 5;
     return {
@@ -122,7 +149,7 @@ export class AprilMovement {
     return visibleIndexes;
   }
 
-  public getAbsoluteIndex(hIndex: number, vIndex: number) {
+  public getAbsoluteIndex(hIndex: number, vIndex: number): number {
     return (hIndex * 5) + vIndex;
   }
 }
