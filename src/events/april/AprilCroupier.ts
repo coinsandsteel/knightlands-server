@@ -48,6 +48,10 @@ export class AprilCroupier {
     return this._usedCards;
   }
 
+  get cardsInQueue(): Card[] {
+    return this._cardsInQueue;
+  }
+
   constructor(state: AprilCroupierState|null, map: AprilMap) {
     this._map = map;
 
@@ -125,6 +129,7 @@ export class AprilCroupier {
     this.commitCards();
 
     console.log('[Croupier] Deck', _.cloneDeep(this._deck).map(card => card.serialize()));
+    console.log('[Croupier] Card In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
   public respawnCards(): void {
@@ -140,6 +145,8 @@ export class AprilCroupier {
 
     this.cardsSpawnCallback();
     this.commitCards();
+
+    console.log('[Croupier] Card In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
   public reset() {
