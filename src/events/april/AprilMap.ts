@@ -200,7 +200,6 @@ export class AprilMap {
 
     if (this._state.hp <= 0) {
       this.sessionResult(april.SESSION_RESULT_FAIL);
-      this.gameOver();
       return;
     }
     
