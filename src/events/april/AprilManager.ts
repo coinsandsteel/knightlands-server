@@ -42,7 +42,7 @@ export class AprilManager {
   }
 
   get aprilTicketId() {
-    return this._meta.aprilTicket;
+    return this._meta.aprilTicket || 3475;
   }
 
   get midnight() {
@@ -57,6 +57,9 @@ export class AprilManager {
 
   async init() {
     this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "april_meta" }) || {};
+    if (!this._meta.aprilTicket || !this._meta.eventStartDate || !this._meta.eventEndDate) {
+      console.error(`[AprilManager] WARNING! Meta is not loaded!`);
+    }
 
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
     this._rankCollection.createIndex({ maxSessionGold: 1 });
