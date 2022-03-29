@@ -54,9 +54,7 @@ export class Unit {
       case UNIT_CLASS_CLOWN:{
         // Move distance: 1 cell
         // Move direction: any, towards enemy
-        const cellsAroundHero = this.map.movement.getCellsAroundHero();
-        const targetIndex = _.sample(cellsAroundHero);
-        this._index = this.map.movement.getFirstPathIndex(this.index, targetIndex);
+        this._index = this.map.movement.getFirstPathIndex(this.index, this.map.playground.hero.index);
         break;
       }
       case UNIT_CLASS_JACK: {

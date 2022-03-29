@@ -44,13 +44,14 @@ export class AprilMovement {
   }
 
   public getFirstPathIndex(enemyIndex: number, heroIndex: number): number {
-    const path = this.route.path(`${enemyIndex}`, `${heroIndex}`);
+    const avoidNodes = this._map.playground.units
+      .filter(unit => ![heroIndex, enemyIndex].includes(unit.index))
+      .map(unit => `${unit.index}`);
+
+    const path = this.route.path(`${enemyIndex}`, `${heroIndex}`, { trim: true, avoid: avoidNodes });
     let index = enemyIndex;
     if (path) {
-      index = path.length <= 2 ? enemyIndex : +path[1];
-    }
-    if (this._map.playground.findUnitByIndex(index)) {
-      index = enemyIndex;
+      index = !path.length ? enemyIndex : +path.shift();
     }
     return index;
   }
