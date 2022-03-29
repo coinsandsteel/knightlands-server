@@ -134,8 +134,9 @@ export class AprilMap {
     }
     
     this.updatePrices();
+    this.resetHealing();
     this.sessionResult(null);
-    
+
     this._state.actionPoints = 2;
     this._events.actionPoints(this._state.actionPoints);
     
@@ -229,6 +230,12 @@ export class AprilMap {
       this._state.healingUsed = true;
       console.log('[Map] Healing used', { hp: this._state.hp });
     }
+  }
+
+  public resetHealing() {
+    this._state.healingUsed = false;
+    this._state.healing = 0;
+    this._events.healing(0);
   }
 
   public spendActionPoint(): void {
