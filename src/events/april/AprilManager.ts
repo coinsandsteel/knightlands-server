@@ -154,7 +154,7 @@ export class AprilManager {
             $set: {
                 order: Game.now
             },
-            $max: {
+            $inc: {
                 [heroClass]: points
             },
         },
