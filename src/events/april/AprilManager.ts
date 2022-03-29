@@ -45,6 +45,14 @@ export class AprilManager {
     return this._meta.aprilTicket || 3475;
   }
 
+  get actionPriceBase() {
+    return this._meta.actionPriceBase || 5;
+  }
+
+  get resurrectionPriceBase() {
+    return this._meta.resurrectionPriceBase || 15;
+  }
+
   get midnight() {
     const midnight = new Date();
     midnight.setHours(0,0,0,0);

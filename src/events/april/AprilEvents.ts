@@ -44,12 +44,11 @@ export class AprilEvents {
     this._events.actionPoints = value;
   }
 
-  thirdActionPrice(value) {
-    this._events.thirdActionPrice = value;
-  }
-
-  resurrectionPrice(value) {
-    this._events.resurrectionPrice = value;
+  prices(key, value) {
+    this._events.prices = { 
+      ...this._events.prices,
+      [key]: value
+    };
   }
 
   cardsInQueue(value) {

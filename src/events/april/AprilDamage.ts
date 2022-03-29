@@ -15,6 +15,7 @@ export class AprilDamage {
     let relativeDmgMap = null;
 
     switch (unit.unitClass) {
+      case UNIT_CLASS_JACK:
       case UNIT_CLASS_TEETH: {
         // Attacks distance: 1 cell
         // Attacks direction: all
@@ -58,18 +59,6 @@ export class AprilDamage {
             [ 1,  0],
           ];
         }
-        break;
-      }
-      case UNIT_CLASS_JACK: {
-        // Attacks distance: 1 cell
-        // Attacks direction: vertical + horizontal
-        // Damage on the spot: no
-        relativeDmgMap = [
-          [-1,  0],
-          [ 0, -1],
-          [ 0,  1],
-          [ 1,  0],
-        ];
         break;
       }
       case UNIT_CLASS_HARLEQUIN: {

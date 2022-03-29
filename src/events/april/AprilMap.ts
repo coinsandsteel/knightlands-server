@@ -52,10 +52,6 @@ export class AprilMap {
       healing: 0,
       actionPoints: 0,
       sessionResult: null,
-      prices: {
-        thirdAction: 0,
-        resurrection: 0
-      },
       boosterCounters: {
         thirdAction: 0,
         resurrection: 0
@@ -63,9 +59,6 @@ export class AprilMap {
       playground: playgroundState,
       croupier: croupierState
     } as AprilMapState;
-
-    this._state.prices.thirdAction = this.getThirdActionPrice();
-    this._state.prices.resurrection = this.getResurrectionPrice();
   }
 
   public getState(): AprilMapState {
@@ -126,12 +119,12 @@ export class AprilMap {
       heroClass: this._state.heroClass
     });
     
-    
     if (this._state.sessionResult === april.SESSION_RESULT_SUCCESS) {
       this._state.level++;
       this._events.level(this._state.level);
     }
     
+    this.updatePrices();
     this.sessionResult(null);
     
     this._state.actionPoints = 2; // TODO verify this value
@@ -240,12 +233,12 @@ export class AprilMap {
     this._croupier.wakeUp(state.croupier);
   }
 
-  protected getThirdActionPrice(): number {
-    return 100 * (this._state.boosterCounters.thirdAction + 1);
+  protected getActionPrice(): number {
+    return this.level * (this._state.boosterCounters.thirdAction + 1) * game.aprilManager.actionPriceBase;
   }
 
   protected getResurrectionPrice(): number {
-    return 1000;
+    return this.level * (this._state.boosterCounters.resurrection + 1) * game.aprilManager.resurrectionPriceBase;
   }
 
   public purchaseAction() {
@@ -253,7 +246,7 @@ export class AprilMap {
       throw errors.IncorrectArguments;
     }
 
-    const price = this.getThirdActionPrice();
+    const price = this.getActionPrice();
     if (this._aprilUser.gold < price) {
       throw errors.NotEnoughCurrency;
     }
@@ -264,8 +257,14 @@ export class AprilMap {
     this._state.boosterCounters.thirdAction++;
 
     this._events.actionPoints(this._state.actionPoints);
+    this.updatePrices();
   }
-
+  
+  public updatePrices(): void {
+    this._events.prices('thirdAction', this.getActionPrice());
+    this._events.prices('resurrection', this.getResurrectionPrice());
+  }
+  
   public backupState(): void {
     this._statePrevious = _.cloneDeep(this._state);
   }
