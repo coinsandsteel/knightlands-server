@@ -207,9 +207,8 @@ export class AprilMap {
       return;
     }
     
-    this._playground.resetKillTracker();
-    this._playground.moveEnemies();
-    this._croupier.respawnCards();
+    this._playground.moveEndedCallback();
+    this._croupier.moveEndedCallback();
     this.resetActionPoints();
   }
   

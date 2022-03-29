@@ -132,6 +132,10 @@ export class AprilCroupier {
     console.log('[Croupier] Card In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
+  public moveEndedCallback(): void {
+    this.respawnCards();
+  }
+
   public respawnCards(): void {
     if (this._cardsInQueue.length >= this._handSize) {
       this.purgeCards();

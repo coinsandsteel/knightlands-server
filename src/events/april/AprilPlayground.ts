@@ -236,7 +236,8 @@ export class AprilPlayground {
         let unit = this.makeUnit({ 
           id: null, 
           unitClass, 
-          index: unitIndex
+          index: unitIndex,
+          isDead: false
         });
         //console.log('[Spawn unit]', unit.serialize());
         this._units.push(unit);
@@ -247,7 +248,8 @@ export class AprilPlayground {
       this.makeUnit({ 
         id: null, 
         unitClass: april.UNIT_CLASS_HERO, 
-        index: 22
+        index: 22,
+        isDead: false
       })
     );
 
@@ -279,12 +281,30 @@ export class AprilPlayground {
 
   public allEnemiesKilled(includingBoss: boolean): boolean  {
     const unitsLast = this._units.filter(
-      unit => unit.unitClass !== april.UNIT_CLASS_HERO && (includingBoss || unit.unitClass !== april.UNIT_CLASS_BOSS)
+      unit => {
+        return (
+          unit.unitClass !== april.UNIT_CLASS_HERO 
+          && 
+          (includingBoss || unit.unitClass !== april.UNIT_CLASS_BOSS)
+          &&
+          !unit.isDead
+        );
+      }
     );
     return !unitsLast.length;
   }
 
-  public resetKillTracker() {
+  public moveEndedCallback(): void {
+    this.removeDeadUnits();
+    this.resetKillTracker();
+    this.moveEnemies();
+  }
+
+  public removeDeadUnits(): void {
+    this._units = this._units.filter(unit => !unit.isDead);
+  }
+
+  public resetKillTracker(): void {
     this._state.enemyWasKilled = false;
   }
 
@@ -363,11 +383,17 @@ export class AprilPlayground {
     if (enemy.unitClass === april.UNIT_CLASS_JACK) {
       const nextEnemiesIndexes = this._map.movement.getCornerPositions(enemy.index);
       const nextEnemies = nextEnemiesIndexes.map(index => this.makeUnit({
-        id: null, unitClass: april.UNIT_CLASS_CLOWN, index 
+        id: null,
+        unitClass: april.UNIT_CLASS_CLOWN,
+        index,
+        isDead: false
       }));
       this._units.push(...nextEnemies);
     }
-    this._units = this.units.filter((unit) => unit.index !== enemy.index || unit.unitClass === april.UNIT_CLASS_HERO);
+
+    // TODO check if it works
+    enemy.kill();
+
     this.updateSessionGoldAndScoreByUnitClass(enemy.unitClass);
     if (enemy.unitClass === april.UNIT_CLASS_BOSS) {
       this._state.hasVictory = true;
@@ -401,11 +427,15 @@ export class AprilPlayground {
   }
 
   protected commitUnits(): void {
-    this._state.units = this.units.map(unit => unit.serialize());
+    this._state.units = this.units
+      .filter(unit => !unit.isDead)
+      .map(unit => unit.serialize());
     this.events.units(this._state.units);
   }
 
   public getBusyIndexes() {
-    return this._units.map(unit => unit.index);
+    return this._units
+      .filter(unit => !unit.isDead)
+      .map(unit => unit.index);
   }
 }

@@ -83,6 +83,7 @@ export interface AprilUnitBlueprint {
   id: string;
   unitClass: string;
   index: number;
+  isDead: boolean;
 }
 
 export interface AprilCardBlueprint {

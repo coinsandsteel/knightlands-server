@@ -31,7 +31,35 @@ export class AprilDamage {
         ];
         break;
       }
-      case UNIT_CLASS_CLOWN:
+      case UNIT_CLASS_CLOWN: {
+        if (unit.isDead) {
+          // Attacks distance: 1 cell
+          // Attacks direction: all
+          // Damage on the spot: yes
+          relativeDmgMap = [
+            [-1, -1],
+            [-1,  0],
+            [-1,  1],
+            [ 0, -1],
+            [ 0,  0],
+            [ 0,  1],
+            [ 1, -1],
+            [ 1,  0],
+            [ 1,  1],
+          ];
+        } else {
+          // Attacks distance: 1 cell
+          // Attacks direction: vertical + horizontal
+          // Damage on the spot: no
+          relativeDmgMap = [
+            [-1,  0],
+            [ 0, -1],
+            [ 0,  1],
+            [ 1,  0],
+          ];
+        }
+        break;
+      }
       case UNIT_CLASS_JACK: {
         // Attacks distance: 1 cell
         // Attacks direction: vertical + horizontal
@@ -106,7 +134,11 @@ export class AprilDamage {
   public getDamageMap(units: Unit[]): number[] {
     const damageMap = Array.from({ length: 25 }, () => 0) as number[];
     units.forEach((unit: Unit) => {
-      if (unit.unitClass === UNIT_CLASS_HERO) {
+      if (
+        unit.unitClass === UNIT_CLASS_HERO
+        ||
+        (unit.unitClass !== UNIT_CLASS_CLOWN && unit.isDead)
+      ) {
         return;
       }
       const unitDamageMap = this.getDamageBlueprint(unit);

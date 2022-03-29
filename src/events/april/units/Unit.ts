@@ -13,6 +13,7 @@ export class Unit {
   protected _unitClass: string;
   protected _map: AprilMap;
   protected _sequence: number;
+  protected _isDead: boolean;
 
   get id(): string {
     return this._id;
@@ -34,10 +35,15 @@ export class Unit {
     return this._sequence;
   }
 
+  get isDead(): boolean {
+    return this._isDead;
+  }
+
   constructor(unit: AprilUnitBlueprint, map: AprilMap) {
     this._id = unit.id || uuidv4().split('-').pop();
     this._index = unit.index;
     this._unitClass = unit.unitClass;
+    this._isDead = unit.isDead;
     this._map = map;
     this._sequence = 0;
   }
@@ -86,4 +92,8 @@ export class Unit {
     
     return _.cloneDeep(card);
   };
+
+  public kill(): void {
+    this._isDead = true;
+  }
 }
