@@ -178,7 +178,7 @@ export class AprilUser {
       }
     }
     if (balance < price) {
-      throw errors.NotEnoughResource;
+      throw errors.NotEnoughCurrency;
     }
 
     // change balance
@@ -255,6 +255,21 @@ export class AprilUser {
 
     this._state.heroes.push(heroClass);
     this._events.heroes(this._state.heroes);
+  }
+
+  public async purchaseTicket() {
+    if (this.gold < april.TICKET_SHOP[0].price) {
+      throw errors.NotEnoughCurrency;
+    }
+
+    this.modifyBalance(april.CURRENCY_GOLD, -april.TICKET_SHOP[0].price);
+
+    await this._user.inventory.addItemTemplates([
+      { 
+        item: game.aprilManager.aprilTicketId,
+        quantity: april.TICKET_SHOP[0].quantity
+      }
+    ]);
   }
 
   public getHeroStat(): AprilRewardHeroesData {

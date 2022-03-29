@@ -110,6 +110,11 @@ export class AprilController {
     this._events.flush();
   }
 
+  async purchaseTicket() {
+    this._aprilUser.purchaseTicket();
+    this._events.flush();
+  }
+
   async purchaseGold(shopIndex: number,currency: string) {
     this._aprilUser.purchaseGold(shopIndex, currency);
     this._events.flush();

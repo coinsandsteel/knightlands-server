@@ -310,6 +310,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
         this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
         this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
+        this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
         
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -2191,6 +2192,10 @@ class PlayerController extends IPaymentListener {
             throw Errors.IncorrectArguments;
         }
         return this.april.purchaseHero(heroClass);
+    }
+
+    async _aprilPurchaseHero(user, data) {
+        return this.april.purchaseTicket();
     }
 
     async _aprilPurchaseGold(user, data) {
