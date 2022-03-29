@@ -61,6 +61,22 @@ export class AprilMovement {
     return +index;
   }
 
+  public getCellsAroundHero(): number[] {
+    const relativeMap = [
+      [-1, -1],
+      [-1,  0],
+      [-1,  1],
+      [ 0, -1],
+      [ 0,  1],
+      [ 1, -1],
+      [ 1,  0],
+      [ 1,  1],
+    ];
+    const heroIndex = this._map.playground.hero.index;
+    const indexes = this.getVisibleIndexes(heroIndex, relativeMap);
+    return indexes;
+  }
+
   public getCornerPositions(enemyIndex: number): number[] {
     const relativeMap = [
       [-1, -1],
@@ -71,7 +87,7 @@ export class AprilMovement {
 
     let busyCells = this._map.playground.getBusyIndexes();
     let freeNeighbors = this.getFreeNeigbors(enemyIndex);
-    let nextEnemiesIndexes = this._map.movement.getVisibleIndexes(enemyIndex, relativeMap);
+    let nextEnemiesIndexes = this.getVisibleIndexes(enemyIndex, relativeMap);
     
     freeNeighbors = _.shuffle(
       freeNeighbors.filter(index => !nextEnemiesIndexes.includes(index))
@@ -130,7 +146,7 @@ export class AprilMovement {
   }
 
   public getVisibleIndexes(unitIndex: number, relativeIndexes: number[][]): number[] {
-    const indexes = this._map.movement.getIndex(unitIndex);
+    const indexes = this.getIndex(unitIndex);
     const absoluteIndexes = relativeIndexes.map(row => {
       const relativeIndexH = indexes.horizontal + row[0];
       const relativeIndexV = indexes.vertical + row[1];
