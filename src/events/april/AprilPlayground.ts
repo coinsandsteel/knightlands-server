@@ -146,8 +146,12 @@ export class AprilPlayground {
     return this._damage;
   }
   
-  get enemyWasKilled(): boolean {
-    return this._state.enemyWasKilled;
+  get fighted(): boolean {
+    return this._state.fighted;
+  }
+
+  get enemiesKilled(): number {
+    return this._state.enemiesKilled;
   }
 
   get hasVictory(): boolean {
@@ -168,7 +172,8 @@ export class AprilPlayground {
 
   public setInitialState() {
     this._state = {
-      enemyWasKilled: false,
+      enemiesKilled: 0,
+      fighted: false,
       hasVictory: false,
       units: [],
       damage: []
@@ -180,7 +185,8 @@ export class AprilPlayground {
   }
   
   public wakeUp(state: AprilPlaygroundState) {
-    this._state.enemyWasKilled = state.enemyWasKilled;
+    this._state.enemiesKilled = state.enemiesKilled;
+    this._state.fighted = state.fighted;
     this._state.damage = state.damage;
     this._state.units = state.units;
     this._state.hasVictory = state.hasVictory;
@@ -197,7 +203,8 @@ export class AprilPlayground {
   }
 
   public enterLevel() {
-    this._state.enemyWasKilled = false;
+    this._state.enemiesKilled = 0;
+    this._state.fighted = false;
     this.spawnUnits();
     this.updateDamageMap();
   }
@@ -305,7 +312,7 @@ export class AprilPlayground {
   }
 
   public resetKillTracker(): void {
-    this._state.enemyWasKilled = false;
+    this._state.fighted = false;
   }
 
   public moveHero(index: number): boolean {
@@ -330,7 +337,6 @@ export class AprilPlayground {
       this.killEnemy(enemyOnTheSpot);
       // Update damage map (no enemy = no damage around)
       this.updateDamageMap();
-      this._state.enemyWasKilled = false;
     }
 
     this.commitUnits();
@@ -398,6 +404,11 @@ export class AprilPlayground {
     if (enemy.unitClass === april.UNIT_CLASS_BOSS) {
       this._state.hasVictory = true;
     }
+
+    this._state.fighted = true;
+    this._state.enemiesKilled++;
+
+    
   }
 
   private updateSessionGoldAndScoreByUnitClass(unitClass: string) {

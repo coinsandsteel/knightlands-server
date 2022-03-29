@@ -20,6 +20,10 @@ export class AprilEvents {
     this._events.hourReward = entry;
   }
 
+  heroClass(value) {
+    this._events.heroClass = value;
+  }
+
   heroRewards(entries) {
     this._events.heroRewards = entries
   }
@@ -34,6 +38,10 @@ export class AprilEvents {
 
   hp(value) {
     this._events.hp = value;
+  }
+
+  maxHp(value) {
+    this._events.maxHp = value;
   }
 
   healing(value) {
@@ -61,6 +69,10 @@ export class AprilEvents {
 
   units(value) {
     this._events.units = value;
+  }
+
+  enemiesKilled(value) {
+    this._events.enemiesKilled = value;
   }
 
   damage(value) {

@@ -49,8 +49,9 @@ export interface AprilMapState {
   level: number;
   sessionResult: string;
   hp: number;
-  healing: number;
   maxHp: number;
+  healing: number;
+  healingUsed: boolean;
   actionPoints: number;
   boosterCounters: {
     thirdAction: number;
@@ -61,7 +62,8 @@ export interface AprilMapState {
 }
 
 export interface AprilPlaygroundState {
-  enemyWasKilled: boolean;
+  enemiesKilled: number;
+  fighted: boolean;
   units: AprilUnitBlueprint[];
   damage: number[];
   hasVictory: boolean;

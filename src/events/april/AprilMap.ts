@@ -49,7 +49,9 @@ export class AprilMap {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
       hp: 0,
+      maxHp: 0,
       healing: 0,
+      healingUsed: false,
       actionPoints: 0,
       sessionResult: null,
       boosterCounters: {
@@ -99,12 +101,16 @@ export class AprilMap {
 
   public restart(heroClass: string) {
     this._state.heroClass = heroClass;
+    this._events.heroClass(heroClass);
 
     this._state.level = 1;
     this._events.level(1);
 
     this._state.hp = 3;
-    this._events.hp(this._state.hp);
+    this._events.hp(3);
+    
+    this._state.maxHp = 3;
+    this._events.maxHp(3);
     
     this._aprilUser.resetSessionGold();
 
@@ -127,13 +133,13 @@ export class AprilMap {
     this.updatePrices();
     this.sessionResult(null);
     
-    this._state.actionPoints = 2; // TODO verify this value
+    this._state.actionPoints = 2;
     this._events.actionPoints(this._state.actionPoints);
     
     // ##### Stat #####
-    // TODO is there a limit of HP?
     if (this._state.level > 1 && booster === april.BOOSTER_HP) {
       this.modifyHp(1);
+      this.modifyMaxHp(1);
     }
 
     // ##### Subsystems #####
@@ -182,17 +188,8 @@ export class AprilMap {
 
   public moveEnded(): void {
     const damage = this._playground.handleDamage();
-    if (
-      this.heroClass === april.HERO_CLASS_PALADIN
-      &&
-      !damage
-      &&
-      !this._playground.enemyWasKilled
-      &&
-      !this._state.healing
-    ) {
-      this.modifyHp(1);
-      this.modifyHealing(1);
+    if (!damage) {
+      this.heal();
     }
 
     if (this._state.hp <= 0) {
@@ -205,6 +202,32 @@ export class AprilMap {
     this.resetActionPoints();
   }
   
+  public heal(): void {
+    if (
+      this.heroClass === april.HERO_CLASS_PALADIN
+      &&
+      !this._playground.fighted
+      &&
+      this._state.hp < this._state.maxHp
+      &&
+      !this._state.healingUsed
+    ) {
+      this._state.healing++;
+      this._events.healing(this._state.healing);
+      console.log('[Map] Healing insreased', { healing: this._state.healing });
+    }
+
+    if (this._state.healing === 4) {
+      this.modifyHp(1);
+
+      this._state.healing = 0;
+      this._events.healing(0);
+
+      this._state.healingUsed = true;
+      console.log('[Map] Healing used', { hp: this._state.hp });
+    }
+  }
+
   public spendActionPoint(): void {
     this._state.actionPoints--;
     this._events.actionPoints(this._state.actionPoints);
@@ -227,6 +250,7 @@ export class AprilMap {
     this._state.level = state.level;
     this._state.sessionResult = state.sessionResult;
     this._state.hp = state.hp;
+    this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
 
     this._playground.wakeUp(state.playground);
@@ -281,14 +305,9 @@ export class AprilMap {
     this._events.hp(this._state.hp);
   };
 
-  public modifyHealing(value: number): void {
-    if (this._state.healing >= 3) {
-      console.log('[Map] Paladin healing already used.');
-      return;
-    }
-    this._state.healing += value;
-    this._events.healing(this._state.healing);
-    console.log('[Map] Paladin healed: hp = ', this._state.hp);
+  public modifyMaxHp(value: number): void {
+    this._state.maxHp += value;
+    this._events.maxHp(this._state.hp);
   };
 
   public gameOver() {
@@ -312,6 +331,9 @@ export class AprilMap {
     
     this._state.hp = 3;
     this._events.hp(3);
+    
+    this._state.maxHp = 3;
+    this._events.maxHp(3);
     
     this._state.healing = 0;
     this._events.healing(0);
