@@ -357,15 +357,15 @@ export class AprilPlayground {
       }
     });
 
-    // Update damage map (enemy moved = damage zone moved). Boss runs a damage sequence.
-    this.updateDamageMap();
-    this.commitUnits();
-
     this._units.forEach((unit) => {
       if (unit.unitClass === april.UNIT_CLASS_BOSS) {
         unit.switchSequence();
       }
     });
+    
+    // Update damage map (enemy moved = damage zone moved). Boss runs a damage sequence.
+    this.updateDamageMap();
+    this.commitUnits();
   }
 
   public handleDamage(): number {
