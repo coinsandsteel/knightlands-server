@@ -103,6 +103,9 @@ export class AprilMap {
     this._state.heroClass = heroClass;
     this._events.heroClass(heroClass);
 
+    this._state.boosterCounters.thirdAction = 0;
+    this._state.boosterCounters.resurrection = 0;
+
     this._state.level = 1;
     this._events.level(1);
 
