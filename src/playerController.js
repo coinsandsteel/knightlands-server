@@ -2194,7 +2194,7 @@ class PlayerController extends IPaymentListener {
         return this.april.purchaseHero(heroClass);
     }
 
-    async _aprilPurchaseHero(user, data) {
+    async _aprilPurchaseTicket(user, data) {
         return this.april.purchaseTicket();
     }
 
