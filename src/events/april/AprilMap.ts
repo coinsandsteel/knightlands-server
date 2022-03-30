@@ -51,6 +51,7 @@ export class AprilMap {
       healing: 0,
       healingUsed: false,
       actionPoints: 0,
+      canPurchaseActionPoint: true,
       sessionResult: null,
       prices: {
         thirdAction: 0,
@@ -149,6 +150,7 @@ export class AprilMap {
     this.sessionResult(null);
 
     this._state.actionPoints = 2;
+    this._state.canPurchaseActionPoint = true;
     this._events.actionPoints(this._state.actionPoints);
     
     // ##### Stat #####
@@ -287,6 +289,10 @@ export class AprilMap {
   }
 
   public purchaseAction() {
+    if (!this._state.canPurchaseActionPoint) {
+      throw errors.IncorrectArguments;
+    }
+
     if (this._state.actionPoints > 2) {
       throw errors.IncorrectArguments;
     }
@@ -300,6 +306,7 @@ export class AprilMap {
 
     this._state.actionPoints++;
     this._state.boosterCounters.thirdAction++;
+    this._state.canPurchaseActionPoint = false;
 
     this._events.actionPoints(this._state.actionPoints);
     this.updatePrices();
