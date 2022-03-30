@@ -64,6 +64,8 @@ export class AprilMap {
   }
 
   public getState(): AprilMapState {
+    this._state.playground = this._playground.getState();
+    this._state.croupier = this._croupier.getState();
     return this._state;
   }
   
