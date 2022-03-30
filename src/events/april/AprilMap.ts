@@ -333,6 +333,9 @@ export class AprilMap {
     // Update resurrection price
     this._state.boosterCounters.resurrection++;
     this.updatePrices();
+
+    this._state.hp = 3;
+    this._state.actionPoints = 2;
   }
 
   public modifyHp(value: number): void {
