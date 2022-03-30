@@ -60,11 +60,13 @@ export class AprilCroupier {
     } else {
       this.setInitialState();
     }
+    console.log('[AprilCroupier] Constructor finished');
   }
 
   public setInitialState() {
     this._state = {
       newCard: null,
+      deck: [],
       cardsInQueue: [],
       cards: [],
       usedCards: []
@@ -80,6 +82,29 @@ export class AprilCroupier {
     this._state.cardsInQueue = state.cardsInQueue;
     this._state.cards = state.cards;
     this._state.usedCards = state.usedCards;
+    this.createCards();
+  }
+
+  protected createCards(): void {
+    this._deck = [];
+    this._state.deck.forEach((card: AprilCardBlueprint) => {
+      this._deck.push(new Card(card, this._map));
+    });
+
+    this._cards = [];
+    this._state.cards.forEach((card: AprilCardBlueprint) => {
+      this._cards.push(new Card(card, this._map));
+    });
+
+    this._cardsInQueue = [];
+    this._state.cardsInQueue.forEach((card: AprilCardBlueprint) => {
+      this._cardsInQueue.push(new Card(card, this._map));
+    });
+
+    this._usedCards = [];
+    this._state.usedCards.forEach((card: AprilCardBlueprint) => {
+      this._usedCards.push(new Card(card, this._map));
+    });
   }
 
   public cardUsed(card: Card): void {
@@ -129,7 +154,7 @@ export class AprilCroupier {
     this.commitCards();
 
     console.log('[Croupier] Deck', _.cloneDeep(this._deck).map(card => card.serialize()));
-    console.log('[Croupier] Card In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
+    console.log('[Croupier] Cards In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
   public moveEndedCallback(): void {
@@ -233,6 +258,8 @@ export class AprilCroupier {
   }
 
   protected commitCards() {
+    this._state.deck = this._deck.map(card => card.serialize());
+
     this._state.cardsInQueue = this._cardsInQueue.map(card => card.serialize());
     this.events.cardsInQueue(this._state.cardsInQueue.length);
 

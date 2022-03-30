@@ -39,12 +39,10 @@ export class AprilMap {
 
     this._statePrevious = null;
     this._movement = new AprilMovement(this);
+    console.log('[AprilMap] Constructor finished');
   }
 
   public setInitialState() {
-    const playgroundState = this._playground.getState();
-    const croupierState = this._croupier.getState();
-
     this._state = {
       heroClass: april.HERO_CLASS_KNIGHT,
       level: 1,
@@ -54,15 +52,26 @@ export class AprilMap {
       healingUsed: false,
       actionPoints: 0,
       sessionResult: null,
+      prices: {
+        thirdAction: 0,
+        resurrection: 0
+      },
       boosterCounters: {
         thirdAction: 0,
         resurrection: 0
       },
-      playground: playgroundState,
-      croupier: croupierState
+      playground: this._playground.getState(),
+      croupier: this._croupier.getState()
     } as AprilMapState;
+
+    this.setPrices();
   }
 
+  public setPrices(): void {
+    this._state.prices.thirdAction = this.getActionPrice();
+    this._state.prices.resurrection = this.getResurrectionPrice();
+  }
+  
   public getState(): AprilMapState {
     this._state.playground = this._playground.getState();
     this._state.croupier = this._croupier.getState();
@@ -189,6 +198,7 @@ export class AprilMap {
   }
   
   public skip(): void {
+    this.backupState();
     this.moveEnded();
   }
 
@@ -264,7 +274,6 @@ export class AprilMap {
     this._state.hp = state.hp;
     this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
-
     this._playground.wakeUp(state.playground);
     this._croupier.wakeUp(state.croupier);
   }
@@ -297,16 +306,21 @@ export class AprilMap {
   }
   
   public updatePrices(): void {
-    this._events.prices('thirdAction', this.getActionPrice());
-    this._events.prices('resurrection', this.getResurrectionPrice());
+    this.setPrices();
+    this._events.prices('thirdAction', this._state.prices.thirdAction);
+    this._events.prices('resurrection', this._state.prices.resurrection);
   }
   
   public backupState(): void {
-    this._statePrevious = _.cloneDeep(this._state);
+    this._statePrevious = _.cloneDeep(this.getState());
   }
 
   public resurrect(): void {
-    this._state = _.cloneDeep(this._statePrevious);
+    this.wakeUp(_.cloneDeep(this._statePrevious));
+
+    // Update resurrection price
+    this._state.boosterCounters.resurrection++;
+    this.updatePrices();
   }
 
   public modifyHp(value: number): void {

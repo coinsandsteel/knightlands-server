@@ -168,6 +168,7 @@ export class AprilPlayground {
     }
 
     this._damage = new AprilDamage(map);
+    console.log('[AprilPlayground] Constructor finished');
   }
 
   public setInitialState() {
@@ -382,6 +383,11 @@ export class AprilPlayground {
     
     this._state.damage = [];
     this.events.damage([]);
+
+    this._state.enemiesKilled = 0;
+    this.events.enemiesKilled(0);
+
+    this._state.fighted = false;
   }
 
   protected killEnemy(enemy: Unit): void {
@@ -405,10 +411,10 @@ export class AprilPlayground {
       this._state.hasVictory = true;
     }
 
-    this._state.fighted = true;
     this._state.enemiesKilled++;
+    this.events.enemiesKilled(0);
 
-    
+    this._state.fighted = true;
   }
 
   private updateSessionGoldAndScoreByUnitClass(unitClass: string) {
