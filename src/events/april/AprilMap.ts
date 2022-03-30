@@ -150,8 +150,10 @@ export class AprilMap {
     this.sessionResult(null);
 
     this._state.actionPoints = 2;
-    this._state.canPurchaseActionPoint = true;
     this._events.actionPoints(this._state.actionPoints);
+    
+    this._state.canPurchaseActionPoint = true;
+    this._events.canPurchaseActionPoint(true);
     
     // ##### Stat #####
     if (this._state.level > 1 && booster === april.BOOSTER_HP) {
@@ -276,6 +278,7 @@ export class AprilMap {
     this._state.hp = state.hp;
     this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
+    this._state.canPurchaseActionPoint = state.canPurchaseActionPoint;
     this._playground.wakeUp(state.playground);
     this._croupier.wakeUp(state.croupier);
   }
@@ -304,11 +307,13 @@ export class AprilMap {
 
     this._aprilUser.modifyBalance(april.CURRENCY_GOLD, -price);
 
-    this._state.actionPoints++;
     this._state.boosterCounters.thirdAction++;
-    this._state.canPurchaseActionPoint = false;
-
+    this._state.actionPoints++;
     this._events.actionPoints(this._state.actionPoints);
+
+    this._state.canPurchaseActionPoint = false;
+    this._events.canPurchaseActionPoint(false);
+
     this.updatePrices();
   }
   
@@ -373,6 +378,9 @@ export class AprilMap {
     
     this._state.actionPoints = 2;
     this._events.actionPoints(2);
+
+    this._state.canPurchaseActionPoint = true;
+    this._events.canPurchaseActionPoint(true);
 
     this._aprilUser.resetSessionGold();
 
