@@ -93,7 +93,7 @@ export class AprilController {
         break;
       }
       case april.REWARD_TYPE_RANKING: {
-        items = await Game.aprilManager.claimRewards(this._user);
+        items = await Game.aprilManager.claimRankingRewards(this._user);
         break;
       }
       case april.REWARD_TYPE_HERO: {

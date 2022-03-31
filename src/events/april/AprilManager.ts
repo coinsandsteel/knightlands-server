@@ -2,23 +2,26 @@ import { Collection, ObjectId } from "mongodb";
 import _ from "lodash";
 
 import Game from "../../game";
-import { Collections } from "../../database/database";
 import User from "../../user";
+import { Collections } from "../../database/database";
 import errors from "../../knightlands-shared/errors";
 import * as april from "../../knightlands-shared/april";
+import random from "../../random";
 
 const RANKS_PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 15 * 60 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
 
 export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
+  private _rewardCollection: Collection;
   private _lastRankingsReset: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.AprilUsers);
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
+    this._rewardCollection = Game.db.collection(Collections.AprilRewards);
   }
   
   get eventStartDate() {
@@ -73,15 +76,16 @@ export class AprilManager {
       console.error(`[AprilManager] WARNING! Meta is not loaded!`);
     }
 
-    this._rankCollection = Game.db.collection(Collections.AprilRanks);
     this._rankCollection.createIndex({ maxSessionGold: 1 });
     this._rankCollection.createIndex({ order: 1 });
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
     this._lastRankingsReset = this._meta.lastReset || 0;
+    //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
-    this.watchResetRankings();
+    //await this.addTestRatings();
+    await this.watchResetRankings();
   }
 
   public eventIsInProgress() {
@@ -105,7 +109,7 @@ export class AprilManager {
     return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
   }
 
-  watchResetRankings() {
+  async watchResetRankings() {
     setInterval(async () => {
       await this.commitResetRankings();
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
@@ -115,9 +119,14 @@ export class AprilManager {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
     if (this._lastRankingsReset >= midnight) {
+      //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
     
+    // Distribute rewards for winners
+    this.distributeRewards();
+
+    console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     // Last reset was more that day ago? Launch reset.
     await Game.dbClient.withTransaction(async (db) => {
       await db.collection(Collections.AprilRanks).deleteMany({});
@@ -131,6 +140,57 @@ export class AprilManager {
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
+    console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
+  }
+
+  async distributeRewards() {
+    console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
+
+    for (let i = 0; i < april.HEROES.length; i++) {
+      let heroClass = april.HEROES[i].heroClass;
+
+      // Rankings page
+      const heroClassRankings = await this.getRankingsByHeroClass(heroClass);
+      for (let rankIndex = 0; rankIndex < heroClassRankings.length; rankIndex++) {
+        let entry = heroClassRankings[rankIndex];
+        await this.debitUserReward(entry.id, heroClass, rankIndex + 1);
+      }
+    }
+
+    console.log(`[AprilManager] Rankings distribution FINISHED.`);
+  }
+
+  async debitUserReward(userId: ObjectId, heroClass: string, rank: number) {
+    let rewardsEntry = await this._rewardCollection.findOne({ _id: userId }) || {};
+    let items = rewardsEntry.items || [];
+
+    let rewardIndex = null;
+    if (rank >= 1 && rank <= 4) {
+      rewardIndex = rank - 1;
+    } else if (rank >= 5 && rank <= 10) {
+      rewardIndex = 4;
+    } else {
+      return;
+    }
+
+    const rewardItems = this.rankingRewards[rewardIndex].items;
+    
+    rewardItems.forEach((itemEntry) => {
+      let receivedItemIndex = items.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
+      if (receivedItemIndex === -1) {
+        items.push(_.cloneDeep(itemEntry));
+      } else {
+        items[receivedItemIndex].quantity += itemEntry.quantity;
+      }
+    });
+
+    await this._rewardCollection.updateOne(
+      { _id: userId }, 
+      { $set: { items, [`ranks.${heroClass}`]: rank }},
+      { upsert: true }
+    );
+
+    //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, items });
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {
@@ -198,72 +258,55 @@ export class AprilManager {
     return records;
   }
 
-  async getUserRank(userId: string) {
-    let userRecord = await this._rankCollection.findOne({ _id: userId });
-    if (!userRecord || !userRecord.maxSessionGold) {
-        return null;
-    }
-
-    let rank = await this._rankCollection.find({ 
-      maxSessionGold: { $gt: userRecord.maxSessionGold } 
-    }).count() + 1;
-
-    return rank;
+  public async userHasRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    return rewardsEntry && rewardsEntry.items && rewardsEntry.items.length && !rewardsEntry.claimed;
   }
 
-  async userHasRewards(user: User) {
-    if (!this.eventFinished()) {
-      return false;
-    }
-    
-    const userRecord = await this._rankCollection.findOne({ _id: user.id });
-    const rewardClaimed = userRecord ? !!userRecord.claimed : false;
-
-    const userClassRank = await Game.aprilManager.getUserRank(user.id);
-
-    if (userClassRank && userClassRank >= 1 && userClassRank <= 10) {
-      return !rewardClaimed;
-    }
-
-    return false;
-  }
-
-  async hasClaimedReward(user: User) {
-    const userRecord = await this._rankCollection.findOne({ _id: user.id });
-    return userRecord ? !!userRecord.claimed : false;
-  }
-
-  public async claimRewards(user: User) {
-    if (!this.eventFinished()) {
+  public async claimRankingRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    if (!rewardsEntry || !rewardsEntry.items.length || rewardsEntry.claimed) {
       throw errors.IncorrectArguments;
     }
 
-    const rewardClaimed = await this.hasClaimedReward(user);
-    if (rewardClaimed) {
-      throw errors.IncorrectArguments;
-    }
-
-    const rankingRewards = this.rankingRewards;
-
-    const userClassRank = await Game.aprilManager.getUserRank(user.id);
-    if (userClassRank === null) {
-      return [];
-    }
-
-    let rewardIndex = null;
-    if (userClassRank >= 1 && userClassRank <= 4) {
-      rewardIndex = userClassRank - 1;
-    } else if (userClassRank >= 5 && userClassRank <= 10) {
-      rewardIndex = 4;
-    } else {
-      return [];
-    }
-
-    const rewardItems = rankingRewards[rewardIndex].items;
-    await user.inventory.addItemTemplates(rewardItems);
+    await user.inventory.addItemTemplates(rewardsEntry.items);
     
-    await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
+    const time = Game.nowSec;
+    await this._rewardCollection.updateOne({ _id: user.id }, { 
+      $set: {
+        items: [],
+        [`history.${time}`]: rewardsEntry,
+        claimed: 0
+      } 
+    });
 
-    return rewardItems;
+    return rewardsEntry.items;
   }
+
+  public async addTestRatings(){
+    const users = await Game.db.collection(Collections.Users).find({}).limit(1000).toArray();
+    const me = await Game.db.collection(Collections.Users).findOne({ address: 'xxx@gmail.com' });
+
+    const heroClasses = [
+      april.HERO_CLASS_KNIGHT,
+      april.HERO_CLASS_PALADIN,
+      april.HERO_CLASS_ROGUE
+    ];
+
+    heroClasses.forEach(async heroClass => {
+      await this.updateRank(
+        me._id,
+        heroClass,
+        3010
+      )
+
+      users.forEach(async user => {
+        await this.updateRank(
+          user._id,
+          heroClass,
+          random.intRange(0, 3000)
+        )
+      });
+    });
+  };
 }
