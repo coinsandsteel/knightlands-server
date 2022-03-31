@@ -37,8 +37,8 @@ export class AprilManager {
     return secondsLeft;
   }
 
-  get eventRewards() {
-    return this._meta.eventRewards || [];
+  get rankingRewards() {
+    return this._meta.rankingRewards || [];
   }
 
   get aprilTicketId() {
@@ -239,7 +239,7 @@ export class AprilManager {
       throw errors.IncorrectArguments;
     }
 
-    const eventRewards = this.eventRewards;
+    const rankingRewards = this.rankingRewards;
 
     const userClassRank = await Game.aprilManager.getUserRank(user.id);
     if (userClassRank === null) {
@@ -255,7 +255,7 @@ export class AprilManager {
       return [];
     }
 
-    const rewardItems = eventRewards[rewardIndex].items;
+    const rewardItems = rankingRewards[rewardIndex].items;
     await user.inventory.addItemTemplates(rewardItems);
     
     await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
