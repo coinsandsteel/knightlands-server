@@ -222,6 +222,11 @@ export class AprilMap {
       this.heal();
     }
 
+    if (damage && this.heroClass === april.HERO_CLASS_PALADIN && this._state.hp < this._state.maxHp && !this._state.healing) {
+      this._state.healing = 1;
+      this._events.healing(1);
+    }
+
     if (this._state.hp <= 0) {
       this.sessionResult(april.SESSION_RESULT_FAIL);
       return;
