@@ -10,8 +10,7 @@ import * as april from "../../knightlands-shared/april";
 const LEVELS = [
   // Level 1
   [
-    //{ t: 1, c: 1, indexes: [6, 12] }
-    { j: 20 }
+    { t: 1, c: 1, indexes: [6, 12] }
   ],
   // Level 2
   [
