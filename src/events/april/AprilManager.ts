@@ -101,7 +101,7 @@ export class AprilManager {
 
     if (!isProd) {
       await this._rankCollection.deleteMany({});
-      await this.addTestRatings();
+      //await this.addTestRatings();
     }
     await this.watchResetRankings();
   }
@@ -129,7 +129,7 @@ export class AprilManager {
 
   async watchResetRankings() {
     if (!isProd) {
-      await this.distributeRewards();
+      //await this.distributeRewards();
     }
 
     setInterval(async () => {
@@ -148,7 +148,7 @@ export class AprilManager {
     // Distribute rewards for winners
     await this.distributeRewards();
 
-    console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
+    //console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     // Last reset was more that day ago? Launch reset.
     await Game.dbClient.withTransaction(async (db) => {
       await db.collection(Collections.AprilRanks).deleteMany({});
@@ -162,15 +162,15 @@ export class AprilManager {
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
-    console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
+    //console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
 
     if (!isProd) {
-      await this.addTestRatings();
+      //await this.addTestRatings();
     }
   }
 
   async distributeRewards() {
-    console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
+    //console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
 
     for await (const hero of april.HEROES) {
       const heroClass = hero.heroClass;
@@ -183,7 +183,7 @@ export class AprilManager {
       }
     }
 
-    console.log(`[AprilManager] Rankings distribution FINISHED.`);
+    //console.log(`[AprilManager] Rankings distribution FINISHED.`);
   }
 
   async debitUserReward(userId: ObjectId, heroClass: string, rank: number) {
