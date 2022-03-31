@@ -181,7 +181,7 @@ export class AprilCroupier {
     this._deck = [];
   }
 
-  protected resetTable() {
+  public resetTable() {
     this._cardsInQueue = _.clone(this._deck);
     this.refreshCards();
     this._usedCards = [];

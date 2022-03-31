@@ -333,6 +333,10 @@ export class AprilMap {
   }
 
   public resurrect(): void {
+    if (!this._statePrevious) {
+      return;
+    }
+
     const price = this.getResurrectionPrice();
     if (this._aprilUser.gold < price) {
       throw errors.NotEnoughCurrency;
@@ -349,6 +353,8 @@ export class AprilMap {
     
     this._state.actionPoints = 2;
     this._events.actionPoints(2);
+
+    this._croupier.respawnCards();
   }
 
   public modifyHp(value: number): void {
