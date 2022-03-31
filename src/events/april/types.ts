@@ -53,6 +53,7 @@ export interface AprilMapState {
   healing: number;
   healingUsed: boolean;
   actionPoints: number;
+  canPurchaseActionPoint: boolean;
   prices?: {
     thirdAction: number;
     resurrection: number;
