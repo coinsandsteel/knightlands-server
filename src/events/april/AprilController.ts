@@ -156,7 +156,11 @@ export class AprilController {
   }
 
   async testAction(action) {
-    await this._aprilUser.testAction(action);
+    if (action === "addHp") {
+      await this._aprilMap.testAction(action);
+    } else {
+      await this._aprilUser.testAction(action);
+    }
     this._events.flush();
   }
   

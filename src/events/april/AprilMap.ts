@@ -401,4 +401,17 @@ export class AprilMap {
     this._croupier.exit();
     this._playground.exit();
   }
+
+  public async testAction(action) {
+    switch (action) {
+      case 'addHp':{
+        this._state.hp += 10;
+        this._events.hp(this._state.hp);
+        
+        this._state.maxHp = this._state.hp;
+        this._events.maxHp(this._state.maxHp);
+        break;
+      }
+    }
+  }
 }
