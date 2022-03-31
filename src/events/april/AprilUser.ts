@@ -225,7 +225,7 @@ export class AprilUser {
     this._state.rewards.heroRewards[heroClass].claimed = true;
     this._events.heroRewards(this._state.rewards.heroRewards);
 
-    return targetHero.rewardItems;
+    return heroRewards;
   }
 
   public addSessionGold(amount: number): void {
