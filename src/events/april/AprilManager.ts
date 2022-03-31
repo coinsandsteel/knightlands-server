@@ -8,8 +8,9 @@ import errors from "../../knightlands-shared/errors";
 import * as april from "../../knightlands-shared/april";
 import random from "../../random";
 
+const isProd = process.env.ENV == "prod";
 const RANKS_PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = (isProd ? 1 : 5) * 60 * 1000;
 
 export class AprilManager {
   private _meta: any;
@@ -34,6 +35,14 @@ export class AprilManager {
 
   get timeLeft() {
     let secondsLeft = this.eventEndDate.getTime()/1000 - Game.nowSec;
+    if (secondsLeft < 0) {
+      secondsLeft = 0;
+    }
+    return secondsLeft;
+  }
+
+  get resetTimeLeft() {
+    let secondsLeft = this.nextMidnight/1000 - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -66,6 +75,12 @@ export class AprilManager {
     return midnight.getTime();
   }
 
+  get nextMidnight() {
+    const midnight = new Date();
+    midnight.setHours(23,59,59,0);
+    return midnight.getTime();
+  }
+
   get meta() {
     return this._meta;
   }
@@ -82,9 +97,12 @@ export class AprilManager {
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
     this._lastRankingsReset = this._meta.lastReset || 0;
-    //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+    console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
-    //await this.addTestRatings();
+    if (!isProd) {
+      await this._rankCollection.deleteMany({});
+      await this.addTestRatings();
+    }
     await this.watchResetRankings();
   }
 
@@ -118,7 +136,7 @@ export class AprilManager {
   async commitResetRankings() {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
-    if (this._lastRankingsReset >= midnight) {
+    if (isProd && this._lastRankingsReset >= midnight) {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
@@ -141,6 +159,10 @@ export class AprilManager {
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
     console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
+
+    if (!isProd) {
+      await this.addTestRatings();
+    }
   }
 
   async distributeRewards() {
@@ -193,7 +215,7 @@ export class AprilManager {
     //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, items });
   }
 
-  async updateRank(userId: ObjectId, heroClass: string, points: number) {
+  async updateRank(userId: ObjectId, heroClass: string, points: number, cheat?: boolean) {
     if (this.eventFinished()) {
       return;
     }
@@ -214,7 +236,7 @@ export class AprilManager {
                 order: Game.now
             },
             $inc: {
-                [heroClass]: points
+                [heroClass]: points + (cheat && !isProd ? 10000 : 0)
             },
         },
         { upsert: true }
@@ -284,8 +306,7 @@ export class AprilManager {
   }
 
   public async addTestRatings(){
-    const users = await Game.db.collection(Collections.Users).find({}).limit(1000).toArray();
-    const me = await Game.db.collection(Collections.Users).findOne({ address: 'xxx@gmail.com' });
+    const users = await Game.db.collection(Collections.Users).aggregate([{$sample:{size:100}}]).toArray();
 
     const heroClasses = [
       april.HERO_CLASS_KNIGHT,
@@ -294,17 +315,12 @@ export class AprilManager {
     ];
 
     heroClasses.forEach(async heroClass => {
-      await this.updateRank(
-        me._id,
-        heroClass,
-        3010
-      )
-
       users.forEach(async user => {
         await this.updateRank(
           user._id,
           heroClass,
-          random.intRange(0, 3000)
+          random.intRange(0, 3000),
+          false
         )
       });
     });

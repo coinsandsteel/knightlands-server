@@ -8,6 +8,8 @@ import { AprilSaveData } from './types';
 import { AprilUser } from './AprilUser';
 import * as april from "../../knightlands-shared/april";
 
+const isProd = process.env.ENV == "prod";
+
 export class AprilController {
   private _user: User;
   private _saveData: AprilSaveData;
@@ -156,7 +158,9 @@ export class AprilController {
   }
 
   async testAction(action) {
-    if (action === "addHp") {
+    if (isProd) return;
+
+    if (action === "win") {
       await this._aprilMap.testAction(action);
     } else {
       await this._aprilUser.testAction(action);

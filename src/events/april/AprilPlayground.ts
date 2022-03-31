@@ -338,6 +338,15 @@ export class AprilPlayground {
     return 'enemyKilled';
   }
 
+  public win() {
+    this._units.forEach(unit => {
+      if (unit.unitClass === april.UNIT_CLASS_HERO) return;
+      this.killEnemy(unit);
+    });
+    this.updateDamageMap();
+    this.commitUnits();
+  }
+
   public moveEnemies() {
     // Re-calc enemies positions
     // Update enemies positions

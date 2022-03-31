@@ -182,7 +182,8 @@ export class AprilMap {
       game.aprilManager.updateRank(
         this._user.id,
         this._state.heroClass,
-        this._aprilUser.sessionGold
+        this._aprilUser.sessionGold,
+        true
       );
       return;
     }
@@ -395,12 +396,8 @@ export class AprilMap {
 
   public async testAction(action) {
     switch (action) {
-      case 'addHp':{
-        this._state.hp += 10;
-        this._events.hp(this._state.hp);
-        
-        this._state.maxHp = this._state.hp;
-        this._events.maxHp(this._state.maxHp);
+      case 'win':{
+        this._playground.win();
         break;
       }
     }
