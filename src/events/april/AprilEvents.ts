@@ -52,10 +52,6 @@ export class AprilEvents {
     this._events.actionPoints = value;
   }
 
-  canPurchaseActionPoint(value) {
-    this._events.canPurchaseActionPoint = value;
-  }
-
   prices(key, value) {
     this._events.prices = { 
       ...this._events.prices,

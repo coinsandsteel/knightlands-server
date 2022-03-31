@@ -138,7 +138,7 @@ export class AprilPlayground {
     return this._units;
   }
   
-  get hero(): Hero {
+  get hero(): Hero|undefined {
     return this._units.find((unit: Unit) => unit.unitClass === april.UNIT_CLASS_HERO);
   }
   
@@ -152,10 +152,6 @@ export class AprilPlayground {
 
   get enemiesKilled(): number {
     return this._state.enemiesKilled;
-  }
-
-  get hasVictory(): boolean {
-    return this._state.hasVictory;
   }
   
   constructor(state: AprilPlaygroundState|null, map: AprilMap) {
@@ -175,7 +171,6 @@ export class AprilPlayground {
     this._state = {
       enemiesKilled: 0,
       fighted: false,
-      hasVictory: false,
       units: [],
       damage: []
     } as AprilPlaygroundState;
@@ -190,7 +185,6 @@ export class AprilPlayground {
     this._state.fighted = state.fighted;
     this._state.damage = state.damage;
     this._state.units = state.units;
-    this._state.hasVictory = state.hasVictory;
     this.createUnits();
   }
 
@@ -316,7 +310,7 @@ export class AprilPlayground {
     this._state.fighted = false;
   }
 
-  public moveHero(index: number): boolean {
+  public moveHero(index: number): string {
     // Hero is not allowed to attack boss if minions are alive
     const enemyOnTheSpot = this.findUnitByIndex(index);
     if (
@@ -326,7 +320,7 @@ export class AprilPlayground {
       &&
       !this.allEnemiesKilled(false)
     ) {
-      return false;
+      return 'fail';
     }
 
     // Update hero index
@@ -336,13 +330,18 @@ export class AprilPlayground {
     if (enemyOnTheSpot) {
       // Spawn more enemies if a box was killed
       this.killEnemy(enemyOnTheSpot);
+
+      if (enemyOnTheSpot.unitClass === april.UNIT_CLASS_BOSS) {
+        return 'bossKilled';
+      }
+  
       // Update damage map (no enemy = no damage around)
       this.updateDamageMap();
     }
 
     this.commitUnits();
     
-    return true;
+    return 'enemyKilled';
   }
 
   public moveEnemies() {
@@ -377,6 +376,9 @@ export class AprilPlayground {
   }
   
   public exit() {
+    this._state.fighted = false;
+    this.events.units([]);
+
     this._units = [];
     this._state.units = [];
     this.events.units([]);
@@ -386,8 +388,6 @@ export class AprilPlayground {
 
     this._state.enemiesKilled = 0;
     this.events.enemiesKilled(0);
-
-    this._state.fighted = false;
   }
 
   protected killEnemy(enemy: Unit): void {
@@ -403,13 +403,9 @@ export class AprilPlayground {
       this._units.push(...nextEnemies);
     }
 
-    // TODO check if it works
     enemy.kill();
 
     this.updateSessionGoldAndScoreByUnitClass(enemy.unitClass);
-    if (enemy.unitClass === april.UNIT_CLASS_BOSS) {
-      this._state.hasVictory = true;
-    }
 
     this._state.enemiesKilled++;
     this.events.enemiesKilled(0);

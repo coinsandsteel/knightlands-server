@@ -51,7 +51,6 @@ export class AprilMap {
       healing: 0,
       healingUsed: false,
       actionPoints: 0,
-      canPurchaseActionPoint: true,
       sessionResult: null,
       prices: {
         thirdAction: 0,
@@ -152,9 +151,6 @@ export class AprilMap {
     this._state.actionPoints = 2;
     this._events.actionPoints(this._state.actionPoints);
     
-    this._state.canPurchaseActionPoint = true;
-    this._events.canPurchaseActionPoint(true);
-    
     // ##### Stat #####
     if (this._state.level > 1 && booster === april.BOOSTER_HP) {
       this.modifyHp(1);
@@ -175,9 +171,19 @@ export class AprilMap {
     }
     
     const oldHeroIndex = this._playground.hero.index;
-    console.log('[Move start]', { oldHeroIndex, newHeroIndex: index});
-    const validMove = this._playground.moveHero(index);
-    if (!validMove) {
+    //console.log('[Move start]', { oldHeroIndex, newHeroIndex: index});
+    const moveResult = this._playground.moveHero(index);
+    if (moveResult === "fail") {
+      return;
+    }
+
+    if (moveResult === "bossKilled") {
+      this.sessionResult(april.SESSION_RESULT_SUCCESS);
+      game.aprilManager.updateRank(
+        this._user.id,
+        this._state.heroClass,
+        this._aprilUser.sessionGold
+      );
       return;
     }
     
@@ -190,7 +196,7 @@ export class AprilMap {
     this._croupier.heroMoveCallback(card, oldHeroIndex, index);
     this.spendActionPoint();
     
-    console.log('[Move end]', { oldHeroIndex, newHeroIndex: this._playground.hero.index});
+    //console.log('[Move end]', { oldHeroIndex, newHeroIndex: this._playground.hero.index});
     if (this._state.actionPoints === 0) {
       this.moveEnded();
     }
@@ -278,7 +284,6 @@ export class AprilMap {
     this._state.hp = state.hp;
     this._state.maxHp = state.maxHp;
     this._state.actionPoints = state.actionPoints;
-    this._state.canPurchaseActionPoint = state.canPurchaseActionPoint;
     this._playground.wakeUp(state.playground);
     this._croupier.wakeUp(state.croupier);
   }
@@ -292,10 +297,6 @@ export class AprilMap {
   }
 
   public purchaseAction() {
-    if (!this._state.canPurchaseActionPoint) {
-      throw errors.IncorrectArguments;
-    }
-
     if (this._state.actionPoints > 2) {
       throw errors.IncorrectArguments;
     }
@@ -311,9 +312,6 @@ export class AprilMap {
     this._state.actionPoints++;
     this._events.actionPoints(this._state.actionPoints);
 
-    this._state.canPurchaseActionPoint = false;
-    this._events.canPurchaseActionPoint(false);
-
     this.updatePrices();
   }
   
@@ -328,14 +326,22 @@ export class AprilMap {
   }
 
   public resurrect(): void {
-    this.wakeUp(_.cloneDeep(this._statePrevious));
+    const price = this.getResurrectionPrice();
+    if (this._aprilUser.gold < price) {
+      throw errors.NotEnoughCurrency;
+    }
 
-    // Update resurrection price
+    this._aprilUser.modifyBalance(april.CURRENCY_GOLD, -price);
     this._state.boosterCounters.resurrection++;
     this.updatePrices();
 
+    this.wakeUp(_.cloneDeep(this._statePrevious));
+
     this._state.hp = 3;
+    this._events.hp(3);
+    
     this._state.actionPoints = 2;
+    this._events.actionPoints(2);
   }
 
   public modifyHp(value: number): void {
@@ -351,20 +357,9 @@ export class AprilMap {
     this._events.maxHp(this._state.hp);
   };
 
-  public gameOver() {
+  public exit() {
     this._aprilUser.modifyBalance(april.CURRENCY_GOLD, this._aprilUser.sessionGold);
 
-    if (this._playground.hasVictory) {
-      game.aprilManager.updateRank(
-        this._user.id,
-        this._state.heroClass,
-        this._aprilUser.sessionGold
-      );
-    }
-  }
-  
-  public exit() {
-    this.gameOver();
     this._state.level = 1;
     this._events.level(1);
     
@@ -381,9 +376,6 @@ export class AprilMap {
     
     this._state.actionPoints = 2;
     this._events.actionPoints(2);
-
-    this._state.canPurchaseActionPoint = true;
-    this._events.canPurchaseActionPoint(true);
 
     this._aprilUser.resetSessionGold();
 

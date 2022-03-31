@@ -82,6 +82,11 @@ export class AprilCroupier {
     this._state.cardsInQueue = state.cardsInQueue;
     this._state.cards = state.cards;
     this._state.usedCards = state.usedCards;
+
+    if (!this._map.playground.hero) {
+      return;
+    }
+
     this.createCards();
   }
 
@@ -271,8 +276,11 @@ export class AprilCroupier {
   }
 
   public exit() {
+    this._state.newCard = null;
+    this._state.deck = [];
+    
     this._state.cardsInQueue = [];
-    this.events.cardsInQueue(0);
+    this.events.cardsInQueue([]);
     
     this._cards = [];
     this._state.cards = [];
@@ -280,7 +288,7 @@ export class AprilCroupier {
 
     this._usedCards = [];
     this._state.usedCards = [];
-    this.events.usedCards(0);
+    this.events.usedCards([]);
   }
 
   public getCardById(cardId: string): Card|null {

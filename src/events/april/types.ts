@@ -53,7 +53,6 @@ export interface AprilMapState {
   healing: number;
   healingUsed: boolean;
   actionPoints: number;
-  canPurchaseActionPoint: boolean;
   prices?: {
     thirdAction: number;
     resurrection: number;
@@ -71,7 +70,6 @@ export interface AprilPlaygroundState {
   fighted: boolean;
   units: AprilUnitBlueprint[];
   damage: number[];
-  hasVictory: boolean;
 }
 
 export interface AprilCroupierState {
