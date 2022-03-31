@@ -10,7 +10,7 @@ import random from "../../random";
 
 const isProd = process.env.ENV == "prod";
 const RANKS_PAGE_SIZE = 10;
-const RANKING_WATCHER_PERIOD_MILSECONDS = (isProd ? 1 : 5) * 60 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
 
 export class AprilManager {
   private _meta: any;
@@ -215,7 +215,7 @@ export class AprilManager {
     //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, items });
   }
 
-  async updateRank(userId: ObjectId, heroClass: string, points: number, cheat?: boolean) {
+  async updateRank(userId: ObjectId, heroClass: string, points: number) {
     if (this.eventFinished()) {
       return;
     }
@@ -236,7 +236,7 @@ export class AprilManager {
                 order: Game.now
             },
             $inc: {
-                [heroClass]: points + (cheat && !isProd ? 10000 : 0)
+                [heroClass]: points
             },
         },
         { upsert: true }
@@ -319,8 +319,7 @@ export class AprilManager {
         await this.updateRank(
           user._id,
           heroClass,
-          random.intRange(0, 3000),
-          false
+          random.intRange(0, 3000)
         )
       });
     });

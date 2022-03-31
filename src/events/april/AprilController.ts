@@ -159,12 +159,7 @@ export class AprilController {
 
   async testAction(action) {
     if (isProd) return;
-
-    if (action === "win") {
-      await this._aprilMap.testAction(action);
-    } else {
-      await this._aprilUser.testAction(action);
-    }
+    await this._aprilUser.testAction(action);
     this._events.flush();
   }
   

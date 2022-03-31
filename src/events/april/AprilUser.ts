@@ -295,6 +295,24 @@ export class AprilUser {
 
   public async testAction(action) {
     switch (action) {
+      case 'addRating':{
+        game.aprilManager.updateRank(
+          this._user.id,
+          april.HERO_CLASS_KNIGHT,
+          5000
+        );
+        game.aprilManager.updateRank(
+          this._user.id,
+          april.HERO_CLASS_PALADIN,
+          5000
+        );
+        game.aprilManager.updateRank(
+          this._user.id,
+          april.HERO_CLASS_ROGUE,
+          5000
+        );
+        break;
+      }
       case 'addTicket':{
         await this._user.inventory.addItemTemplates([
           { 

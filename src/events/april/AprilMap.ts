@@ -182,8 +182,7 @@ export class AprilMap {
       game.aprilManager.updateRank(
         this._user.id,
         this._state.heroClass,
-        this._aprilUser.sessionGold,
-        true
+        this._aprilUser.sessionGold
       );
       return;
     }
@@ -392,14 +391,5 @@ export class AprilMap {
 
     this._croupier.exit();
     this._playground.exit();
-  }
-
-  public async testAction(action) {
-    switch (action) {
-      case 'win':{
-        this._playground.win();
-        break;
-      }
-    }
   }
 }
