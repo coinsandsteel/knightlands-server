@@ -28,6 +28,10 @@ export class AprilUser {
     return this._state.balance.gold;
   }
 
+  get heroes(): string[] {
+    return this._state.heroes;
+  }
+
   get sessionGold(): number {
     return this._state.balance.sessionGold;
   }

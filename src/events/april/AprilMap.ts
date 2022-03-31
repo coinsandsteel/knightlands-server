@@ -112,6 +112,9 @@ export class AprilMap {
   }
 
   public restart(heroClass: string) {
+    if (heroClass !== april.HERO_CLASS_KNIGHT && !this._aprilUser.heroes.includes(heroClass)) {
+      throw errors.IncorrectArguments;
+    }
     this._state.heroClass = heroClass;
     this._events.heroClass(heroClass);
 
