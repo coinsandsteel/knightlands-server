@@ -60,7 +60,6 @@ export class AprilCroupier {
     } else {
       this.setInitialState();
     }
-    console.log('[AprilCroupier] Constructor finished');
   }
 
   public setInitialState() {
@@ -157,9 +156,6 @@ export class AprilCroupier {
     this.resetTable();
     this.cardsSpawnCallback();
     this.commitCards();
-
-    console.log('[Croupier] Deck', _.cloneDeep(this._deck).map(card => card.serialize()));
-    console.log('[Croupier] Cards In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
   public moveEndedCallback(): void {
@@ -179,8 +175,6 @@ export class AprilCroupier {
 
     this.cardsSpawnCallback();
     this.commitCards();
-
-    console.log('[Croupier] Card In Queue', _.cloneDeep(this.cardsInQueue).map(card => card.serialize().cardClass));
   }
   
   public reset() {
@@ -224,7 +218,6 @@ export class AprilCroupier {
     this._usedCards = this._usedCards.filter(
       usedCard => usedCard.id !== returnedUsedCard.id
     );
-    console.log('[Croupier] A card was took from used deck', returnedUsedCard.serialize());
   }
 
   protected makeCardByClass(cardClass: string): Card {
@@ -300,12 +293,10 @@ export class AprilCroupier {
     const newCard = this.makeCardByClass(this._state.newCard);
     this._deck.push(newCard);
     this._state.newCard = null;
-    console.log('[Croupier] Deck extended by 1 card', newCard.serialize());
   }
 
   public proposeNewCard(): void {
     this._state.newCard = _.sample(EXTEND_DECK);
     this.events.newCard(this._state.newCard);
-    console.log('[Croupier] Card proposed', this._state.newCard);
   }
 }

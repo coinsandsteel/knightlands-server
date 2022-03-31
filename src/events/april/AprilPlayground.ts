@@ -164,7 +164,6 @@ export class AprilPlayground {
     }
 
     this._damage = new AprilDamage(map);
-    console.log('[AprilPlayground] Constructor finished');
   }
 
   public setInitialState() {
@@ -214,7 +213,6 @@ export class AprilPlayground {
       )
       .filter(index => index !== 22 && (!levelPool.b || index !== 12));
       
-    //console.log('[Spawn pool]', levelPool);
 
     for (let index in levelPool) {
       let quantity = levelPool[index];
@@ -230,8 +228,6 @@ export class AprilPlayground {
         continue;
       }
 
-      //console.log('[Spawn class]', { unitClass, quantity });
-      
       for (let i = 0; i < quantity; i++) {
         let unitIndex = unitClass === april.UNIT_CLASS_BOSS ? 12 : indexes.pop();
         let unit = this.makeUnit({ 
@@ -240,7 +236,6 @@ export class AprilPlayground {
           index: unitIndex,
           isDead: false
         });
-        //console.log('[Spawn unit]', unit.serialize());
         this._units.push(unit);
       }
     }

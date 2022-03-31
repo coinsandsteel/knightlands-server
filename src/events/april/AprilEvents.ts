@@ -92,12 +92,10 @@ export class AprilEvents {
       ...this._events.balance,
       [currency]: balance
     };
-    console.log('April Balance', { currency, balance });
   }
 
   heroes(entries) {
     this._events.heroes = entries;
-    console.log('April heroes', { entries });
   }
 
   newCard(value) {

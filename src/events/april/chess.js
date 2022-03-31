@@ -581,7 +581,6 @@ var Chess = function (fen) {
         /* single square, non-capturing */
         var square = i + PAWN_OFFSETS[us][0]
         if (board[square] == null) {
-          //console.log("🚀 ~ file: chess.js ~ line 582 ~ generate_moves ~ board", board)
           add_move(board, moves, i, square, BITS.NORMAL)
 
           /* double square */

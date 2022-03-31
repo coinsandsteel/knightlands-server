@@ -39,7 +39,6 @@ export class AprilMap {
 
     this._statePrevious = null;
     this._movement = new AprilMovement(this);
-    console.log('[AprilMap] Constructor finished');
   }
 
   public setInitialState() {
@@ -137,11 +136,6 @@ export class AprilMap {
   }
 
   public enterLevel(booster?: string) {
-    console.log("");
-    console.log("");
-    console.log("🚀🚀🚀 GAME STARTED 🚀🚀🚀", { 
-      heroClass: this._state.heroClass
-    });
     
     if (this._state.sessionResult === april.SESSION_RESULT_SUCCESS) {
       this._state.level++;
@@ -178,7 +172,6 @@ export class AprilMap {
     }
     
     const oldHeroIndex = this._playground.hero.index;
-    //console.log('[Move start]', { oldHeroIndex, newHeroIndex: index});
     const moveResult = this._playground.moveHero(index);
     if (moveResult === "fail") {
       return;
@@ -203,7 +196,6 @@ export class AprilMap {
     this._croupier.heroMoveCallback(card, oldHeroIndex, index);
     this.spendActionPoint();
     
-    //console.log('[Move end]', { oldHeroIndex, newHeroIndex: this._playground.hero.index});
     if (this._state.actionPoints === 0) {
       this.moveEnded();
     }
@@ -252,7 +244,6 @@ export class AprilMap {
     ) {
       this._state.healing++;
       this._events.healing(this._state.healing);
-      console.log('[Map] Healing insreased', { healing: this._state.healing });
     }
 
     if (this._state.healing === 4) {
@@ -262,7 +253,6 @@ export class AprilMap {
       this._events.healing(0);
 
       this._state.healingUsed = true;
-      console.log('[Map] Healing used', { hp: this._state.hp });
     }
   }
 
@@ -275,13 +265,11 @@ export class AprilMap {
   public spendActionPoint(): void {
     this._state.actionPoints--;
     this._events.actionPoints(this._state.actionPoints);
-    console.log('[Map] -1 action point: ', this._state.actionPoints);
   }
   
   public addActionPoint(): void {
     this._state.actionPoints++;
     this._events.actionPoints(this._state.actionPoints);
-    console.log('[Map] +1 action point: ', this._state.actionPoints);
   }
   
   protected resetActionPoints(): void {

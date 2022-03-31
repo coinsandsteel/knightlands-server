@@ -76,7 +76,6 @@ export class AprilManager {
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
     this._lastRankingsReset = this._meta.lastReset || 0;
-    console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     this.watchResetRankings();
   }
@@ -112,11 +111,8 @@ export class AprilManager {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
     if (this._lastRankingsReset >= midnight) {
-      console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
-
-    console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     
     // Last reset was more that day ago? Launch reset.
     await Game.dbClient.withTransaction(async (db) => {
@@ -131,7 +127,6 @@ export class AprilManager {
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
-    console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {
@@ -209,8 +204,6 @@ export class AprilManager {
       maxSessionGold: { $gt: userRecord.maxSessionGold } 
     }).count() + 1;
 
-    //console.log('[User rank]', { userId, rank });
-
     return rank;
   }
 
@@ -266,7 +259,6 @@ export class AprilManager {
     await user.inventory.addItemTemplates(rewardItems);
     
     await this._rankCollection.updateOne({ _id: user.id }, { $set: { claimed: 1 } });
-    //console.log('[User rewards]', user.id, receivedItems);
 
     return rewardItems;
   }
