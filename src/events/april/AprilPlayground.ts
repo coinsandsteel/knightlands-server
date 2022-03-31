@@ -198,7 +198,6 @@ export class AprilPlayground {
   }
 
   public enterLevel() {
-    this._state.enemiesKilled = 0;
     this._state.fighted = false;
     this.spawnUnits();
     this.updateDamageMap();
@@ -408,7 +407,7 @@ export class AprilPlayground {
     this.updateSessionGoldAndScoreByUnitClass(enemy.unitClass);
 
     this._state.enemiesKilled++;
-    this.events.enemiesKilled(0);
+    this.events.enemiesKilled(this._state.enemiesKilled);
 
     this._state.fighted = true;
   }
