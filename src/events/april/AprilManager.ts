@@ -41,6 +41,10 @@ export class AprilManager {
     return this._meta.rankingRewards || [];
   }
 
+  get heroRewards() {
+    return this._meta.heroRewards || [];
+  }
+
   get aprilTicketId() {
     return this._meta.aprilTicket || 3475;
   }

@@ -218,7 +218,9 @@ export class AprilUser {
     if (this._state.rewards.heroRewards[heroClass].claimed) {
       throw errors.AlreadyClaimed;
     }
-    await this._user.inventory.addItemTemplates(targetHero.rewardItems);
+
+    const heroRewards = game.aprilManager.heroRewards[0][heroClass];
+    await this._user.inventory.addItemTemplates(heroRewards);
 
     this._state.rewards.heroRewards[heroClass].claimed = true;
     this._events.heroRewards(this._state.rewards.heroRewards);
