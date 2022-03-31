@@ -128,6 +128,10 @@ export class AprilManager {
   }
 
   async watchResetRankings() {
+    if (!isProd) {
+      await this.distributeRewards();
+    }
+
     setInterval(async () => {
       await this.commitResetRankings();
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
@@ -142,7 +146,7 @@ export class AprilManager {
     }
     
     // Distribute rewards for winners
-    this.distributeRewards();
+    await this.distributeRewards();
 
     console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     // Last reset was more that day ago? Launch reset.
@@ -168,12 +172,12 @@ export class AprilManager {
   async distributeRewards() {
     console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
 
-    for (let i = 0; i < april.HEROES.length; i++) {
-      let heroClass = april.HEROES[i].heroClass;
-
+    for await (const hero of april.HEROES) {
+      const heroClass = hero.heroClass;
       // Rankings page
       const heroClassRankings = await this.getRankingsByHeroClass(heroClass);
-      for (let rankIndex = 0; rankIndex < heroClassRankings.length; rankIndex++) {
+      let rankIndex = 0;
+      for (; rankIndex < heroClassRankings.length; rankIndex++) {
         let entry = heroClassRankings[rankIndex];
         await this.debitUserReward(entry.id, heroClass, rankIndex + 1);
       }
@@ -212,7 +216,7 @@ export class AprilManager {
       { upsert: true }
     );
 
-    console.log(`[AprilManager] Rankings rewards distributed.`, { userId, heroClass, rank, items });
+    //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, heroClass, rank, items });
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {
