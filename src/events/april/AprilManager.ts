@@ -212,7 +212,7 @@ export class AprilManager {
       { upsert: true }
     );
 
-    //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, items });
+    console.log(`[AprilManager] Rankings rewards distributed.`, { userId, heroClass, rank, items });
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {

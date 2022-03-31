@@ -151,7 +151,7 @@ export class AprilController {
     this._aprilMap.enterLevel(booster);
     this._events.flush();
   }
-  
+   
   async resurrect() {
     this._aprilMap.resurrect();
     this._events.flush();
