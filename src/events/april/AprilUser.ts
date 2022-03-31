@@ -335,6 +335,9 @@ export class AprilUser {
       }
       case 'addGold':{
         this.modifyBalance(april.CURRENCY_GOLD, 100);
+        this.updateHeroScore(april.HERO_CLASS_KNIGHT, 100);
+        this.updateHeroScore(april.HERO_CLASS_PALADIN, 100);
+        this.updateHeroScore(april.HERO_CLASS_ROGUE, 100);
         break;
       }
       case 'resetCharacters':{
