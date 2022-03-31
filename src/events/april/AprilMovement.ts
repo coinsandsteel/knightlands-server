@@ -93,9 +93,12 @@ export class AprilMovement {
     freeNeighbors = _.shuffle(
       freeNeighbors.filter(index => !nextEnemiesIndexes.includes(index))
     );
-    nextEnemiesIndexes = nextEnemiesIndexes.map(
-      index => busyCells.includes(index) ? freeNeighbors.pop() : index
-    );
+
+    nextEnemiesIndexes = nextEnemiesIndexes
+      .map(
+        index => busyCells.includes(index) ? freeNeighbors.pop() : index
+      )
+      .filter(index => index !== undefined);
 
     return nextEnemiesIndexes;
   }
