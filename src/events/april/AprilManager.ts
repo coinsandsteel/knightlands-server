@@ -99,10 +99,7 @@ export class AprilManager {
     this._lastRankingsReset = this._meta.lastReset || 0;
     console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
-    if (!isProd) {
-      await this._rankCollection.deleteMany({});
-      //await this.addTestRatings();
-    }
+    //await this.addTestRatings();
     await this.watchResetRankings();
   }
 
@@ -140,7 +137,7 @@ export class AprilManager {
   async commitResetRankings() {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
-    if (isProd && this._lastRankingsReset >= midnight) {
+    if (this._lastRankingsReset >= midnight) {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
