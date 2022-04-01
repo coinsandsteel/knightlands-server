@@ -31,6 +31,7 @@ import { DungeonController } from "./events/simple-dungeon/DungeonController";
 import { XmasController } from "./events/xmas/XmasController";
 import { LunarController } from "./events/lunar/LunarController";
 import { MarchController } from "./events/march/MarchController";
+import { AprilController } from "./events/april/AprilController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -294,6 +295,23 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
         this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
 
+        // April
+        this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
+        this._socket.on(Operations.AprilClaimReward, this._gameHandler(this._aprilClaimReward.bind(this)));
+        this._socket.on(Operations.AprilRankings, this._gameHandler(this._aprilRankings.bind(this)));
+        this._socket.on(Operations.AprilHeroStat, this._gameHandler(this._aprilHeroStat.bind(this)));
+        this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
+        this._socket.on(Operations.AprilRestart, this._gameHandler(this._aprilRestart.bind(this)));
+        this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
+        this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
+        this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
+        this._socket.on(Operations.AprilPurchaseGold, this._gameHandler(this._aprilPurchaseGold.bind(this)));
+        this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
+        this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
+        this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
+        this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
+        this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
+        
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -342,6 +360,11 @@ class PlayerController extends IPaymentListener {
             this.march = null
         }
 
+        if (this.april) {
+            await this.april.dispose();
+            this.april = null
+        }
+
         return true;
     }
 
@@ -364,6 +387,9 @@ class PlayerController extends IPaymentListener {
 
         this.march = new MarchController(user);
         await this.march.init();
+
+        this.april = new AprilController(user);
+        await this.april.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {
@@ -2138,6 +2164,99 @@ class PlayerController extends IPaymentListener {
         }
 
         return this.march.purchaseGold(data.shopIndex, data.currency);
+    }
+
+    // April
+    async _aprilLoad() {
+        return this.april.load();
+    }
+
+    async _aprilClaimReward(user, { type, heroClass }) {
+        return this.april.claimReward(type, heroClass);
+    }
+
+    async _aprilRankings(user, data) {
+        return {
+            rankings: await Game.aprilManager.getRankings(),
+            hasRewards: await Game.aprilManager.userHasRewards(user),
+            resetTimeLeft: Game.aprilManager.resetTimeLeft,
+            timeLeft: Game.aprilManager.timeLeft,
+        };
+    }
+
+    async _aprilHeroStat(user, data) {
+        return this.april.heroStat();
+    }
+
+    async _aprilPurchaseHero(user, heroClass) {
+        if (!isString(heroClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.purchaseHero(heroClass);
+    }
+
+    async _aprilPurchaseTicket(user, data) {
+        return this.april.purchaseTicket();
+    }
+
+    async _aprilPurchaseGold(user, data) {
+        if (
+            !isNumber(data.shopIndex) 
+            || 
+            !['hard', 'dkt'].includes(data.currency)
+          ) {
+              throw Errors.IncorrectArguments;
+          }
+  
+          if (!isString(data.currency) && ['hard', 'dkt'].includes(data.currency)) {
+              throw Errors.IncorrectArguments;
+          }
+  
+          return this.april.purchaseGold(data.shopIndex, data.currency);
+    }
+
+    async _aprilRestart(user, heroClass) {
+        if (!isString(heroClass)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.restart(heroClass);
+    }
+
+    async _aprilMove(user, data) {
+        if (!isString(data.cardId)) {
+            throw Errors.IncorrectArguments;
+        }
+        if (!isNumber(data.index)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.move(data.cardId, data.index);
+    }
+
+    async _aprilSkip() {
+        return this.april.skip();
+    }
+
+    async _aprilPurchaseAction() {
+        return this.april.purchaseAction();
+    }
+
+    async _aprilEnterLevel(user, booster) {
+        if (!isString(booster)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.april.enterLevel(booster);
+    }
+
+    async _aprilResurrect() {
+        return this.april.resurrect();
+    }
+
+    async _aprilTestAction(_, data) {
+        return this.april.testAction(data.action);
+    }
+
+    async _aprilExit() {
+        return this.april.exit();
     }
 }
 

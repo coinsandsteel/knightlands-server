@@ -24,6 +24,7 @@ import { DungeonManager } from "./events/simple-dungeon/DungeonManager";
 import { XmasManager } from "./events/xmas/XmasManager";
 import { LunarManager } from "./events/lunar/LunarManager";
 import { MarchManager } from "./events/march/MarchManager";
+import { AprilManager } from "./events/april/AprilManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -74,6 +75,7 @@ class Game extends EventEmitter {
         this.xmasManager = new XmasManager();
         this.lunarManager = new LunarManager();
         this.marchManager = new MarchManager();
+        this.aprilManager = new AprilManager();
 
         this._players = {};
         this._playersById = {};
@@ -82,6 +84,7 @@ class Game extends EventEmitter {
         await this.dungeonManager.init(iapExecutor);
         await this.xmasManager.init();
         await this.marchManager.init();
+        await this.aprilManager.init();
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();
