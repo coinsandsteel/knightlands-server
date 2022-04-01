@@ -217,7 +217,7 @@ export class AprilMap {
       this.heal();
     }
 
-    if (damage && this.heroClass === april.HERO_CLASS_PALADIN && this._state.hp < this._state.maxHp && !this._state.healing) {
+    if (this.mayStartHealing(damage)) {
       this._state.healing = 1;
       this._events.healing(1);
     }
@@ -232,6 +232,10 @@ export class AprilMap {
     this.resetActionPoints();
   }
   
+  public mayStartHealing(damage) {
+    return this.heroClass === april.HERO_CLASS_PALADIN && !this._state.healingUsed && damage && !this._state.healing;
+  }
+
   public heal(): void {
     if (
       this.heroClass === april.HERO_CLASS_PALADIN
