@@ -282,18 +282,18 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.LunarPurchase, this._gameHandler(this._lunarPurchase.bind(this)));
 
         // March
-        this._socket.on(Operations.MarchLoad, this._gameHandler(this._marchLoad.bind(this)));
-        this._socket.on(Operations.MarchStartNewGame, this._gameHandler(this._marchStartNewGame.bind(this)));
-        this._socket.on(Operations.MarchExitGame, this._gameHandler(this._marchExitGame.bind(this)));
-        this._socket.on(Operations.MarchTouch, this._gameHandler(this._marchTouch.bind(this)));
-        this._socket.on(Operations.MarchCollectDailyReward, this._gameHandler(this._marchCollectDailyReward.bind(this)));
-        this._socket.on(Operations.MarchTestAction, this._gameHandler(this._marchTestAction.bind(this)));
-        this._socket.on(Operations.MarchPurchaseGold, this._gameHandler(this._marchPurchaseGold.bind(this)));
-        this._socket.on(Operations.MarchOpenChest, this._gameHandler(this._marchOpenChest.bind(this)));
-        this._socket.on(Operations.MarchUnlockPet, this._gameHandler(this._marchUnlockPet.bind(this)));
-        this._socket.on(Operations.MarchUpgradePet, this._gameHandler(this._marchUpgradePet.bind(this)));
-        this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
-        this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
+        // this._socket.on(Operations.MarchLoad, this._gameHandler(this._marchLoad.bind(this)));
+        // this._socket.on(Operations.MarchStartNewGame, this._gameHandler(this._marchStartNewGame.bind(this)));
+        // this._socket.on(Operations.MarchExitGame, this._gameHandler(this._marchExitGame.bind(this)));
+        // this._socket.on(Operations.MarchTouch, this._gameHandler(this._marchTouch.bind(this)));
+        // this._socket.on(Operations.MarchCollectDailyReward, this._gameHandler(this._marchCollectDailyReward.bind(this)));
+        // this._socket.on(Operations.MarchTestAction, this._gameHandler(this._marchTestAction.bind(this)));
+        // this._socket.on(Operations.MarchPurchaseGold, this._gameHandler(this._marchPurchaseGold.bind(this)));
+        // this._socket.on(Operations.MarchOpenChest, this._gameHandler(this._marchOpenChest.bind(this)));
+        // this._socket.on(Operations.MarchUnlockPet, this._gameHandler(this._marchUnlockPet.bind(this)));
+        // this._socket.on(Operations.MarchUpgradePet, this._gameHandler(this._marchUpgradePet.bind(this)));
+        // this._socket.on(Operations.MarchRanking, this._gameHandler(this._marchRanking.bind(this)));
+        // this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
 
         // April
         this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
@@ -311,7 +311,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
         this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
         this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
-        
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -2079,17 +2079,11 @@ class PlayerController extends IPaymentListener {
     }
 
     async _marchStartNewGame(_, data) {
-        if (
-            !isNumber(data.petClass)
-            ||
-            !isNumber(data.level)
-            ||
-            !data.boosters
-            ||
-            !isNumber(data.boosters.maxHealth)
-            ||
-            !isNumber(data.boosters.extraLife)
-            ||
+        if (!isNumber(data.petClass) ||
+            !isNumber(data.level) ||
+            !data.boosters ||
+            !isNumber(data.boosters.maxHealth) ||
+            !isNumber(data.boosters.extraLife) ||
             !isNumber(data.boosters.key)
         ) {
             throw Errors.IncorrectArguments;
@@ -2151,10 +2145,8 @@ class PlayerController extends IPaymentListener {
     }
 
     async _marchPurchaseGold(user, data) {
-        if (
-          !isNumber(data.shopIndex) 
-          || 
-          !['hard', 'dkt'].includes(data.currency)
+        if (!isNumber(data.shopIndex) ||
+            !['hard', 'dkt'].includes(data.currency)
         ) {
             throw Errors.IncorrectArguments;
         }
@@ -2200,19 +2192,17 @@ class PlayerController extends IPaymentListener {
     }
 
     async _aprilPurchaseGold(user, data) {
-        if (
-            !isNumber(data.shopIndex) 
-            || 
+        if (!isNumber(data.shopIndex) ||
             !['hard', 'dkt'].includes(data.currency)
-          ) {
-              throw Errors.IncorrectArguments;
-          }
-  
-          if (!isString(data.currency) && ['hard', 'dkt'].includes(data.currency)) {
-              throw Errors.IncorrectArguments;
-          }
-  
-          return this.april.purchaseGold(data.shopIndex, data.currency);
+        ) {
+            throw Errors.IncorrectArguments;
+        }
+
+        if (!isString(data.currency) && ['hard', 'dkt'].includes(data.currency)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.april.purchaseGold(data.shopIndex, data.currency);
     }
 
     async _aprilRestart(user, heroClass) {
