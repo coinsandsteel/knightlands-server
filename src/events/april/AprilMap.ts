@@ -402,4 +402,10 @@ export class AprilMap {
     this._croupier.exit();
     this._playground.exit();
   }
+
+  public dispose() {
+    if (this._state.sessionResult === april.SESSION_RESULT_FAIL) {
+      this.exit();
+    }
+  }
 }

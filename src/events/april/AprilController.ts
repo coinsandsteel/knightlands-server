@@ -42,6 +42,7 @@ export class AprilController {
   }
 
   async dispose() {
+    this._aprilMap.dispose();
     await this._save();
   }
 
