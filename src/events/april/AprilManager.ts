@@ -11,6 +11,7 @@ import random from "../../random";
 const isProd = process.env.ENV == "prod";
 const RANKS_PAGE_SIZE = 10;
 const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
+const DAY = 24 * 60 * 60 * 1000;
 
 export class AprilManager {
   private _meta: any;
@@ -126,7 +127,8 @@ export class AprilManager {
 
   async watchResetRankings() {
     if (!isProd) {
-      //await this.distributeRewards();
+      await this.distributeRewards();
+      await this.commitResetRankings();
     }
 
     setInterval(async () => {
@@ -134,10 +136,14 @@ export class AprilManager {
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
+  relativeDayStart(day: number) {
+    return this.eventStartDate.getTime() + (DAY * (day - 1));
+  }
+
   async commitResetRankings() {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
-    if (this._lastRankingsReset >= midnight) {
+    if (isProd && this._lastRankingsReset >= midnight) {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
@@ -171,17 +177,37 @@ export class AprilManager {
 
     for await (const hero of april.HEROES) {
       const heroClass = hero.heroClass;
+
+      if (!this.heroClassStatEnabled(heroClass)) {
+        continue;
+      }
+
       // Rankings page
       const heroClassRankings = await this.getRankingsByHeroClass(heroClass);
       let rankIndex = 0;
       for (; rankIndex < heroClassRankings.length; rankIndex++) {
         let entry = heroClassRankings[rankIndex];
+        if (+entry.score == 0) {
+          continue;
+        }
         await this.debitUserReward(entry.id, heroClass, rankIndex + 1);
       }
     }
 
     //console.log(`[AprilManager] Rankings distribution FINISHED.`);
   }
+
+  public heroClassStatEnabled(heroClass: string): boolean {
+    if (heroClass === april.HERO_CLASS_PALADIN && Game.now < this.relativeDayStart(2)) {
+      return false;
+    }
+    
+    if (heroClass === april.HERO_CLASS_ROGUE && Game.now < this.relativeDayStart(3)) {
+      return false;
+    }
+
+    return true;
+}
 
   async debitUserReward(userId: ObjectId, heroClass: string, rank: number) {
     let rewardsEntry = await this._rewardCollection.findOne({ _id: userId }) || {};
@@ -220,7 +246,7 @@ export class AprilManager {
     if (this.eventFinished()) {
       return;
     }
-
+  
     const setOnInsert = april.HEROES.reduce(
       (previousValue, currentValue) => {
         previousValue[currentValue.heroClass] = 0
