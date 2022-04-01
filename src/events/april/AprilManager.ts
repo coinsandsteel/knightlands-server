@@ -126,10 +126,10 @@ export class AprilManager {
   }
 
   async watchResetRankings() {
-    if (!isProd) {
+    /*if (!isProd) {
       await this.distributeRewards();
       await this.commitResetRankings();
-    }
+    }*/
 
     setInterval(async () => {
       await this.commitResetRankings();
@@ -143,7 +143,7 @@ export class AprilManager {
   async commitResetRankings() {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
-    if (isProd && this._lastRankingsReset >= midnight) {
+    if (this._lastRankingsReset >= midnight) {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
