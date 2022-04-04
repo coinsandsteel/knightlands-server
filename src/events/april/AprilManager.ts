@@ -237,10 +237,12 @@ export class AprilManager {
         items.push(_.cloneDeep(itemEntry));
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
+        console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
       }
     });
     if (!isProd) {
       console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
+      console.log('');
     }
     
     await this._rewardCollection.updateOne(
