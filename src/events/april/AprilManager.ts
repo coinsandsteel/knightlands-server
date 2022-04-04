@@ -97,7 +97,7 @@ export class AprilManager {
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this._meta.lastReset || 0;
+    this._lastRankingsReset = this._meta.lastReset || this.midnight;
     //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     //await this.addTestRatings();
