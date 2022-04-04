@@ -228,22 +228,24 @@ export class AprilManager {
 
     const rewardItems = this.rankingRewards[rewardIndex].items;
     
-    if (!isProd) {
+    /*if (!isProd) {
       console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
-    }
+    }*/
     rewardItems.forEach((itemEntry) => {
       let receivedItemIndex = items.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
       if (receivedItemIndex === -1) {
         items.push(_.cloneDeep(itemEntry));
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
-        console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
+        /*if (!isProd) {
+          console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
+        }*/
       }
     });
-    if (!isProd) {
+    /*if (!isProd) {
       console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
       console.log('');
-    }
+    }*/
     
     await this._rewardCollection.updateOne(
       { _id: userId }, 
