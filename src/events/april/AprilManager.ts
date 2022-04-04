@@ -100,7 +100,6 @@ export class AprilManager {
     this._lastRankingsReset = this._meta.lastReset || this.midnight;
     //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
-    //await this.addTestRatings();
     await this.watchResetRankings();
   }
 
@@ -126,14 +125,15 @@ export class AprilManager {
   }
 
   async watchResetRankings() {
-    /*if (!isProd) {
+    if (!isProd) {
+      await this._rankCollection.deleteMany({});
+      await this.addTestRatings();
       await this.distributeRewards();
-      await this.commitResetRankings();
-    }*/
-
-    setInterval(async () => {
-      await this.commitResetRankings();
-    }, RANKING_WATCHER_PERIOD_MILSECONDS);
+    } else {
+      setInterval(async () => {
+        await this.commitResetRankings();
+      }, RANKING_WATCHER_PERIOD_MILSECONDS);
+    }
   }
 
   relativeDayStart(day: number) {
@@ -168,10 +168,6 @@ export class AprilManager {
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
     //console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
-
-    if (!isProd) {
-      //await this.addTestRatings();
-    }
   }
 
   async distributeRewards() {
@@ -339,6 +335,8 @@ export class AprilManager {
 
   public async addTestRatings(){
     const users = await Game.db.collection(Collections.Users).aggregate([{$sample:{size:100}}]).toArray();
+    // For tests: email
+    const me = await Game.db.collection(Collections.Users).findOne({ address: 'xxx@gmail.com' });
 
     const heroClasses = [
       april.HERO_CLASS_KNIGHT,
@@ -347,6 +345,14 @@ export class AprilManager {
     ];
 
     heroClasses.forEach(async heroClass => {
+      if (me) {
+        await this.updateRank(
+          me._id,
+          heroClass,
+          // For tests: score
+          2985
+        );
+      }
       users.forEach(async user => {
         await this.updateRank(
           user._id,
