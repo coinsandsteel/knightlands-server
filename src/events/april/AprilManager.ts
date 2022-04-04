@@ -187,12 +187,12 @@ export class AprilManager {
       // Rankings page
       const heroClassRankings = await this.getRankingsByHeroClass(heroClass);
       let rankIndex = 0;
-      for (; rankIndex < heroClassRankings.length; rankIndex++) {
-        let entry = heroClassRankings[rankIndex];
-        if (+entry.score == 0) {
+      for await (const rankingEntry of heroClassRankings) {
+        if (+rankingEntry.score == 0) {
           continue;
         }
-        await this.debitUserReward(entry.id, heroClass, rankIndex + 1);
+        await this.debitUserReward(rankingEntry.id, heroClass, rankIndex + 1);
+        rankIndex++;
       }
     }
 
@@ -322,10 +322,12 @@ export class AprilManager {
 
     await user.inventory.addItemTemplates(rewardsEntry.items);
     
+    delete rewardsEntry.history;
     const time = Game.nowSec;
     await this._rewardCollection.updateOne({ _id: user.id }, { 
       $set: {
         items: [],
+        ranks: {},
         [`history.${time}`]: rewardsEntry,
         claimed: 0
       } 
