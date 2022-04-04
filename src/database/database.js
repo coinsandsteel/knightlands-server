@@ -98,6 +98,7 @@ module.exports = {
         MarchRanks: "march_ranks",
         AprilUsers: "april_users",
         AprilRanks: "april_ranks",
+        AprilFinalRanks: "april_final_ranks",
         AprilRewards: "april_rewards",
     },
 

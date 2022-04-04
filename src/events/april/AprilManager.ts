@@ -17,12 +17,14 @@ export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
+  private _finalRankCollection: Collection;
   private _rewardCollection: Collection;
   private _lastRankingsReset: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.AprilUsers);
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
+    this._finalRankCollection = Game.db.collection(Collections.AprilFinalRanks);
     this._rewardCollection = Game.db.collection(Collections.AprilRewards);
   }
   
@@ -173,9 +175,9 @@ export class AprilManager {
   async distributeRewards() {
     //console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
 
+    const dateRanks = {};
     for await (const hero of april.HEROES) {
       const heroClass = hero.heroClass;
-
       if (!this.heroClassStatEnabled(heroClass)) {
         continue;
       }
@@ -190,8 +192,12 @@ export class AprilManager {
         await this.debitUserReward(rankingEntry.id, heroClass, rankIndex + 1);
         rankIndex++;
       }
+      dateRanks[heroClass] = heroClassRankings;
     }
 
+    await this._finalRankCollection.insertOne(
+      { date: Game.nowSec, ranks: dateRanks }
+    );
     //console.log(`[AprilManager] Rankings distribution FINISHED.`);
   }
 
@@ -222,6 +228,9 @@ export class AprilManager {
 
     const rewardItems = this.rankingRewards[rewardIndex].items;
     
+    if (!isProd) {
+      console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
+    }
     rewardItems.forEach((itemEntry) => {
       let receivedItemIndex = items.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
       if (receivedItemIndex === -1) {
@@ -230,14 +239,15 @@ export class AprilManager {
         items[receivedItemIndex].quantity += itemEntry.quantity;
       }
     });
-
+    if (!isProd) {
+      console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
+    }
+    
     await this._rewardCollection.updateOne(
       { _id: userId }, 
       { $set: { items, [`ranks.${heroClass}`]: rank }},
       { upsert: true }
     );
-
-    //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, heroClass, rank, items });
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {
