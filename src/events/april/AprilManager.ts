@@ -98,7 +98,7 @@ export class AprilManager {
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
     this._lastRankingsReset = this._meta.lastReset || 0;
-    console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+    //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     //await this.addTestRatings();
     await this.watchResetRankings();
@@ -147,6 +147,8 @@ export class AprilManager {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
+
+    //console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     
     // Distribute rewards for winners
     await this.distributeRewards();
@@ -328,6 +330,7 @@ export class AprilManager {
         claimed: 0
       } 
     });
+    //console.log('[User rewards]', user.id, receivedItems);
 
     return rewardsEntry.items;
   }
