@@ -141,7 +141,7 @@ export class Card {
     let fen = '';
     const playground = this._map.playground;
     for (let i = 0; i <= 24; i++) {
-      const foundUnit = playground.units.find(unit => unit.index === i);
+      const foundUnit = playground.units.find(unit => unit.index === i && !unit.isDead);
       if (!foundUnit && playground.hero.index !== i) {
         empty++;
       } else {

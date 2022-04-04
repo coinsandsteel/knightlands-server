@@ -294,6 +294,7 @@ export class AprilUser {
   }
 
   public async testAction(action) {
+    return;
     switch (action) {
       case 'addRating':{
         game.aprilManager.updateRank(
