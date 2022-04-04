@@ -436,7 +436,7 @@ class Raid extends EventEmitter {
             }
         }
 
-        await attacker.modifyTimerValue(CharacterStats.Stamina, -damageLog.hits);
+        await attacker.modifyTimerValue(CharacterStats.Stamina, -damageLog.hits * this.template.staminaCost);
 
         if (damageLog.damage > 0) {
             let actualDamage = damageLog.damage;
