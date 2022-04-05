@@ -17,12 +17,14 @@ export class AprilManager {
   private _meta: any;
   private _saveCollection: Collection;
   private _rankCollection: Collection;
+  private _finalRankCollection: Collection;
   private _rewardCollection: Collection;
   private _lastRankingsReset: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.AprilUsers);
     this._rankCollection = Game.db.collection(Collections.AprilRanks);
+    this._finalRankCollection = Game.db.collection(Collections.AprilFinalRanks);
     this._rewardCollection = Game.db.collection(Collections.AprilRewards);
   }
   
@@ -97,10 +99,9 @@ export class AprilManager {
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this._meta.lastReset || 0;
-    console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+    this._lastRankingsReset = this._meta.lastReset || this.midnight;
+    //console.log(`[AprilManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
-    //await this.addTestRatings();
     await this.watchResetRankings();
   }
 
@@ -126,14 +127,15 @@ export class AprilManager {
   }
 
   async watchResetRankings() {
-    /*if (!isProd) {
+    if (!isProd) {
+      await this._rankCollection.deleteMany({});
+      await this.addTestRatings();
       await this.distributeRewards();
-      await this.commitResetRankings();
-    }*/
-
-    setInterval(async () => {
-      await this.commitResetRankings();
-    }, RANKING_WATCHER_PERIOD_MILSECONDS);
+    } else {
+      setInterval(async () => {
+        await this.commitResetRankings();
+      }, RANKING_WATCHER_PERIOD_MILSECONDS);
+    }
   }
 
   relativeDayStart(day: number) {
@@ -147,6 +149,8 @@ export class AprilManager {
       //console.log(`[AprilManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`);
       return;
     }
+
+    //console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
     
     // Distribute rewards for winners
     await this.distributeRewards();
@@ -166,18 +170,14 @@ export class AprilManager {
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
     //console.log(`[AprilManager] Rankings reset FINISH.`, { _lastRankingsReset: this._lastRankingsReset});
-
-    if (!isProd) {
-      //await this.addTestRatings();
-    }
   }
 
   async distributeRewards() {
     //console.log(`[AprilManager] Rankings distribution LAUNCHED.`);
 
+    const dateRanks = {};
     for await (const hero of april.HEROES) {
       const heroClass = hero.heroClass;
-
       if (!this.heroClassStatEnabled(heroClass)) {
         continue;
       }
@@ -185,15 +185,19 @@ export class AprilManager {
       // Rankings page
       const heroClassRankings = await this.getRankingsByHeroClass(heroClass);
       let rankIndex = 0;
-      for (; rankIndex < heroClassRankings.length; rankIndex++) {
-        let entry = heroClassRankings[rankIndex];
-        if (+entry.score == 0) {
+      for await (const rankingEntry of heroClassRankings) {
+        if (+rankingEntry.score == 0) {
           continue;
         }
-        await this.debitUserReward(entry.id, heroClass, rankIndex + 1);
+        await this.debitUserReward(rankingEntry.id, heroClass, rankIndex + 1);
+        rankIndex++;
       }
+      dateRanks[heroClass] = heroClassRankings;
     }
 
+    await this._finalRankCollection.insertOne(
+      { date: Game.nowSec, ranks: dateRanks }
+    );
     //console.log(`[AprilManager] Rankings distribution FINISHED.`);
   }
 
@@ -224,22 +228,30 @@ export class AprilManager {
 
     const rewardItems = this.rankingRewards[rewardIndex].items;
     
+    /*if (!isProd) {
+      console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
+    }*/
     rewardItems.forEach((itemEntry) => {
       let receivedItemIndex = items.findIndex((receivedItem) => receivedItem.item === itemEntry.item);
       if (receivedItemIndex === -1) {
         items.push(_.cloneDeep(itemEntry));
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
+        /*if (!isProd) {
+          console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
+        }*/
       }
     });
-
+    /*if (!isProd) {
+      console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
+      console.log('');
+    }*/
+    
     await this._rewardCollection.updateOne(
       { _id: userId }, 
       { $set: { items, [`ranks.${heroClass}`]: rank }},
       { upsert: true }
     );
-
-    //console.log(`[AprilManager] Rankings rewards distributed.`, { userId, heroClass, rank, items });
   }
 
   async updateRank(userId: ObjectId, heroClass: string, points: number) {
@@ -320,20 +332,25 @@ export class AprilManager {
 
     await user.inventory.addItemTemplates(rewardsEntry.items);
     
+    delete rewardsEntry.history;
     const time = Game.nowSec;
     await this._rewardCollection.updateOne({ _id: user.id }, { 
       $set: {
         items: [],
+        ranks: {},
         [`history.${time}`]: rewardsEntry,
         claimed: 0
       } 
     });
+    //console.log('[User rewards]', user.id, receivedItems);
 
     return rewardsEntry.items;
   }
 
   public async addTestRatings(){
     const users = await Game.db.collection(Collections.Users).aggregate([{$sample:{size:100}}]).toArray();
+    // For tests: email
+    const me = await Game.db.collection(Collections.Users).findOne({ address: 'xxx@gmail.com' });
 
     const heroClasses = [
       april.HERO_CLASS_KNIGHT,
@@ -342,6 +359,14 @@ export class AprilManager {
     ];
 
     heroClasses.forEach(async heroClass => {
+      if (me) {
+        await this.updateRank(
+          me._id,
+          heroClass,
+          // For tests: score
+          2985
+        );
+      }
       users.forEach(async user => {
         await this.updateRank(
           user._id,
