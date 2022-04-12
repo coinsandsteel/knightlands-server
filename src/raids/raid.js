@@ -348,6 +348,18 @@ class Raid extends EventEmitter {
                 bonusDamage *= 1.3;
             }
         }
+        const attackerOffhandWeaponCombatData = await attacker.getOffhandWeaponCombatData();
+        if (attackerOffhandWeaponCombatData) {
+            // if element matches +30%
+            // if weapon matches +30%
+            if (attackerOffhandWeaponCombatData.element == this._data.weakness.current.element) {
+                bonusDamage *= 1.3;
+            }
+
+            if (attackerOffhandWeaponCombatData.type == this._data.weakness.current.weapon) {
+                bonusDamage *= 1.3;
+            }
+        }
 
         combatUnit.updateStats(this._data.weakness.current.element)
 
