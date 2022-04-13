@@ -278,6 +278,20 @@ class User {
         }
     }
 
+    async getOffhandWeaponCombatData() {
+        let weapon = this.equipment[EquipmentSlots.OffHand];
+        if (!weapon) {
+            return null;
+        }
+
+        let item = this.inventory.getItemById(weapon.id);
+        let template = await Game.itemTemplates.getTemplate(item.template);
+        return {
+            element: item.element,
+            type: template.equipmentType
+        }
+    }
+
     getCombatUnit(config) {
         let stats = {...this.maxStats };
         if (config && config.raid) {
