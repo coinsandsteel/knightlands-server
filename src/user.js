@@ -287,7 +287,7 @@ class User {
         let item = this.inventory.getItemById(weapon.id);
         let template = await Game.itemTemplates.getTemplate(item.template);
         return {
-            element: item.element,
+            element: item.element || Elements.Physical,
             type: template.equipmentType
         }
     }
