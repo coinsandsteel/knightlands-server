@@ -32,6 +32,7 @@ import { XmasController } from "./events/xmas/XmasController";
 import { LunarController } from "./events/lunar/LunarController";
 import { MarchController } from "./events/march/MarchController";
 import { AprilController } from "./events/april/AprilController";
+import { BattleController } from "./events/battle/BattleController";
 
 const TowerFloorPageSize = 20;
 const isProd = process.env.ENV == "prod";
@@ -296,21 +297,23 @@ class PlayerController extends IPaymentListener {
         // this._socket.on(Operations.MarchClaimRewards, this._gameHandler(this._marchClaimRewards.bind(this)));
 
         // April
-        this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
-        this._socket.on(Operations.AprilClaimReward, this._gameHandler(this._aprilClaimReward.bind(this)));
-        this._socket.on(Operations.AprilRankings, this._gameHandler(this._aprilRankings.bind(this)));
-        this._socket.on(Operations.AprilHeroStat, this._gameHandler(this._aprilHeroStat.bind(this)));
-        this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
-        this._socket.on(Operations.AprilRestart, this._gameHandler(this._aprilRestart.bind(this)));
-        this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
-        this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
-        this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
-        this._socket.on(Operations.AprilPurchaseGold, this._gameHandler(this._aprilPurchaseGold.bind(this)));
-        this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
-        this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
-        this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
-        this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
-        this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
+        //this._socket.on(Operations.AprilLoad, this._gameHandler(this._aprilLoad.bind(this)));
+        //this._socket.on(Operations.AprilClaimReward, this._gameHandler(this._aprilClaimReward.bind(this)));
+        //this._socket.on(Operations.AprilRankings, this._gameHandler(this._aprilRankings.bind(this)));
+        //this._socket.on(Operations.AprilHeroStat, this._gameHandler(this._aprilHeroStat.bind(this)));
+        //this._socket.on(Operations.AprilPurchaseHero, this._gameHandler(this._aprilPurchaseHero.bind(this)));
+        //this._socket.on(Operations.AprilRestart, this._gameHandler(this._aprilRestart.bind(this)));
+        //this._socket.on(Operations.AprilMove, this._gameHandler(this._aprilMove.bind(this)));
+        //this._socket.on(Operations.AprilSkip, this._gameHandler(this._aprilSkip.bind(this)));
+        //this._socket.on(Operations.AprilPurchaseAction, this._gameHandler(this._aprilPurchaseAction.bind(this)));
+        //this._socket.on(Operations.AprilPurchaseGold, this._gameHandler(this._aprilPurchaseGold.bind(this)));
+        //this._socket.on(Operations.AprilEnterLevel, this._gameHandler(this._aprilEnterLevel.bind(this)));
+        //this._socket.on(Operations.AprilResurrect, this._gameHandler(this._aprilResurrect.bind(this)));
+        //this._socket.on(Operations.AprilExit, this._gameHandler(this._aprilExit.bind(this)));
+        //this._socket.on(Operations.AprilTestAction, this._gameHandler(this._aprilTestAction.bind(this)));
+        //this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
+
+        // Battle
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -365,6 +368,11 @@ class PlayerController extends IPaymentListener {
             this.april = null
         }
 
+        if (this.battle) {
+            await this.battle.dispose();
+            this.battle = null
+        }
+
         return true;
     }
 
@@ -390,6 +398,9 @@ class PlayerController extends IPaymentListener {
 
         this.april = new AprilController(user);
         await this.april.init();
+
+        this.battle = new BattleController(user);
+        await this.battle.init();
     }
 
     async onPayment(iap, eventToTrigger, context) {

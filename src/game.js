@@ -25,6 +25,7 @@ import { XmasManager } from "./events/xmas/XmasManager";
 import { LunarManager } from "./events/lunar/LunarManager";
 import { MarchManager } from "./events/march/MarchManager";
 import { AprilManager } from "./events/april/AprilManager";
+import { BattleManager } from "./events/battle/BattleManager";
 
 class Game extends EventEmitter {
     constructor() {
@@ -76,6 +77,7 @@ class Game extends EventEmitter {
         this.lunarManager = new LunarManager();
         this.marchManager = new MarchManager();
         this.aprilManager = new AprilManager();
+        this.battleManager = new BattleManager();
 
         this._players = {};
         this._playersById = {};
@@ -85,6 +87,8 @@ class Game extends EventEmitter {
         await this.xmasManager.init();
         await this.marchManager.init();
         await this.aprilManager.init();
+        await this.battleManager.init();
+
         await this.questZones.init();
         await this.lootGenerator.init();
         await this._season.init();
