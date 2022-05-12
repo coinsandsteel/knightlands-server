@@ -98,13 +98,8 @@ export class BattleController {
     return items;
   }
 
-  async purchaseChest(currency: string) {
-    this._battleUser.purchaseChest(currency);
-    this._events.flush();
-  }
-
-  async purchaseGold(shopIndex: number, currency: string) {
-    this._battleUser.purchaseGold(shopIndex, currency);
+  async purchase(commodity: string, currency: string, shopIndex: number) {
+    this._battleUser.purchase(commodity, currency, shopIndex);
     this._events.flush();
   }
 
@@ -118,8 +113,8 @@ export class BattleController {
     this._events.flush();
   }
 
-  async enterLevel(roomId: string, level?: number) {
-    this._battleGame.enterLevel(roomId, level);
+  async enterLevel(room: number, level?: number) {
+    this._battleGame.enterLevel(room, level);
     this._events.flush();
   }
 
