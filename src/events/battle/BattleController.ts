@@ -103,18 +103,20 @@ export class BattleController {
     this._events.flush();
   }
 
+  // TODO
+  async enterLevel(room: number, level: number) {
+    this._battleGame.enterLevel(room, level);
+    this._events.flush();
+  }
+  
+  // TODO
   async apply(unitId: string, index: number, ability?: string) {
-    this._battleUser.apply(unitId, index, ability);
+    this._battleGame.apply(unitId, index, ability);
     this._events.flush();
   }
 
   async skip() {
     this._battleGame.skip();
-    this._events.flush();
-  }
-
-  async enterLevel(room: number, level?: number) {
-    this._battleGame.enterLevel(room, level);
     this._events.flush();
   }
 

@@ -1,6 +1,7 @@
 export interface BattleSaveData {
   user: BattleUserState;
-  game: BattlGameState;
+  game: BattleGameState;
+  inventory: BattleInventoryUnit[];
 }
 
 export interface BattleUserState {
@@ -26,40 +27,73 @@ export interface BattleRewardDayData {
   date?: string;
 }
 
-export interface BattleRewardRankingData {
-}
-
-export interface BattlGameState {
-  room: number; // 8
-  difficulty: number; // 0, 1
-  level: number; // 5 + 1
-  turn: boolean;
-  squads: {
-    user: BattleSquad;
-    enemy: BattleSquad;
-  };
-  terrain: BattleTerrainCell[];
-}
-
-export interface BattleSquad {
-  power: number;
-  bonus: BattleSquadBonus[];
-  units: BattleUnit[];
-}
-
-export interface BattleUnit {
-  id?: string;
+export interface BattleInventoryUnit {
+  unitId?: string;
+  unitTribe: string; // 15
   unitClass: string; // 5
-  // exp > max limit > pay coins > lvl up > attributes auto-upgrade
+  tier: number; // 3, modify via merger (3 => 1) // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   level: number; // 15
-  tier: number; // 3, modify via merger (3 => 1)
   power: number;
+  expirience: {
+    current: number; // gained value (relative)
+    max: number; // full value (relative)
+  };
+  characteristics: BattleUnitCharacteristics;
+  abilities: InventoryUnitAbility[];
+  quantity: number;
+}
+
+export interface BattleRewardRankingData {}
+
+export interface BattleGameState {
+  mode: string|null; // "duel" | "adventure"
+  room: number|null; // 8
+  difficulty: number|null; // 0, 1
+
+  userSquad: BattleSquadState;
+  enemySquad: BattleSquadState;
+
+  level: number|null; // 5 + 1
+  terrain: BattleTerrainCell[];
+  combat: BattleCombatState;
+}
+
+export interface BattleCombatState {
+  started: boolean;
+  result: string|null; // "win" | "loose"
+  isMyTurn: boolean|null;
+  runtime: {
+    unitId: string|null;
+    selectedIndex: number|null;
+    selectedAbilityClass: string|null;
+    moveCells: number[];
+    attackCells: number[];
+  };
+}
+
+export interface BattleSquadState {
+  power: number;
+  bonuses: BattleSquadBonus[];
+  units: BattleSquadUnit[];
+}
+
+export interface BattleSquadUnit {
+  unitId?: string;
+  unitTribe: string; // 15
+  unitClass: string; // 5
+  tier: number; // 3, modify via merger (3 => 1) // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   index: number; // 0-34
-  exp: number;
+  hp: number;
   abilities: BattleUnitAbility[];
-  attributes: BattleUnitAttribute[];
-  moveCells: number[]; // Choosed "move" action
-  attackCells: number[]; // Choosed ability
+  activeBuffs: BattleBuff[];
+}
+
+export interface BattleUnitCharacteristics {
+  hp: number;
+  damage: number;
+  defence: number;
+  initiative: number;
+  speed: number;
 }
 
 export interface BattleTerrainCell {
@@ -67,19 +101,19 @@ export interface BattleTerrainCell {
   index: number;
 }
 
-export interface BattleUnitAbility {
+export interface InventoryUnitAbility {
   abilityClass: string; // 
-  // unit lvl opens ability lvl > pay crystal > lvl up
+  canLearn: boolean; // unit lvl opens ability lvl > pay crystal > lvl up
   level: number; // 3-5
-  value: {
-    initial: number;
-    current: number;
-  };
+}
+
+export interface BattleUnitAbility {
+  abilityClass: string;
   cooldown: {
-    initial: number;
-    current: number;
-  };
-  buffs: BattleBuff[];
+    enabled: boolean;
+    stepsLeft: number;
+    stepsMax: number;
+  }
 }
 
 export interface BattleUnitAttribute {
@@ -91,20 +125,12 @@ export interface BattleUnitAttribute {
 
 export interface BattleBuff {
   buffClass: string;
-  delta: number;
-  modifier: number; // % > ceil()
-  cooldown: number;
+  type: string;
+  target: string;
 }
 
 export interface BattleSquadBonus {
-  // magic attack
-  // phys attack
-  // magic defence
-  // phys defence
-  // terrain
-  // speed
   alias: string;
-  // TODO details
   value: number; // % or delta
   modifier: number;
 }

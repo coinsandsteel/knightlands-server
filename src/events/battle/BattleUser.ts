@@ -29,6 +29,19 @@ export class BattleUser {
     
   public setInitialState() {
     this._state = {
+      balance: {
+        energy: 10000,
+        coins: 5000,
+        crystals: 2000,
+      },
+      timers: {
+        energy: 0
+      },
+      rewards: {
+        // TODO set rewards
+        dailyRewards: [],
+        rankingRewards: {}
+      },
     } as BattleUserState;
 
     this.setActiveReward();
@@ -44,5 +57,17 @@ export class BattleUser {
 
   public async testAction(action) {
     return;
+  }
+
+  public claimDailyReward(): void {
+
+  }
+
+  public claimSquadReward(): void {
+
+  }
+
+  public purchase(commodity: string, currency: string, shopIndex: number): void {
+
   }
 }
