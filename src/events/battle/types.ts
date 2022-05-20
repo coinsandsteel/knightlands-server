@@ -48,12 +48,12 @@ export interface BattleRewardRankingData {}
 export interface BattleGameState {
   mode: string|null; // "duel" | "adventure"
   room: number|null; // 8
-  difficulty: number|null; // 0, 1
+  difficulty: string|null; // 0, 1
+  level: number|null; // 5 + 1
 
   userSquad: BattleSquadState;
   enemySquad: BattleSquadState;
 
-  level: number|null; // 5 + 1
   terrain: BattleTerrainCell[];
   combat: BattleCombatState;
 }
@@ -102,13 +102,17 @@ export interface BattleTerrainCell {
 }
 
 export interface InventoryUnitAbility {
-  abilityClass: string; // 
+  abilityId: string; // 
+  abilityGroup: string; // 
+  alias: string; // 
   canLearn: boolean; // unit lvl opens ability lvl > pay crystal > lvl up
   level: number; // 3-5
 }
 
 export interface BattleUnitAbility {
-  abilityClass: string;
+  abilityId: string; // 
+  abilityGroup: string; // 
+  alias: string; // 
   cooldown: {
     enabled: boolean;
     stepsLeft: number;
@@ -124,13 +128,13 @@ export interface BattleUnitAttribute {
 }
 
 export interface BattleBuff {
-  buffClass: string;
+  abilityClass: string;
   type: string;
   target: string;
 }
 
 export interface BattleSquadBonus {
-  alias: string;
+  bonusClass: string;
   value: number; // % or delta
   modifier: number;
 }

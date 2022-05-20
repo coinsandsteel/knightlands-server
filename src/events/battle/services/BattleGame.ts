@@ -24,22 +24,34 @@ export class BattleGame {
       this.setInitialState();
     }
 
-    this._userSquad = new BattleSquad(this._state.squads.user);
-    this._enemySquad = new BattleSquad(this._state.squads.enemy);
+    this._userSquad = new BattleSquad(this._state.userSquad);
+    this._enemySquad = new BattleSquad(this._state.enemySquad);
   }
 
   // TODO
   protected setInitialState() {
     this._state = {
-      room: 0, // 8
-      difficulty: 0, // 0, 1
+      mode: null,
+      room: null, // 8
+      difficulty: null, // "low", "mudium", "hard"
       level: 0, // 5 + 1
-      isMyTurn: false,
-      squads: {
-        user: this._userSquad.getState(),
-        enemy: this._enemySquad.getState()
-      },
-      terrain: []
+
+      userSquad: this._userSquad.getState(),
+      enemySquad: this._enemySquad.getState(),
+      terrain: [],
+
+      combat: {
+        started: false,
+        result: null, // "win" | "loose"
+        isMyTurn: null,
+        runtime: {
+          unitId: null,
+          selectedIndex: null,
+          selectedAbilityClass: null,
+          moveCells: [],
+          attackCells: []
+        }
+      }
     } as BattleGameState;
   }
 

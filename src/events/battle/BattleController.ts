@@ -7,6 +7,7 @@ import { BattleSaveData } from './types';
 import { BattleEvents } from './BattleEvents';
 import { BattleUser } from './BattleUser';
 import { BattleGame } from './services/BattleGame';
+import { BattleInventory } from './services/BattleInventory';
 
 const isProd = process.env.ENV == "prod";
 
@@ -17,6 +18,7 @@ export class BattleController {
   
   private _battleUser: BattleUser;
   private _battleGame: BattleGame;
+  private _battleInventory: BattleInventory;
   
   async init() {
     const saveData = await Game.battleManager.loadProgress(this._user.id);
@@ -64,7 +66,8 @@ export class BattleController {
   getState(): BattleSaveData {
     return {
       user: this._battleUser.getState(),
-      game: this._battleGame.getState()
+      game: this._battleGame.getState(),
+      inventory: this._battleInventory.getState()
     };
   }
 
@@ -103,13 +106,11 @@ export class BattleController {
     this._events.flush();
   }
 
-  // TODO
   async enterLevel(room: number, level: number) {
     this._battleGame.enterLevel(room, level);
     this._events.flush();
   }
   
-  // TODO
   async apply(unitId: string, index: number, ability?: string) {
     this._battleGame.apply(unitId, index, ability);
     this._events.flush();
