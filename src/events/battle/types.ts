@@ -102,17 +102,15 @@ export interface BattleTerrainCell {
 }
 
 export interface InventoryUnitAbility {
-  abilityId: string; // 
+  abilityClass: string; // 
   abilityGroup: string; // 
-  alias: string; // 
   canLearn: boolean; // unit lvl opens ability lvl > pay crystal > lvl up
   level: number; // 3-5
 }
 
 export interface BattleUnitAbility {
-  abilityId: string; // 
+  abilityClass: string; // 
   abilityGroup: string; // 
-  alias: string; // 
   cooldown: {
     enabled: boolean;
     stepsLeft: number;
