@@ -18,16 +18,16 @@ export class BattleGame {
     this._state = state;
     this._events = events;
 
+    this._userSquad = new BattleSquad(state ? state.userSquad : null);
+    this._enemySquad = new BattleSquad(state ? state.enemySquad : null);
+
     if (state) {
       this._state = state;
     } else {
       this.setInitialState();
     }
-
-    this._userSquad = new BattleSquad(this._state.userSquad);
-    this._enemySquad = new BattleSquad(this._state.enemySquad);
   }
-
+  
   // TODO
   protected setInitialState() {
     this._state = {

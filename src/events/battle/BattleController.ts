@@ -20,6 +20,11 @@ export class BattleController {
   private _battleGame: BattleGame;
   private _battleInventory: BattleInventory;
   
+  constructor(user: User) {
+    this._events = new BattleEvents(user.id);
+    this._user = user;
+  }
+  
   async init() {
     const saveData = await Game.battleManager.loadProgress(this._user.id);
     if (saveData) {
@@ -134,9 +139,9 @@ export class BattleController {
     this._events.flush();
   }
 
-  async testAction(action) {
+  async testAction(data) {
     if (isProd) return;
-    await this._battleUser.testAction(action);
+    await this._battleUser.testAction(data);
     this._events.flush();
   }
 

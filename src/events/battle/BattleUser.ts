@@ -55,7 +55,27 @@ export class BattleUser {
     return this._state;
   }
 
-  public async testAction(action) {
+  public async testAction(data) {
+    switch (data.action) {
+      case 'increaseUnitExp':{
+        // unitId
+        break;
+      }
+      case 'decreaseUnitExp':{
+        // unitId
+        break;
+      }
+      case 'increaseAbilityLevel':{
+        // unitId
+        // abilityClass
+        break;
+      }
+      case 'decreaseAbilityLevel':{
+        // unitId
+        // abilityClass
+        break;
+      }
+    }
     return;
   }
 
