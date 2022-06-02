@@ -314,7 +314,19 @@ class PlayerController extends IPaymentListener {
         //this._socket.on(Operations.AprilPurchaseTicket, this._gameHandler(this._aprilPurchaseTicket.bind(this)));
 
         // Battle
-
+        this._socket.on(Operations.BattleLoad, this._gameHandler(this._battleLoad.bind(this)));
+        this._socket.on(Operations.BattleClaimReward, this._gameHandler(this._battleClaimReward.bind(this)));
+        this._socket.on(Operations.BattlePurchase, this._gameHandler(this._battlePurchase.bind(this)));
+        this._socket.on(Operations.BattleFillSquadSlot, this._gameHandler(this._battleFillSquadSlot.bind(this)));
+        this._socket.on(Operations.BattleClearSquadSlot, this._gameHandler(this._battleClearSquadSlot.bind(this)));
+        this._socket.on(Operations.BattleApply, this._gameHandler(this._battleApply.bind(this)));
+        this._socket.on(Operations.BattleSkip, this._gameHandler(this._battleSkip.bind(this)));
+        this._socket.on(Operations.BattleEnterLevel, this._gameHandler(this._battleEnterLevel.bind(this)));
+        this._socket.on(Operations.BattleRankings, this._gameHandler(this._battleRankings.bind(this)));
+        this._socket.on(Operations.BattleRestart, this._gameHandler(this._battleRestart.bind(this)));
+        this._socket.on(Operations.BattleExit, this._gameHandler(this._battleExit.bind(this)));
+        this._socket.on(Operations.BattleTestAction, this._gameHandler(this._battleTextAction.bind(this)));
+        
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -2259,6 +2271,56 @@ class PlayerController extends IPaymentListener {
     async _aprilExit() {
         return this.april.exit();
     }
+
+    // Battle
+    async _battleLoad() {
+      return this.battle.load();
+    }
+
+    async _battleClaimReward(_, { type }) {
+      return this.battle.claimReward(type);
+    }
+
+    async _battlePurchase(_, { commodity, currency, shopIndex }) {
+      return this.battle.purchase(commodity, currency, shopIndex);
+    }
+    
+    async _battleFillSquadSlot(_, { unitId, index }) {
+      return this.battle.fillSquadSlot(unitId, index);
+    }
+    
+    async _battleClearSquadSlot(_, { index }) {
+      return this.battle.clearSquadSlot(index);
+    }
+    
+    async _battleApply(_, { unitId, index, ability }) {
+      return this.battle.apply(unitId, index, ability);
+    }
+    
+    async _battleSkip() {
+      return this.battle.skip();
+    }
+    
+    async _battleEnterLevel(_, { room, level }) {
+      return this.battle.enterLevel(room, level);
+    }
+
+    async _battleRankings() {
+      return Game.battleManager.getRankings();
+    }
+
+    async _battleRestart() {
+      return this.battle.restart();
+    }
+    
+    async _battleExit() {
+      return this.battle.exit();
+    }
+    
+    async _battleTextAction(_, data) {
+      return this.battle.testAction(data);
+    }
+
 }
 
 module.exports = PlayerController;

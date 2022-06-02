@@ -106,6 +106,9 @@ export interface InventoryUnitAbility {
   abilityGroup: string; // 
   canLearn: boolean; // unit lvl opens ability lvl > pay crystal > lvl up
   level: number; // 3-5
+  damage: number|null;
+  defence: number|null;
+  speed: number|null;
 }
 
 export interface BattleUnitAbility {

@@ -28,6 +28,7 @@ export class BattleController {
     
     this.initPlayer();
     this.initGame();
+    this.initInventory();
     
     if (!this._saveData) {
       this.generate();
@@ -63,6 +64,17 @@ export class BattleController {
     }
   }
 
+  private initInventory() {
+    if (!this._battleInventory) {
+      this._battleInventory = new BattleInventory(
+        this._saveData ? this._saveData.inventory : [], 
+        this._events,
+        this._battleUser,
+        this._user
+      );
+    }
+  }
+
   getState(): BattleSaveData {
     return {
       user: this._battleUser.getState(),
@@ -78,6 +90,7 @@ export class BattleController {
   async load() {
     await this._battleUser.init();
     await this._battleGame.init();
+    await this._battleInventory.init();
     return this.getState();
   }
 
