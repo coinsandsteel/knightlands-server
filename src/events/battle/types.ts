@@ -108,7 +108,6 @@ export interface BattleTerrainCell {
 export interface InventoryUnitAbility {
   abilityClass: string; // 
   abilityGroup: string; // 
-  canLearn: boolean;
   level: { // unit lvl opens ability lvl > pay crystal > lvl up
     current: number; // 0 means "not learned"
     next: number|null; // not null means "can learn"
