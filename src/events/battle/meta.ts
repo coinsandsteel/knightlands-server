@@ -1,4 +1,5 @@
 import * as battle from "./../../knightlands-shared/battle";
+import { BattleUnitBlueprint } from "./types";
 
 export const CHARACTERISTICS = {
   [battle.UNIT_CLASS_MELEE]: [
@@ -503,13 +504,77 @@ export const ABILITIES = {
   },
 };
 
+export const ABILITY_GROUPS = {
+  [battle.ABILITY_HEAL]: null, // ???
+  [battle.ABILITY_GROUP_HEAL]: null, // ???
+  
+  [battle.ABILITY_DASH]: battle.ABILITY_GROUP_JUMP,
+  [battle.ABILITY_FLIGHT]: battle.ABILITY_GROUP_JUMP,
+  [battle.ABILITY_RUSH]: battle.ABILITY_GROUP_JUMP,
+  [battle.ABILITY_TELEPORTATION]: battle.ABILITY_GROUP_JUMP,
+  
+  [battle.ABILITY_MIGHT]: battle.ABILITY_GROUP_BUFF,
+  [battle.ABILITY_SHIELD]: battle.ABILITY_GROUP_BUFF,
+  [battle.ABILITY_WIND_WALK]: battle.ABILITY_GROUP_BUFF,
+  
+  [battle.ABILITY_CURSE]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_FROZEN_ABYSS]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_HAMSTRING]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_LAZINESS]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_SHIELD_STUN]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_STUN]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_STUN_SHOT]: battle.ABILITY_GROUP_DE_BUFF,
+  [battle.ABILITY_WEAKNESS]: battle.ABILITY_GROUP_DE_BUFF,
+  
+  [battle.ABILITY_HEAVY_ARROW]: battle.ABILITY_GROUP_SELF_BUFF,
+  [battle.ABILITY_RAGE]: battle.ABILITY_GROUP_SELF_BUFF,
+  [battle.ABILITY_SHIELD_WALL]: battle.ABILITY_GROUP_SELF_BUFF,
+  [battle.ABILITY_ZEALOT]: battle.ABILITY_GROUP_SELF_BUFF,
+  
+  [battle.ABILITY_ACCURATE_SHOT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_AGRESSION]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_ARROW_CRUSH]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_AXE_BLOW]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_AXE_CRUSH]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_BLADE_VORTEX]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_CRUSH_OF_DOOM]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_DARK_VORTEX]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_DEATH_SHOT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_DOUBLE_SHOT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_DRAGON_BITE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_DRAGON_FURY]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_ENERGY_BOLT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_FATAL_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_FIRE_BLADE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_FLAME_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_FROST_BLADE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_FURY_CLAWS]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_HEAVY_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_HOLY_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_HUMMER_BLOW]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_HURRICANE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_JAVELIN_THROW]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_KUNAI_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_LETHAL_SHOT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_LETHAL_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_MORTAL_BLOW]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_POWER_SHOT]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_POWER_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_RETRIBUTION]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_SHIELD_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_SPEAR_STRIKE]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_STRONG_PUNCH]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_SWORD_CRUSH]: battle.ABILITY_GROUP_ATTACK,
+  [battle.ABILITY_WOLF_BITE]: battle.ABILITY_GROUP_ATTACK,
+};
+
 export const UNITS = [
   //battle.UNIT_TRIBE_KOBOLD
   {
     template: 1,
     unitTribe: battle.UNIT_TRIBE_KOBOLD,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_HAMSTRING,
@@ -519,7 +584,7 @@ export const UNITS = [
     template: 2,
     unitTribe: battle.UNIT_TRIBE_KOBOLD,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_JAVELIN_THROW,
       battle.ABILITY_FLIGHT,
       battle.ABILITY_LETHAL_SHOT,
@@ -529,7 +594,7 @@ export const UNITS = [
     template: 3,
     unitTribe: battle.UNIT_TRIBE_KOBOLD,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -539,7 +604,7 @@ export const UNITS = [
     template: 4,
     unitTribe: battle.UNIT_TRIBE_KOBOLD,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_MORTAL_BLOW,
       battle.ABILITY_FLIGHT,
       battle.ABILITY_SHIELD_STUN,
@@ -549,7 +614,7 @@ export const UNITS = [
     template: 5,
     unitTribe: battle.UNIT_TRIBE_KOBOLD,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAL,
       battle.ABILITY_MIGHT,
       battle.ABILITY_LAZINESS,
@@ -560,7 +625,7 @@ export const UNITS = [
     template: 6,
     unitTribe: battle.UNIT_TRIBE_DWARF,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_STUN,
       battle.ABILITY_LETHAL_STRIKE,
@@ -570,7 +635,7 @@ export const UNITS = [
     template: 7,
     unitTribe: battle.UNIT_TRIBE_DWARF,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_AXE_CRUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -580,7 +645,7 @@ export const UNITS = [
     template: 8,
     unitTribe: battle.UNIT_TRIBE_DWARF,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_RUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -590,7 +655,7 @@ export const UNITS = [
     template: 9,
     unitTribe: battle.UNIT_TRIBE_DWARF,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAVY_STRIKE,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_STUN,
@@ -601,7 +666,7 @@ export const UNITS = [
     template: 10,
     unitTribe: battle.UNIT_TRIBE_EGYPTIAN,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_ACCURATE_SHOT,
       battle.ABILITY_DEATH_SHOT,
@@ -611,7 +676,7 @@ export const UNITS = [
     template: 11,
     unitTribe: battle.UNIT_TRIBE_EGYPTIAN,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_DASH,
       battle.ABILITY_DEATH_SHOT,
@@ -621,7 +686,7 @@ export const UNITS = [
     template: 12,
     unitTribe: battle.UNIT_TRIBE_EGYPTIAN,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_AXE_CRUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -631,7 +696,7 @@ export const UNITS = [
     template: 13,
     unitTribe: battle.UNIT_TRIBE_EGYPTIAN,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAVY_STRIKE,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_STUN,
@@ -641,7 +706,7 @@ export const UNITS = [
     template: 14,
     unitTribe: battle.UNIT_TRIBE_EGYPTIAN,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAL,
       battle.ABILITY_MIGHT,
       battle.ABILITY_WIND_WALK,
@@ -652,7 +717,7 @@ export const UNITS = [
     template: 15,
     unitTribe: battle.UNIT_TRIBE_GOBLIN,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_DEATH_SHOT,
@@ -662,7 +727,7 @@ export const UNITS = [
     template: 16,
     unitTribe: battle.UNIT_TRIBE_GOBLIN,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -672,7 +737,7 @@ export const UNITS = [
     template: 17,
     unitTribe: battle.UNIT_TRIBE_GOBLIN,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SPEAR_STRIKE,
       battle.ABILITY_WOLF_BITE,
       battle.ABILITY_FATAL_STRIKE,
@@ -682,7 +747,7 @@ export const UNITS = [
     template: 18,
     unitTribe: battle.UNIT_TRIBE_GOBLIN,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HOLY_STRIKE,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_WALL,
@@ -692,7 +757,7 @@ export const UNITS = [
     template: 19,
     unitTribe: battle.UNIT_TRIBE_GOBLIN,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_WEAKNESS,
       battle.ABILITY_LAZINESS,
@@ -703,7 +768,7 @@ export const UNITS = [
     template: 20,
     unitTribe: battle.UNIT_TRIBE_INSECT,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_DEATH_SHOT,
@@ -713,7 +778,7 @@ export const UNITS = [
     template: 21,
     unitTribe: battle.UNIT_TRIBE_INSECT,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -723,7 +788,7 @@ export const UNITS = [
     template: 22,
     unitTribe: battle.UNIT_TRIBE_INSECT,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -733,7 +798,7 @@ export const UNITS = [
     template: 23,
     unitTribe: battle.UNIT_TRIBE_INSECT,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_WALL,
@@ -743,7 +808,7 @@ export const UNITS = [
     template: 24,
     unitTribe: battle.UNIT_TRIBE_INSECT,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
       battle.ABILITY_GROUP_HEAL,
@@ -754,7 +819,7 @@ export const UNITS = [
     template: 25,
     unitTribe: battle.UNIT_TRIBE_ORC,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_HEAVY_ARROW,
       battle.ABILITY_DEATH_SHOT,
@@ -764,7 +829,7 @@ export const UNITS = [
     template: 26,
     unitTribe: battle.UNIT_TRIBE_ORC,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RAGE,
       battle.ABILITY_LETHAL_STRIKE,
@@ -774,7 +839,7 @@ export const UNITS = [
     template: 27,
     unitTribe: battle.UNIT_TRIBE_ORC,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_RUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -784,7 +849,7 @@ export const UNITS = [
     template: 28,
     unitTribe: battle.UNIT_TRIBE_ORC,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_RUSH,
       battle.ABILITY_RETRIBUTION,
@@ -794,7 +859,7 @@ export const UNITS = [
     template: 29,
     unitTribe: battle.UNIT_TRIBE_ORC,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
       battle.ABILITY_LAZINESS,
@@ -805,7 +870,7 @@ export const UNITS = [
     template: 30,
     unitTribe: battle.UNIT_TRIBE_ASSEMBLING,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -815,7 +880,7 @@ export const UNITS = [
     template: 31,
     unitTribe: battle.UNIT_TRIBE_ASSEMBLING,
     unitClass: battle.UNIT_CLASS_MAGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_FLAME_STRIKE,
       battle.ABILITY_ENERGY_BOLT,
       battle.ABILITY_DARK_VORTEX,
@@ -825,7 +890,7 @@ export const UNITS = [
     template: 32,
     unitTribe: battle.UNIT_TRIBE_ASSEMBLING,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_STUN,
       battle.ABILITY_LETHAL_STRIKE,
@@ -835,7 +900,7 @@ export const UNITS = [
     template: 33,
     unitTribe: battle.UNIT_TRIBE_ASSEMBLING,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_RUSH,
       battle.ABILITY_RETRIBUTION,
@@ -845,7 +910,7 @@ export const UNITS = [
     template: 34,
     unitTribe: battle.UNIT_TRIBE_ASSEMBLING,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_WEAKNESS,
       battle.ABILITY_WIND_WALK,
@@ -856,7 +921,7 @@ export const UNITS = [
     template: 35,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_STUN,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -866,7 +931,7 @@ export const UNITS = [
     template: 36,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_FURY_CLAWS,
       battle.ABILITY_BLADE_VORTEX,
@@ -876,7 +941,7 @@ export const UNITS = [
     template: 37,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -886,7 +951,7 @@ export const UNITS = [
     template: 38,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_WALL,
@@ -896,7 +961,7 @@ export const UNITS = [
     template: 39,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
       battle.ABILITY_GROUP_HEAL,
@@ -907,7 +972,7 @@ export const UNITS = [
     template: 40,
     unitTribe: battle.UNIT_TRIBE_SKELETON,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_ARROW_CRUSH,
       battle.ABILITY_HAMSTRING,
@@ -917,7 +982,7 @@ export const UNITS = [
     template: 41,
     unitTribe: battle.UNIT_TRIBE_SKELETON,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -927,7 +992,7 @@ export const UNITS = [
     template: 42,
     unitTribe: battle.UNIT_TRIBE_SKELETON,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_DRAGON_BITE,
       battle.ABILITY_FLIGHT,
       battle.ABILITY_DRAGON_FURY,
@@ -937,7 +1002,7 @@ export const UNITS = [
     template: 43,
     unitTribe: battle.UNIT_TRIBE_SKELETON,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAVY_STRIKE,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_STUN,
@@ -947,7 +1012,7 @@ export const UNITS = [
     template: 44,
     unitTribe: battle.UNIT_TRIBE_SKELETON,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_WEAKNESS,
       battle.ABILITY_LAZINESS,
@@ -958,7 +1023,7 @@ export const UNITS = [
     template: 35,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_STUN,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -968,7 +1033,7 @@ export const UNITS = [
     template: 36,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_FURY_CLAWS,
       battle.ABILITY_BLADE_VORTEX,
@@ -978,7 +1043,7 @@ export const UNITS = [
     template: 37,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -988,7 +1053,7 @@ export const UNITS = [
     template: 38,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_WALL,
@@ -998,7 +1063,7 @@ export const UNITS = [
     template: 39,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
       battle.ABILITY_GROUP_HEAL,
@@ -1009,7 +1074,7 @@ export const UNITS = [
     template: 40,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RAGE,
       battle.ABILITY_LETHAL_STRIKE,
@@ -1019,7 +1084,7 @@ export const UNITS = [
     template: 41,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_FROST_BLADE,
       battle.ABILITY_FROZEN_ABYSS,
@@ -1029,7 +1094,7 @@ export const UNITS = [
     template: 42,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SPEAR_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_FATAL_STRIKE,
@@ -1039,7 +1104,7 @@ export const UNITS = [
     template: 43,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_TELEPORTATION,
       battle.ABILITY_SHIELD_STUN,
@@ -1049,7 +1114,7 @@ export const UNITS = [
     template: 44,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
       battle.ABILITY_LAZINESS,
@@ -1060,7 +1125,7 @@ export const UNITS = [
     template: 45,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_DOUBLE_SHOT,
       battle.ABILITY_HAMSTRING,
@@ -1070,7 +1135,7 @@ export const UNITS = [
     template: 46,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -1080,7 +1145,7 @@ export const UNITS = [
     template: 47,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_DEATH_SHOT,
@@ -1090,7 +1155,7 @@ export const UNITS = [
     template: 48,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_RUSH,
       battle.ABILITY_RETRIBUTION,
@@ -1100,7 +1165,7 @@ export const UNITS = [
     template: 49,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
       battle.ABILITY_GROUP_HEAL,
@@ -1111,7 +1176,7 @@ export const UNITS = [
     template: 50,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_DOUBLE_SHOT,
       battle.ABILITY_HAMSTRING,
@@ -1121,7 +1186,7 @@ export const UNITS = [
     template: 51,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_STRONG_PUNCH,
       battle.ABILITY_FURY_CLAWS,
       battle.ABILITY_BLADE_VORTEX,
@@ -1131,7 +1196,7 @@ export const UNITS = [
     template: 52,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_STUN,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -1141,7 +1206,7 @@ export const UNITS = [
     template: 53,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_TELEPORTATION,
       battle.ABILITY_SHIELD_STUN,
@@ -1151,7 +1216,7 @@ export const UNITS = [
     template: 54,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_WEAKNESS,
       battle.ABILITY_LAZINESS,
@@ -1162,7 +1227,7 @@ export const UNITS = [
     template: 55,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_HAMSTRING,
@@ -1172,7 +1237,7 @@ export const UNITS = [
     template: 56,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AXE_BLOW,
       battle.ABILITY_ZEALOT,
       battle.ABILITY_LETHAL_STRIKE,
@@ -1182,7 +1247,7 @@ export const UNITS = [
     template: 57,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_SWORD_CRUSH,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -1192,7 +1257,7 @@ export const UNITS = [
     template: 58,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAVY_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_HUMMER_BLOW,
@@ -1202,7 +1267,7 @@ export const UNITS = [
     template: 59,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_WEAKNESS,
       battle.ABILITY_WIND_WALK,
@@ -1213,7 +1278,7 @@ export const UNITS = [
     template: 60,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MAGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_FLAME_STRIKE,
       battle.ABILITY_HURRICANE,
       battle.ABILITY_DARK_VORTEX,
@@ -1223,7 +1288,7 @@ export const UNITS = [
     template: 61,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_RUSH,
       battle.ABILITY_LETHAL_STRIKE,
@@ -1233,7 +1298,7 @@ export const UNITS = [
     template: 62,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_KUNAI_STRIKE,
       battle.ABILITY_BLADE_VORTEX,
@@ -1243,7 +1308,7 @@ export const UNITS = [
     template: 63,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_AGRESSION,
       battle.ABILITY_SHIELD_STRIKE,
       battle.ABILITY_SHIELD_WALL,
@@ -1253,7 +1318,7 @@ export const UNITS = [
     template: 64,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
       battle.ABILITY_LAZINESS,
@@ -1264,7 +1329,7 @@ export const UNITS = [
     template: 65,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_RANGE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_SHOT,
       battle.ABILITY_STUN_SHOT,
       battle.ABILITY_DEATH_SHOT,
@@ -1274,7 +1339,7 @@ export const UNITS = [
     template: 66,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_FIRE_BLADE,
       battle.ABILITY_CRUSH_OF_DOOM,
@@ -1284,7 +1349,7 @@ export const UNITS = [
     template: 67,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_MELEE,
-    abilities: [
+    abilityList: [
       battle.ABILITY_POWER_STRIKE,
       battle.ABILITY_FROST_BLADE,
       battle.ABILITY_FROZEN_ABYSS,
@@ -1294,7 +1359,7 @@ export const UNITS = [
     template: 68,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_TANK,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HOLY_STRIKE,
       battle.ABILITY_FLIGHT,
       battle.ABILITY_RETRIBUTION,
@@ -1304,21 +1369,13 @@ export const UNITS = [
     template: 69,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_SUPPORT,
-    abilities: [
+    abilityList: [
       battle.ABILITY_HEAL,
       battle.ABILITY_MIGHT,
       battle.ABILITY_WIND_WALK,
     ]
   },
-];
-
-/*
-  hp: number;
-  damage: number;
-  defence: number;
-  initiative: number;
-  speed: number;
-*/
+] as BattleUnitBlueprint[];
 
 export const SQUAD_BONUSES = {
   [battle.UNIT_TRIBE_KOBOLD]: [
@@ -1686,3 +1743,60 @@ export const SQUAD_BONUSES = {
     ],
   ],
 };
+
+export const EXP_TABLE = [
+  // Tier 1
+  [
+    0, // 0 > 1
+    100, // 1 > 2
+    200, // 2 > 3
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+    1100,
+    1200,
+    1300,
+    1400
+  ],
+  // Tier 2
+  [
+    0,
+    200,
+    400,
+    600,
+    800,
+    1000,
+    1200,
+    1400,
+    1600,
+    1800,
+    2000,
+    2200,
+    2400,
+    2600,
+    2800
+  ],
+  // Tier 3
+  [
+    0,
+    500,
+    800,
+    1100,
+    1400,
+    1700,
+    2000,
+    2300,
+    2600,
+    2900,
+    3200,
+    3500,
+    3800,
+    4100,
+    4400
+  ],
+];

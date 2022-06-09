@@ -141,6 +141,31 @@ export class BattleController {
 
   async testAction(data) {
     if (isProd) return;
+    switch (data.action) {
+      case 'addUnit':{
+        const unit = this._battleInventory.getRandomUnit();
+        await this._battleInventory.addUnit(unit);
+        break;
+      }
+      case 'increaseUnitExp':{
+        // unitId
+        break;
+      }
+      case 'decreaseUnitExp':{
+        // unitId
+        break;
+      }
+      case 'increaseAbilityLevel':{
+        // unitId
+        // abilityClass
+        break;
+      }
+      case 'decreaseAbilityLevel':{
+        // unitId
+        // abilityClass
+        break;
+      }
+    }
     await this._battleUser.testAction(data);
     this._events.flush();
   }

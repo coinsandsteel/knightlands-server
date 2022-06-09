@@ -28,15 +28,12 @@ export interface BattleRewardDayData {
 }
 
 export interface BattleInventoryUnit {
+  template: number;
   unitId?: string;
   unitTribe: string; // 15
   unitClass: string; // 5
   tier: number; // 3, modify via merger (3 => 1)
-  level: {  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-    current: number;
-    next: number|null;
-    price: number|null;
-  };
+  level: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   power: number;
   expirience: {
     current: number; // gained value (relative)
@@ -45,6 +42,21 @@ export interface BattleInventoryUnit {
   characteristics: BattleUnitCharacteristics;
   abilities: InventoryUnitAbility[];
   quantity: number;
+}
+
+export interface BattleUnitBlueprint {
+  template: number;
+  unitId?: number;
+  unitTribe: string; // 15
+  unitClass: string; // 5
+  tier?: number;
+  abilityList: string[];
+}
+
+export interface BattleLevelScheme {
+  current: number;
+  next: number|null;
+  price: number|null;
 }
 
 export interface BattleRewardRankingData {}
@@ -82,11 +94,12 @@ export interface BattleSquadState {
 }
 
 export interface BattleSquadUnit {
+  template: number;
   unitId?: string;
   unitTribe: string; // 15
   unitClass: string; // 5
   tier: number; // 3, modify via merger (3 => 1) // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  index: number; // 0-34
+  index?: number; // 0-34
   hp: number;
   abilities: BattleUnitAbility[];
   activeBuffs: BattleBuff[];
@@ -108,14 +121,12 @@ export interface BattleTerrainCell {
 export interface InventoryUnitAbility {
   abilityClass: string; // 
   abilityGroup: string; // 
-  level: { // unit lvl opens ability lvl > pay crystal > lvl up
-    current: number; // 0 means "not learned"
-    next: number|null; // not null means "can learn"
-    price: number|null; // Learn price, crystals
-  };
-  damage: number|null;
-  defence: number|null;
-  speed: number|null;
+  level: BattleLevelScheme; // unit lvl opens ability lvl > pay crystal > lvl up
+  //   current: number; // 0 means "not learned"
+  //   next: number|null; // not null means "can learn"
+  //   price: number|null; // Learn price, crystals
+  // };
+  value: number;
 }
 
 export interface BattleUnitAbility {

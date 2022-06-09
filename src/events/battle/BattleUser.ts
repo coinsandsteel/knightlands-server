@@ -57,6 +57,10 @@ export class BattleUser {
 
   public async testAction(data) {
     switch (data.action) {
+      case 'addUnit':{
+        // unitId
+        break;
+      }
       case 'increaseUnitExp':{
         // unitId
         break;
