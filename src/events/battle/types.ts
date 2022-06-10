@@ -17,7 +17,16 @@ export interface BattleUserState {
   rewards: {
     dailyRewards: BattleRewardDayData[];
     rankingRewards: BattleRewardRankingData;
+  },
+  adventures: object;
+  /*
+  adventures: {
+    1: {
+      1: { [GAME_DIFFICULTY_MEDIUM]: true, [GAME_DIFFICULTY_HIGH]: false },
+      //2: { [GAME_DIFFICULTY_MEDIUM]: false, [GAME_DIFFICULTY_HIGH]: false },
+    }
   }
+  */
 }
 
 export interface BattleRewardDayData {
@@ -36,8 +45,10 @@ export interface BattleInventoryUnit {
   level: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   power: number;
   expirience: {
-    current: number; // gained value (relative)
-    max: number; // full value (relative)
+    value: number;
+    percentage: number;
+    currentLevelExp: number;
+    nextLevelExp: number;
   };
   characteristics: BattleUnitCharacteristics;
   abilities: InventoryUnitAbility[];

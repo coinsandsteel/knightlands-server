@@ -21,4 +21,8 @@ export class BattleEvents {
   updateUnit(unit: Unit) {
     this._events.updateUnit = unit.serialize();
   }
+
+  units(units: Unit[]) {
+    this._events.units = units.map((unit: Unit) => unit.serialize());
+  }
 }

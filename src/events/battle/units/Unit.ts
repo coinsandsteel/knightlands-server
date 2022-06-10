@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
 import random from "../../../random";
 import { ABILITIES, ABILITY_GROUPS, CHARACTERISTICS, EXP_TABLE } from "../meta";
+import { BattleInventory } from "../services/BattleInventory";
 import { 
   BattleInventoryUnit, 
   BattleLevelScheme, 
@@ -12,6 +13,8 @@ import {
 } from "../types";
 
 export class Unit {
+  private _inventory: BattleInventory;
+
   private _template: number;
   private _unitId: string;
   private _unitTribe: string; // 15
@@ -24,8 +27,10 @@ export class Unit {
   //};
   private _power: number;
   private _expirience: {
-    current: number; // gained value (relative)
-    max: number; // full value (relative)
+    value: number;
+    percentage: number;
+    currentLevelExp: number;
+    nextLevelExp: number;
   };
   private _characteristics: BattleUnitCharacteristics;
   private _abilities: InventoryUnitAbility[];
@@ -37,6 +42,10 @@ export class Unit {
   private _initiative: number;
   private _speed: number;
 
+  get unitId(): string {
+    return this._unitId;
+  }
+
   get template(): number {
     return this._template;
   }
@@ -45,7 +54,9 @@ export class Unit {
     return this._quantity;
   }
 
-  constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit) {
+  constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit, inventory: BattleInventory) {
+    this._inventory = inventory;
+
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
@@ -69,23 +80,16 @@ export class Unit {
       } as BattleLevelScheme;
 
       this._expirience = {
-        current: 0,
-        max: _.cloneDeep(EXP_TABLE[this._tier - 1][1])
+        value: 0,
+        percentage: 0,
+        currentLevelExp: 0,
+        nextLevelExp: _.cloneDeep(EXP_TABLE[this._tier - 1][1])
       };
 
       const characteristicsMeta = _.cloneDeep(CHARACTERISTICS[this._unitClass][this._tier - 1][this._level.current - 1]);
       this._characteristics = {...this._characteristics, ...characteristicsMeta};
 
       const firstTierAbility = _.cloneDeep(blueprint.abilityList[0]);
-      console.log({
-        firstTierAbility,
-        unitClass: this._unitClass
-      });
-      const abilityValue = this._unitClass === UNIT_CLASS_SUPPORT ? 
-        1
-        :
-        _.cloneDeep(ABILITIES[this._unitClass][firstTierAbility][this._tier - 1][0]);
-
       this._abilities = [
         {
           abilityClass: firstTierAbility,
@@ -95,12 +99,30 @@ export class Unit {
             next: null,
             price: null
           },
-          value: abilityValue
+          value: this.getAbilityValue(firstTierAbility, 1)
         },
       ];
     }
 
     this.setPower();
+  }
+
+  protected getAbilityValue(ability: string, level?: number): number {
+    if (this._unitClass === UNIT_CLASS_SUPPORT) {
+      return 1;
+    }
+
+    const abilityData = _.cloneDeep(ABILITIES[this._unitClass][ability]);
+    if (!abilityData) {
+      return 1;
+    }
+
+    const abilityValue = abilityData[this._tier - 1][level - 1];
+    if (!abilityValue) {
+      return 1;
+    }
+
+    return abilityValue;
   }
 
   protected setPower() {
@@ -129,24 +151,61 @@ export class Unit {
 
     return _.cloneDeep(unit);
   }
-  
-  /*public serializeForSquad(): BattleSquadUnit {
-    const unit = {
-      template: this._template,
-      unitId: this._unitId,
-      unitTribe: this._unitTribe,
-      unitClass: this._unitClass,
-      tier: this._tier,
-      index: this._index,
-      hp: this._hp,
-      abilities: this._abilities,
-      activeBuffs: []
-    } as BattleSquadUnit;
-    
-    return _.cloneDeep(unit);
-  }*/
 
   public updateQuantity(value: number): void {
     this._quantity += value;
+  }
+
+  public addExpirience(value) {
+    this._expirience.value += value;
+
+    let expTable = EXP_TABLE[this._tier - 1];
+    let currentExp = this._expirience.value;
+    let currentLevel = this._level.current;
+    let newLevel = currentLevel + 1;
+    let currentLevelExpStart = expTable[currentLevel];
+    let currentLevelExpEnd = expTable[newLevel];
+
+    console.log("[addExpirience] Prerequisites", {
+      currentExp,
+      currentLevel,
+      newLevel,
+      currentLevelExpStart,
+      currentLevelExpEnd,
+    });
+
+    while (expTable[newLevel] < this._expirience.value) {
+      currentLevelExpStart = expTable[newLevel];
+      currentLevelExpEnd = expTable[newLevel + 1];
+      newLevel++;
+      console.log("[addExpirience] While", {
+        m1: expTable[newLevel],
+        m2: this._expirience.value,
+        currentLevelExpStart,
+        currentLevelExpEnd,
+        newLevel
+      });
+    }
+
+    if (newLevel > currentLevel) {
+      this._level.next = newLevel - 1;
+      this._level.price = 1000;
+    } else {
+      this._level.next = null;
+      this._level.price = null;
+    }
+
+    let expGap = currentLevelExpEnd - currentLevelExpStart;
+    let currentGap = currentExp - currentLevelExpStart;
+
+    this._expirience.percentage = Math.floor(
+      currentGap * 100 / expGap
+    );
+    this._expirience.currentLevelExp = currentGap;
+    this._expirience.nextLevelExp = expGap;
+
+    console.log("[addExpirience] Expirience result", this._expirience);
+  
+    this._inventory.events.updateUnit(this);
   }
 }

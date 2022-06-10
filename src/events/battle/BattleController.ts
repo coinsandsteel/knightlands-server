@@ -147,12 +147,18 @@ export class BattleController {
         await this._battleInventory.addUnit(unit);
         break;
       }
+      case 'clearUnits':{
+        await this._battleInventory.setUnits([]);
+        break;
+      }
       case 'increaseUnitExp':{
         // unitId
+        this._battleInventory.addExp(data.unitId, 100);
         break;
       }
       case 'decreaseUnitExp':{
         // unitId
+        this._battleInventory.addExp(data.unitId, -100);
         break;
       }
       case 'increaseAbilityLevel':{

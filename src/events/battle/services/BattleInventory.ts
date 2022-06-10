@@ -19,6 +19,10 @@ export class BattleInventory {
     this._state = state || [];
   }
   
+  get events(): BattleEvents {
+    return this._events;
+  }
+  
   public async init() {
     this.createUnits();
   }
@@ -26,8 +30,12 @@ export class BattleInventory {
   protected createUnits(): void {
     this._units = [];
     this._state.forEach((unit: BattleInventoryUnit) => {
-      this._units.push(new Unit(unit));
+      this._units.push(this.makeUnit(unit));
     });
+  }
+  
+  protected makeUnit(unit: BattleInventoryUnit): Unit {
+    return new Unit(unit, this);
   }
   
   getState(): BattleInventoryUnit[] {
@@ -39,18 +47,13 @@ export class BattleInventory {
     const unitBlueprint = _.cloneDeep(_.sample(UNITS));
     unitBlueprint.tier = tier || null;
     // Construct unit
-    const unit = new Unit(unitBlueprint);
+    const unit = this.makeUnit(unitBlueprint);
     return unit;
   }
 
   public async addUnit(unit: Unit) {
     // Search by template
     const index = this._units.findIndex(inventoryUnit => inventoryUnit.template === unit.template);
-
-    console.log({
-      _units: this._units,
-      _state: this._state
-    });
 
     // Add or increase quantity
     if (index === -1) {
@@ -64,6 +67,29 @@ export class BattleInventory {
     // TODO sync
   }
 
+  public async setUnits(units: Unit[]) {
+    this._units = units;
+    this._events.units(units);
+  }
+
+  public async addExp(unitId: string, value: number) {
+    const unit = this.getUnitById(unitId);
+    if (unit) {
+      unit.addExpirience(value);
+      this._events.updateUnit(unit);
+    }
+  }
+
   // TODO add edit unit
   // TODO add merge units
+
+  public getUnitById(unitId: string): Unit|null {
+    return this._units.find((inventoryUnit: Unit) => { 
+      return inventoryUnit.unitId === unitId; 
+    }) || null;
+  }
+
+  public getUnitByTemplate(template: number): Unit|null {
+    return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template) || null;
+  }
 }
