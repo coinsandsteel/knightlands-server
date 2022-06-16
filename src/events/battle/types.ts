@@ -113,7 +113,15 @@ export interface BattleSquadUnit {
   index?: number; // 0-34
   hp: number;
   abilities: BattleUnitAbility[];
-  activeBuffs: BattleBuff[];
+  buffs: BattleBuff[];
+}
+
+export interface BattleSquadUnitUpdate {
+  unitId: string;
+  index?: number; // 0-34
+  hp?: number;
+  abilities?: BattleUnitAbility[];
+  buffs?: BattleBuff[];
 }
 
 export interface BattleUnitCharacteristics {

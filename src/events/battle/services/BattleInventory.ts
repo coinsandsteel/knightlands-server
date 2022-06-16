@@ -1,4 +1,6 @@
 import _ from "lodash";
+import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
+import errors from "../../../knightlands-shared/errors";
 import User from "../../../user";
 import { BattleEvents } from "../BattleEvents";
 import { BattleUser } from "../BattleUser";
@@ -8,12 +10,14 @@ import { UNITS } from "./../meta"
 
 export class BattleInventory {
   protected _user: User;
+  protected _battleUser: BattleUser;
   protected _state: BattleInventoryUnit[];
   protected _events: BattleEvents;
   protected _units: Unit[];
 
   constructor(state: BattleInventoryUnit[], events: BattleEvents, battleUser: BattleUser, user: User) {
     this._user = user;
+    this._battleUser = battleUser;
     this._state = state;
     this._events = events;
     this._state = state || [];
@@ -74,7 +78,7 @@ export class BattleInventory {
 
   public async addExp(unitId: string, value: number) {
     const unit = this.getUnitById(unitId);
-    if (unit) {
+    if (unit && !unit.level.next) {
       unit.addExpirience(value);
       this._events.updateUnit(unit);
     }
@@ -91,5 +95,43 @@ export class BattleInventory {
 
   public getUnitByTemplate(template: number): Unit|null {
     return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template) || null;
+  }
+
+  public upgradeUnitLevel(unitId: string): void {
+    const unit = this.getUnitById(unitId);
+    if (
+      !unit
+      ||
+      !unit.canUpgradeLevel()
+    ) {
+      throw errors.IncorrectArguments;
+    }
+
+    if (this._battleUser.coins < unit.level.price) {
+      throw errors.NotEnoughCurrency;
+    }
+
+    this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
+    unit.upgradeLevel();
+    this._events.updateUnit(unit);
+  }
+
+  public upgradeUnitAbility(unitId: string, ability: string): void {
+    const unit = this.getUnitById(unitId);
+    if (
+      !unit
+      ||
+      !unit.upgradeAbility(ability)
+    ) {
+      throw errors.IncorrectArguments;
+    }
+    
+    if (this._battleUser.crystals < unit.level.price) {
+      throw errors.NotEnoughCurrency;
+    }
+
+    this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
+    unit.upgradeAbility(ability);
+    this._events.updateUnit(unit);
   }
 }

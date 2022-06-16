@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
+import errors from "../../../knightlands-shared/errors";
 import random from "../../../random";
 import { ABILITIES, ABILITY_GROUPS, CHARACTERISTICS, EXP_TABLE } from "../meta";
 import { BattleInventory } from "../services/BattleInventory";
@@ -52,6 +53,10 @@ export class Unit {
 
   get quantity(): number {
     return this._quantity;
+  }
+
+  get level(): BattleLevelScheme {
+    return this._level;
   }
 
   constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit, inventory: BattleInventory) {
@@ -156,12 +161,17 @@ export class Unit {
     this._quantity += value;
   }
 
-  public addExpirience(value) {
+  public addExpirience(value): void {
+    if (this._level.next) {
+      return;
+    }
+
     this._expirience.value += value;
 
     let expTable = EXP_TABLE[this._tier - 1];
+    
     let currentExp = this._expirience.value;
-    let currentLevel = this._level.current;
+    let currentLevel = this._level.current - 1;
     let newLevel = currentLevel + 1;
     let currentLevelExpStart = expTable[currentLevel];
     let currentLevelExpEnd = expTable[newLevel];
@@ -187,7 +197,7 @@ export class Unit {
       });
     }
 
-    if (newLevel > currentLevel) {
+    if (newLevel > currentLevel + 1) {
       this._level.next = newLevel - 1;
       this._level.price = 1000;
     } else {
@@ -207,5 +217,43 @@ export class Unit {
     console.log("[addExpirience] Expirience result", this._expirience);
   
     this._inventory.events.updateUnit(this);
+  }
+
+  public upgradeLevel(): boolean {
+    if (!this.canUpgradeLevel()) {
+      return false;
+    }
+    this._level.current = this._level.next;
+    this._level.next = null;
+    this._level.price = null;
+
+    return true;
+  }
+
+  public canUpgradeLevel(): boolean {
+    return !!this._level.next;
+  }
+
+  public upgradeAbility(abilityClass: string): boolean {
+    if (!this.canUpgradeAbility(abilityClass)) {
+      return false;
+    }
+
+    const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
+    ability.level.current = ability.level.next;
+    ability.level.next = null;
+    ability.level.price = null;
+
+    return true;
+  }
+
+  public canUpgradeAbility(abilityClass: string): boolean {
+    const ability = this.getAbilityByClass(abilityClass);
+    return !!ability && !!ability.level.next;
+  }
+
+  public getAbilityByClass(abilityClass: string): InventoryUnitAbility|null {
+    const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
+    return ability || null;
   }
 }

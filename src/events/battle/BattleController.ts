@@ -139,6 +139,16 @@ export class BattleController {
     this._events.flush();
   }
 
+  async upgradeUnitLevel(unitId: string) {
+    this._battleInventory.upgradeUnitLevel(unitId);
+    this._events.flush();
+  }
+  
+  async upgradeUnitAbility(unitId: string, ability: string) {
+    this._battleInventory.upgradeUnitAbility(unitId, ability);
+    this._events.flush();
+  }
+  
   async testAction(data) {
     if (isProd) return;
     switch (data.action) {
@@ -153,12 +163,12 @@ export class BattleController {
       }
       case 'increaseUnitExp':{
         // unitId
-        this._battleInventory.addExp(data.unitId, 100);
+        this._battleInventory.addExp(data.unitId, 15);
         break;
       }
       case 'decreaseUnitExp':{
         // unitId
-        this._battleInventory.addExp(data.unitId, -100);
+        this._battleInventory.addExp(data.unitId, -15);
         break;
       }
       case 'increaseAbilityLevel':{

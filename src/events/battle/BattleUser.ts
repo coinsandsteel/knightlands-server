@@ -1,4 +1,5 @@
 import game from "../../game";
+import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY } from "../../knightlands-shared/battle";
 import errors from "../../knightlands-shared/errors";
 
 import User from "../../user";
@@ -22,6 +23,18 @@ export class BattleUser {
     }
   }
   
+  get energy(): number {
+    return this._state.balance.energy;
+  }
+  
+  get coins(): number {
+    return this._state.balance.coins;
+  }
+  
+  get crystals(): number {
+    return this._state.balance.crystals;
+  }
+  
   public async init() {
     this.setEventDay();
     this.setActiveReward();
@@ -30,9 +43,9 @@ export class BattleUser {
   public setInitialState() {
     this._state = {
       balance: {
-        energy: 10000,
-        coins: 5000,
-        crystals: 2000,
+        [COMMODITY_ENERGY]: 10000,
+        [COMMODITY_COINS]: 5000,
+        [COMMODITY_CRYSTALS]: 2000,
       },
       timers: {
         energy: 0
@@ -53,6 +66,13 @@ export class BattleUser {
 
   public getState(): BattleUserState {
     return this._state;
+  }
+
+  public debitCurrency(currency: string, amount: number): void {
+    this._state.balance[currency] -= amount;
+    if (this._state.balance[currency] < 0) {
+      this._state.balance[currency] = 0;
+    }
   }
 
   public async testAction(data) {
