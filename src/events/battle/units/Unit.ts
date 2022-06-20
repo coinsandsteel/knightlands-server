@@ -1,10 +1,16 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
-import errors from "../../../knightlands-shared/errors";
-import random from "../../../random";
-import { ABILITIES, ABILITY_GROUPS, CHARACTERISTICS, EXP_TABLE } from "../meta";
 import { BattleInventory } from "../services/BattleInventory";
+import random from "../../../random";
+import { 
+  ABILITIES,
+  ABILITY_GROUPS,
+  CHARACTERISTICS,
+  UNIT_EXP_TABLE,
+  UNIT_LEVEL_UP_PRICES,
+  ABILITY_LEVEL_UP_PRICES
+} from "../meta";
 import { 
   BattleInventoryUnit, 
   BattleLevelScheme, 
@@ -88,31 +94,35 @@ export class Unit {
         value: 0,
         percentage: 0,
         currentLevelExp: 0,
-        nextLevelExp: _.cloneDeep(EXP_TABLE[this._tier - 1][1])
+        nextLevelExp: _.cloneDeep(UNIT_EXP_TABLE[this._tier - 1][1])
       };
 
       const characteristicsMeta = _.cloneDeep(CHARACTERISTICS[this._unitClass][this._tier - 1][this._level.current - 1]);
       this._characteristics = {...this._characteristics, ...characteristicsMeta};
 
-      const firstTierAbility = _.cloneDeep(blueprint.abilityList[0]);
-      this._abilities = [
-        {
-          abilityClass: firstTierAbility,
-          abilityGroup: _.cloneDeep(ABILITY_GROUPS[firstTierAbility]),
+      const abilityList = _.cloneDeep(blueprint.abilityList);
+      const abilities = abilityList.map((abilityClass, index) => {
+        let tier = index + 1;
+        return {
+          abilityClass,
+          abilityGroup: _.cloneDeep(ABILITY_GROUPS[abilityClass]),
+          tier,
           level: {
-            current: 1,
-            next: null,
-            price: null
+            current: !index ? 1 : 0, // Unlock only the first ability
+            next: !index ? 2 : null,
+            price: !index ? this.getAbilityUpgradePrice(tier, 2) : null,
           },
-          value: this.getAbilityValue(firstTierAbility, 1)
-        },
-      ];
+          value: this.getAbilityValue(abilityClass, 1)
+        };
+      });
+
+      this._abilities = abilities;
     }
 
     this.setPower();
   }
 
-  protected getAbilityValue(ability: string, level?: number): number {
+  protected getAbilityValue(ability: string, level?: number): number|null {
     if (this._unitClass === UNIT_CLASS_SUPPORT) {
       return 1;
     }
@@ -122,9 +132,14 @@ export class Unit {
       return 1;
     }
 
-    const abilityValue = abilityData[this._tier - 1][level - 1];
+    const abilityTierData = abilityData[this._tier - 1];
+    if (!abilityTierData) {
+      return null;
+    }
+
+    const abilityValue = abilityTierData[level - 1];
     if (!abilityValue) {
-      return 1;
+      return null;
     }
 
     return abilityValue;
@@ -168,7 +183,8 @@ export class Unit {
 
     this._expirience.value += value;
 
-    let expTable = EXP_TABLE[this._tier - 1];
+    let expTable = _.cloneDeep(UNIT_EXP_TABLE[this._tier - 1]);
+    let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES[this._tier - 1]);
     
     let currentExp = this._expirience.value;
     let currentLevel = this._level.current - 1;
@@ -176,30 +192,15 @@ export class Unit {
     let currentLevelExpStart = expTable[currentLevel];
     let currentLevelExpEnd = expTable[newLevel];
 
-    console.log("[addExpirience] Prerequisites", {
-      currentExp,
-      currentLevel,
-      newLevel,
-      currentLevelExpStart,
-      currentLevelExpEnd,
-    });
-
-    while (expTable[newLevel] < this._expirience.value) {
+    while (expTable[newLevel] <= this._expirience.value) {
       currentLevelExpStart = expTable[newLevel];
       currentLevelExpEnd = expTable[newLevel + 1];
       newLevel++;
-      console.log("[addExpirience] While", {
-        m1: expTable[newLevel],
-        m2: this._expirience.value,
-        currentLevelExpStart,
-        currentLevelExpEnd,
-        newLevel
-      });
     }
 
     if (newLevel > currentLevel + 1) {
-      this._level.next = newLevel - 1;
-      this._level.price = 1000;
+      this._level.next = newLevel;
+      this._level.price = priceTable[newLevel-1];
     } else {
       this._level.next = null;
       this._level.price = null;
@@ -221,11 +222,42 @@ export class Unit {
     if (!this.canUpgradeLevel()) {
       return false;
     }
+
     this._level.current = this._level.next;
     this._level.next = null;
     this._level.price = null;
 
+    this.unblockAbilities();
+
     return true;
+  }
+
+  protected unblockAbilities(): void {
+    let abilityTier = 2;
+    if (
+      this._level.current >= 3
+      &&
+      this._abilities[abilityTier-1].level.current === 0
+    ) {
+      // Unlock tier 2 ability
+      this._abilities[abilityTier-1].level.current = 1;
+      this._abilities[abilityTier-1].level.next = 2;
+      this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
+      console.log("[Unit] Ability tier 2 unlocked");
+    }
+    
+    abilityTier = 3;
+    if (
+      this._level.current >= 5
+      &&
+      this._abilities[abilityTier-1].level.current === 0
+      ) {
+        // Unlock tier 3 ability
+        this._abilities[abilityTier-1].level.current = 1;
+        this._abilities[abilityTier-1].level.next = 2;
+        this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
+        console.log("[Unit] Ability tier 3 unlocked");
+    }
   }
 
   public canUpgradeLevel(): boolean {
@@ -238,11 +270,15 @@ export class Unit {
     }
 
     const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
-    ability.level.current = ability.level.next;
-    ability.level.next = null;
-    ability.level.price = null;
+    ability.level.current++;
+    ability.level.next = ability.level.next + 1;
+    ability.level.price = this.getAbilityUpgradePrice(ability.tier, ability.level.next);
 
     return true;
+  }
+
+  protected getAbilityUpgradePrice(tier: number, level: number){
+    return _.cloneDeep(ABILITY_LEVEL_UP_PRICES[tier-1][level-1]);
   }
 
   public canUpgradeAbility(abilityClass: string): boolean {

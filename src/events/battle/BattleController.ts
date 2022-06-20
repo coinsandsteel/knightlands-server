@@ -166,11 +166,6 @@ export class BattleController {
         this._battleInventory.addExp(data.unitId, 15);
         break;
       }
-      case 'decreaseUnitExp':{
-        // unitId
-        this._battleInventory.addExp(data.unitId, -15);
-        break;
-      }
       case 'increaseAbilityLevel':{
         // unitId
         // abilityClass

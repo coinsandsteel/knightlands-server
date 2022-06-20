@@ -139,7 +139,8 @@ export interface BattleTerrainCell {
 
 export interface InventoryUnitAbility {
   abilityClass: string; // 
-  abilityGroup: string; // 
+  abilityGroup: string; //
+  tier: number;
   level: BattleLevelScheme; // unit lvl opens ability lvl > pay crystal > lvl up
   //   current: number; // 0 means "not learned"
   //   next: number|null; // not null means "can learn"
@@ -151,6 +152,7 @@ export interface InventoryUnitAbility {
 export interface BattleUnitAbility {
   abilityClass: string; // 
   abilityGroup: string; // 
+  tier: number;
   cooldown: {
     enabled: boolean;
     stepsLeft: number;

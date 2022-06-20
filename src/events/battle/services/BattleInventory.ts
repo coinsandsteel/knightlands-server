@@ -124,7 +124,7 @@ export class BattleInventory {
     if (
       !unit
       ||
-      !unit.upgradeAbility(ability)
+      !unit.canUpgradeAbility(ability)
     ) {
       throw errors.IncorrectArguments;
     }
