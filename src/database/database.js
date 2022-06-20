@@ -100,6 +100,8 @@ module.exports = {
         AprilRanks: "april_ranks",
         AprilFinalRanks: "april_final_ranks",
         AprilRewards: "april_rewards",
+        BattleUsers: "battle_users",
+        BattleRanks: "battle_ranks",
     },
 
 

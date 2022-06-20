@@ -62,30 +62,33 @@ export class BattleInventory {
     // Add or increase quantity
     if (index === -1) {
       this._units.push(unit);
-      this._events.updateUnit(unit);
+      this._state.push(unit.serialize());
+      this._events.addUnit(unit);
     } else {
       this._units[index].updateQuantity(unit.quantity);
-      this._events.updateUnit(unit);
+      this.updateUnitState(unit);
     }
-
-    // TODO sync
   }
 
   public async setUnits(units: Unit[]) {
     this._units = units;
-    this._events.units(units);
+    this._state = this._units.map(unit => unit.serialize());
+    this._events.inventory(units);
   }
 
   public async addExp(unitId: string, value: number) {
     const unit = this.getUnitById(unitId);
     if (unit && !unit.level.next) {
       unit.addExpirience(value);
-      this._events.updateUnit(unit);
+      this.updateUnitState(unit);
     }
   }
 
-  // TODO add edit unit
-  // TODO add merge units
+  protected updateUnitState(unit: Unit): void{
+    const stateIndex = this._state.findIndex(inventoryUnit => inventoryUnit.template === unit.template);
+    this._state[stateIndex] = unit.serialize();
+    this._events.updateUnit(unit);
+  }
 
   public getUnitById(unitId: string): Unit|null {
     return this._units.find((inventoryUnit: Unit) => { 
@@ -113,7 +116,7 @@ export class BattleInventory {
 
     this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeLevel();
-    this._events.updateUnit(unit);
+    this.updateUnitState(unit);
   }
 
   public upgradeUnitAbility(unitId: string, ability: string): void {
@@ -132,6 +135,6 @@ export class BattleInventory {
 
     this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeAbility(ability);
-    this._events.updateUnit(unit);
+    this.updateUnitState(unit);
   }
 }

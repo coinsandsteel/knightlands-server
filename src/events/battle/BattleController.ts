@@ -182,7 +182,6 @@ export class BattleController {
         break;
       }
     }
-    await this._battleUser.testAction(data);
     this._events.flush();
   }
 

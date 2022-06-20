@@ -11,8 +11,8 @@ export class BattleManager {
   private _rankCollection: Collection;
 
   constructor() {
-    this._saveCollection = Game.db.collection(Collections.AprilUsers);
-    this._rankCollection = Game.db.collection(Collections.AprilRanks);
+    this._saveCollection = Game.db.collection(Collections.BattleUsers);
+    this._rankCollection = Game.db.collection(Collections.BattleRanks);
   }
   
   get eventStartDate() {

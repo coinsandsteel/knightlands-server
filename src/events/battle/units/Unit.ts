@@ -215,8 +215,6 @@ export class Unit {
     this._expirience.nextLevelExp = expGap;
 
     console.log("[addExpirience] Expirience result", this._expirience);
-  
-    this._inventory.events.updateUnit(this);
   }
 
   public upgradeLevel(): boolean {
