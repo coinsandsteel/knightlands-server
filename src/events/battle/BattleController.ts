@@ -12,17 +12,34 @@ import { BattleInventory } from './services/BattleInventory';
 const isProd = process.env.ENV == "prod";
 
 export class BattleController {
-  private _user: User;
-  private _saveData: BattleSaveData;
-  private _events: BattleEvents;
-  
-  private _battleUser: BattleUser;
-  private _battleGame: BattleGame;
-  private _battleInventory: BattleInventory;
+  protected _saveData: BattleSaveData;
+
+  protected _user: User;
+  protected _events: BattleEvents;
+
+  protected _battleUser: BattleUser;
+  protected _battleGame: BattleGame;
+  protected _battleInventory: BattleInventory;
   
   constructor(user: User) {
     this._events = new BattleEvents(user.id);
     this._user = user;
+  }
+  
+  get events(): BattleEvents {
+    return this._events;
+  }
+  
+  get inventory(): BattleInventory {
+    return this._battleInventory;
+  }
+  
+  get user(): BattleUser {
+    return this._battleUser;
+  }
+  
+  get rootUser(): User {
+    return this._user;
   }
   
   async init() {
@@ -48,34 +65,29 @@ export class BattleController {
     await this._save();
   }
 
-  private initPlayer() {
+  protected initPlayer() {
     if (!this._battleUser) {
       this._battleUser = new BattleUser(
         this._saveData ? this._saveData.user : null, 
-        this._events,
-        this._user
+        this
       );
     }
   }
   
-  private initGame() {
+  protected initGame() {
     if (!this._battleGame) {
       this._battleGame = new BattleGame(
         this._saveData ? this._saveData.game : null, 
-        this._events,
-        this._battleUser,
-        this._user
+        this
       );
     }
   }
 
-  private initInventory() {
+  protected initInventory() {
     if (!this._battleInventory) {
       this._battleInventory = new BattleInventory(
         this._saveData ? this._saveData.inventory : [], 
-        this._events,
-        this._battleUser,
-        this._user
+        this
       );
     }
   }
@@ -88,7 +100,7 @@ export class BattleController {
     };
   }
 
-  private async _save() {
+  protected async _save() {
     await Game.battleManager.saveProgress(this._user.id, { state: this.getState() });
   }
 
@@ -124,18 +136,15 @@ export class BattleController {
     this._events.flush();
   }
 
-  async enterLevel(room: number, level: number) {
-    this._battleGame.enterLevel(room, level);
+  // TODO
+  async fillSquadSlot(unitId: string, index: number) {
+    this._battleGame.fillSquadSlot(unitId, index);
     this._events.flush();
   }
   
-  async apply(unitId: string, index: number, ability?: string) {
-    this._battleGame.apply(unitId, index, ability);
-    this._events.flush();
-  }
-
-  async skip() {
-    this._battleGame.skip();
+  // TODO
+  async clearSquadSlot(index: number) {
+    this._battleGame.clearSquadSlot(index);
     this._events.flush();
   }
 
@@ -149,6 +158,30 @@ export class BattleController {
     this._events.flush();
   }
   
+  async apply(unitId: string, index: number, ability?: string) {
+    this._battleGame.apply(unitId, index, ability);
+    this._events.flush();
+  }
+
+  async skip() {
+    this._battleGame.skip();
+    this._events.flush();
+  }
+
+  async enterLevel(room: number, level: number) {
+    this._battleGame.enterLevel(room, level);
+    this._events.flush();
+  }
+  
+  async restart() {
+    this._events.flush();
+  }
+
+  async exit() {
+    this._battleGame.exit();
+    this._events.flush();
+  }
+
   async testAction(data) {
     if (isProd) return;
     switch (data.action) {
@@ -180,8 +213,4 @@ export class BattleController {
     this._events.flush();
   }
 
-  async exit() {
-    this._battleGame.exit();
-    this._events.flush();
-  }
 }

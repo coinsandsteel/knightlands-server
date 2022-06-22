@@ -1,30 +1,21 @@
 import _ from "lodash";
-import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
-import User from "../../../user";
+import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../BattleEvents";
-import { BattleUser } from "../BattleUser";
+import { BattleController } from "../BattleController";
 import { BattleInventoryUnit } from "../types";
 import { Unit } from "../units/Unit";
 import { UNITS } from "./../meta"
 
 export class BattleInventory {
-  protected _user: User;
-  protected _battleUser: BattleUser;
+  protected _ctrl: BattleController;
+
   protected _state: BattleInventoryUnit[];
-  protected _events: BattleEvents;
   protected _units: Unit[];
 
-  constructor(state: BattleInventoryUnit[], events: BattleEvents, battleUser: BattleUser, user: User) {
-    this._user = user;
-    this._battleUser = battleUser;
-    this._state = state;
-    this._events = events;
+  constructor(state: BattleInventoryUnit[], ctrl: BattleController) {
     this._state = state || [];
-  }
-  
-  get events(): BattleEvents {
-    return this._events;
+    this._ctrl = ctrl;
   }
   
   public async init() {
@@ -63,7 +54,7 @@ export class BattleInventory {
     if (index === -1) {
       this._units.push(unit);
       this._state.push(unit.serialize());
-      this._events.addUnit(unit);
+      this._ctrl.events.addUnit(unit);
     } else {
       this._units[index].updateQuantity(unit.quantity);
       this.updateUnitState(unit);
@@ -73,7 +64,7 @@ export class BattleInventory {
   public async setUnits(units: Unit[]) {
     this._units = units;
     this._state = this._units.map(unit => unit.serialize());
-    this._events.inventory(units);
+    this._ctrl.events.inventory(units);
   }
 
   public async addExp(unitId: string, value: number) {
@@ -87,7 +78,7 @@ export class BattleInventory {
   protected updateUnitState(unit: Unit): void{
     const stateIndex = this._state.findIndex(inventoryUnit => inventoryUnit.template === unit.template);
     this._state[stateIndex] = unit.serialize();
-    this._events.updateUnit(unit);
+    this._ctrl.events.updateUnit(unit);
   }
 
   public getUnitById(unitId: string): Unit|null {
@@ -110,11 +101,11 @@ export class BattleInventory {
       throw errors.IncorrectArguments;
     }
 
-    if (this._battleUser.coins < unit.level.price) {
+    if (this._ctrl.user.coins < unit.level.price) {
       throw errors.NotEnoughCurrency;
     }
 
-    this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
+    this._ctrl.user.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeLevel();
     this.updateUnitState(unit);
   }
@@ -129,11 +120,11 @@ export class BattleInventory {
       throw errors.IncorrectArguments;
     }
     
-    if (this._battleUser.crystals < unit.level.price) {
+    if (this._ctrl.user.crystals < unit.level.price) {
       throw errors.NotEnoughCurrency;
     }
 
-    this._battleUser.debitCurrency(COMMODITY_COINS, unit.level.price);
+    this._ctrl.user.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeAbility(ability);
     this.updateUnitState(unit);
   }

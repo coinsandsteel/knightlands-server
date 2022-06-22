@@ -1,20 +1,14 @@
-import game from "../../game";
 import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY } from "../../knightlands-shared/battle";
-import errors from "../../knightlands-shared/errors";
-
-import User from "../../user";
-import { BattleEvents } from "./BattleEvents";
+import { BattleController } from "./BattleController";
 import { BattleUserState } from "./types";
 
 export class BattleUser {
-  private _state: BattleUserState;
-  private _events: BattleEvents;
-  private _user: User;
-  private day = 1;
+  protected _state: BattleUserState;
+  protected _ctrl: BattleController;
+  protected day = 1;
 
-  constructor(state: BattleUserState | null, events: BattleEvents, user: User) {
-    this._events = events;
-    this._user = user;
+  constructor(state: BattleUserState | null, ctrl: BattleController) {
+    this._ctrl = ctrl;
 
     if (state) {
       this._state = state;
@@ -60,7 +54,7 @@ export class BattleUser {
     this.setActiveReward();
   }
 
-  private setEventDay() {}
+  protected setEventDay() {}
 
   async setActiveReward() {}
 
@@ -73,6 +67,7 @@ export class BattleUser {
     if (this._state.balance[currency] < 0) {
       this._state.balance[currency] = 0;
     }
+    this._ctrl.events.balance(this._state.balance);
   }
 
   public async testAction(data) {

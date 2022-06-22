@@ -1,14 +1,19 @@
 import _ from "lodash";
 import { BattleSquadBonus, BattleSquadState } from "../types";
+import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
+import errors from "../../../knightlands-shared/errors";
 
 export class BattleSquad {
   protected _state: BattleSquadState;
+  protected _ctrl: BattleController;
+
   protected _units: Unit[];
   protected _bonuses: BattleSquadBonus[];
 
-  constructor(state: BattleSquadState|null) {
+  constructor(state: BattleSquadState|null, ctrl: BattleController) {
     this._state = state;
+    this._ctrl = ctrl;
 
     if (state) {
       this._state = state;
@@ -45,5 +50,50 @@ export class BattleSquad {
   
   public getState(): BattleSquadState {
     return this._state;
+  }
+  
+  public fillSlot(unitId: string, index: number): void {
+    if (!(index >= 0 && index <= 4)) {
+      throw errors.IncorrectArguments;
+    }
+    
+    const unit = this._ctrl.inventory.getUnitById(unitId) as Unit;
+    if (!unit) {
+      throw errors.IncorrectArguments;
+    }
+
+    // Fill slot
+    this._units[index] = unit;
+    
+    // Update state
+    this._state.units[index] = unit.serializeForSquad();
+
+    // Update bonuses
+    this.setBonuses();
+
+    // Event
+    this._ctrl.events.userSquad(this._state);
+  }
+  
+  public clearSlot(index: number): void {
+    if (!(index >= 0 && index <= 4)) {
+      throw errors.IncorrectArguments;
+    }
+    
+    // Fill slot
+    this._units[index] = null;
+    
+    // Update state
+    this._state.units[index] = null;
+
+    // Update bonuses
+    this.setBonuses();
+
+    // Event
+    this._ctrl.events.userSquad(this._state);
+  }
+  
+  protected setBonuses(): void {
+
   }
 }

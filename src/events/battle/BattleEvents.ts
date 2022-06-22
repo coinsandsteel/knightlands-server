@@ -6,8 +6,8 @@ import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleS
 import { Unit } from "./units/Unit";
 
 export class BattleEvents {
-  private _events: any;
-  private _userId: ObjectId;
+  protected _events: any;
+  protected _userId: ObjectId;
 
   constructor(userId: ObjectId) {
       this._userId = userId;

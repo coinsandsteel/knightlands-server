@@ -12,42 +12,44 @@ import {
   ABILITY_LEVEL_UP_PRICES
 } from "../meta";
 import { 
+  BattleBuff,
   BattleInventoryUnit, 
   BattleLevelScheme, 
+  BattleSquadUnit, 
+  BattleUnitAbility, 
   BattleUnitBlueprint, 
   BattleUnitCharacteristics, 
   InventoryUnitAbility 
 } from "../types";
 
 export class Unit {
-  private _inventory: BattleInventory;
+  protected _inventory: BattleInventory;
 
-  private _template: number;
-  private _unitId: string;
-  private _unitTribe: string; // 15
-  private _unitClass: string; // 5
-  private _tier: number; // 3, modify via merger (3 => 1)
-  private _level: BattleLevelScheme; // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  //  current: number;
-  //  next: number|null;
-  //  price: number|null;
-  //};
-  private _power: number;
-  private _expirience: {
+  protected _template: number;
+  protected _unitId: string;
+  protected _unitTribe: string; // 15
+  protected _unitClass: string; // 5
+  protected _tier: number; // 3, modify via merger (3 => 1)
+  protected _level: BattleLevelScheme; // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  protected _power: number;
+  protected _expirience: {
     value: number;
     percentage: number;
     currentLevelExp: number;
     nextLevelExp: number;
   };
-  private _characteristics: BattleUnitCharacteristics;
-  private _abilities: InventoryUnitAbility[];
-  private _quantity: number;
+  protected _characteristics: BattleUnitCharacteristics;
+  protected _abilities: InventoryUnitAbility[];
+  protected _quantity: number;
+  
+  protected _hp: number;
+  protected _damage: number;
+  protected _defence: number;
+  protected _initiative: number;
+  protected _speed: number;
 
-  private _hp: number;
-  private _damage: number;
-  private _defence: number;
-  private _initiative: number;
-  private _speed: number;
+  protected _index: number;
+  protected _buffs: BattleBuff[];
 
   get unitId(): string {
     return this._unitId;
@@ -74,13 +76,15 @@ export class Unit {
     this._unitClass = blueprint.unitClass;
     this._tier = blueprint.tier || random.intRange(1, 3);
 
+    // Existing
     if ("level" in blueprint) {
       this._level = blueprint.level;
       this._expirience = blueprint.expirience;
       this._characteristics = blueprint.characteristics;
       this._abilities = blueprint.abilities;
       this._quantity = blueprint.quantity;
-
+      
+    // New
     } else {
       this._quantity = 1;
 
@@ -146,12 +150,15 @@ export class Unit {
   }
 
   protected setPower() {
-    this._power = 
+    const statsSum = 
       this._characteristics.hp + 
       this._characteristics.damage + 
       this._characteristics.defence + 
       this._characteristics.initiative + 
       this._characteristics.speed;
+
+    const abilitySum = _.sumBy(this._abilities, "value");
+    this._power = (statsSum + abilitySum) * 2;
   }
     
   public serialize(): BattleInventoryUnit {
@@ -170,6 +177,35 @@ export class Unit {
     } as BattleInventoryUnit;
 
     return _.cloneDeep(unit);
+  }
+
+  public serializeForSquad(): BattleSquadUnit {
+    const abilities = this._abilities.map(ability => {
+      return {
+        abilityClass: ability.abilityClass,
+        abilityGroup: ability.abilityGroup,
+        tier: ability.tier,
+        cooldown: {
+          enabled: false,
+          stepsLeft: 0,
+          stepsMax: 0
+        }
+      } as BattleUnitAbility;
+    });
+
+    const squadUnit = {
+      template: this._template,
+      unitId: this._unitId,
+      unitTribe: this._unitTribe,
+      unitClass: this._unitClass,
+      tier: this._tier,
+      index: this._index,
+      hp: this._hp,
+      abilities,
+      buffs: this._buffs
+    } as BattleSquadUnit;
+
+    return _.cloneDeep(squadUnit);
   }
 
   public updateQuantity(value: number): void {

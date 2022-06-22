@@ -6,9 +6,9 @@ import Game from "../../game";
 import User from "../../user";
 
 export class BattleManager {
-  private _meta: any;
-  private _saveCollection: Collection;
-  private _rankCollection: Collection;
+  protected _meta: any;
+  protected _saveCollection: Collection;
+  protected _rankCollection: Collection;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
