@@ -3,13 +3,13 @@ import { BattleSquadBonus, BattleSquadState } from "../types";
 import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
 import errors from "../../../knightlands-shared/errors";
+import { SQUAD_BONUSES } from "../meta";
 
 export class BattleSquad {
   protected _state: BattleSquadState;
   protected _ctrl: BattleController;
 
   protected _units: Unit[];
-  protected _bonuses: BattleSquadBonus[];
 
   constructor(state: BattleSquadState|null, ctrl: BattleController) {
     this._state = state;
@@ -37,7 +37,7 @@ export class BattleSquad {
     
     // Apply squad bonuses
     // https://docs.google.com/spreadsheets/d/1BzNKygvM41HFggswJLnMWzaN3F4mI6D7iWpRMCEm_QM/edit#gid=1792408341
-    this._bonuses = [];
+    //this._bonuses = [];
   }
   
   protected setInitialState() {
@@ -59,6 +59,7 @@ export class BattleSquad {
     
     const unit = this._ctrl.inventory.getUnitById(unitId) as Unit;
     if (!unit) {
+      console.log(this._ctrl.inventory.unitIds);
       throw errors.IncorrectArguments;
     }
 
@@ -70,6 +71,7 @@ export class BattleSquad {
 
     // Update bonuses
     this.setBonuses();
+    this.setPower();
 
     // Event
     this._ctrl.events.userSquad(this._state);
@@ -81,13 +83,14 @@ export class BattleSquad {
     }
     
     // Fill slot
-    this._units[index] = null;
+    delete this._units[index];
     
     // Update state
-    this._state.units[index] = null;
+    delete this._state.units[index];
 
     // Update bonuses
     this.setBonuses();
+    this.setPower();
 
     // Event
     this._ctrl.events.userSquad(this._state);
@@ -104,7 +107,36 @@ export class BattleSquad {
   }
   
   protected setBonuses(): void {
+    let stat = {};
 
+    this._units.forEach(unit => {
+      stat = {
+        ...stat, 
+        [unit.tribe]: { 
+          ...stat[unit.tribe], 
+          ...{ [unit.tier]: _.get(stat, `${unit.tribe}.${unit.tier}`, 0) + 1 }
+        }
+      };
+    });
+
+    let bonuses = [];
+    _.forOwn(stat, (tribeStat, unitTribe) => {
+      _.forOwn(tribeStat, (tierCount, unitTier) => {
+        if (tierCount >= 2) {
+          bonuses.push(
+            SQUAD_BONUSES[unitTribe][unitTier - 1][tierCount - 2]
+          );
+        }
+      });
+    });
+
+    this._state.bonuses = bonuses;
+
+    console.log("Squad bonuses", { bonuses });
+  }
+  
+  protected setPower(): void {
+    this._state.power = _.sumBy(this._units, "power");
   }
   
   public includesUnit(unitId: string): boolean {

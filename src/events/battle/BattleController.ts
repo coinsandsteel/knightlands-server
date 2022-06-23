@@ -8,6 +8,8 @@ import { BattleEvents } from './BattleEvents';
 import { BattleUser } from './BattleUser';
 import { BattleGame } from './services/BattleGame';
 import { BattleInventory } from './services/BattleInventory';
+import errors from '../../knightlands-shared/errors';
+import { threadId } from 'worker_threads';
 
 const isProd = process.env.ENV == "prod";
 
@@ -189,11 +191,12 @@ export class BattleController {
     switch (data.action) {
       case 'addUnit':{
         const unit = this._battleInventory.getRandomUnit();
-        await this._battleInventory.addUnit(unit);
+        this._battleInventory.addUnit(unit);
         break;
       }
       case 'clearUnits':{
-        await this._battleInventory.setUnits([]);
+        this._battleGame.clearSquad();
+        this._battleInventory.setUnits([]);
         break;
       }
       case 'increaseUnitExp':{
@@ -201,14 +204,9 @@ export class BattleController {
         this._battleInventory.addExp(data.unitId, 15);
         break;
       }
-      case 'increaseAbilityLevel':{
+      case 'buildSquad':{
         // unitId
-        // abilityClass
-        break;
-      }
-      case 'decreaseAbilityLevel':{
-        // unitId
-        // abilityClass
+        this._battleGame.buildSquad();
         break;
       }
     }

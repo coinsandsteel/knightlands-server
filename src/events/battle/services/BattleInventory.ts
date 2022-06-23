@@ -18,6 +18,10 @@ export class BattleInventory {
     this._ctrl = ctrl;
   }
   
+  get unitIds(): string[] {
+    return this._units.map(unit => unit.unitId);
+  }
+  
   public async init() {
     this.createUnits();
   }
@@ -46,22 +50,38 @@ export class BattleInventory {
     return unit;
   }
 
-  public async addUnit(unit: Unit) {
-    // Search by template
-    const index = this._units.findIndex(inventoryUnit => inventoryUnit.template === unit.template);
+  public getRandomUnitByProps(tribe: string, tier: number): Unit {
+    const filteredUnits = _.cloneDeep(UNITS)
+      .filter(unit => unit.unitTribe === tribe);
 
+    const unitBlueprint = _.sample(filteredUnits);
+    unitBlueprint.tier = tier;
+
+    // Construct unit
+    const unit = this.makeUnit(unitBlueprint);
+    return unit;
+  }
+
+  public addUnit(unit: Unit) {
+    // Search by template
+    const index = this._units.findIndex(inventoryUnit => inventoryUnit.template === unit.template && inventoryUnit.tier === unit.tier);
+
+    console.log("Add unit", unit.unitId);
+    
     // Add or increase quantity
     if (index === -1) {
       this._units.push(unit);
       this._state.push(unit.serialize());
       this._ctrl.events.addUnit(unit);
+      console.log("Unit added", unit.unitId);
     } else {
       this._units[index].updateQuantity(unit.quantity);
       this.updateUnitState(unit);
+      console.log("Unit stacked", unit.unitId);
     }
   }
 
-  public async setUnits(units: Unit[]) {
+  public setUnits(units: Unit[]) {
     this._units = units;
     this._state = this._units.map(unit => unit.serialize());
     this._ctrl.events.inventory(units);
@@ -91,6 +111,10 @@ export class BattleInventory {
     return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template) || null;
   }
 
+  public getUnitByTemplateAndTier(template: number, tier: number): Unit|null {
+    return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template && inventoryUnit.tier === tier) || null;
+  }
+
   public upgradeUnitLevel(unitId: string): void {
     const unit = this.getUnitById(unitId);
     if (
@@ -112,9 +136,9 @@ export class BattleInventory {
     if (
       !this._ctrl.game.combatStarted
       &&
-      this._ctrl.game.squadIncludesUnit(unitId)
+      this._ctrl.game.squadIncludesUnit(unit.unitId)
     ) {
-      this._ctrl.game.proxyUnit(unitId);
+      this._ctrl.game.proxyUnit(unit.unitId);
     }
   }
 
@@ -139,9 +163,9 @@ export class BattleInventory {
     if (
       !this._ctrl.game.combatStarted
       &&
-      this._ctrl.game.squadIncludesUnit(unitId)
+      this._ctrl.game.squadIncludesUnit(unit.unitId)
     ) {
-      this._ctrl.game.proxyUnit(unitId);
+      this._ctrl.game.proxyUnit(unit.unitId);
     }
   }
 }

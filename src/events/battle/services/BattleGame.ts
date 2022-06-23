@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { BattleController } from "../BattleController";
+import { SQUAD_BONUSES } from "../meta";
 import { BattleGameState } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
@@ -79,6 +80,35 @@ export class BattleGame {
   
   public clearSquadSlot(index: number): void {
     this._userSquad.clearSlot(index);
+  }
+
+  public buildSquad(): void {
+    const tribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const tier = _.random(1, 3);
+
+    console.log("Build squad", { tribe, tier });
+
+    for (let index = 0; index < 5; index++) {
+      const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
+      console.log("Squad member", { unitId: unit.unitId, tribe: unit.tribe, unitClass: unit.class, tier: unit.tier });
+      
+      const existingUnit = this._ctrl.inventory.getUnitByTemplateAndTier(unit.template, tier);
+      console.log("Existing member", { 
+        existingUnit
+      });
+      
+      if (!existingUnit) {
+        this._ctrl.inventory.addUnit(unit);
+      }
+      
+      this._userSquad.fillSlot(existingUnit ? existingUnit.unitId : unit.unitId, index);
+    }
+  }
+
+  public clearSquad(): void {
+    for (let index = 0; index < 5; index++) {
+      this._userSquad.clearSlot(index);
+    }
   }
 
   // TODO

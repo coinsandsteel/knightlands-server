@@ -178,6 +178,7 @@ export interface BattleBuff {
 
 export interface BattleSquadBonus {
   bonusClass: string;
-  value: number; // % or delta
   modifier: number;
+  max?: number;
+  probability?: number;
 }

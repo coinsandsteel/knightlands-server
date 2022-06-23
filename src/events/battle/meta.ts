@@ -1382,364 +1382,364 @@ export const SQUAD_BONUSES = {
     // Tier 1
     [
       // Attack +5%
-      { index: "damage", modifier: 5 },
-      { index: "damage", modifier: 7 },
-      { index: "damage", modifier: 10 },
-      { index: "damage", modifier: 15 },
+      { bonusClass: "damage", modifier: 5 },
+      { bonusClass: "damage", modifier: 7 },
+      { bonusClass: "damage", modifier: 10 },
+      { bonusClass: "damage", modifier: 15 },
     ],
     // Tier 2
     [
       // Swamp slows down by 25% less
-      { index: "swamp_speed", modifier: 25 },
-      { index: "swamp_speed", modifier: 50 },
-      { index: "swamp_speed", modifier: 75 },
-      { index: "swamp_speed", modifier: 100 },
+      { bonusClass: "swamp_speed", modifier: 25 },
+      { bonusClass: "swamp_speed", modifier: 50 },
+      { bonusClass: "swamp_speed", modifier: 75 },
+      { bonusClass: "swamp_speed", modifier: 100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_DWARF]: [
     // Tier 1
     [
       // Attack +5%
-      { index: "hp", modifier: 5 },
-      { index: "hp", modifier: 7 },
-      { index: "hp", modifier: 10 },
-      { index: "hp", modifier: 15 },
+      { bonusClass: "hp", modifier: 5 },
+      { bonusClass: "hp", modifier: 7 },
+      { bonusClass: "hp", modifier: 10 },
+      { bonusClass: "hp", modifier: 15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { index: "hill_attack", modifier: 25 },
-      { index: "hill_attack", modifier: 50 },
-      { index: "hill_attack", modifier: 75 },
-      { index: "hill_attack", modifier: 100 },
+      { bonusClass: "hill_attack", modifier: 25 },
+      { bonusClass: "hill_attack", modifier: 50 },
+      { bonusClass: "hill_attack", modifier: 75 },
+      { bonusClass: "hill_attack", modifier: 100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_EGYPTIAN]: [
     // Tier 1
     [
       // Attack +5%
-      { index: "damage", modifier: 5 },
-      { index: "damage", modifier: 7 },
-      { index: "damage", modifier: 10 },
-      { index: "damage", modifier: 15 },
+      { bonusClass: "damage", modifier: 5 },
+      { bonusClass: "damage", modifier: 7 },
+      { bonusClass: "damage", modifier: 10 },
+      { bonusClass: "damage", modifier: 15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { index: "woods_defence", modifier: 25 },
-      { index: "woods_defence", modifier: 50 },
-      { index: "woods_defence", modifier: 75 },
-      { index: "woods_defence", modifier: 100 },
+      { bonusClass: "woods_defence", modifier: 25 },
+      { bonusClass: "woods_defence", modifier: 50 },
+      { bonusClass: "woods_defence", modifier: 75 },
+      { bonusClass: "woods_defence", modifier: 100 },
     ],
     // Tier 3
     [
       // Chance of a counterattack 7%
-      { index: "counter_attack", probability: 7 },
-      { index: "counter_attack", probability: 10 },
-      { index: "counter_attack", probability: 12 },
-      { index: "counter_attack", probability: 15 },
+      { bonusClass: "counter_attack", probability: 7 },
+      { bonusClass: "counter_attack", probability: 10 },
+      { bonusClass: "counter_attack", probability: 12 },
+      { bonusClass: "counter_attack", probability: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_GOBLIN]: [
     // Tier 1
     [
       // HP +5%
-      { index: "hp", modifier: 5 },
-      { index: "hp", modifier: 7 },
-      { index: "hp", modifier: 10 },
-      { index: "hp", modifier: 15 },
+      { bonusClass: "hp", modifier: 5 },
+      { bonusClass: "hp", modifier: 7 },
+      { bonusClass: "hp", modifier: 10 },
+      { bonusClass: "hp", modifier: 15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { index: "woods_defence", modifier: 25 },
-      { index: "woods_defence", modifier: 50 },
-      { index: "woods_defence", modifier: 75 },
-      { index: "woods_defence", modifier: 100 },
+      { bonusClass: "woods_defence", modifier: 25 },
+      { bonusClass: "woods_defence", modifier: 50 },
+      { bonusClass: "woods_defence", modifier: 75 },
+      { bonusClass: "woods_defence", modifier: 100 },
     ],
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by 5%
-      { index: "debuff_speed", modifier: 5 },
-      { index: "debuff_speed", modifier: 7 },
-      { index: "debuff_speed", modifier: 10 },
-      { index: "debuff_speed", modifier: 15 },
+      { bonusClass: "debuff_speed", modifier: 5 },
+      { bonusClass: "debuff_speed", modifier: 7 },
+      { bonusClass: "debuff_speed", modifier: 10 },
+      { bonusClass: "debuff_speed", modifier: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_INSECT]: [
     // Tier 1
     [
       // Defense +5%
-      { index: "defence", modifier: 5 },
-      { index: "defence", modifier: 7 },
-      { index: "defence", modifier: 10 },
-      { index: "defence", modifier: 15 },
+      { bonusClass: "defence", modifier: 5 },
+      { bonusClass: "defence", modifier: 7 },
+      { bonusClass: "defence", modifier: 10 },
+      { bonusClass: "defence", modifier: 15 },
     ],
     // Tier 2
     [
       // Swamp slows down by 25% less
-      { index: "swamp_speed", modifier: 25 },
-      { index: "swamp_speed", modifier: 50 },
-      { index: "swamp_speed", modifier: 75 },
-      { index: "swamp_speed", modifier: 100 },
+      { bonusClass: "swamp_speed", modifier: 25 },
+      { bonusClass: "swamp_speed", modifier: 50 },
+      { bonusClass: "swamp_speed", modifier: 75 },
+      { bonusClass: "swamp_speed", modifier: 100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_ORC]: [
     // Tier 1
     [
       // Attack +5%
-      { index: "damage", modifier: 5 },
-      { index: "damage", modifier: 7 },
-      { index: "damage", modifier: 10 },
-      { index: "damage", modifier: 15 },
+      { bonusClass: "damage", modifier: 5 },
+      { bonusClass: "damage", modifier: 7 },
+      { bonusClass: "damage", modifier: 10 },
+      { bonusClass: "damage", modifier: 15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { index: "hill_attack", modifier: 25 },
-      { index: "hill_attack", modifier: 50 },
-      { index: "hill_attack", modifier: 75 },
-      { index: "hill_attack", modifier: 100 },
+      { bonusClass: "hill_attack", modifier: 25 },
+      { bonusClass: "hill_attack", modifier: 50 },
+      { bonusClass: "hill_attack", modifier: 75 },
+      { bonusClass: "hill_attack", modifier: 100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_ASSEMBLING]: [
     // Tier 1
     [
       // Abilities power +5%
-      { index: "abilities", modifier: 5 },
-      { index: "abilities", modifier: 7 },
-      { index: "abilities", modifier: 10 },
-      { index: "abilities", modifier: 15 },
+      { bonusClass: "abilities", modifier: 5 },
+      { bonusClass: "abilities", modifier: 7 },
+      { bonusClass: "abilities", modifier: 10 },
+      { bonusClass: "abilities", modifier: 15 },
     ],
     // Tier 2
     [
       // Swamp slows down by 25% less
-      { index: "swamp_speed", modifier: 25 },
-      { index: "swamp_speed", modifier: 50 },
-      { index: "swamp_speed", modifier: 75 },
-      { index: "swamp_speed", modifier: 100 },
+      { bonusClass: "swamp_speed", modifier: 25 },
+      { bonusClass: "swamp_speed", modifier: 50 },
+      { bonusClass: "swamp_speed", modifier: 75 },
+      { bonusClass: "swamp_speed", modifier: 100 },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { index: "crit", modifier: 1.3, probability: 7 },
-      { index: "crit", modifier: 1.5, probability: 10 },
-      { index: "crit", modifier: 1.7, probability: 12 },
-      { index: "crit", modifier: 2, probability: 15 },
+      { bonusClass: "crit", modifier: 1.3, probability: 7 },
+      { bonusClass: "crit", modifier: 1.5, probability: 10 },
+      { bonusClass: "crit", modifier: 1.7, probability: 12 },
+      { bonusClass: "crit", modifier: 2, probability: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_ICE]: [
     // Tier 1
     [
       // Defense +5%
-      { index: "defence", modifier: 5 },
-      { index: "defence", modifier: 7 },
-      { index: "defence", modifier: 10 },
-      { index: "defence", modifier: 15 },
+      { bonusClass: "defence", modifier: 5 },
+      { bonusClass: "defence", modifier: 7 },
+      { bonusClass: "defence", modifier: 10 },
+      { bonusClass: "defence", modifier: 15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { index: "ice_defence", modifier: 25 },
-      { index: "ice_defence", modifier: 50 },
-      { index: "ice_defence", modifier: 75 },
-      { index: "ice_defence", modifier: 100 },
+      { bonusClass: "ice_defence", modifier: 25 },
+      { bonusClass: "ice_defence", modifier: 50 },
+      { bonusClass: "ice_defence", modifier: 75 },
+      { bonusClass: "ice_defence", modifier: 100 },
     ],
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by 5%
-      { index: "debuff_speed", modifier: 5 },
-      { index: "debuff_speed", modifier: 7 },
-      { index: "debuff_speed", modifier: 10 },
-      { index: "debuff_speed", modifier: 15 },
+      { bonusClass: "debuff_speed", modifier: 5 },
+      { bonusClass: "debuff_speed", modifier: 7 },
+      { bonusClass: "debuff_speed", modifier: 10 },
+      { bonusClass: "debuff_speed", modifier: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_CLOCKWORK]: [
     // Tier 1
     [
       // Defense +5%
-      { index: "defence", modifier: 5 },
-      { index: "defence", modifier: 7 },
-      { index: "defence", modifier: 10 },
-      { index: "defence", modifier: 15 },
+      { bonusClass: "defence", modifier: 5 },
+      { bonusClass: "defence", modifier: 7 },
+      { bonusClass: "defence", modifier: 10 },
+      { bonusClass: "defence", modifier: 15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { index: "lava_damage", modifier: -25 },
-      { index: "lava_damage", modifier: -50 },
-      { index: "lava_damage", modifier: -75 },
-      { index: "lava_damage", modifier: -100 },
+      { bonusClass: "lava_damage", modifier: -25 },
+      { bonusClass: "lava_damage", modifier: -50 },
+      { bonusClass: "lava_damage", modifier: -75 },
+      { bonusClass: "lava_damage", modifier: -100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_ELDRITCH]: [
     // Tier 1
     [
       // Defense +5%
-      { index: "hp", modifier: 5 },
-      { index: "hp", modifier: 7 },
-      { index: "hp", modifier: 10 },
-      { index: "hp", modifier: 15 },
+      { bonusClass: "hp", modifier: 5 },
+      { bonusClass: "hp", modifier: 7 },
+      { bonusClass: "hp", modifier: 10 },
+      { bonusClass: "hp", modifier: 15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { index: "lava_damage", modifier: -25 },
-      { index: "lava_damage", modifier: -50 },
-      { index: "lava_damage", modifier: -75 },
-      { index: "lava_damage", modifier: -100 },
+      { bonusClass: "lava_damage", modifier: -25 },
+      { bonusClass: "lava_damage", modifier: -50 },
+      { bonusClass: "lava_damage", modifier: -75 },
+      { bonusClass: "lava_damage", modifier: -100 },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { index: "crit", modifier: 1.3, probability: 7 },
-      { index: "crit", modifier: 1.5, probability: 10 },
-      { index: "crit", modifier: 1.7, probability: 12 },
-      { index: "crit", modifier: 2, probability: 15 },
+      { bonusClass: "crit", modifier: 1.3, probability: 7 },
+      { bonusClass: "crit", modifier: 1.5, probability: 10 },
+      { bonusClass: "crit", modifier: 1.7, probability: 12 },
+      { bonusClass: "crit", modifier: 2, probability: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_ELF]: [
     // Tier 1
     [
       // Abilities power +5%
-      { index: "abilities", modifier: 5 },
-      { index: "abilities", modifier: 7 },
-      { index: "abilities", modifier: 10 },
-      { index: "abilities", modifier: 15 },
+      { bonusClass: "abilities", modifier: 5 },
+      { bonusClass: "abilities", modifier: 7 },
+      { bonusClass: "abilities", modifier: 10 },
+      { bonusClass: "abilities", modifier: 15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { index: "woods_defence", modifier: 25 },
-      { index: "woods_defence", modifier: 50 },
-      { index: "woods_defence", modifier: 75 },
-      { index: "woods_defence", modifier: 100 },
+      { bonusClass: "woods_defence", modifier: 25 },
+      { bonusClass: "woods_defence", modifier: 50 },
+      { bonusClass: "woods_defence", modifier: 75 },
+      { bonusClass: "woods_defence", modifier: 100 },
     ],
     // Tier 3
     [
       // Chance of a counterattack 7%
-      { index: "counter_attack", probability: 7 },
-      { index: "counter_attack", probability: 10 },
-      { index: "counter_attack", probability: 12 },
-      { index: "counter_attack", probability: 15 },
+      { bonusClass: "counter_attack", probability: 7 },
+      { bonusClass: "counter_attack", probability: 10 },
+      { bonusClass: "counter_attack", probability: 12 },
+      { bonusClass: "counter_attack", probability: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_SKELETON]: [
     // Tier 1
     [
       // Abilities power +5%
-      { index: "hp", modifier: 5 },
-      { index: "hp", modifier: 7 },
-      { index: "hp", modifier: 10 },
-      { index: "hp", modifier: 15 },
+      { bonusClass: "hp", modifier: 5 },
+      { bonusClass: "hp", modifier: 7 },
+      { bonusClass: "hp", modifier: 10 },
+      { bonusClass: "hp", modifier: 15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { index: "ice_defence", modifier: 25 },
-      { index: "ice_defence", modifier: 50 },
-      { index: "ice_defence", modifier: 75 },
-      { index: "ice_defence", modifier: 100 },
+      { bonusClass: "ice_defence", modifier: 25 },
+      { bonusClass: "ice_defence", modifier: 50 },
+      { bonusClass: "ice_defence", modifier: 75 },
+      { bonusClass: "ice_defence", modifier: 100 },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { index: "defence_stack", modifier: 1, max: 5 },
-      { index: "defence_stack", modifier: 1, max: 7 },
-      { index: "defence_stack", modifier: 1, max: 10 },
-      { index: "defence_stack", modifier: 1, max: 15 },
+      { bonusClass: "defence_stack", modifier: 1, max: 5 },
+      { bonusClass: "defence_stack", modifier: 1, max: 7 },
+      { bonusClass: "defence_stack", modifier: 1, max: 10 },
+      { bonusClass: "defence_stack", modifier: 1, max: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_FALLEN_KING]: [
     // Tier 1
     [
       // Attack +5%
-      { index: "damage", modifier: 5 },
-      { index: "damage", modifier: 7 },
-      { index: "damage", modifier: 10 },
-      { index: "damage", modifier: 15 },
+      { bonusClass: "damage", modifier: 5 },
+      { bonusClass: "damage", modifier: 7 },
+      { bonusClass: "damage", modifier: 10 },
+      { bonusClass: "damage", modifier: 15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { index: "hill_attack", modifier: 25 },
-      { index: "hill_attack", modifier: 50 },
-      { index: "hill_attack", modifier: 75 },
-      { index: "hill_attack", modifier: 100 },
+      { bonusClass: "hill_attack", modifier: 25 },
+      { bonusClass: "hill_attack", modifier: 50 },
+      { bonusClass: "hill_attack", modifier: 75 },
+      { bonusClass: "hill_attack", modifier: 100 },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { index: "crit", modifier: 1.3, probability: 7 },
-      { index: "crit", modifier: 1.5, probability: 10 },
-      { index: "crit", modifier: 1.7, probability: 12 },
-      { index: "crit", modifier: 2, probability: 15 },
+      { bonusClass: "crit", modifier: 1.3, probability: 7 },
+      { bonusClass: "crit", modifier: 1.5, probability: 10 },
+      { bonusClass: "crit", modifier: 1.7, probability: 12 },
+      { bonusClass: "crit", modifier: 2, probability: 15 },
     ],
   ],
   [battle.UNIT_TRIBE_TITAN]: [
     // Tier 1
     [
       // Abilities power +5%
-      { index: "abilities", modifier: 5 },
-      { index: "abilities", modifier: 7 },
-      { index: "abilities", modifier: 10 },
-      { index: "abilities", modifier: 15 },
+      { bonusClass: "abilities", modifier: 5 },
+      { bonusClass: "abilities", modifier: 7 },
+      { bonusClass: "abilities", modifier: 10 },
+      { bonusClass: "abilities", modifier: 15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { index: "lava_damage", modifier: -25 },
-      { index: "lava_damage", modifier: -50 },
-      { index: "lava_damage", modifier: -75 },
-      { index: "lava_damage", modifier: -100 },
+      { bonusClass: "lava_damage", modifier: -25 },
+      { bonusClass: "lava_damage", modifier: -50 },
+      { bonusClass: "lava_damage", modifier: -75 },
+      { bonusClass: "lava_damage", modifier: -100 },
     ],
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by 5%
-      { index: "debuff_speed", modifier: 5 },
-      { index: "debuff_speed", modifier: 7 },
-      { index: "debuff_speed", modifier: 10 },
-      { index: "debuff_speed", modifier: 15 },
+      { bonusClass: "debuff_speed", modifier: 5 },
+      { bonusClass: "debuff_speed", modifier: 7 },
+      { bonusClass: "debuff_speed", modifier: 10 },
+      { bonusClass: "debuff_speed", modifier: 15 },
     ],
   ],
 };

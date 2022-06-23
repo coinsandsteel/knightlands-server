@@ -49,6 +49,18 @@ export class Unit {
   protected _index: number;
   protected _buffs: BattleBuff[];
 
+  get tier(): number {
+    return this._tier;
+  }
+
+  get tribe(): string {
+    return this._unitTribe;
+  }
+
+  get class(): string {
+    return this._unitClass;
+  }
+
   get unitId(): string {
     return this._unitId;
   }
@@ -63,6 +75,10 @@ export class Unit {
 
   get level(): BattleLevelScheme {
     return this._level;
+  }
+
+  get power(): number {
+    return this._power;
   }
 
   constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit) {
