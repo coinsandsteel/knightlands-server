@@ -93,7 +93,21 @@ export class BattleSquad {
     this._ctrl.events.userSquad(this._state);
   }
   
+  public proxyUnit(unitId: string): void {
+    const index = this._units.findIndex(unitEntry => unitEntry.unitId === unitId)
+    if (index === -1) {
+      return;
+    }
+
+    this.fillSlot(unitId, index);
+    this._ctrl.events.userSquad(this._state);
+  }
+  
   protected setBonuses(): void {
 
+  }
+  
+  public includesUnit(unitId: string): boolean {
+    return this._units.findIndex(unit => unit.unitId === unitId) !== -1;
   }
 }

@@ -110,6 +110,8 @@ export interface BattleSquadUnit {
   unitTribe: string; // 15
   unitClass: string; // 5
   tier: number; // 3, modify via merger (3 => 1) // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  level: number;
+  power: number;
   index?: number; // 0-34
   hp: number;
   abilities: BattleUnitAbility[];
@@ -150,6 +152,7 @@ export interface InventoryUnitAbility {
 }
 
 export interface BattleUnitAbility {
+  enabled: boolean;
   abilityClass: string; // 
   abilityGroup: string; // 
   tier: number;

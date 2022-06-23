@@ -30,7 +30,7 @@ export class BattleInventory {
   }
   
   protected makeUnit(unit: BattleInventoryUnit): Unit {
-    return new Unit(unit, this);
+    return new Unit(unit);
   }
   
   getState(): BattleInventoryUnit[] {
@@ -108,6 +108,14 @@ export class BattleInventory {
     this._ctrl.user.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeLevel();
     this.updateUnitState(unit);
+
+    if (
+      !this._ctrl.game.combatStarted
+      &&
+      this._ctrl.game.squadIncludesUnit(unitId)
+    ) {
+      this._ctrl.game.proxyUnit(unitId);
+    }
   }
 
   public upgradeUnitAbility(unitId: string, ability: string): void {
@@ -127,5 +135,13 @@ export class BattleInventory {
     this._ctrl.user.debitCurrency(COMMODITY_COINS, unit.level.price);
     unit.upgradeAbility(ability);
     this.updateUnitState(unit);
+
+    if (
+      !this._ctrl.game.combatStarted
+      &&
+      this._ctrl.game.squadIncludesUnit(unitId)
+    ) {
+      this._ctrl.game.proxyUnit(unitId);
+    }
   }
 }

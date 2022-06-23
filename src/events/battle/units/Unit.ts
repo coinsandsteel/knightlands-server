@@ -23,8 +23,6 @@ import {
 } from "../types";
 
 export class Unit {
-  protected _inventory: BattleInventory;
-
   protected _template: number;
   protected _unitId: string;
   protected _unitTribe: string; // 15
@@ -67,9 +65,7 @@ export class Unit {
     return this._level;
   }
 
-  constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit, inventory: BattleInventory) {
-    this._inventory = inventory;
-
+  constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
@@ -182,6 +178,7 @@ export class Unit {
   public serializeForSquad(): BattleSquadUnit {
     const abilities = this._abilities.map(ability => {
       return {
+        enabled: !!ability.level.current,
         abilityClass: ability.abilityClass,
         abilityGroup: ability.abilityGroup,
         tier: ability.tier,
@@ -199,6 +196,8 @@ export class Unit {
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,
       tier: this._tier,
+      level: this._level.current,
+      power: this._power,
       index: this._index,
       hp: this._hp,
       abilities,
@@ -263,6 +262,7 @@ export class Unit {
     this._level.next = null;
     this._level.price = null;
 
+    this.setPower();
     this.unblockAbilities();
 
     return true;
@@ -309,6 +309,8 @@ export class Unit {
     ability.level.current++;
     ability.level.next = ability.level.next + 1;
     ability.level.price = this.getAbilityUpgradePrice(ability.tier, ability.level.next);
+
+    this.setPower();
 
     return true;
   }

@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { BattleController } from "../BattleController";
 import { BattleGameState } from "../types";
+import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
 
 export class BattleGame {
@@ -23,7 +24,11 @@ export class BattleGame {
       this.setInitialState();
     }
   }
-  
+
+  get combatStarted(): boolean {
+    return this._state.combat.started;
+  }
+
   // TODO
   protected setInitialState() {
     this._state = {
@@ -58,6 +63,14 @@ export class BattleGame {
   public init(): void {
     this._userSquad.init();
     this._enemySquad.init();
+  }
+  
+  public squadIncludesUnit(unitId: string): boolean {
+    return this._userSquad.includesUnit(unitId);
+  }
+  
+  public proxyUnit(unitId: string): void {
+    this._userSquad.proxyUnit(unitId);
   }
   
   public fillSquadSlot(unitId: string, index: number): void {

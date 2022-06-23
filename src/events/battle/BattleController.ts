@@ -30,6 +30,10 @@ export class BattleController {
     return this._events;
   }
   
+  get game(): BattleGame {
+    return this._battleGame;
+  }
+  
   get inventory(): BattleInventory {
     return this._battleInventory;
   }
@@ -136,13 +140,11 @@ export class BattleController {
     this._events.flush();
   }
 
-  // TODO
   async fillSquadSlot(unitId: string, index: number) {
     this._battleGame.fillSquadSlot(unitId, index);
     this._events.flush();
   }
   
-  // TODO
   async clearSquadSlot(index: number) {
     this._battleGame.clearSquadSlot(index);
     this._events.flush();
