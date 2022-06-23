@@ -201,7 +201,7 @@ export class BattleController {
       }
       case 'increaseUnitExp':{
         // unitId
-        this._battleInventory.addExp(data.unitId, 15);
+        this._battleInventory.addExp(data.unitId, 100);
         break;
       }
       case 'buildSquad':{
