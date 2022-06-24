@@ -177,6 +177,16 @@ export class BattleController {
     this._events.flush();
   }
   
+  async enterDuel(difficulty: string) {
+    this._battleGame.enterDuel(difficulty);
+    this._events.flush();
+  }
+  
+  async getDuelOptions() {
+    this._battleGame.getDuelOptions();
+    this._events.flush();
+  }
+  
   async restart() {
     this._events.flush();
   }

@@ -324,6 +324,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BattleApply, this._gameHandler(this._battleApply.bind(this)));
         this._socket.on(Operations.BattleSkip, this._gameHandler(this._battleSkip.bind(this)));
         this._socket.on(Operations.BattleEnterLevel, this._gameHandler(this._battleEnterLevel.bind(this)));
+        this._socket.on(Operations.BattleEnterDuel, this._gameHandler(this._battleEnterDuel.bind(this)));
+        this._socket.on(Operations.BattleFetchDuelOptions, this._gameHandler(this._battleFetchDuelOptions.bind(this)));
         this._socket.on(Operations.BattleRankings, this._gameHandler(this._battleRankings.bind(this)));
         this._socket.on(Operations.BattleRestart, this._gameHandler(this._battleRestart.bind(this)));
         this._socket.on(Operations.BattleExit, this._gameHandler(this._battleExit.bind(this)));
@@ -2313,6 +2315,10 @@ class PlayerController extends IPaymentListener {
     
     async _battleEnterLevel(_, { room, level }) {
       return this.battle.enterLevel(room, level);
+    }
+
+    async _battleFetchDuelOptions(_) {
+      return this.battle.getDuelOptions();
     }
 
     async _battleRankings() {

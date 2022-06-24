@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES } from "../meta";
 import { BattleGameState } from "../types";
@@ -118,6 +119,29 @@ export class BattleGame {
     // Set isMyTurn
     // Find an enemy
     // Load terrain
+  }
+  
+  // TODO
+  public enterDuel(difficulty: string): void {
+    // Set room/level
+    // Set difficulty
+    // Set isMyTurn
+    // Find an enemy
+    // Load terrain
+  }
+  
+  public getDuelOptions() {
+    const tribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const squads = [[], [], []];
+    
+    for (let tier = 0; tier < 3; tier++) {
+      for (let index = 0; index < 5; index++) {
+        const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
+        squads[tier].push(unit.serializeForSquad());
+      }
+    }
+    
+    return squads;
   }
   
   // TODO
