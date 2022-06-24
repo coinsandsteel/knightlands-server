@@ -2317,6 +2317,10 @@ class PlayerController extends IPaymentListener {
       return this.battle.enterLevel(room, level);
     }
 
+    async _battleEnterDuel(_, { difficulty }) {
+      return this.battle.enterDuel(difficulty);
+    }
+
     async _battleFetchDuelOptions(_) {
       return this.battle.getDuelOptions();
     }

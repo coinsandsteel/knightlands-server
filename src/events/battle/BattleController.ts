@@ -183,8 +183,7 @@ export class BattleController {
   }
   
   async getDuelOptions() {
-    this._battleGame.getDuelOptions();
-    this._events.flush();
+    return this._battleGame.getDuelOptions();
   }
   
   async restart() {
