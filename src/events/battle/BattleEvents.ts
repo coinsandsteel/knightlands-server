@@ -24,7 +24,8 @@ export class BattleEvents {
   }
 
   addUnit(unit: Unit) {
-    this._events.addUnit = unit.serialize();
+    this._events.addUnit = this._events.addUnit || [];
+    this._events.addUnit.push(unit.serialize());
   }
 
   inventory(units: Unit[]) {

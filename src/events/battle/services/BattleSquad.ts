@@ -36,6 +36,7 @@ export class BattleSquad {
   }
   
   public getState(): BattleSquadState {
+    this.syncUnits();
     return this._state;
   }
   
@@ -43,6 +44,12 @@ export class BattleSquad {
     this._units = [];
     this._state.units.forEach((unit: BattleUnit) => {
       this._units.push(this.makeUnit(unit));
+    });
+  }
+  
+  protected syncUnits(): void {
+    this._units.forEach((unit: Unit, index: number) => {
+      this._state.units[index] = unit.serializeForSquad();
     });
   }
   
@@ -146,8 +153,15 @@ export class BattleSquad {
     return this._units.findIndex(unit => unit.unitId === unitId) !== -1;
   }
 
-  protected updateStat() {
+  protected updateStat(): void {
     this.setBonuses();
     this.setPower();
+  }
+
+  public setInitialIndexes(onTop: boolean): void {
+    this._units.forEach((unit, index) => {
+      unit.setIndex(index + (onTop ? 0 : 30));
+    });
+    this.syncUnits();
   }
 }

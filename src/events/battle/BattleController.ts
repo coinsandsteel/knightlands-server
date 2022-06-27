@@ -160,6 +160,11 @@ export class BattleController {
     this._events.flush();
   }
   
+  async unitChoose(unitId: string) {
+    this._battleGame.unitChoose(unitId);
+    this._events.flush();
+  }
+
   async apply(unitId: string, index: number, ability?: string) {
     this._battleGame.apply(unitId, index, ability);
     this._events.flush();

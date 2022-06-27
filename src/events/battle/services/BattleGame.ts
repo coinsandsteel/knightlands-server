@@ -3,7 +3,6 @@ import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState } from "../types";
-import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
 
 export class BattleGame {
@@ -66,6 +65,8 @@ export class BattleGame {
   }
 
   public getState(): BattleGameState {
+    this._state.userSquad = this._userSquad.getState();
+    this._state.enemySquad = this._enemySquad.getState();
     return this._state;
   }
 
@@ -143,7 +144,13 @@ export class BattleGame {
     this._enemySquad = new BattleSquad(squad, this._ctrl);
     this._enemyOptions = [[], [], []];
 
-    // Sync enemy squad
+    // Prepare user Squad
+    this._userSquad.setInitialIndexes(false);
+    this._state.userSquad = this._enemySquad.getState();
+    this._ctrl.events.userSquad(this._state.userSquad);
+    
+    // Prepare enemy squad
+    this._enemySquad.setInitialIndexes(true);
     this._state.enemySquad = this._enemySquad.getState();
     this._ctrl.events.enemySquad(this._state.enemySquad);
     
@@ -201,6 +208,13 @@ export class BattleGame {
     const unitId = this._initiativeRating[0].unitId;
     this._state.combat.activeUnitId = unitId;
     this._ctrl.events.activeUnitId(unitId);
+  }
+  
+  public unitChoose(unitId: string): void {
+    const attackCells = [...Array(5)].map(e=> _.random(0, 34));
+    const moveCells = [...Array(5)].map(e=> _.random(0, 34));
+    this._ctrl.events.combatAttackCells(attackCells);
+    this._ctrl.events.combatMoveCells(moveCells);
   }
   
   // TODO

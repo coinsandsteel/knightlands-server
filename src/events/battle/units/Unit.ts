@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { isThisTypeNode } from "typescript";
 import { v4 as uuidv4 } from "uuid";
 import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
 import {
@@ -235,7 +236,7 @@ export class Unit {
         abilityGroup: ability.abilityGroup,
         tier: ability.tier,
         value: ability.value,
-        enabled: !!ability.level.current,
+        enabled: ability.enabled,
         cooldown: {
           enabled: false,
           stepsLeft: 0,
@@ -312,6 +313,7 @@ export class Unit {
       return false;
     }
 
+    this._levelInt = this._level.next;
     this._level.current = this._level.next;
     this._level.next = null;
     this._level.price = null;
@@ -330,6 +332,7 @@ export class Unit {
       this._abilities[abilityTier-1].level.current === 0
     ) {
       // Unlock tier 2 ability
+      this._abilities[abilityTier-1].enabled = true;
       this._abilities[abilityTier-1].level.current = 1;
       this._abilities[abilityTier-1].level.next = 2;
       this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
@@ -343,6 +346,7 @@ export class Unit {
       this._abilities[abilityTier-1].level.current === 0
       ) {
         // Unlock tier 3 ability
+        this._abilities[abilityTier-1].enabled = true;
         this._abilities[abilityTier-1].level.current = 1;
         this._abilities[abilityTier-1].level.next = 2;
         this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
@@ -360,6 +364,7 @@ export class Unit {
     }
 
     const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
+    ability.enabled = true;
     ability.level.current++;
     ability.level.next = ability.level.next + 1;
     ability.level.price = this.getAbilityUpgradePrice(ability.tier, ability.level.next);
@@ -381,5 +386,12 @@ export class Unit {
   public getAbilityByClass(abilityClass: string): BattleUnitAbility|null {
     const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
     return ability || null;
+  }
+
+  public setIndex(index: number): void {
+    if (index < 0 || index > 34) {
+      throw Error("Unit index overflow");
+    }
+    this._index = index;
   }
 }
