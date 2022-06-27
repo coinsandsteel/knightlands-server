@@ -1,15 +1,13 @@
-import _ from 'lodash'
-import User from "../../user";
 import Game from "../../game";
 import * as battle from "../../knightlands-shared/battle";
+import User from "../../user";
 
-import { BattleSaveData } from './types';
+import random from "../../random";
 import { BattleEvents } from './BattleEvents';
 import { BattleUser } from './BattleUser';
 import { BattleGame } from './services/BattleGame';
 import { BattleInventory } from './services/BattleInventory';
-import errors from '../../knightlands-shared/errors';
-import { threadId } from 'worker_threads';
+import { BattleSaveData } from './types';
 
 const isProd = process.env.ENV == "prod";
 
@@ -199,7 +197,8 @@ export class BattleController {
     if (isProd) return;
     switch (data.action) {
       case 'addUnit':{
-        const unit = this._battleInventory.getRandomUnit();
+        const tier = random.intRange(1, 3);
+        const unit = this._battleInventory.getRandomUnit(tier);
         this._battleInventory.addUnit(unit);
         break;
       }

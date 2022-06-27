@@ -1,19 +1,18 @@
 import _ from "lodash";
 import errors from "../../../knightlands-shared/errors";
 import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
-import { BattleEvents } from "../BattleEvents";
 import { BattleController } from "../BattleController";
-import { BattleInventoryUnit } from "../types";
+import { BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
 import { UNITS } from "./../meta"
 
 export class BattleInventory {
   protected _ctrl: BattleController;
 
-  protected _state: BattleInventoryUnit[];
+  protected _state: BattleUnit[];
   protected _units: Unit[];
 
-  constructor(state: BattleInventoryUnit[], ctrl: BattleController) {
+  constructor(state: BattleUnit[], ctrl: BattleController) {
     this._state = state || [];
     this._ctrl = ctrl;
   }
@@ -28,23 +27,23 @@ export class BattleInventory {
 
   protected createUnits(): void {
     this._units = [];
-    this._state.forEach((unit: BattleInventoryUnit) => {
+    this._state.forEach((unit: BattleUnit) => {
       this._units.push(this.makeUnit(unit));
     });
   }
   
-  protected makeUnit(unit: BattleInventoryUnit): Unit {
+  protected makeUnit(unit: BattleUnit): Unit {
     return new Unit(unit);
   }
   
-  getState(): BattleInventoryUnit[] {
+  getState(): BattleUnit[] {
     return this._state;
   }
   
-  public getRandomUnit(tier?: number): Unit {
+  public getRandomUnit(tier: number): Unit {
     // Get random unit blueprint
     const unitBlueprint = _.cloneDeep(_.sample(UNITS));
-    unitBlueprint.tier = tier || null;
+    unitBlueprint.tier = tier;
     // Construct unit
     const unit = this.makeUnit(unitBlueprint);
     return unit;

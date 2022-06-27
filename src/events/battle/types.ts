@@ -1,7 +1,7 @@
 export interface BattleSaveData {
   user: BattleUserState;
   game: BattleGameState;
-  inventory: BattleInventoryUnit[];
+  inventory: BattleUnit[];
 }
 
 export interface BattleUserState {
@@ -36,32 +36,29 @@ export interface BattleRewardDayData {
   date?: string;
 }
 
-export interface BattleInventoryUnit {
+export interface BattleUnit {
   template: number;
-  unitId?: string;
   unitTribe: string; // 15
   unitClass: string; // 5
-  tier: number; // 3, modify via merger (3 => 1)
-  level: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  power: number;
-  expirience: {
+  unitId?: string;
+  tier?: number; // 3, modify via merger (3 => 1)
+  levelInt?: number;
+  level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  power?: number;
+  expirience?: {
     value: number;
     percentage: number;
     currentLevelExp: number;
     nextLevelExp: number;
   };
-  characteristics: BattleUnitCharacteristics;
-  abilities: InventoryUnitAbility[];
-  quantity: number;
-}
-
-export interface BattleUnitBlueprint {
-  template: number;
-  unitId?: number;
-  unitTribe: string; // 15
-  unitClass: string; // 5
-  tier?: number;
-  abilityList: string[];
+  characteristics?: BattleUnitCharacteristics;
+  abilities?: BattleUnitAbility[];
+  abilityList?: string[];
+  quantity?: number;
+  // Combat
+  index?: number; // 0-34
+  hp?: number;
+  buffs?: BattleBuff[];
 }
 
 export interface BattleLevelScheme {
@@ -101,21 +98,7 @@ export interface BattleCombatState {
 export interface BattleSquadState {
   power: number;
   bonuses: BattleSquadBonus[];
-  units: BattleSquadUnit[];
-}
-
-export interface BattleSquadUnit {
-  template: number;
-  unitId?: string;
-  unitTribe: string; // 15
-  unitClass: string; // 5
-  tier: number; // 3, modify via merger (3 => 1) // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  level: number;
-  power: number;
-  index?: number; // 0-34
-  hp: number;
-  abilities: BattleUnitAbility[];
-  buffs: BattleBuff[];
+  units: BattleUnit[];
 }
 
 export interface BattleSquadUnitUpdate {
@@ -139,24 +122,15 @@ export interface BattleTerrainCell {
   index: number;
 }
 
-export interface InventoryUnitAbility {
+export interface BattleUnitAbility {
   abilityClass: string; // 
   abilityGroup: string; //
   tier: number;
-  level: BattleLevelScheme; // unit lvl opens ability lvl > pay crystal > lvl up
-  //   current: number; // 0 means "not learned"
-  //   next: number|null; // not null means "can learn"
-  //   price: number|null; // Learn price, crystals
-  // };
-  value: number;
-}
-
-export interface BattleUnitAbility {
-  enabled: boolean;
-  abilityClass: string; // 
-  abilityGroup: string; // 
-  tier: number;
-  cooldown: {
+  levelInt?: number;
+  level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
+  value?: number;
+  enabled?: boolean;
+  cooldown?: {
     enabled: boolean;
     stepsLeft: number;
     stepsMax: number;

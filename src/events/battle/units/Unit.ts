@@ -1,25 +1,16 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
-import { BattleInventory } from "../services/BattleInventory";
-import random from "../../../random";
-import { 
+import {
   ABILITIES,
-  ABILITY_GROUPS,
-  CHARACTERISTICS,
+  ABILITY_GROUPS, ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
   UNIT_EXP_TABLE,
-  UNIT_LEVEL_UP_PRICES,
-  ABILITY_LEVEL_UP_PRICES
+  UNIT_LEVEL_UP_PRICES
 } from "../meta";
-import { 
-  BattleBuff,
-  BattleInventoryUnit, 
-  BattleLevelScheme, 
-  BattleSquadUnit, 
-  BattleUnitAbility, 
-  BattleUnitBlueprint, 
-  BattleUnitCharacteristics, 
-  InventoryUnitAbility 
+import {
+  BattleBuff, BattleLevelScheme,
+  BattleUnit, BattleUnitAbility,
+  BattleUnitCharacteristics
 } from "../types";
 
 export class Unit {
@@ -29,6 +20,7 @@ export class Unit {
   protected _unitClass: string; // 5
   protected _tier: number; // 3, modify via merger (3 => 1)
   protected _level: BattleLevelScheme; // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  protected _levelInt: Number;
   protected _power: number;
   protected _expirience: {
     value: number;
@@ -37,9 +29,11 @@ export class Unit {
     nextLevelExp: number;
   };
   protected _characteristics: BattleUnitCharacteristics;
-  protected _abilities: InventoryUnitAbility[];
+  protected _abilityList: string[];
+  protected _abilities: BattleUnitAbility[];
   protected _quantity: number;
   
+  // Combat
   protected _hp: number;
   protected _damage: number;
   protected _defence: number;
@@ -81,58 +75,97 @@ export class Unit {
     return this._power;
   }
 
-  constructor(blueprint: BattleUnitBlueprint|BattleInventoryUnit) {
+  constructor(blueprint: BattleUnit) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
     this._unitClass = blueprint.unitClass;
-    this._tier = blueprint.tier || random.intRange(1, 3);
-
-    // Existing
+    
+    if ("tier" in blueprint) {
+      this._tier = blueprint.tier;
+    } else {
+      throw Error("Unit's tier was not set");
+    }
+    
     if ("level" in blueprint) {
       this._level = blueprint.level;
-      this._expirience = blueprint.expirience;
-      this._characteristics = blueprint.characteristics;
-      this._abilities = blueprint.abilities;
-      this._quantity = blueprint.quantity;
-      
-    // New
     } else {
-      this._quantity = 1;
-
       this._level = {
         current: 1,
         next: null,
         price: null
       } as BattleLevelScheme;
+    }
 
+    if ("levelInt" in blueprint) {
+      this._levelInt = blueprint.levelInt;
+    } else if ("level" in blueprint) {
+      this._levelInt = blueprint.level.current;
+    }
+    
+    if ("expirience" in blueprint) {
+      this._expirience = blueprint.expirience;
+    } else {
       this._expirience = {
         value: 0,
         percentage: 0,
         currentLevelExp: 0,
         nextLevelExp: _.cloneDeep(UNIT_EXP_TABLE[this._tier - 1][1])
       };
+    }
 
+    if ("characteristics" in blueprint) {
+      this._characteristics = blueprint.characteristics;
+    } else {
       const characteristicsMeta = _.cloneDeep(CHARACTERISTICS[this._unitClass][this._tier - 1][this._level.current - 1]);
       this._characteristics = {...this._characteristics, ...characteristicsMeta};
+    }
 
-      const abilityList = _.cloneDeep(blueprint.abilityList);
-      const abilities = abilityList.map((abilityClass, index) => {
+    if ("abilityList" in blueprint) {
+      this._abilityList = blueprint.abilityList;
+    }
+
+    if ("abilities" in blueprint) {
+      this._abilities = blueprint.abilities;
+    } else if (this._abilityList.length) {
+      const abilities = this._abilityList.map((abilityClass, index) => {
         let tier = index + 1;
         return {
           abilityClass,
           abilityGroup: _.cloneDeep(ABILITY_GROUPS[abilityClass]),
           tier,
+          levelInt: !index ? 1 : 0,
           level: {
             current: !index ? 1 : 0, // Unlock only the first ability
             next: !index ? 2 : null,
             price: !index ? this.getAbilityUpgradePrice(tier, 2) : null,
-          },
-          value: this.getAbilityValue(abilityClass, 1)
-        };
-      });
+          },  
+          value: this.getAbilityValue(abilityClass, 1),
+          enabled: !index ? true : false
+        };  
+      });  
 
       this._abilities = abilities;
+    } else {
+      throw Error("Abilities was not set");
+    }
+
+    if ("quantity" in blueprint) {
+      this._quantity = blueprint.quantity;
+    } else {
+      this._quantity = 1;
+    }
+
+    if ("index" in blueprint) {
+      this._index = blueprint.index;
+    }
+
+    if ("hp" in blueprint) {
+      this._hp = blueprint.hp;
+    }
+
+    if ("buffs" in blueprint) {
+      this._buffs = blueprint.buffs;
     }
 
     this.setPower();
@@ -173,7 +206,7 @@ export class Unit {
     this._power = (statsSum + abilitySum) * 2;
   }
     
-  public serialize(): BattleInventoryUnit {
+  public serialize(): BattleUnit {
     const unit = {
       template: this._template,
       unitId: this._unitId,
@@ -186,18 +219,19 @@ export class Unit {
       characteristics: this._characteristics,
       abilities: this._abilities,
       quantity: this._quantity
-    } as BattleInventoryUnit;
+    } as BattleUnit;
 
     return _.cloneDeep(unit);
   }
 
-  public serializeForSquad(): BattleSquadUnit {
+  public serializeForSquad(): BattleUnit {
     const abilities = this._abilities.map(ability => {
       return {
-        enabled: !!ability.level.current,
         abilityClass: ability.abilityClass,
         abilityGroup: ability.abilityGroup,
         tier: ability.tier,
+        value: ability.value,
+        enabled: !!ability.level.current,
         cooldown: {
           enabled: false,
           stepsLeft: 0,
@@ -212,13 +246,13 @@ export class Unit {
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,
       tier: this._tier,
-      level: this._level.current,
+      levelInt: this._level.current,
       power: this._power,
       index: this._index,
       hp: this._hp,
       abilities,
       buffs: this._buffs
-    } as BattleSquadUnit;
+    } as BattleUnit;
 
     return _.cloneDeep(squadUnit);
   }
@@ -340,7 +374,7 @@ export class Unit {
     return !!ability && !!ability.level.next;
   }
 
-  public getAbilityByClass(abilityClass: string): InventoryUnitAbility|null {
+  public getAbilityByClass(abilityClass: string): BattleUnitAbility|null {
     const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
     return ability || null;
   }

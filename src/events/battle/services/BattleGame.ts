@@ -12,13 +12,19 @@ export class BattleGame {
 
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
+  protected _enemyOptions: any[][];
 
   constructor(state: BattleGameState|null, ctrl: BattleController) {
-    this._state = state;
     this._ctrl = ctrl;
 
-    this._userSquad = new BattleSquad(state ? state.userSquad : null, this._ctrl);
-    this._enemySquad = new BattleSquad(state ? state.enemySquad : null, this._ctrl);
+    this._userSquad = new BattleSquad(
+      state ? state.userSquad.units : null, 
+      this._ctrl
+    );
+    this._enemySquad = new BattleSquad(
+      state ? state.enemySquad.units : null, 
+      this._ctrl
+    );
 
     if (state) {
       this._state = state;
@@ -123,24 +129,30 @@ export class BattleGame {
   
   // TODO
   public enterDuel(difficulty: string): void {
-    // Set room/level
-    // Set difficulty
-    // Set isMyTurn
-    // Find an enemy
-    // Load terrain
+    const difficulties = {
+      [GAME_DIFFICULTY_HIGH]: 0,
+      [GAME_DIFFICULTY_MEDIUM]: 1,
+      [GAME_DIFFICULTY_LOW]: 2
+    };
+    const squad = this._enemyOptions[difficulties[difficulty]];
+    // Set enemy squad
+    this._enemySquad = new BattleSquad(squad, this._ctrl);
+    this._enemyOptions = [[], [], []];
   }
   
   public getDuelOptions() {
     const tribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const squads = [[], [], []];
     
-    for (let tier = 0; tier < 3; tier++) {
+    for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
         const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
-        squads[tier].push(unit.serializeForSquad());
+        squads[tier-1].push(unit.serializeForSquad());
       }
     }
     
+    this._enemyOptions = squads;
+
     return squads;
   }
   

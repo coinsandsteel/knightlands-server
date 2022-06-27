@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { BattleSquadBonus, BattleSquadState } from "../types";
+import { BattleSquadBonus, BattleSquadState, BattleUnit } from "../types";
 import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
 import errors from "../../../knightlands-shared/errors";
@@ -11,30 +11,17 @@ export class BattleSquad {
 
   protected _units: Unit[];
 
-  constructor(state: BattleSquadState|null, ctrl: BattleController) {
-    this._state = state;
+  constructor(units: BattleUnit[]|null, ctrl: BattleController) {
     this._ctrl = ctrl;
 
-    if (state) {
-      this._state = state;
-    } else {
-      this.setInitialState();
-    }
+    this.setInitialState();
+    this._state.units = units || [];
+
+    this.createUnits();
+    this.updateStat();
   }
   
   public init() {
-    // Properties
-    // https://docs.google.com/spreadsheets/d/1BzNKygvM41HFggswJLnMWzaN3F4mI6D7iWpRMCEm_QM/edit#gid=1206803409
-    // hp
-    // damage
-    // def
-    // speed
-    // initiative
-
-    // Abilities
-    // https://docs.google.com/spreadsheets/d/1BzNKygvM41HFggswJLnMWzaN3F4mI6D7iWpRMCEm_QM/edit#gid=1260018765
-    this._units = [];
-    
     // Apply squad bonuses
     // https://docs.google.com/spreadsheets/d/1BzNKygvM41HFggswJLnMWzaN3F4mI6D7iWpRMCEm_QM/edit#gid=1792408341
     //this._bonuses = [];
@@ -50,6 +37,17 @@ export class BattleSquad {
   
   public getState(): BattleSquadState {
     return this._state;
+  }
+  
+  protected createUnits(): void {
+    this._units = [];
+    this._state.units.forEach((unit: BattleUnit) => {
+      this._units.push(this.makeUnit(unit));
+    });
+  }
+  
+  protected makeUnit(unit: BattleUnit): Unit {
+    return new Unit(unit);
   }
   
   public fillSlot(unitId: string, index: number): void {
@@ -69,9 +67,7 @@ export class BattleSquad {
     // Update state
     this._state.units[index] = unit.serializeForSquad();
 
-    // Update bonuses
-    this.setBonuses();
-    this.setPower();
+    this.updateStat();
 
     // Event
     this._ctrl.events.userSquad(this._state);
@@ -88,9 +84,7 @@ export class BattleSquad {
     // Update state
     delete this._state.units[index];
 
-    // Update bonuses
-    this.setBonuses();
-    this.setPower();
+    this.updateStat();
 
     // Event
     this._ctrl.events.userSquad(this._state);
@@ -107,9 +101,14 @@ export class BattleSquad {
   }
   
   protected setBonuses(): void {
+    if (!this._units.length) {
+      return;
+    }
+
     let stat = {};
 
     this._units.forEach(unit => {
+      console.log("Bonuses", { unit });
       stat = {
         ...stat, 
         [unit.tribe]: { 
@@ -136,10 +135,19 @@ export class BattleSquad {
   }
   
   protected setPower(): void {
+    if (!this._units.length) {
+      return;
+    }
+
     this._state.power = _.sumBy(this._units, "power");
   }
   
   public includesUnit(unitId: string): boolean {
     return this._units.findIndex(unit => unit.unitId === unitId) !== -1;
+  }
+
+  protected updateStat() {
+    this.setBonuses();
+    this.setPower();
   }
 }

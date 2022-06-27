@@ -1,5 +1,4 @@
 import * as battle from "./../../knightlands-shared/battle";
-import { BattleUnitBlueprint } from "./types";
 
 export const CHARACTERISTICS = {
   [battle.UNIT_CLASS_MELEE]: [
@@ -1375,7 +1374,7 @@ export const UNITS = [
       battle.ABILITY_WIND_WALK,
     ]
   },
-] as BattleUnitBlueprint[];
+];
 
 export const SQUAD_BONUSES = {
   [battle.UNIT_TRIBE_KOBOLD]: [
