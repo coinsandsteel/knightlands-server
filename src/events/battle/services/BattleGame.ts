@@ -146,7 +146,7 @@ export class BattleGame {
 
     // Prepare user Squad
     this._userSquad.setInitialIndexes(false);
-    this._state.userSquad = this._enemySquad.getState();
+    this._state.userSquad = this._userSquad.getState();
     this._ctrl.events.userSquad(this._state.userSquad);
     
     // Prepare enemy squad
