@@ -97,6 +97,10 @@ export class BattleEvents {
     this._events.combatStarted = value;
   }
 
+  activeUnitId(value: string) {
+    this._events.activeUnitId = value;
+  }
+
   combatResult(value: string) {
     this._events.combatResult = value;
   }

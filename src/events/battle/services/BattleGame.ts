@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM } from "../../../knightlands-shared/battle";
+import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { SQUAD_BONUSES } from "../meta";
+import { SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
@@ -13,6 +13,7 @@ export class BattleGame {
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
   protected _enemyOptions: any[][];
+  protected _initiativeRating: any[];
 
   constructor(state: BattleGameState|null, ctrl: BattleController) {
     this._ctrl = ctrl;
@@ -37,7 +38,6 @@ export class BattleGame {
     return this._state.combat.started;
   }
 
-  // TODO
   protected setInitialState() {
     this._state = {
       mode: null,
@@ -53,6 +53,7 @@ export class BattleGame {
         started: false,
         result: null, // "win" | "loose"
         isMyTurn: null,
+        activeUnitId: null,
         runtime: {
           unitId: null,
           selectedIndex: null,
@@ -127,17 +128,32 @@ export class BattleGame {
     // Load terrain
   }
   
-  // TODO
   public enterDuel(difficulty: string): void {
+    // Set game mode and difficulty
+    this.setMode(GAME_MODE_DUEL);
+    this.setDifficulty(difficulty);
+    
+    // Set enemy squad
     const difficulties = {
       [GAME_DIFFICULTY_HIGH]: 0,
       [GAME_DIFFICULTY_MEDIUM]: 1,
       [GAME_DIFFICULTY_LOW]: 2
     };
     const squad = this._enemyOptions[difficulties[difficulty]];
-    // Set enemy squad
     this._enemySquad = new BattleSquad(squad, this._ctrl);
     this._enemyOptions = [[], [], []];
+
+    // Sync enemy squad
+    this._state.enemySquad = this._enemySquad.getState();
+    this._ctrl.events.enemySquad(this._state.enemySquad);
+    
+    // Terrain
+    this._state.terrain = TERRAIN[0];
+    this._ctrl.events.terrain(this._state.terrain);
+
+    // Start combat
+    this.setCombatStarted(true);
+    this.setActiveUnitId();
   }
   
   public getDuelOptions() {
@@ -154,6 +170,37 @@ export class BattleGame {
     this._enemyOptions = squads;
 
     return squads;
+  }
+  
+  public setMode(mode: string): void {
+    this._state.mode = mode;
+    this._ctrl.events.mode(mode);
+  }
+  
+  public setDifficulty(difficulty: string): void {
+    this._state.difficulty = difficulty;
+    this._ctrl.events.difficulty(difficulty);
+  }
+  
+  public setCombatStarted(value: boolean): void {
+    this._state.combat.started = value;
+    this._ctrl.events.combatStarted(value);
+  }
+  
+  public setActiveUnitId(): void {
+    this._initiativeRating = _.orderBy(
+      _.union(
+        this._userSquad.getState().units,
+        //this._enemySquad.getState().units
+      ).map(unit => {
+        return { unitId: unit.unitId, initiative: unit.initiative };
+      }),
+      ["initiative", "desc"]
+    );
+
+    const unitId = this._initiativeRating[0].unitId;
+    this._state.combat.activeUnitId = unitId;
+    this._ctrl.events.activeUnitId(unitId);
   }
   
   // TODO

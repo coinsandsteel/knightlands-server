@@ -75,6 +75,10 @@ export class Unit {
     return this._power;
   }
 
+  get initiative(): number {
+    return this._characteristics.initiative;
+  }
+
   constructor(blueprint: BattleUnit) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();

@@ -1883,3 +1883,87 @@ export const UNIT_EXP_TABLE = [
     34400
   ],
 ];
+
+export const TERRAIN = [
+  [
+    { terrainId: "45c43rv", terrainClass: battle.TERRAIN_GRASS, index: 0 },
+    {
+      terrainId: "v34vt34",
+      terrainClass: battle.TERRAIN_GRASS_SWAMP,
+      index: 1
+    },
+    {
+      terrainId: "c4c435t",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 2
+    },
+    { terrainId: "1", terrainClass: battle.TERRAIN_GRASS_HILL, index: 3 },
+    { terrainId: "2", terrainClass: battle.TERRAIN_GRASS, index: 4 },
+    { terrainId: "3", terrainClass: battle.TERRAIN_GRASS, index: 5 },
+    {
+      terrainId: "4",
+      terrainClass: battle.TERRAIN_GRASS_SWAMP_X,
+      index: 6
+    },
+    {
+      terrainId: "5",
+      terrainClass: battle.TERRAIN_GRASS_SWAMP_Y,
+      index: 7
+    },
+    {
+      terrainId: "6",
+      terrainClass: battle.TERRAIN_GRASS_SWAMP_Y,
+      index: 8
+    },
+    {
+      terrainId: "7",
+      terrainClass: battle.TERRAIN_GRASS_SWAMP_Z,
+      index: 9
+    },
+    { terrainId: "8", terrainClass: battle.TERRAIN_GRASS, index: 10 },
+    { terrainId: "8", terrainClass: battle.TERRAIN_GRASS, index: 11 },
+    { terrainId: "9", terrainClass: battle.TERRAIN_GRASS, index: 12 },
+    { terrainId: "10", terrainClass: battle.TERRAIN_GRASS, index: 13 },
+    {
+      terrainId: "11",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 14
+    },
+    {
+      terrainId: "12",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 15
+    },
+    {
+      terrainId: "13",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 16
+    },
+    { terrainId: "14", terrainClass: battle.TERRAIN_GRASS, index: 17 },
+    { terrainId: "15", terrainClass: battle.TERRAIN_GRASS, index: 18 },
+    { terrainId: "16", terrainClass: battle.TERRAIN_GRASS, index: 19 },
+    { terrainId: "17", terrainClass: battle.TERRAIN_GRASS, index: 20 },
+    { terrainId: "18", terrainClass: battle.TERRAIN_GRASS, index: 21 },
+    { terrainId: "19", terrainClass: battle.TERRAIN_GRASS, index: 22 },
+    { terrainId: "20", terrainClass: battle.TERRAIN_GRASS, index: 23 },
+    { terrainId: "21", terrainClass: battle.TERRAIN_GRASS, index: 24 },
+    {
+      terrainId: "22",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 25
+    },
+    { terrainId: "23", terrainClass: battle.TERRAIN_GRASS, index: 26 },
+    { terrainId: "24", terrainClass: battle.TERRAIN_GRASS, index: 27 },
+    {
+      terrainId: "25",
+      terrainClass: battle.TERRAIN_GRASS_WOODS,
+      index: 28
+    },
+    { terrainId: "26", terrainClass: battle.TERRAIN_GRASS, index: 29 },
+    { terrainId: "27", terrainClass: battle.TERRAIN_GRASS, index: 30 },
+    { terrainId: "28", terrainClass: battle.TERRAIN_GRASS, index: 31 },
+    { terrainId: "29", terrainClass: battle.TERRAIN_GRASS, index: 32 },
+    { terrainId: "30", terrainClass: battle.TERRAIN_GRASS, index: 33 },
+    { terrainId: "31", terrainClass: battle.TERRAIN_GRASS, index: 34 }
+  ]
+];

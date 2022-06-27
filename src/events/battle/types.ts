@@ -86,6 +86,7 @@ export interface BattleCombatState {
   started: boolean;
   result: string|null; // "win" | "loose"
   isMyTurn: boolean|null;
+  activeUnitId: string|null;
   runtime: {
     unitId: string|null;
     selectedIndex: number|null;
