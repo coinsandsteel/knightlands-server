@@ -16,6 +16,7 @@ import {
 
 export class Unit {
   protected _template: number;
+  protected _fighterId: string;
   protected _unitId: string;
   protected _unitTribe: string; // 15
   protected _unitClass: string; // 5
@@ -56,6 +57,10 @@ export class Unit {
     return this._unitClass;
   }
 
+  get fighterId(): string {
+    return this._fighterId;
+  }
+
   get unitId(): string {
     return this._unitId;
   }
@@ -85,6 +90,10 @@ export class Unit {
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
     this._unitClass = blueprint.unitClass;
+    
+    if ("fighterId" in blueprint) {
+      this._fighterId = blueprint.fighterId;
+    }
     
     if ("tier" in blueprint) {
       this._tier = blueprint.tier;
@@ -167,6 +176,8 @@ export class Unit {
 
     if ("hp" in blueprint) {
       this._hp = blueprint.hp;
+    } else {
+      this._hp = this._characteristics.hp;
     }
 
     if ("buffs" in blueprint) {
@@ -174,6 +185,10 @@ export class Unit {
     }
 
     this.setPower();
+  }
+
+  public regenerateFighterId(): void {
+    this._fighterId = uuidv4().split('-').pop();
   }
 
   protected getAbilityValue(ability: string, level?: number): number|null {
@@ -247,6 +262,7 @@ export class Unit {
 
     const squadUnit = {
       template: this._template,
+      fighterId: this._fighterId,
       unitId: this._unitId,
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,

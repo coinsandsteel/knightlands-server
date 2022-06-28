@@ -62,11 +62,12 @@ export class BattleSquad {
       throw errors.IncorrectArguments;
     }
     
-    const unit = this._ctrl.inventory.getUnitById(unitId) as Unit;
+    const unit = _.cloneDeep(this._ctrl.inventory.getUnitById(unitId) as Unit);
     if (!unit) {
-      console.log(this._ctrl.inventory.unitIds);
-      throw errors.IncorrectArguments;
+      throw Error("Unit not found");
     }
+
+    unit.regenerateFighterId();
 
     // Fill slot
     this._units[index] = unit;
@@ -98,12 +99,16 @@ export class BattleSquad {
   }
   
   public proxyUnit(unitId: string): void {
-    const index = this._units.findIndex(unitEntry => unitEntry.unitId === unitId)
-    if (index === -1) {
-      return;
+    for (let index = 0; index < 5; index++) {
+      if (
+        this._units[index]
+        &&
+        this._units[index].unitId === unitId
+      ) {
+        this.fillSlot(unitId, index);
+      }
     }
 
-    this.fillSlot(unitId, index);
     this._ctrl.events.userSquad(this._state);
   }
   

@@ -160,13 +160,13 @@ export class BattleController {
     this._events.flush();
   }
   
-  async unitChoose(unitId: string) {
-    this._battleGame.unitChoose(unitId);
+  async chooseFighter(fighterId: string) {
+    this._battleGame.chooseFighter(fighterId);
     this._events.flush();
   }
 
-  async apply(unitId: string, index: number, ability?: string) {
-    this._battleGame.apply(unitId, index, ability);
+  async apply(fighterId: string, index: number, ability?: string) {
+    this._battleGame.apply(fighterId, index, ability);
     this._events.flush();
   }
 
@@ -213,12 +213,10 @@ export class BattleController {
         break;
       }
       case 'increaseUnitExp':{
-        // unitId
         this._battleInventory.addExp(data.unitId, 100);
         break;
       }
       case 'buildSquad':{
-        // unitId
         this._battleGame.buildSquad();
         break;
       }

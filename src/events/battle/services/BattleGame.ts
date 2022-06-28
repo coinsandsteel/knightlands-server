@@ -52,9 +52,9 @@ export class BattleGame {
         started: false,
         result: null, // "win" | "loose"
         isMyTurn: null,
-        activeUnitId: null,
+        activeFighterId: null,
         runtime: {
-          unitId: null,
+          fighterId: null,
           selectedIndex: null,
           selectedAbilityClass: null,
           moveCells: [],
@@ -200,17 +200,17 @@ export class BattleGame {
         this._userSquad.getState().units,
         //this._enemySquad.getState().units
       ).map(unit => {
-        return { unitId: unit.unitId, initiative: unit.initiative };
+        return { fighterId: unit.fighterId, initiative: unit.initiative };
       }),
       ["initiative", "desc"]
     );
 
-    const unitId = this._initiativeRating[0].unitId;
-    this._state.combat.activeUnitId = unitId;
-    this._ctrl.events.activeUnitId(unitId);
+    const fighterId = this._initiativeRating[0].fighterId;
+    this._state.combat.activeFighterId = fighterId;
+    this._ctrl.events.activeFighterId(fighterId);
   }
   
-  public unitChoose(unitId: string): void {
+  public chooseFighter(fighterId: string): void {
     const attackCells = [...Array(5)].map(e=> _.random(0, 34));
     const moveCells = [...Array(5)].map(e=> _.random(0, 34));
     this._ctrl.events.combatAttackCells(attackCells);
@@ -218,7 +218,7 @@ export class BattleGame {
   }
   
   // TODO
-  public apply(unitId: string, index: number, ability?: string): void {
+  public apply(fighterId: string, index: number, ability?: string): void {
     
   }
   

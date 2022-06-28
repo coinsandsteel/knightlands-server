@@ -70,34 +70,6 @@ export class BattleUser {
     this._ctrl.events.balance(this._state.balance);
   }
 
-  public async testAction(data) {
-    switch (data.action) {
-      case 'addUnit':{
-        // unitId
-        break;
-      }
-      case 'increaseUnitExp':{
-        // unitId
-        break;
-      }
-      case 'decreaseUnitExp':{
-        // unitId
-        break;
-      }
-      case 'increaseAbilityLevel':{
-        // unitId
-        // abilityClass
-        break;
-      }
-      case 'decreaseAbilityLevel':{
-        // unitId
-        // abilityClass
-        break;
-      }
-    }
-    return;
-  }
-
   public claimDailyReward(): void {
 
   }

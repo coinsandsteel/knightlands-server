@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import game from "../../game";
 import events from "../../knightlands-shared/events";
-import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleSquadUnitUpdate, BattleTerrainCell } from "./types";
+import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainCell } from "./types";
 import { Unit } from "./units/Unit";
 
 export class BattleEvents {
@@ -76,18 +76,18 @@ export class BattleEvents {
     this._events.enemySquad = squad;
   }
 
-  userSquadUnit(data: BattleSquadUnitUpdate) {
-    if (this._events.userSquadUnit === undefined) {
-      this._events.userSquadUnit = [];
+  userFighter(data: BattleFighterUpdate) {
+    if (this._events.userFighter === undefined) {
+      this._events.userFighter = [];
     }
-    this._events.userSquadUnit.push(data);
+    this._events.userFighter.push(data);
   }
 
-  enemySquadUnit(data: BattleSquadUnitUpdate) {
-    if (this._events.enemySquadUnit === undefined) {
-      this._events.enemySquadUnit = [];
+  enemyFighter(data: BattleFighterUpdate) {
+    if (this._events.enemyFighter === undefined) {
+      this._events.enemyFighter = [];
     }
-    this._events.enemySquadUnit.push(data);
+    this._events.enemyFighter.push(data);
   }
 
   terrain(terrain: BattleTerrainCell[]) {
@@ -98,8 +98,8 @@ export class BattleEvents {
     this._events.combatStarted = value;
   }
 
-  activeUnitId(value: string) {
-    this._events.activeUnitId = value;
+  activeFighterId(value: string) {
+    this._events.activeFighterId = value;
   }
 
   combatResult(value: string) {

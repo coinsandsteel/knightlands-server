@@ -41,6 +41,7 @@ export interface BattleUnit {
   unitTribe: string; // 15
   unitClass: string; // 5
   unitId?: string;
+  fighterId?: string;
   tier?: number; // 3, modify via merger (3 => 1)
   levelInt?: number;
   level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
@@ -86,9 +87,9 @@ export interface BattleCombatState {
   started: boolean;
   result: string|null; // "win" | "loose"
   isMyTurn: boolean|null;
-  activeUnitId: string|null;
+  activeFighterId: string|null;
   runtime: {
-    unitId: string|null;
+    fighterId: string|null;
     selectedIndex: number|null;
     selectedAbilityClass: string|null;
     moveCells: number[];
@@ -102,8 +103,8 @@ export interface BattleSquadState {
   units: BattleUnit[];
 }
 
-export interface BattleSquadUnitUpdate {
-  unitId: string;
+export interface BattleFighterUpdate {
+  fighterId: string;
   index?: number; // 0-34
   hp?: number;
   abilities?: BattleUnitAbility[];
