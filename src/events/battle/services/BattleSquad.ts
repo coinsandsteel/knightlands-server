@@ -169,4 +169,11 @@ export class BattleSquad {
     });
     this.syncUnits();
   }
+
+  public regenerateFighterIds(): void {
+    this._units.forEach((unit, index) => {
+      unit.regenerateFighterId();
+    });
+    this.syncUnits();
+  }
 }

@@ -151,6 +151,7 @@ export class BattleGame {
     
     // Prepare enemy squad
     this._enemySquad.setInitialIndexes(true);
+    this._enemySquad.regenerateFighterIds();
     this._state.enemySquad = this._enemySquad.getState();
     this._ctrl.events.enemySquad(this._state.enemySquad);
     
@@ -170,7 +171,6 @@ export class BattleGame {
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
         const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
-        unit.regenerateFighterId();
         squads[tier-1].push(unit.serializeForSquad());
       }
     }
