@@ -161,6 +161,7 @@ export class BattleGame {
 
     // Start combat
     this.setCombatStarted(true);
+    this.createInitiativeRating();
     this.setActiveUnitId();
   }
   
@@ -196,21 +197,51 @@ export class BattleGame {
   }
   
   public setActiveUnitId(): void {
+    let fighterId = null;
+    const index = this._initiativeRating.findIndex(entry => entry.active === true);
+
+    if (index === -1) {
+      fighterId = this._initiativeRating[0].fighterId;
+      this._initiativeRating[0].active = true;
+    } else {
+      this._initiativeRating[index].active = false;
+      if (this._initiativeRating[index+1]) {
+        this._initiativeRating[index+1].active = true;
+      } else {
+        this._initiativeRating[0].active = true;
+      }
+    }
+
+    this._state.combat.activeFighterId = fighterId;
+    this._ctrl.events.activeFighterId(fighterId);
+  }
+  
+  public createInitiativeRating(): void{
     this._initiativeRating = _.orderBy(
       _.union(
         this._userSquad.getState().units,
         //this._enemySquad.getState().units
       ).map(unit => {
-        return { fighterId: unit.fighterId, initiative: unit.initiative };
+        return {
+          fighterId: unit.fighterId,
+          initiative: unit.initiative,
+          active: false
+        };
       }),
       ["initiative", "desc"]
     );
-
-    const fighterId = this._initiativeRating[0].fighterId;
-    this._state.combat.activeFighterId = fighterId;
-    this._ctrl.events.activeFighterId(fighterId);
   }
-  
+
+  public refreshInitiativeRating(){
+    if (!this._initiativeRating) {
+      return;
+    }
+    this._initiativeRating = _.orderBy(
+      this._initiativeRating, 
+      ["initiative", "desc"]
+    );
+  }
+
   public chooseFighter(fighterId: string): void {
     const attackCells = [...Array(5)].map(e=> _.random(0, 34));
     const moveCells = [...Array(5)].map(e=> _.random(0, 34));
@@ -234,7 +265,8 @@ export class BattleGame {
     // Adjust characteristics
     // Send effects
 
-    //  Apply squad bonuses
+    // Apply squad bonuses
+    // Launch next unit turn
   }
   
   public skip(): void {}
