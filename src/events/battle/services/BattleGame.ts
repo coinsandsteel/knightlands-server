@@ -170,6 +170,7 @@ export class BattleGame {
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
         const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
+        unit.regenerateFighterId();
         squads[tier-1].push(unit.serializeForSquad());
       }
     }
@@ -217,9 +218,24 @@ export class BattleGame {
     this._ctrl.events.combatMoveCells(moveCells);
   }
   
-  // TODO
-  public apply(fighterId: string, index: number, ability?: string): void {
+  public apply(fighterId: string, index: number|null, ability: string|null): void {
+    // Find a fighter
+    const fighter = 
+
+    // Move
+    // Calc the path
+
+    // Check ability cooldown
+    // Attack
+    // Deal damage
+    // Send effects
     
+    // Check ability cooldown
+    // Buff
+    // Adjust characteristics
+    // Send effects
+
+    //  Apply squad bonuses
   }
   
   public skip(): void {}

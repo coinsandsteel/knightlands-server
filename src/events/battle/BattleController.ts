@@ -165,7 +165,7 @@ export class BattleController {
     this._events.flush();
   }
 
-  async apply(fighterId: string, index: number, ability?: string) {
+  async apply(fighterId: string, index: number|null, ability: string|null) {
     this._battleGame.apply(fighterId, index, ability);
     this._events.flush();
   }
