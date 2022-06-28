@@ -220,7 +220,6 @@ export class BattleGame {
   
   public apply(fighterId: string, index: number|null, ability: string|null): void {
     // Find a fighter
-    const fighter = 
 
     // Move
     // Calc the path
