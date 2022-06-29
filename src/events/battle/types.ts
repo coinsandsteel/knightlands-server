@@ -126,7 +126,7 @@ export interface BattleTerrainCell {
 
 export interface BattleUnitAbility {
   abilityClass: string; // 
-  abilityGroup: string; //
+  abilityType: string; //
   tier: number;
   levelInt?: number;
   level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up

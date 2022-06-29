@@ -501,70 +501,78 @@ export const ABILITIES = {
       [8, 9, 11],
     ],
   },
-};
-
-export const ABILITY_GROUPS = {
-  [battle.ABILITY_HEAL]: null, // ???
-  [battle.ABILITY_GROUP_HEAL]: null, // ???
-  
-  [battle.ABILITY_DASH]: battle.ABILITY_GROUP_JUMP,
-  [battle.ABILITY_FLIGHT]: battle.ABILITY_GROUP_JUMP,
-  [battle.ABILITY_RUSH]: battle.ABILITY_GROUP_JUMP,
-  [battle.ABILITY_TELEPORTATION]: battle.ABILITY_GROUP_JUMP,
-  
-  [battle.ABILITY_MIGHT]: battle.ABILITY_GROUP_BUFF,
-  [battle.ABILITY_SHIELD]: battle.ABILITY_GROUP_BUFF,
-  [battle.ABILITY_WIND_WALK]: battle.ABILITY_GROUP_BUFF,
-  
-  [battle.ABILITY_CURSE]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_FROZEN_ABYSS]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_HAMSTRING]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_LAZINESS]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_SHIELD_STUN]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_STUN]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_STUN_SHOT]: battle.ABILITY_GROUP_DE_BUFF,
-  [battle.ABILITY_WEAKNESS]: battle.ABILITY_GROUP_DE_BUFF,
-  
-  [battle.ABILITY_HEAVY_ARROW]: battle.ABILITY_GROUP_SELF_BUFF,
-  [battle.ABILITY_RAGE]: battle.ABILITY_GROUP_SELF_BUFF,
-  [battle.ABILITY_SHIELD_WALL]: battle.ABILITY_GROUP_SELF_BUFF,
-  [battle.ABILITY_ZEALOT]: battle.ABILITY_GROUP_SELF_BUFF,
-  
-  [battle.ABILITY_ACCURATE_SHOT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_AGRESSION]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_ARROW_CRUSH]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_AXE_BLOW]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_AXE_CRUSH]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_BLADE_VORTEX]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_CRUSH_OF_DOOM]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_DARK_VORTEX]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_DEATH_SHOT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_DOUBLE_SHOT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_DRAGON_BITE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_DRAGON_FURY]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_ENERGY_BOLT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_FATAL_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_FIRE_BLADE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_FLAME_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_FROST_BLADE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_FURY_CLAWS]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_HEAVY_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_HOLY_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_HUMMER_BLOW]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_HURRICANE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_JAVELIN_THROW]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_KUNAI_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_LETHAL_SHOT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_LETHAL_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_MORTAL_BLOW]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_POWER_SHOT]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_POWER_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_RETRIBUTION]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_SHIELD_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_SPEAR_STRIKE]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_STRONG_PUNCH]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_SWORD_CRUSH]: battle.ABILITY_GROUP_ATTACK,
-  [battle.ABILITY_WOLF_BITE]: battle.ABILITY_GROUP_ATTACK,
+  other: {
+    [battle.ABILITY_SHIELD]: [
+      [14, 16, 18, 20, 22],
+      [18, 21, 24, 26, 29],
+      [25, 28, 32, 36, 39],
+    ],
+    [battle.ABILITY_CURSE]: [
+      [14, 16, 18, 20, 22],
+      [18, 21, 24, 26, 29],
+      [25, 28, 32, 36, 39],
+    ],
+    [battle.ABILITY_AGRESSION]: [
+      [14, 16, 18, 20, 22],
+      [18, 21, 24, 26, 29],
+      [25, 28, 32, 36, 39],
+    ],
+    [battle.ABILITY_FLIGHT]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_RAGE]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_ZEALOT]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_DASH]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_HEAVY_ARROW]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_MIGHT]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_TELEPORTATION]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_WEAKNESS]: [
+      null,
+      [30, 34, 38, 42],
+      [40, 45, 51, 56],
+    ],
+    [battle.ABILITY_SHIELD_WALL]: [
+      null,
+      null,
+      [52, 63, 74],
+    ],
+    [battle.ABILITY_WIND_WALK]: [
+      null,
+      null,
+      [52, 63, 74],
+    ],
+    [battle.ABILITY_LAZINESS]: [
+      null,
+      null,
+      [52, 63, 74],
+    ],
+  },
 };
 
 export const UNITS = [
@@ -810,7 +818,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_GROUP_HEAL,
+      battle.ABILITY_TYPE_HEALING,
     ]
   },
   // battle.UNIT_TRIBE_ORC
@@ -963,7 +971,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_GROUP_HEAL,
+      battle.ABILITY_TYPE_HEALING,
     ]
   },
   // battle.UNIT_TRIBE_SKELETON
@@ -1065,7 +1073,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_GROUP_HEAL,
+      battle.ABILITY_TYPE_HEALING,
     ]
   },
   // battle.UNIT_TRIBE_ICE
@@ -1167,7 +1175,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_GROUP_HEAL,
+      battle.ABILITY_TYPE_HEALING,
     ]
   },
   // battle.UNIT_TRIBE_ELDRITCH

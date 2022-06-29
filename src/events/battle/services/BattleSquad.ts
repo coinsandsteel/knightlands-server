@@ -120,7 +120,7 @@ export class BattleSquad {
     let stat = {};
 
     this._units.forEach(unit => {
-      console.log("Bonuses", { unit });
+      //console.log("Bonuses", { unit });
       stat = {
         ...stat, 
         [unit.tribe]: { 
@@ -143,7 +143,7 @@ export class BattleSquad {
 
     this._state.bonuses = bonuses;
 
-    console.log("Squad bonuses", { bonuses });
+    //console.log("Squad bonuses", { bonuses });
   }
   
   protected setPower(): void {
@@ -175,5 +175,9 @@ export class BattleSquad {
       unit.regenerateFighterId();
     });
     this.syncUnits();
+  }
+
+  public getFighter(fighterId: string): Unit|null {
+    return this._units.find(unit => unit.fighterId === fighterId) || null;
   }
 }

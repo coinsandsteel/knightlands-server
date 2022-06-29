@@ -1,8 +1,9 @@
 import _ from "lodash";
-import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState } from "../types";
+import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
 
 export class BattleGame {
@@ -243,6 +244,7 @@ export class BattleGame {
   }
 
   public chooseFighter(fighterId: string): void {
+    // TODO calc move and atack cells
     const attackCells = [...Array(5)].map(e=> _.random(0, 34));
     const moveCells = [...Array(5)].map(e=> _.random(0, 34));
     this._ctrl.events.combatAttackCells(attackCells);
@@ -251,24 +253,66 @@ export class BattleGame {
   
   public apply(fighterId: string, index: number|null, ability: string|null): void {
     // Find a fighter
+    const fighter = this._userSquad.getFighter(fighterId);
+    if (!fighter) {
+      return;
+    }
 
-    // Move
-    // Calc the path
-
-    // Check ability cooldown
-    // Attack
-    // Deal damage
-    // Send effects
-    
-    // Check ability cooldown
-    // Buff
-    // Adjust characteristics
-    // Send effects
-
-    // Apply squad bonuses
-    // Launch next unit turn
+    this.handleAction(fighter, index, ability);
   }
   
+  protected handleAction(fighter: Unit, index: number|null, ability: string|null): void {
+    console.log('handleAction', { fighter, index, ability });
+
+    // Check if unit can use ability
+    // Check ability cooldown
+    if (
+      ability
+      &&
+      !fighter.canUseAbility(ability)
+    ) {
+      return;
+    }
+
+    const abilityType = ability ? ABILITY_TYPES[ability] : null;
+    
+    // Move
+    if (index !== null && ability === null) {
+      // Calc the path
+      // Check if unit allowed to move there
+      // Launch move, calc if there's any obstacles
+      // Add obstacles effects
+      // Change unit's index
+      // Send effects
+
+    // Heal
+    } else if (index !== null && abilityType === ABILITY_TYPE_HEALING) {
+      
+    // Group heal
+    } else if (index === null && abilityType === ABILITY_TYPE_HEALING) {
+      
+    // Jump
+    } else if (index !== null && abilityType === ABILITY_TYPE_JUMP) {
+      
+    // Buff / De-buff
+    } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
+      // Adjust characteristics
+      // Apply squad bonuses
+      
+      // Self-buff
+    } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF) {
+      // Adjust characteristics
+      // Apply squad bonuses
+      
+    // Attack
+    } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK) {
+      // Deal damage
+    }
+
+    // Send effects
+    // Launch next unit turn
+  }
+
   public skip(): void {}
 
   public exit(): void {}

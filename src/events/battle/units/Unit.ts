@@ -1,10 +1,9 @@
 import _ from "lodash";
-import { isThisTypeNode } from "typescript";
 import { v4 as uuidv4 } from "uuid";
-import { UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPES, UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
-  ABILITY_GROUPS, ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
+  ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
   UNIT_EXP_TABLE,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
@@ -146,7 +145,7 @@ export class Unit {
         let tier = index + 1;
         return {
           abilityClass,
-          abilityGroup: _.cloneDeep(ABILITY_GROUPS[abilityClass]),
+          abilityType: _.cloneDeep(ABILITY_TYPES[abilityClass]),
           tier,
           levelInt: !index ? 1 : 0,
           level: {
@@ -248,7 +247,7 @@ export class Unit {
     const abilities = this._abilities.map(ability => {
       return {
         abilityClass: ability.abilityClass,
-        abilityGroup: ability.abilityGroup,
+        abilityType: ability.abilityType,
         tier: ability.tier,
         value: ability.value,
         enabled: ability.enabled,
@@ -409,5 +408,18 @@ export class Unit {
       throw Error("Unit index overflow");
     }
     this._index = index;
+  }
+
+  public canUseAbility(ability: string): boolean {
+    if (!this._abilityList.includes(ability)) {
+      return false;
+    }
+    
+    const abilityEntry = this._abilities.find(entry => entry.abilityClass === ability);
+    if (abilityEntry && abilityEntry.cooldown && abilityEntry.cooldown.enabled) {
+      return false;
+    }
+
+    return true;
   }
 }
