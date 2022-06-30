@@ -8,6 +8,7 @@ import { BattleUser } from './BattleUser';
 import { BattleGame } from './services/BattleGame';
 import { BattleInventory } from './services/BattleInventory';
 import { BattleSaveData } from './types';
+import { BattleMovement } from "./services/BattleMovement";
 
 const isProd = process.env.ENV == "prod";
 
@@ -20,9 +21,11 @@ export class BattleController {
   protected _battleUser: BattleUser;
   protected _battleGame: BattleGame;
   protected _battleInventory: BattleInventory;
+  protected _battleMovement: BattleMovement;
   
   constructor(user: User) {
     this._events = new BattleEvents(user.id);
+    this._battleMovement = new BattleMovement(this);
     this._user = user;
   }
   
@@ -36,6 +39,10 @@ export class BattleController {
   
   get inventory(): BattleInventory {
     return this._battleInventory;
+  }
+  
+  get movement(): BattleMovement {
+    return this._battleMovement;
   }
   
   get user(): BattleUser {

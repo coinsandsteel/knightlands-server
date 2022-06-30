@@ -11,6 +11,10 @@ export class BattleSquad {
 
   protected _units: Unit[];
 
+  get units(): Unit[] {
+    return this._units;
+  }
+  
   constructor(units: BattleUnit[]|null, ctrl: BattleController) {
     this._ctrl = ctrl;
 

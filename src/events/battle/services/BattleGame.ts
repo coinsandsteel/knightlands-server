@@ -38,6 +38,10 @@ export class BattleGame {
     return this._state.combat.started;
   }
 
+  get allUnits(): Unit[] {
+    return [...this._userSquad.units, ...this._enemySquad.units];
+  }
+
   protected setInitialState() {
     this._state = {
       mode: null,
@@ -244,11 +248,19 @@ export class BattleGame {
   }
 
   public chooseFighter(fighterId: string): void {
-    // TODO calc move and atack cells
-    const attackCells = [...Array(5)].map(e=> _.random(0, 34));
-    const moveCells = [...Array(5)].map(e=> _.random(0, 34));
-    this._ctrl.events.combatAttackCells(attackCells);
+    // Find a fighter
+    const fighter = this._userSquad.getFighter(fighterId);
+    if (!fighter) {
+      return;
+    }
+
+    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    fighter.setMoveCells(moveCells);
     this._ctrl.events.combatMoveCells(moveCells);
+    
+    /*const attackCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    fighter.setAttackCells();
+    this._ctrl.events.combatAttackCells(fighter.attackCells);*/
   }
   
   public apply(fighterId: string, index: number|null, ability: string|null): void {
@@ -278,12 +290,7 @@ export class BattleGame {
     
     // Move
     if (index !== null && ability === null) {
-      // Calc the path
-      // Check if unit allowed to move there
-      // Launch move, calc if there's any obstacles
-      // Add obstacles effects
-      // Change unit's index
-      // Send effects
+      fighter.move(index);
 
     // Heal
     } else if (index !== null && abilityType === ABILITY_TYPE_HEALING) {

@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { ABILITY_TYPES, UNIT_CLASS_SUPPORT } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
@@ -36,13 +36,15 @@ export class Unit {
   
   // Combat
   protected _hp: number;
-  protected _damage: number;
-  protected _defence: number;
-  protected _initiative: number;
-  protected _speed: number;
-
   protected _index: number;
   protected _buffs: BattleBuff[];
+
+  protected _moveCells: number[];
+  protected _attackCells: number[];
+
+  get index(): number {
+    return this._index;
+  }
 
   get tier(): number {
     return this._tier;
@@ -78,6 +80,10 @@ export class Unit {
 
   get power(): number {
     return this._power;
+  }
+
+  get speed(): number {
+    return this._characteristics.speed;
   }
 
   get initiative(): number {
@@ -191,11 +197,18 @@ export class Unit {
   }
 
   protected getAbilityValue(ability: string, level?: number): number|null {
-    if (this._unitClass === UNIT_CLASS_SUPPORT) {
-      return 1;
-    }
+    const abilities =  _.cloneDeep(ABILITIES);
+    const abilityData = (
+      (abilities[this._unitClass] ? abilities[this._unitClass][ability] : null)
+      ||
+      (abilities.other[ability] || null)
+    );
 
-    const abilityData = _.cloneDeep(ABILITIES[this._unitClass][ability]);
+    console.log("getAbilityValue", {
+      byUnitClass: (abilities[this._unitClass] ? abilities[this._unitClass][ability] : null),
+      byAbility: ABILITIES.other[ability] || null
+    });
+    
     if (!abilityData) {
       return 1;
     }
@@ -421,5 +434,20 @@ export class Unit {
     }
 
     return true;
+  }
+
+  public move(index: number): void {
+    // Calc the path
+
+    // Check if unit allowed to move there
+    // Launch move, calc if there's any obstacles
+    // Add obstacles effects
+    // Change unit's index
+    // Send effects
+    this._index = index;
+  }
+
+  public setMoveCells(cells: number[]): void {
+    this._moveCells = cells;
   }
 }
