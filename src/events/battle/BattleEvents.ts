@@ -114,7 +114,8 @@ export class BattleEvents {
     this._events.combatAttackCells = value;
   }
 
-  effect(data) {
-    this._events.effect = data;
+  effect(payload) {
+    this._events.effects = this._events.effects || [];
+    this._events.effects.push(payload);
   }
 }

@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { BattleController } from "../BattleController";
+import { Unit } from "../units/Unit";
 const Graph = require('node-dijkstra');
 
 export class BattleMovement {
@@ -54,7 +55,6 @@ export class BattleMovement {
         continue;
       }
       let path = this.getPath(unitIndex, index);
-      console.log("getRangeCells", { unitIndex, range, path });
       if (
         path 
         && 
@@ -106,5 +106,29 @@ export class BattleMovement {
 
   public getAbsoluteIndex(vIndex: number, hIndex: number): number {
     return (vIndex * 5) + hIndex;
+  }
+
+  public moveFighter(fighter: Unit, index: number): void {
+    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    if (!moveCells.includes(index)) {
+      return;
+    }
+
+    // Launch move, calc if there's any obstacles
+
+    // Add obstacles effects
+
+    // Change unit's index
+    fighter.setIndex(index);
+
+    // Send effects
+    this._ctrl.events.effect({
+      action: "move",
+      fighterId: fighter.fighterId,
+      newIndex: index
+    });
+
+    // Void move cells
+    this._ctrl.events.combatMoveCells([]);
   }
 }

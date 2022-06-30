@@ -90,6 +90,10 @@ export class Unit {
     return this._characteristics.initiative;
   }
 
+  get moveCells(): number[] {
+    return this._moveCells;
+  }
+
   constructor(blueprint: BattleUnit) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
@@ -421,6 +425,7 @@ export class Unit {
       throw Error("Unit index overflow");
     }
     this._index = index;
+    this._moveCells = [];
   }
 
   public canUseAbility(ability: string): boolean {
@@ -436,18 +441,17 @@ export class Unit {
     return true;
   }
 
-  public move(index: number): void {
-    // Calc the path
+  public canMoveToCell(index: number): boolean {
+    if (
+      !this._moveCells
+      ||
+      !this._moveCells.length
+      ||
+      !this._moveCells.includes(index)
+    ) {
+      return false;
+    }
 
-    // Check if unit allowed to move there
-    // Launch move, calc if there's any obstacles
-    // Add obstacles effects
-    // Change unit's index
-    // Send effects
-    this._index = index;
-  }
-
-  public setMoveCells(cells: number[]): void {
-    this._moveCells = cells;
+    return true;
   }
 }

@@ -255,7 +255,6 @@ export class BattleGame {
     }
 
     const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
-    fighter.setMoveCells(moveCells);
     this._ctrl.events.combatMoveCells(moveCells);
     
     /*const attackCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
@@ -290,7 +289,7 @@ export class BattleGame {
     
     // Move
     if (index !== null && ability === null) {
-      fighter.move(index);
+      this._ctrl.movement.moveFighter(fighter, index);
 
     // Heal
     } else if (index !== null && abilityType === ABILITY_TYPE_HEALING) {
@@ -316,7 +315,6 @@ export class BattleGame {
       // Deal damage
     }
 
-    // Send effects
     // Launch next unit turn
   }
 
