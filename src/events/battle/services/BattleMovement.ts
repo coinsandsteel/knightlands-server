@@ -5,56 +5,78 @@ const Graph = require('node-dijkstra');
 
 export class BattleMovement {
   protected _ctrl: BattleController;
-  protected route;
-  protected graph;
+  protected routes;
+  protected graphs;
 
   constructor (ctrl: BattleController){
     this._ctrl = ctrl;
 
-    this.setGraph();
-    this.route = new Graph(this.graph);
+    this.setGraphs();
+
+    this.routes = {
+      rook: new Graph(this.graphs.rook),
+      queen: new Graph(this.graphs.queen)
+    };
   }
 
-  protected setGraph(): void{
-    let graph = {};
-    for (let index = 0; index < 35; index++) {
-      graph[index] = {};
-      let indexCoords = this.getIndex(index);
-      for (let neighbor = 0; neighbor < 35; neighbor++) {
-        if (index === neighbor) continue;
-        let neighborCoords = this.getIndex(neighbor);
-        if (
-          // Queen mode
-          /*[-1, 0, 1].includes(indexCoords.horizontal - neighborCoords.horizontal)
-          &&
-          [-1, 0, 1].includes(indexCoords.vertical - neighborCoords.vertical)*/
-          (
-            Math.abs(indexCoords.horizontal - neighborCoords.horizontal) === 1
+  protected setGraphs(): void{
+    let graphs = {};
+
+    ["queen", "rook"].forEach(scheme => {
+      graphs[scheme] = {};
+
+      for (let index = 0; index < 35; index++) {
+        graphs[scheme][index] = {};
+        let indexCoords = this.getIndex(index);
+
+        for (let neighbor = 0; neighbor < 35; neighbor++) {
+          if (index === neighbor) continue;
+          let neighborCoords = this.getIndex(neighbor);
+          
+          // Queen scheme
+          if (
+            scheme === "queen"
             &&
-            indexCoords.vertical === neighborCoords.vertical
-          )
-          ||
-          (
-            Math.abs(indexCoords.vertical - neighborCoords.vertical) === 1
+            [-1, 0, 1].includes(indexCoords.horizontal - neighborCoords.horizontal)
             &&
-            indexCoords.horizontal === neighborCoords.horizontal
-          )
-        ) {
-          graph[index][neighbor] = 1;
+            [-1, 0, 1].includes(indexCoords.vertical - neighborCoords.vertical)
+            ) {
+              graphs[scheme][index][neighbor] = 1;
+            }
+            
+          // Rook scheme
+          if (
+            scheme === "rook"
+            &&
+            (
+              (
+                Math.abs(indexCoords.horizontal - neighborCoords.horizontal) === 1
+                &&
+                indexCoords.vertical === neighborCoords.vertical
+              )
+              ||
+              (
+                Math.abs(indexCoords.vertical - neighborCoords.vertical) === 1
+                &&
+                indexCoords.horizontal === neighborCoords.horizontal
+              )
+            )
+          ) {
+            graphs[scheme][index][neighbor] = 1;
+          }
         }
       }
-    }
-    this.graph = graph;
-    //console.log("setGraph", { graph });
+      });
+    this.graphs = graphs;
   }
 
-  public getRangeCells(unitIndex: number, range: number): number[] {
+  public getRangeCells(unitIndex: number, range: number, scheme: string): number[] {
     const result = [];
     for (let index = 0; index < 35; index++) {
       if (index === unitIndex) {
         continue;
       }
-      let path = this.getPath(unitIndex, index);
+      let path = this.getPath(unitIndex, index, scheme);
       if (
         path 
         && 
@@ -66,12 +88,12 @@ export class BattleMovement {
     return result;
   }
 
-  public getPath(from: number, to: number): any {
+  public getPath(from: number, to: number, scheme: string): any {
     const avoidNodes = this._ctrl.game.allUnits
       .filter(unit => ![from, to].includes(unit.index))
       .map(unit => `${unit.index}`);
 
-    const path = this.route.path(`${from}`, `${to}`, { trim: true, avoid: avoidNodes });
+    const path = this.routes[scheme].path(`${from}`, `${to}`, { trim: true, avoid: avoidNodes });
     return path;
   }
 
@@ -109,7 +131,7 @@ export class BattleMovement {
   }
 
   public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    const moveCells = this.getRangeCells(fighter.index, fighter.speed, "rook");
     if (!moveCells.includes(index)) {
       return;
     }

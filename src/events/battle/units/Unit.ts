@@ -4,6 +4,7 @@ import { ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
+  UNITS,
   UNIT_EXP_TABLE,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
@@ -82,12 +83,20 @@ export class Unit {
     return this._power;
   }
 
+  get hp(): number {
+    return this._hp;
+  }
+
   get speed(): number {
     return this._characteristics.speed;
   }
 
   get initiative(): number {
     return this._characteristics.initiative;
+  }
+
+  get defence(): number {
+    return this._characteristics.defence;
   }
 
   get moveCells(): number[] {
@@ -429,7 +438,8 @@ export class Unit {
   }
 
   public canUseAbility(ability: string): boolean {
-    if (!this._abilityList.includes(ability)) {
+    const unitMeta = UNITS.find(unitData => unitData.template === this._template);
+    if (!unitMeta.abilityList.includes(ability)) {
       return false;
     }
     
@@ -453,5 +463,16 @@ export class Unit {
     }
 
     return true;
+  }
+
+  public modifyHp(value: number): void {
+    this._hp += value;
+    if (this._hp <= 0) {
+      this.destroy();
+    }
+  };
+
+  public destroy(): void {
+
   }
 }

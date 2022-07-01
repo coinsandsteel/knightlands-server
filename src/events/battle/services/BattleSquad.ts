@@ -162,6 +162,10 @@ export class BattleSquad {
     return this._units.findIndex(unit => unit.unitId === unitId) !== -1;
   }
 
+  public includesFighter(fighterId: string): boolean {
+    return this._units.findIndex(unit => unit.fighterId === fighterId) !== -1;
+  }
+
   protected updateStat(): void {
     this.setBonuses();
     this.setPower();

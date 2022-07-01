@@ -1,5 +1,11 @@
 import * as battle from "./../../knightlands-shared/battle";
 
+export const SETTINGS = {
+  moveScheme: "rook",
+  attackScheme: "queen",
+  jumpScheme: "queen"
+};
+
 export const CHARACTERISTICS = {
   [battle.UNIT_CLASS_MELEE]: [
     // Tier 1
@@ -1027,7 +1033,7 @@ export const UNITS = [
   },
     // battle.UNIT_TRIBE_CLOCKWORK
   {
-    template: 35,
+    template: 45,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1037,7 +1043,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 36,
+    template: 46,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1047,7 +1053,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 37,
+    template: 47,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1057,7 +1063,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 38,
+    template: 48,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1067,7 +1073,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 39,
+    template: 49,
     unitTribe: battle.UNIT_TRIBE_CLOCKWORK,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1078,7 +1084,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_ICE
   {
-    template: 40,
+    template: 50,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1088,7 +1094,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 41,
+    template: 51,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1098,7 +1104,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 42,
+    template: 52,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1108,7 +1114,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 43,
+    template: 53,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1118,7 +1124,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 44,
+    template: 54,
     unitTribe: battle.UNIT_TRIBE_ICE,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1129,7 +1135,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_ELF
   {
-    template: 45,
+    template: 55,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_RANGE,
     abilityList: [
@@ -1139,7 +1145,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 46,
+    template: 56,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1149,7 +1155,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 47,
+    template: 57,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_RANGE,
     abilityList: [
@@ -1159,7 +1165,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 48,
+    template: 58,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1169,7 +1175,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 49,
+    template: 59,
     unitTribe: battle.UNIT_TRIBE_ELF,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1180,7 +1186,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_ELDRITCH
   {
-    template: 50,
+    template: 60,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_RANGE,
     abilityList: [
@@ -1190,7 +1196,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 51,
+    template: 61,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1200,7 +1206,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 52,
+    template: 62,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1210,7 +1216,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 53,
+    template: 63,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1220,7 +1226,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 54,
+    template: 64,
     unitTribe: battle.UNIT_TRIBE_ELDRITCH,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1231,7 +1237,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_FALLEN_KING
   {
-    template: 55,
+    template: 65,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_RANGE,
     abilityList: [
@@ -1241,7 +1247,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 56,
+    template: 66,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1251,7 +1257,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 57,
+    template: 67,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1261,7 +1267,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 58,
+    template: 68,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1271,7 +1277,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 59,
+    template: 69,
     unitTribe: battle.UNIT_TRIBE_FALLEN_KING,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1282,7 +1288,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_LEGENDARY
   {
-    template: 60,
+    template: 70,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MAGE,
     abilityList: [
@@ -1292,7 +1298,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 61,
+    template: 71,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1302,7 +1308,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 62,
+    template: 72,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1312,7 +1318,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 63,
+    template: 73,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1322,7 +1328,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 64,
+    template: 74,
     unitTribe: battle.UNIT_TRIBE_LEGENDARY,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [
@@ -1333,7 +1339,7 @@ export const UNITS = [
   },
   // battle.UNIT_TRIBE_TITAN
   {
-    template: 65,
+    template: 75,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_RANGE,
     abilityList: [
@@ -1343,7 +1349,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 66,
+    template: 76,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1353,7 +1359,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 67,
+    template: 77,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_MELEE,
     abilityList: [
@@ -1363,7 +1369,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 68,
+    template: 78,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_TANK,
     abilityList: [
@@ -1373,7 +1379,7 @@ export const UNITS = [
     ]
   },
   {
-    template: 69,
+    template: 79,
     unitTribe: battle.UNIT_TRIBE_TITAN,
     unitClass: battle.UNIT_CLASS_SUPPORT,
     abilityList: [

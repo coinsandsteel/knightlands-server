@@ -1,18 +1,23 @@
 import _ from "lodash";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { SQUAD_BONUSES, TERRAIN } from "../meta";
+import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
 import { Unit } from "../units/Unit";
+import { BattleCombat } from "./BattleCombat";
+import { BattleMovement } from "./BattleMovement";
 import { BattleSquad } from "./BattleSquad";
 
 export class BattleGame {
   protected _state: BattleGameState;
   protected _ctrl: BattleController;
-
+  
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
   protected _enemyOptions: any[][];
+
+  protected _combat: BattleCombat;
+  protected _movement: BattleMovement;
 
   constructor(state: BattleGameState|null, ctrl: BattleController) {
     this._ctrl = ctrl;
@@ -31,6 +36,18 @@ export class BattleGame {
     } else {
       this.setInitialState();
     }
+
+    this._movement = new BattleMovement(this._ctrl);
+    this._combat = new BattleCombat(this._ctrl);
+  }
+
+  get relativeEnemySquad(): Unit[] {
+    const index = this._userSquad.units.findIndex(unit => unit.fighterId === this._state.combat.activeFighterId);
+    return index !== -1 ? this._enemySquad.units : this._userSquad.units;
+  }
+
+  get movement(): BattleMovement {
+    return this._movement;
   }
 
   get combatStarted(): boolean {
@@ -229,21 +246,27 @@ export class BattleGame {
     this._ctrl.events.activeFighterId(fighterId);
 
     // Find a fighter
-    const fighter = this._userSquad.getFighter(fighterId);
+    const fighter = this._userSquad.getFighter(fighterId) || this._enemySquad.getFighter(fighterId) || null;
     if (!fighter) {
       return;
     }
 
-    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
     this._ctrl.events.combatMoveCells(moveCells);
     this._ctrl.events.combatAttackCells([]);
+
+    console.log("Active fighter is", fighter);
+
+    if (this._enemySquad.includesFighter(fighterId)) {
+      setTimeout(() => this.nextFighter(), 1000);
+    }
   }
   
   public createInitiativeRating(): void{
     this._state.initiativeRating = _.orderBy(
       _.union(
         this._userSquad.getState().units,
-        //this._enemySquad.getState().units
+        this._enemySquad.getState().units
       ).map(unit => {
         return {
           fighterId: unit.fighterId,
@@ -277,8 +300,9 @@ export class BattleGame {
       return;
     }
 
-    const rangeCells = this._ctrl.movement.getRangeCells(fighter.index, 1);
-    this._ctrl.events.combatAttackCells(rangeCells);
+    const attackCells = this._combat.getAttackCells(fighter, abilityClass);
+    this._ctrl.events.combatAttackCells(attackCells);
+    this._ctrl.events.combatMoveCells([]);
   }
 
   public apply(index: number|null, ability: string|null): void {
@@ -310,37 +334,46 @@ export class BattleGame {
     }
 
     const abilityType = ability ? ABILITY_TYPES[ability] : null;
-    
+    const target = index === null ? null : this.getFighterByIndex(index);
+
     // Move
-    if (index !== null && ability === null) {
-      this._ctrl.movement.moveFighter(fighter, index);
+    if (index !== null && ability === null && target === null) {
+      this._movement.moveFighter(fighter, index);
 
     // Heal
-    } else if (index !== null && abilityType === ABILITY_TYPE_HEALING) {
+    } else if (index !== null && abilityType === ABILITY_TYPE_HEALING && target !== null) {
       
     // Group heal
     } else if (index === null && abilityType === ABILITY_TYPE_HEALING) {
       
     // Jump
-    } else if (index !== null && abilityType === ABILITY_TYPE_JUMP) {
+    } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
       
     // Buff / De-buff
-    } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
+    } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
       // Adjust characteristics
       // Apply squad bonuses
       
-      // Self-buff
-    } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF) {
+    // Self-buff
+    } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
       // Adjust characteristics
       // Apply squad bonuses
-      
+       
     // Attack
-    } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK) {
+    } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK && target !== null) {
       // Deal damage
+      this._combat.attack(fighter, index, ability);
     }
 
     // Launch next unit turn
     this.nextFighter();
+  }
+
+  public getFighterByIndex(index: number): Unit|null {
+    return _.union(
+      this._userSquad.units,
+      this._enemySquad.units
+    ).find(unit => unit.index === index) || null;
   }
 
   public skip(): void {}
