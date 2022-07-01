@@ -78,9 +78,16 @@ export interface BattleGameState {
 
   userSquad: BattleSquadState;
   enemySquad: BattleSquadState;
+  initiativeRating: BattleInitiativeRatingEntry[];
 
   terrain: BattleTerrainCell[];
   combat: BattleCombatState;
+}
+
+export interface BattleInitiativeRatingEntry {
+  fighterId: string;
+  initiative: number;
+  active: boolean;
 }
 
 export interface BattleCombatState {
@@ -89,7 +96,6 @@ export interface BattleCombatState {
   isMyTurn: boolean|null;
   activeFighterId: string|null;
   runtime: {
-    fighterId: string|null;
     selectedIndex: number|null;
     selectedAbilityClass: string|null;
     moveCells: number[];

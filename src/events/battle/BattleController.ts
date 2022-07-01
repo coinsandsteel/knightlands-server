@@ -119,7 +119,10 @@ export class BattleController {
     await this._battleUser.init();
     await this._battleGame.init();
     await this._battleInventory.init();
-    return this.getState();
+    
+    const state = this.getState();
+    delete state.game.initiativeRating;
+    return state;
   }
 
   async claimReward(type: string) {
@@ -172,8 +175,8 @@ export class BattleController {
     this._events.flush();
   }
 
-  async apply(fighterId: string, index: number|null, ability: string|null) {
-    this._battleGame.apply(fighterId, index, ability);
+  async apply(index: number|null, ability: string|null) {
+    this._battleGame.apply(index, ability);
     this._events.flush();
   }
 

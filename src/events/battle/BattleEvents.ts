@@ -15,6 +15,7 @@ export class BattleEvents {
   }
 
   flush() {
+    console.log("Event flush", this._events);
     game.emitPlayerEvent(this._userId, events.BattleUpdate, this._events);
     this._events = {};
   }

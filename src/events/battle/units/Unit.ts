@@ -208,10 +208,10 @@ export class Unit {
       (abilities.other[ability] || null)
     );
 
-    console.log("getAbilityValue", {
+    /*console.log("getAbilityValue", {
       byUnitClass: (abilities[this._unitClass] ? abilities[this._unitClass][ability] : null),
       byAbility: ABILITIES.other[ability] || null
-    });
+    });*/
     
     if (!abilityData) {
       return 1;

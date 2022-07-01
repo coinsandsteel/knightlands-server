@@ -2,7 +2,7 @@ import _ from "lodash";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES, TERRAIN } from "../meta";
-import { BattleGameState } from "../types";
+import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleSquad } from "./BattleSquad";
 
@@ -13,7 +13,6 @@ export class BattleGame {
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
   protected _enemyOptions: any[][];
-  protected _initiativeRating: any[];
 
   constructor(state: BattleGameState|null, ctrl: BattleController) {
     this._ctrl = ctrl;
@@ -51,6 +50,7 @@ export class BattleGame {
 
       userSquad: this._userSquad.getState(),
       enemySquad: this._enemySquad.getState(),
+      initiativeRating: [],
       terrain: [],
 
       combat: {
@@ -59,7 +59,6 @@ export class BattleGame {
         isMyTurn: null,
         activeFighterId: null,
         runtime: {
-          fighterId: null,
           selectedIndex: null,
           selectedAbilityClass: null,
           moveCells: [],
@@ -78,6 +77,9 @@ export class BattleGame {
   public init(): void {
     this._userSquad.init();
     this._enemySquad.init();
+    if (!this._state.initiativeRating ||!this._state.initiativeRating.length) {
+      this.createInitiativeRating();
+    }
   }
   
   public squadIncludesUnit(unitId: string): boolean {
@@ -167,7 +169,7 @@ export class BattleGame {
     // Start combat
     this.setCombatStarted(true);
     this.createInitiativeRating();
-    this.setActiveUnitId();
+    this.nextFighter();
   }
   
   public getDuelOptions() {
@@ -201,28 +203,43 @@ export class BattleGame {
     this._ctrl.events.combatStarted(value);
   }
   
-  public setActiveUnitId(): void {
+  public nextFighter(): void {
+    if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
+      return;
+    }
+
     let fighterId = null;
-    const index = this._initiativeRating.findIndex(entry => entry.active === true);
+    const index = this._state.initiativeRating.findIndex(entry => entry.active === true);
 
     if (index === -1) {
-      fighterId = this._initiativeRating[0].fighterId;
-      this._initiativeRating[0].active = true;
+      fighterId = this._state.initiativeRating[0].fighterId;
+      this._state.initiativeRating[0].active = true;
     } else {
-      this._initiativeRating[index].active = false;
-      if (this._initiativeRating[index+1]) {
-        this._initiativeRating[index+1].active = true;
+      this._state.initiativeRating[index].active = false;
+      if (this._state.initiativeRating[index+1]) {
+        fighterId = this._state.initiativeRating[index+1].fighterId;
+        this._state.initiativeRating[index+1].active = true;
       } else {
-        this._initiativeRating[0].active = true;
+        fighterId = this._state.initiativeRating[0].fighterId;
+        this._state.initiativeRating[0].active = true;
       }
     }
 
     this._state.combat.activeFighterId = fighterId;
     this._ctrl.events.activeFighterId(fighterId);
+
+    // Find a fighter
+    const fighter = this._userSquad.getFighter(fighterId);
+    if (!fighter) {
+      return;
+    }
+
+    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
+    this._ctrl.events.combatMoveCells(moveCells);
   }
   
   public createInitiativeRating(): void{
-    this._initiativeRating = _.orderBy(
+    this._state.initiativeRating = _.orderBy(
       _.union(
         this._userSquad.getState().units,
         //this._enemySquad.getState().units
@@ -231,18 +248,19 @@ export class BattleGame {
           fighterId: unit.fighterId,
           initiative: unit.initiative,
           active: false
-        };
+        } as BattleInitiativeRatingEntry;
       }),
       ["initiative", "desc"]
     );
+    //console.log("createInitiativeRating", { initiativeRating: this._state.initiativeRating });
   }
 
   public refreshInitiativeRating(){
-    if (!this._initiativeRating) {
+    if (!this._state.initiativeRating) {
       return;
     }
-    this._initiativeRating = _.orderBy(
-      this._initiativeRating, 
+    this._state.initiativeRating = _.orderBy(
+      this._state.initiativeRating, 
       ["initiative", "desc"]
     );
   }
@@ -261,19 +279,24 @@ export class BattleGame {
     fighter.setAttackCells();
     this._ctrl.events.combatAttackCells(fighter.attackCells);*/
   }
-  
-  public apply(fighterId: string, index: number|null, ability: string|null): void {
+
+  public apply(index: number|null, ability: string|null): void {
+    if (!this._state.combat.activeFighterId) {
+      return;
+    }
+
     // Find a fighter
-    const fighter = this._userSquad.getFighter(fighterId);
+    const fighter = this._userSquad.getFighter(this._state.combat.activeFighterId);
     if (!fighter) {
       return;
     }
 
     this.handleAction(fighter, index, ability);
+    //console.log(this._userSquad.units);
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null): void {
-    console.log('handleAction', { fighter, index, ability });
+    //console.log('handleAction', { fighter, index, ability });
 
     // Check if unit can use ability
     // Check ability cooldown
@@ -316,6 +339,7 @@ export class BattleGame {
     }
 
     // Launch next unit turn
+    this.nextFighter();
   }
 
   public skip(): void {}
