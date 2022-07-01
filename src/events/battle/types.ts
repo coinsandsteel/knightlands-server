@@ -138,6 +138,7 @@ export interface BattleUnitAbility {
   level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
   value?: number;
   enabled?: boolean;
+  range?: number;
   cooldown?: {
     enabled: boolean;
     stepsLeft: number;

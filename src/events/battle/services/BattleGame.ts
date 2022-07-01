@@ -236,6 +236,7 @@ export class BattleGame {
 
     const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
     this._ctrl.events.combatMoveCells(moveCells);
+    this._ctrl.events.combatAttackCells([]);
   }
   
   public createInitiativeRating(): void{
@@ -265,19 +266,19 @@ export class BattleGame {
     );
   }
 
-  public chooseFighter(fighterId: string): void {
+  public chooseAbility(abilityClass: string): void {
     // Find a fighter
-    const fighter = this._userSquad.getFighter(fighterId);
+    const fighter = this._userSquad.getFighter(this._state.combat.activeFighterId);
     if (!fighter) {
       return;
     }
 
-    const moveCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
-    this._ctrl.events.combatMoveCells(moveCells);
-    
-    /*const attackCells = this._ctrl.movement.getRangeCells(fighter.index, fighter.speed);
-    fighter.setAttackCells();
-    this._ctrl.events.combatAttackCells(fighter.attackCells);*/
+    if (!fighter.canUseAbility(abilityClass)) {
+      return;
+    }
+
+    const rangeCells = this._ctrl.movement.getRangeCells(fighter.index, 1);
+    this._ctrl.events.combatAttackCells(rangeCells);
   }
 
   public apply(index: number|null, ability: string|null): void {

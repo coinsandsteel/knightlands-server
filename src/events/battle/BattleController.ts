@@ -170,8 +170,8 @@ export class BattleController {
     this._events.flush();
   }
   
-  async chooseFighter(fighterId: string) {
-    this._battleGame.chooseFighter(fighterId);
+  async chooseAbility(abilityclass: string) {
+    this._battleGame.chooseAbility(abilityclass);
     this._events.flush();
   }
 
