@@ -12,7 +12,7 @@ export class BattleCombat {
   }
 
   public attack(fighter: Unit, index: number, abilityClass: string): void {
-    const attackCells = this.getAttackCells(fighter, abilityClass);
+    const attackCells = this.getAttackCells(fighter, abilityClass, true);
     if (!attackCells.includes(index)) {
       return;
     }
@@ -29,7 +29,8 @@ export class BattleCombat {
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
-    fighter.modifyHp(-damage);
+    const oldHp = enemy.hp;
+    enemy.modifyHp(-damage);
 
     // TODO simple hit
     // TODO critical hit
@@ -44,6 +45,7 @@ export class BattleCombat {
       target: {
         fighterId: enemy.fighterId,
         index: enemy.index,
+        oldHp,
         newHp: enemy.hp
       },
       ability: {
@@ -93,11 +95,14 @@ export class BattleCombat {
     }
   }
 
-  public getAttackCells(fighter: Unit, abilityClass: string): number[] {
+  public getAttackCells(fighter: Unit, abilityClass: string, onlyTargets: boolean): number[] {
     const rangeData = this.getRangeAndScheme(fighter, abilityClass);
     const rangeCells = this._ctrl.game.movement.getRangeCells(fighter.index, rangeData.range, rangeData.scheme);
-    return rangeCells;
-    //const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
-    //return _.intersection(rangeCells, enemyCells);
+    if (onlyTargets) {
+      const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
+      return _.intersection(rangeCells, enemyCells);
+    } else {
+      return rangeCells;
+    }
   }
 }

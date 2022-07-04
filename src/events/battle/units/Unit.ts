@@ -472,6 +472,14 @@ export class Unit {
     }
   };
 
+  public strongestEnabledAbility(): string {
+    const enabledAbilities = this._abilities.filter(entry => {
+      return entry.enabled && (!entry.cooldown || !entry.cooldown.enabled)
+    }).map(entry => entry.abilityClass);
+    
+    return _.last(enabledAbilities);
+  }
+
   public destroy(): void {
 
   }

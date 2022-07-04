@@ -251,15 +251,19 @@ export class BattleGame {
       return;
     }
 
-    const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
-    this._ctrl.events.combatMoveCells(moveCells);
-    this._ctrl.events.combatAttackCells([]);
-
-    console.log("Active fighter is", fighter);
-
+    const isEnemy = this._enemySquad.includesFighter(fighterId);
+    console.log("Active fighter is", { fighterId: fighter.fighterId, isEnemy });
+    
     if (this._enemySquad.includesFighter(fighterId)) {
-      setTimeout(() => this.nextFighter(), 1000);
+      this._ctrl.events.combatMoveCells([]);
+      this.autoMove(fighter);
+    } else {
+      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      this._ctrl.events.combatMoveCells(moveCells);
     }
+    this._ctrl.events.combatAttackCells([]);
+    
+    this._ctrl.events.flush();
   }
   
   public createInitiativeRating(): void{
@@ -296,13 +300,18 @@ export class BattleGame {
       return;
     }
 
-    if (!fighter.canUseAbility(abilityClass)) {
-      return;
+    if (abilityClass === "move") {
+      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      this._ctrl.events.combatMoveCells(moveCells);
+      this._ctrl.events.combatAttackCells([]);
+    } else {
+      if (!fighter.canUseAbility(abilityClass)) {
+        return;
+      }
+      const attackCells = this._combat.getAttackCells(fighter, abilityClass, false);
+      this._ctrl.events.combatAttackCells(attackCells);
+      this._ctrl.events.combatMoveCells([]);
     }
-
-    const attackCells = this._combat.getAttackCells(fighter, abilityClass);
-    this._ctrl.events.combatAttackCells(attackCells);
-    this._ctrl.events.combatMoveCells([]);
   }
 
   public apply(index: number|null, ability: string|null): void {
@@ -316,12 +325,30 @@ export class BattleGame {
       return;
     }
 
-    this.handleAction(fighter, index, ability);
+    this.handleAction(fighter, index, ability, false);
     //console.log(this._userSquad.units);
   }
   
-  protected handleAction(fighter: Unit, index: number|null, ability: string|null): void {
-    //console.log('handleAction', { fighter, index, ability });
+  public autoMove(fighter: Unit): void {
+    let ability = null;
+    let index = null;
+
+    const attackCells = this._combat.getAttackCells(fighter, ability, true);
+    if (attackCells.length) {
+      ability = fighter.strongestEnabledAbility();
+      index = _.sample(attackCells);
+      console.log('Auto attack', { attackCells, index });
+    } else {
+      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      index = _.sample(moveCells);
+      console.log('Auto move', { moveCells, index });
+    }
+
+    this.handleAction(fighter, index, ability, true);
+  }
+  
+  protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
+    console.log('handleAction', { fighter: fighter.fighterId, index, ability });
 
     // Check if unit can use ability
     // Check ability cooldown
@@ -365,8 +392,10 @@ export class BattleGame {
       this._combat.attack(fighter, index, ability);
     }
 
+    this._ctrl.events.flush();
+
     // Launch next unit turn
-    this.nextFighter();
+    setTimeout(() => this.nextFighter(), timeout ? 1500 : 0);
   }
 
   public getFighterByIndex(index: number): Unit|null {

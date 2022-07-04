@@ -1,5 +1,5 @@
 import Game from "../../game";
-import * as battle from "../../knightlands-shared/battle";
+import * as battle from "../../../src/knightlands-shared/battle";
 import User from "../../user";
 
 import random from "../../random";
@@ -171,7 +171,6 @@ export class BattleController {
 
   async apply(index: number|null, ability: string|null) {
     this._battleGame.apply(index, ability);
-    this._events.flush();
   }
 
   async skip() {
