@@ -1,6 +1,5 @@
 import _ from "lodash";
-import { ReturnDocument } from "mongodb";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
@@ -406,7 +405,7 @@ export class BattleGame {
       throw errors.IncorrectArguments;
     }
 
-    if (ability && ability !== ABILITY_ATACK) {
+    if (ability && ability !== ABILITY_ATTACK) {
       fighter.enableAbilityCooldown(ability);
       console.log("Cooldown set", fighter.getAbilityByClass(ability));
     }
