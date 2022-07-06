@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPE_ATTACK, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
+import { ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
@@ -11,42 +11,104 @@ export class BattleCombat {
     this._ctrl = ctrl;
   }
 
-  public attack(fighter: Unit, index: number, abilityClass: string): void {
-    const attackCells = this.getAttackCells(fighter, abilityClass, true);
-    if (!attackCells.includes(index)) {
+  public groupHeal(source: Unit, abilityClass: string): void {
+    const squad = this._ctrl.game.getSquadByFighter(source);
+    const targets = squad.units;
+    targets.forEach(target => {
+      if (this.canAffect(source, target, abilityClass)) {
+        this.heal(source, target, abilityClass);
+      }
+    });
+  }
+
+  public heal(source: Unit, target: Unit, abilityClass: string): void {
+    if (!this.canAffect(source, target, abilityClass)) {
       return;
     }
 
-    const enemy = this._ctrl.game.getFighterByIndex(index);
-    if (!enemy) {
-      console.log("No enemy at the cell", index);
+    const abilityData = source.getAbilityByClass(abilityClass);
+    const value = abilityData.value;
+    const oldHp = target.hp;
+    target.modifyHp(+value);
+
+    this._ctrl.events.effect({
+      action: ABILITY_TYPE_HEALING,
+      source: {
+        fighterId: source.fighterId,
+        index: source.index
+      },
+      target: {
+        fighterId: target.fighterId,
+        index: target.index,
+        oldHp,
+        newHp: target.hp
+      },
+      ability: {
+        abilityClass,
+        value,
+        criticalHit: false
+      }
+    });
+  }
+
+  public buff(source: Unit, target: Unit, abilityClass: string): void {
+    if (!this.canAffect(source, target, abilityClass)) {
+      return;
+    }
+    
+    // Adjust characteristics
+    // Apply squad bonuses
+    const buffAdded = target.buff(abilityClass);
+    if (buffAdded) {
+      const abilityType = ABILITY_TYPES[abilityClass];
+      this._ctrl.events.effect({
+        action: abilityType,
+        source: {
+          fighterId: source.fighterId,
+          index: source.index
+        },
+        target: {
+          fighterId: target.fighterId,
+          index: target.index
+        },
+        buff: {
+          abilityClass,
+          type: "speed_reduce",
+          value: 1.1,
+          stepsLeft: 1
+        }
+      });
+    }
+  }
+
+  public attack(source: Unit, target: Unit, abilityClass: string): void {
+    if (!this.canAffect(source, target, abilityClass)) {
       return;
     }
 
-    const abilityData = fighter.getAbilityByClass(abilityClass);
+    const abilityData = source.getAbilityByClass(abilityClass);
     const dmgBase = abilityData.value;
-    const defBase = enemy.defence;
+    const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
-    const oldHp = enemy.hp;
-    enemy.modifyHp(-damage);
+    const oldHp = target.hp;
+    target.modifyHp(-damage);
 
-    // TODO simple hit
-    // TODO critical hit
-    // TODO cooldown
+    // TODO add simple hit into meta
+    // TODO critical hit logic
 
     this._ctrl.events.effect({
       action: ABILITY_TYPE_ATTACK,
       source: {
-        fighterId: fighter.fighterId,
-        index: fighter.index
+        fighterId: source.fighterId,
+        index: source.index
       },
       target: {
-        fighterId: enemy.fighterId,
-        index: enemy.index,
+        fighterId: target.fighterId,
+        index: target.index,
         oldHp,
-        newHp: enemy.hp
+        newHp: target.hp
       },
       ability: {
         abilityClass,
@@ -93,6 +155,11 @@ export class BattleCombat {
         }
       }
     }
+  }
+
+  public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
+    const attackCells = this.getAttackCells(source, abilityClass, true);
+    return attackCells.includes(target.index);
   }
 
   public getAttackCells(fighter: Unit, abilityClass: string, onlyTargets: boolean): number[] {

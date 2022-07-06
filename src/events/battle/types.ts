@@ -142,7 +142,6 @@ export interface BattleUnitAbility {
   cooldown?: {
     enabled: boolean;
     stepsLeft: number;
-    stepsMax: number;
   }
 }
 
@@ -156,7 +155,9 @@ export interface BattleUnitAttribute {
 export interface BattleBuff {
   abilityClass: string;
   type: string;
-  target: string;
+  value: number;
+  probability: number;
+  duration: number;
 }
 
 export interface BattleSquadBonus {

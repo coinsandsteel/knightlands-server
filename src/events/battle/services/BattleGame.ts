@@ -1,5 +1,7 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL } from "../../../knightlands-shared/battle";
+import { ReturnDocument } from "mongodb";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL } from "../../../knightlands-shared/battle";
+import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
@@ -154,6 +156,14 @@ export class BattleGame {
   }
   
   public enterDuel(difficulty: string): void {
+    if (
+      !this._userSquad.units.length 
+      || 
+      !this._enemySquad.units.length
+    ) {
+      return;
+    }
+
     // Set game mode and difficulty
     this.setMode(GAME_MODE_DUEL);
     this.setDifficulty(difficulty);
@@ -366,30 +376,39 @@ export class BattleGame {
     // Move
     if (index !== null && ability === null && target === null) {
       this._movement.moveFighter(fighter, index);
-
+      
     // Heal
     } else if (index !== null && abilityType === ABILITY_TYPE_HEALING && target !== null) {
-      
+      this._combat.heal(fighter, target, ability);
+
     // Group heal
-    } else if (index === null && abilityType === ABILITY_TYPE_HEALING) {
-      
+    } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
+      this._combat.groupHeal(fighter, ability);
+
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
+      this._movement.moveFighter(fighter, index);
       
     // Buff / De-buff
     } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
-      // Adjust characteristics
-      // Apply squad bonuses
+      this._combat.buff(fighter, target, ability);
       
     // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
-      // Adjust characteristics
-      // Apply squad bonuses
-       
+      this._combat.buff(fighter, fighter, ability);
+      
     // Attack
     } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK && target !== null) {
       // Deal damage
-      this._combat.attack(fighter, index, ability);
+      this._combat.attack(fighter, target, ability);
+
+    } else {
+      throw errors.IncorrectArguments;
+    }
+
+    if (ability && ability !== ABILITY_ATACK) {
+      fighter.enableAbilityCooldown(ability);
+      console.log("Cooldown set", fighter.getAbilityByClass(ability));
     }
 
     this._ctrl.events.flush();
@@ -403,6 +422,16 @@ export class BattleGame {
       this._userSquad.units,
       this._enemySquad.units
     ).find(unit => unit.index === index) || null;
+  }
+
+  public getSquadByFighter(fighter: Unit): BattleSquad {
+    if (this._userSquad.includesFighter(fighter.fighterId)) {
+      return this._userSquad;
+    }
+    if (this._enemySquad.includesFighter(fighter.fighterId)) {
+      return this._enemySquad;
+    }
+    throw errors.IncorrectArguments;
   }
 
   public skip(): void {}

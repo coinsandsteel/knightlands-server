@@ -1981,3 +1981,21 @@ export const TERRAIN = [
     { terrainId: "31", terrainClass: battle.TERRAIN_GRASS, index: 34 }
   ]
 ];
+
+export const ABILITY_COOLDOWN = [
+  [5, null, null], // 1
+  [5, null, null], // 2
+  [5, 5, null], // 3
+  [4, 5, null], // 4
+  [4, 5, 5], // 5
+  [4, 4, 5], // 6
+  [3, 4, 5], // 7
+  [3, 4, 5], // 8
+  [3, 3, 5], // 9
+  [3, 3, 4], // 10
+  [3, 3, 4], // 11
+  [3, 3, 4], // 12
+  [3, 3, 4], // 13
+  [3, 3, 4], // 14
+  [3, 3, 3], // 15
+];

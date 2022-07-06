@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
+  ABILITY_COOLDOWN,
   ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
   UNITS,
   UNIT_EXP_TABLE,
@@ -22,7 +23,7 @@ export class Unit {
   protected _unitClass: string; // 5
   protected _tier: number; // 3, modify via merger (3 => 1)
   protected _level: BattleLevelScheme; // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  protected _levelInt: Number;
+  protected _levelInt: number;
   protected _power: number;
   protected _expirience: {
     value: number;
@@ -190,6 +191,8 @@ export class Unit {
 
     if ("index" in blueprint) {
       this._index = blueprint.index;
+    } else {
+      this._index = null;
     }
 
     if ("hp" in blueprint) {
@@ -200,6 +203,8 @@ export class Unit {
 
     if ("buffs" in blueprint) {
       this._buffs = blueprint.buffs;
+    } else {
+      this._buffs = [];
     }
 
     this.setPower();
@@ -464,6 +469,39 @@ export class Unit {
 
     return true;
   }
+
+  public enableAbilityCooldown(ability: string): void {
+    const abilityEntry = this.getAbilityByClass(ability);
+    if (
+      abilityEntry 
+      && 
+      abilityEntry.enabled
+      && 
+      (!abilityEntry.cooldown || !abilityEntry.cooldown.enabled)
+    ) {
+      abilityEntry.cooldown = {
+        enabled: true,
+        stepsLeft: ABILITY_COOLDOWN[this._levelInt-1][abilityEntry.tier-1] || 5
+      }
+    }
+  }
+
+  public buff(abilityClass: string): boolean {
+    const index = this._buffs.findIndex(buff => buff.abilityClass === abilityClass);
+    if (index !== -1) {
+      return false;
+    }
+
+    this._buffs.push({
+      abilityClass,
+      type: "speed_reduce",
+      value: 1.1,
+      probability: 0.5,
+      duration: 1
+    });
+
+    return true;
+  };
 
   public modifyHp(value: number): void {
     this._hp += value;
