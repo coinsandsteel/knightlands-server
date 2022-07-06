@@ -155,11 +155,7 @@ export class BattleGame {
   }
   
   public enterDuel(difficulty: string): void {
-    if (
-      !this._userSquad.units.length 
-      || 
-      !this._enemySquad.units.length
-    ) {
+    if (!this._userSquad.units.length) {
       return;
     }
 
