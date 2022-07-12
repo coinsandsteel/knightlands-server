@@ -234,6 +234,7 @@ export class Unit {
       return 1;
     }
 
+    // TODO use ability tier!!! sic...
     const abilityTierData = abilityData[this._tier - 1];
     if (!abilityTierData) {
       return null;
@@ -315,7 +316,7 @@ export class Unit {
   }
 
   public addExpirience(value): void {
-    if (this._level.next) {
+    if (this._level.next || this._level.current >= 45) {
       return;
     }
 
@@ -403,7 +404,7 @@ export class Unit {
     let innerTierLvl = level - 1 - 15 * boundary;
     let defence = defenceBase + base.defIncrement * innerTierLvl;
 
-    console.log({ level, defenceBase, innerTierLvl });
+    //console.log({ level, defenceBase, innerTierLvl });
 
     // speed
     let speed = base.speed;
@@ -440,10 +441,12 @@ export class Unit {
       this._abilities[abilityTier-1].level.current === 0
     ) {
       // Unlock tier 2 ability
+      let abilityData = this._abilities[abilityTier-1];
       this._abilities[abilityTier-1].enabled = true;
       this._abilities[abilityTier-1].level.current = 1;
       this._abilities[abilityTier-1].level.next = 2;
       this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
+      this._abilities[abilityTier-1].value = this.getAbilityValue(abilityData.abilityClass, 1);
       console.log("[Unit] Ability tier 2 unlocked");
     }
     
@@ -454,10 +457,12 @@ export class Unit {
       this._abilities[abilityTier-1].level.current === 0
       ) {
         // Unlock tier 3 ability
+        let abilityData = this._abilities[abilityTier-1];
         this._abilities[abilityTier-1].enabled = true;
         this._abilities[abilityTier-1].level.current = 1;
         this._abilities[abilityTier-1].level.next = 2;
         this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
+        this._abilities[abilityTier-1].value = this.getAbilityValue(abilityData.abilityClass, 1);
         console.log("[Unit] Ability tier 3 unlocked");
     }
   }
@@ -476,6 +481,7 @@ export class Unit {
     ability.level.current++;
     ability.level.next = ability.level.next + 1;
     ability.level.price = this.getAbilityUpgradePrice(ability.tier, ability.level.next);
+    ability.value = this.getAbilityValue(abilityClass, ability.level.current);
 
     this.setPower();
 

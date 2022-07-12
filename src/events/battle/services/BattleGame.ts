@@ -99,7 +99,7 @@ export class BattleGame {
       this.createInitiativeRating();
     }
 
-    [
+    /*[
       UNIT_CLASS_MELEE, 
       UNIT_CLASS_RANGE, 
       UNIT_CLASS_MAGE, 
@@ -112,7 +112,7 @@ export class BattleGame {
         console.log(`[${unitClass}] level: ${level}, hp: ${c.hp}, damage: ${c.damage}, defence: ${c.defence}, speed: ${c.speed}, initiative: ${c.initiative}`);
         level++;
       }
-    })
+    })*/
   }
   
   public squadIncludesUnit(unitId: string): boolean {
