@@ -3,10 +3,10 @@ import { v4 as uuidv4 } from "uuid";
 import { ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
-  ABILITY_COOLDOWN,
-  ABILITY_LEVEL_UP_PRICES, CHARACTERISTICS,
+  ABILITY_LEVEL_UP_PRICES, 
+  ABILITY_SCHEME, 
+  CHARACTERISTICS,
   UNITS,
-  UNIT_EXP_TABLE,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
 import {
@@ -143,7 +143,7 @@ export class Unit {
         value: 0,
         percentage: 0,
         currentLevelExp: 0,
-        nextLevelExp: _.cloneDeep(UNIT_EXP_TABLE[this._tier - 1][1])
+        nextLevelExp: this.getExpForLevel(2)
       };
     }
 
@@ -284,8 +284,7 @@ export class Unit {
         enabled: ability.enabled,
         cooldown: {
           enabled: false,
-          stepsLeft: 0,
-          stepsMax: 0
+          stepsLeft: 0
         }
       } as BattleUnitAbility;
     });
@@ -319,24 +318,24 @@ export class Unit {
 
     this._expirience.value += value;
 
-    let expTable = _.cloneDeep(UNIT_EXP_TABLE[this._tier - 1]);
-    let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES[this._tier - 1]);
+    let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES);
     
     let currentExp = this._expirience.value;
-    let currentLevel = this._level.current - 1;
+    let currentLevel = this._level.current;
     let newLevel = currentLevel + 1;
-    let currentLevelExpStart = expTable[currentLevel];
-    let currentLevelExpEnd = expTable[newLevel];
+    let currentLevelExpStart = this.getExpForLevel(currentLevel);
+    let currentLevelExpEnd = this.getExpForLevel(newLevel);
 
-    while (expTable[newLevel] <= this._expirience.value) {
-      currentLevelExpStart = expTable[newLevel];
-      currentLevelExpEnd = expTable[newLevel + 1];
+    while (this.getExpForLevel(newLevel) <= this._expirience.value) {
+      currentLevelExpStart = this.getExpForLevel(newLevel);
+      currentLevelExpEnd = this.getExpForLevel(newLevel + 1);
       newLevel++;
     }
 
     if (newLevel > currentLevel + 1) {
+      newLevel--;
       this._level.next = newLevel;
-      this._level.price = priceTable[newLevel-1];
+      this._level.price = priceTable[newLevel - 1];
     } else {
       this._level.next = null;
       this._level.price = null;
@@ -365,15 +364,15 @@ export class Unit {
     this._level.price = null;
 
     this.setPower();
-    this.unblockAbilities();
+    this.unlockAbilities();
 
     return true;
   }
 
-  protected unblockAbilities(): void {
+  protected unlockAbilities(): void {
     let abilityTier = 2;
     if (
-      this._level.current >= 3
+      this._level.current >= 16
       &&
       this._abilities[abilityTier-1].level.current === 0
     ) {
@@ -387,7 +386,7 @@ export class Unit {
     
     abilityTier = 3;
     if (
-      this._level.current >= 5
+      this._level.current >= 31
       &&
       this._abilities[abilityTier-1].level.current === 0
       ) {
@@ -426,7 +425,19 @@ export class Unit {
 
   public canUpgradeAbility(abilityClass: string): boolean {
     const ability = this.getAbilityByClass(abilityClass);
-    return !!ability && !!ability.level.next;
+    return (
+      !!ability 
+      &&
+      !!ability.level.next 
+      &&
+      (
+        (ability.tier === 1 && ability.level.current < 15)
+        ||
+        (ability.tier === 2 && ability.level.current < 8)
+        ||
+        (ability.tier === 3 && ability.level.current < 3)
+      )
+    );
   }
 
   public getAbilityByClass(abilityClass: string): BattleUnitAbility|null {
@@ -479,9 +490,10 @@ export class Unit {
       && 
       (!abilityEntry.cooldown || !abilityEntry.cooldown.enabled)
     ) {
+      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][abilityEntry.tier-1];
       abilityEntry.cooldown = {
         enabled: true,
-        stepsLeft: ABILITY_COOLDOWN[this._levelInt-1][abilityEntry.tier-1] || 5
+        stepsLeft: abilityScheme.cd
       }
     }
   }
@@ -516,6 +528,16 @@ export class Unit {
     }).map(entry => entry.abilityClass);
     
     return _.last(enabledAbilities);
+  }
+
+  public getExpForLevel(level: number): number {
+    let i = 0;
+    let exp = 0;
+    while (i < level) {
+      exp += i * 100;
+      i++;
+    }
+    return exp;
   }
 
   public destroy(): void {

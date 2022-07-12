@@ -1761,141 +1761,86 @@ export const ABILITY_LEVEL_UP_PRICES = [
   // Tier 1
   [
     0,
+    3,
     5,
-    10,
+    7,
+    9,
+    11,
+    13,
     15,
-    20
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29
   ],
   // Tier 2
   [
     0,
-    10,
     15,
-    20,
-    null
+    17,
+    19,
+    21,
+    23,
+    25,
+    27
   ],
   // Tier 3
   [
     0,
-    15,
-    20,
-    null,
-    null
+    30,
+    35
   ],
 ];
 
 export const UNIT_LEVEL_UP_PRICES = [
-  // Tier 1
-  [
-    0, // 0 > 1
-    100, // 1 > 2
-    200, // 2 > 3
-    300, 
-    400, 
-    500, 
-    600, 
-    700, 
-    800, 
-    900, 
-    1000, 
-    1100, 
-    1200, 
-    1300, 
-    1400, 
-  ],
-  // Tier 2
-  [
-    0,
-    200,
-    400,
-    600,
-    800,
-    1000,
-    1200,
-    1400,
-    1600,
-    1800,
-    2000,
-    2200,
-    2400,
-    2600,
-    2800,
-  ],
-  // Tier 3
-  [
-    0,
-    500,
-    800,
-    1100,
-    1400,
-    1700,
-    2000,
-    2300,
-    2600,
-    2900,
-    3200,
-    3500,
-    3800,
-    4100,
-    4400,
-  ],
-];
-
-export const UNIT_EXP_TABLE = [
-  // Tier 1
-  [
-    0, // 0 > 1
-    100, // 1 > 2
-    300, // 2 > 3
-    600,
-    1000,
-    1500,
-    2100,
-    2800,
-    3600,
-    4500,
-    5500,
-    6600,
-    7800,
-    9100,
-    10500
-  ],
-  // Tier 2
-  [
-    0,
-    200,
-    600,
-    1200,
-    2000,
-    3000,
-    4200,
-    5600,
-    7200,
-    9000,
-    11000,
-    13200,
-    15600,
-    18200,
-    21000
-  ],
-  // Tier 3
-  [
-    0,
-    500,
-    1300,
-    2400,
-    3800,
-    5500,
-    7500,
-    9800,
-    12400,
-    15300,
-    18500,
-    22000,
-    25800,
-    30000,
-    34400
-  ],
+  0,
+  150,
+  150,
+  150,
+  150, // lvl 5
+  450,
+  450,
+  450,
+  450,
+  450, // lvl 10
+  800,
+  800,
+  800,
+  800,
+  800, // lvl 15
+  1100,
+  1100,
+  1100,
+  1100,
+  1100, // lvl 20
+  1300,
+  1300,
+  1300,
+  1300,
+  1300, // lvl 25
+  1500,
+  1500,
+  1500,
+  1500,
+  1500, // lvl 30
+  2100,
+  2100,
+  2100,
+  2100,
+  2100, // lvl 35
+  2300,
+  2300,
+  2300,
+  2300,
+  2300, // lvl 40
+  2500,
+  2500,
+  2500,
+  2500,
+  2500, // lvl 45
 ];
 
 export const TERRAIN = [
@@ -1982,20 +1927,52 @@ export const TERRAIN = [
   ]
 ];
 
-export const ABILITY_COOLDOWN = [
-  [5, null, null], // 1
-  [5, null, null], // 2
-  [5, 5, null], // 3
-  [4, 5, null], // 4
-  [4, 5, 5], // 5
-  [4, 4, 5], // 6
-  [3, 4, 5], // 7
-  [3, 4, 5], // 8
-  [3, 3, 5], // 9
-  [3, 3, 4], // 10
-  [3, 3, 4], // 11
-  [3, 3, 4], // 12
-  [3, 3, 4], // 13
-  [3, 3, 4], // 14
-  [3, 3, 3], // 15
+export const ABILITY_SCHEME = [
+  [{cd: 5, lvl: 1}, null, null], // unit lvl 1
+  [{cd: 5, lvl: 1}, null, null],
+  [{cd: 5, lvl: 1}, null, null],
+  [{cd: 4, lvl: 2}, null, null], // unit lvl 4
+  [{cd: 4, lvl: 2}, null, null], 
+  [{cd: 4, lvl: 2}, null, null], 
+  [{cd: 3, lvl: 3}, null, null], // unit lvl 7
+  [{cd: 3, lvl: 3}, null, null],
+  [{cd: 3, lvl: 3}, null, null],
+  [{cd: 3, lvl: 4}, null, null], // unit lvl 10
+  [{cd: 3, lvl: 4}, null, null], 
+  [{cd: 3, lvl: 4}, null, null], 
+  [{cd: 3, lvl: 5}, null, null], // unit lvl 13
+  [{cd: 3, lvl: 5}, null, null],
+  [{cd: 3, lvl: 5}, null, null],
+  
+  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null], // unit lvl 16
+  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null],
+  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null],
+  [{cd: 3, lvl: 7}, {cd: 5, lvl: 1}, null], // unit lvl 19
+  [{cd: 3, lvl: 7}, {cd: 4, lvl: 2}, null], // unit lvl 20
+  [{cd: 3, lvl: 7}, {cd: 4, lvl: 2}, null],
+  [{cd: 3, lvl: 8}, {cd: 4, lvl: 2}, null], // unit lvl 22
+  [{cd: 3, lvl: 8}, {cd: 4, lvl: 2}, null],
+  [{cd: 3, lvl: 8}, {cd: 3, lvl: 3}, null], // unit lvl 24
+  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null], // unit lvl 25
+  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null],
+  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null],
+  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null], // unit lvl 28
+  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null],
+  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null],
+
+  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 31
+  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}],
+  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}],
+  [{cd: 3, lvl: 12}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 34
+  [{cd: 3, lvl: 12}, {cd: 3, lvl: 6}, {cd: 5, lvl: 1}], // unit lvl 35
+  [{cd: 3, lvl: 12}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}], // unit lvl 36
+  [{cd: 3, lvl: 13}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}], // unit lvl 37
+  [{cd: 3, lvl: 13}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}],
+  [{cd: 3, lvl: 13}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 39
+  [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 40
+  [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}],
+  [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 3, lvl: 3}], // unit lvl 42
+  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}], // unit lvl 43
+  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
+  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
 ];
