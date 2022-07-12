@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
@@ -98,6 +98,21 @@ export class BattleGame {
     if (!this._state.initiativeRating ||!this._state.initiativeRating.length) {
       this.createInitiativeRating();
     }
+
+    [
+      UNIT_CLASS_MELEE, 
+      UNIT_CLASS_RANGE, 
+      UNIT_CLASS_MAGE, 
+      UNIT_CLASS_TANK, 
+      UNIT_CLASS_SUPPORT
+    ].forEach(unitClass => {
+      let level = 1;
+      while (level <= 45) {
+        const c = Unit.getCharacteristics(unitClass, level);
+        console.log(`[${unitClass}] level: ${level}, hp: ${c.hp}, damage: ${c.damage}, defence: ${c.defence}, speed: ${c.speed}, initiative: ${c.initiative}`);
+        level++;
+      }
+    })
   }
   
   public squadIncludesUnit(unitId: string): boolean {

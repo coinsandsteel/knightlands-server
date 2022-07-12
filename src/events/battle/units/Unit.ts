@@ -5,6 +5,8 @@ import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, 
   ABILITY_SCHEME, 
+  AVG_DMG, 
+  AVG_HP, 
   CHARACTERISTICS,
   UNITS,
   UNIT_LEVEL_UP_PRICES
@@ -134,6 +136,8 @@ export class Unit {
       this._levelInt = blueprint.levelInt;
     } else if ("level" in blueprint) {
       this._levelInt = blueprint.level.current;
+    } else {
+      this._levelInt = this._level.current;
     }
     
     if ("expirience" in blueprint) {
@@ -150,8 +154,7 @@ export class Unit {
     if ("characteristics" in blueprint) {
       this._characteristics = blueprint.characteristics;
     } else {
-      const characteristicsMeta = _.cloneDeep(CHARACTERISTICS[this._unitClass][this._tier - 1][this._level.current - 1]);
-      this._characteristics = {...this._characteristics, ...characteristicsMeta};
+      this._characteristics = Unit.getCharacteristics(this._unitClass, this._levelInt);
     }
 
     if ("abilityList" in blueprint) {
@@ -350,7 +353,7 @@ export class Unit {
     this._expirience.currentLevelExp = currentGap;
     this._expirience.nextLevelExp = expGap;
 
-    console.log("[addExpirience] Expirience result", this._expirience);
+    //console.log("[addExpirience] Expirience result", this._expirience);
   }
 
   public upgradeLevel(): boolean {
@@ -363,10 +366,70 @@ export class Unit {
     this._level.next = null;
     this._level.price = null;
 
+    this.setCharacteristics();
     this.setPower();
     this.unlockAbilities();
 
     return true;
+  }
+
+  public static getCharacteristics(unitClass: string, level: number): BattleUnitCharacteristics {
+    const characteristicsMeta = _.cloneDeep(CHARACTERISTICS);
+    const meta = characteristicsMeta[unitClass];
+
+    let percentage = (level - 1) * 0.05;
+    let boundary = (level <= 15 ? 0 : (level <= 30 ? 1 : 2));
+    let base = _.cloneDeep(meta.base[boundary]);
+
+    // hp
+    let hpBase = AVG_HP * meta.multipliers.hp;
+    let hp = hpBase * (1 + percentage);
+
+    // damage
+    let damageBase = AVG_DMG * meta.multipliers.damage;
+    let damage = damageBase * (1 + percentage);
+
+    // defence
+    let defenceBase = 0;
+    if (base.defence === "lvl-6" && level >= 16) {
+      let minus6LvlStats = Unit.getCharacteristics(unitClass, (boundary * 15 + 1) - (boundary === 1 ? 6 : 7));
+      defenceBase = minus6LvlStats.defence;
+    } else if (_.isNumber(base.defence)) {
+      defenceBase = base.defence;
+    } else {
+      throw Error("Invalid defence scheme was used");
+    }
+
+    let innerTierLvl = level - 1 - 15 * boundary;
+    let defence = defenceBase + base.defIncrement * innerTierLvl;
+
+    console.log({ level, defenceBase, innerTierLvl });
+
+    // speed
+    let speed = base.speed;
+
+    // speed
+    let initiative = base.initiative;
+
+    return {
+      hp: Math.round(hp),
+      damage: Math.round(damage),
+      defence: Math.round(defence),
+      speed,
+      initiative
+    };
+
+    /*return {
+      hp,
+      damage,
+      defence,
+      speed,
+      initiative
+    };*/
+  }
+
+  protected setCharacteristics(): void {
+    this._characteristics = Unit.getCharacteristics(this._unitClass, this._levelInt);
   }
 
   protected unlockAbilities(): void {
