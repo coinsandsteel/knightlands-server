@@ -316,11 +316,25 @@ export class Unit {
   }
 
   public addExpirience(value): void {
-    if (this._level.next || this._level.current >= 45) {
+    if (this._level.next) {
+      return;
+    }
+
+    if (this._tier === 1 && this._levelInt >= 16) {
+      return;
+    }
+
+    if (this._tier === 2 && this._levelInt >= 31) {
       return;
     }
 
     this._expirience.value += value;
+ 
+    const lastLevelExpEnd = this.getExpForLevel(45);
+    if (this._levelInt >= 44 && this._expirience.value > lastLevelExpEnd) {
+      this._expirience.value = lastLevelExpEnd;
+      return;
+    }
 
     let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES);
     
