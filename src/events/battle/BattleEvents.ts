@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import game from "../../game";
 import events from "../../knightlands-shared/events";
-import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainCell } from "./types";
+import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainCell, BattleTerrainMap } from "./types";
 import { Unit } from "./units/Unit";
 
 export class BattleEvents {
@@ -91,7 +91,7 @@ export class BattleEvents {
     this._events.enemyFighter.push(data);
   }
 
-  terrain(terrain: BattleTerrainCell[]) {
+  terrain(terrain: BattleTerrainMap) {
     this._events.terrain = terrain;
   }
 

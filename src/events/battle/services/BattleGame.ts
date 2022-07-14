@@ -8,6 +8,7 @@ import { Unit } from "../units/Unit";
 import { BattleCombat } from "./BattleCombat";
 import { BattleMovement } from "./BattleMovement";
 import { BattleSquad } from "./BattleSquad";
+import { BattleTerrain } from "./BattleTerrain";
 
 export class BattleGame {
   protected _state: BattleGameState;
@@ -19,7 +20,8 @@ export class BattleGame {
 
   protected _combat: BattleCombat;
   protected _movement: BattleMovement;
-
+  protected _terrain: BattleTerrain;
+ 
   constructor(state: BattleGameState|null, ctrl: BattleController) {
     this._ctrl = ctrl;
 
@@ -40,6 +42,7 @@ export class BattleGame {
 
     this._movement = new BattleMovement(this._ctrl);
     this._combat = new BattleCombat(this._ctrl);
+    this._terrain = new BattleTerrain(this._ctrl);
   }
 
   get relativeEnemySquad(): Unit[] {
@@ -69,7 +72,7 @@ export class BattleGame {
       userSquad: this._userSquad.getState(),
       enemySquad: this._enemySquad.getState(),
       initiativeRating: [],
-      terrain: [],
+      terrain: {},
 
       combat: {
         started: false,
@@ -200,7 +203,7 @@ export class BattleGame {
     this._ctrl.events.enemySquad(this._state.enemySquad);
     
     // Terrain
-    this._state.terrain = TERRAIN[0];
+    this._state.terrain = this._terrain.getRandomMap();
     this._ctrl.events.terrain(this._state.terrain);
 
     // Start combat

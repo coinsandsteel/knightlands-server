@@ -79,7 +79,7 @@ export interface BattleGameState {
   enemySquad: BattleSquadState;
   initiativeRating: BattleInitiativeRatingEntry[];
 
-  terrain: BattleTerrainCell[];
+  terrain: BattleTerrainMap;
   combat: BattleCombatState;
 }
 
@@ -124,9 +124,9 @@ export interface BattleUnitCharacteristics {
   speed: number;
 }
 
-export interface BattleTerrainCell {
-  terrainClass: string; // >= 5
-  index: number;
+export interface BattleTerrainMap {
+  base: string;
+  tiles: string[]|null[];
 }
 
 export interface BattleUnitAbility {

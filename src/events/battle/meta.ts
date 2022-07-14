@@ -1602,87 +1602,128 @@ export const UNIT_LEVEL_UP_PRICES = [
 ];
 
 export const TERRAIN = [
-  [
-    { terrainId: "45c43rv", terrainClass: battle.TERRAIN_GRASS, index: 0 },
-    {
-      terrainId: "v34vt34",
-      terrainClass: battle.TERRAIN_GRASS_SWAMP,
-      index: 1
-    },
-    {
-      terrainId: "c4c435t",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 2
-    },
-    { terrainId: "1", terrainClass: battle.TERRAIN_GRASS_HILL, index: 3 },
-    { terrainId: "2", terrainClass: battle.TERRAIN_GRASS, index: 4 },
-    { terrainId: "3", terrainClass: battle.TERRAIN_GRASS, index: 5 },
-    {
-      terrainId: "4",
-      terrainClass: battle.TERRAIN_GRASS_SWAMP_X,
-      index: 6
-    },
-    {
-      terrainId: "5",
-      terrainClass: battle.TERRAIN_GRASS_SWAMP_Y,
-      index: 7
-    },
-    {
-      terrainId: "6",
-      terrainClass: battle.TERRAIN_GRASS_SWAMP_Y,
-      index: 8
-    },
-    {
-      terrainId: "7",
-      terrainClass: battle.TERRAIN_GRASS_SWAMP_Z,
-      index: 9
-    },
-    { terrainId: "8", terrainClass: battle.TERRAIN_GRASS, index: 10 },
-    { terrainId: "8", terrainClass: battle.TERRAIN_GRASS, index: 11 },
-    { terrainId: "9", terrainClass: battle.TERRAIN_GRASS, index: 12 },
-    { terrainId: "10", terrainClass: battle.TERRAIN_GRASS, index: 13 },
-    {
-      terrainId: "11",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 14
-    },
-    {
-      terrainId: "12",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 15
-    },
-    {
-      terrainId: "13",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 16
-    },
-    { terrainId: "14", terrainClass: battle.TERRAIN_GRASS, index: 17 },
-    { terrainId: "15", terrainClass: battle.TERRAIN_GRASS, index: 18 },
-    { terrainId: "16", terrainClass: battle.TERRAIN_GRASS, index: 19 },
-    { terrainId: "17", terrainClass: battle.TERRAIN_GRASS, index: 20 },
-    { terrainId: "18", terrainClass: battle.TERRAIN_GRASS, index: 21 },
-    { terrainId: "19", terrainClass: battle.TERRAIN_GRASS, index: 22 },
-    { terrainId: "20", terrainClass: battle.TERRAIN_GRASS, index: 23 },
-    { terrainId: "21", terrainClass: battle.TERRAIN_GRASS, index: 24 },
-    {
-      terrainId: "22",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 25
-    },
-    { terrainId: "23", terrainClass: battle.TERRAIN_GRASS, index: 26 },
-    { terrainId: "24", terrainClass: battle.TERRAIN_GRASS, index: 27 },
-    {
-      terrainId: "25",
-      terrainClass: battle.TERRAIN_GRASS_WOODS,
-      index: 28
-    },
-    { terrainId: "26", terrainClass: battle.TERRAIN_GRASS, index: 29 },
-    { terrainId: "27", terrainClass: battle.TERRAIN_GRASS, index: 30 },
-    { terrainId: "28", terrainClass: battle.TERRAIN_GRASS, index: 31 },
-    { terrainId: "29", terrainClass: battle.TERRAIN_GRASS, index: 32 },
-    { terrainId: "30", terrainClass: battle.TERRAIN_GRASS, index: 33 },
-    { terrainId: "31", terrainClass: battle.TERRAIN_GRASS, index: 34 }
-  ]
+  {
+    base: "grass",
+    tiles: [null, null, null, null, null, null, "grass_woods", null, "grass_woods", null, null, null, null, null, null, null, "grass_woods", null, "grass_woods", null, null, null, null, null, null],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, "grass_woods", null, null, null, null, null, null, null, "grass_woods", "grass_woods", "grass_woods", null, null, null, null, null, null, null, null, "grass_woods", null, null, "grass_woods", null],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, "grass_woods", null, null, "grass_woods", null, null, null, null, null, "grass_woods", "grass_woods", null, "grass_woods", "grass_woods", null, null, null, null, null, null, "grass_woods", null, "grass_woods", null],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, "grass_woods", null, null, null, null, "grass_hill", null, "grass_woods", "grass_woods", "grass_woods", "grass_woods", null, "grass_hill", null, null, "grass_hill", null, "grass_woods", "grass_woods", null, "grass_woods", null, null, null],
+  }, 
+  {
+    base: "grass",
+    tiles: ["grass_woods", "grass_woods", null, null, null, "grass_woods", "grass_hill", null, "grass_woods", "grass_woods", null, null, "grass_hill", null, null, "grass_woods", "grass_woods", null, "grass_hill", "grass_woods", null, null, null, "grass_woods", "grass_woods"],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, null, null, "grass_woods", "grass_woods", "grass_swamp_c", "grass_woods", "grass_woods", null, "grass_hill", "grass_swamp_b", "grass_woods", null, null, null, null, null, "grass_hill", "grass_woods", "grass_swamp", null, null, "grass_woods", "grass_woods", null],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, null, null, null, null, "grass_woods", "grass_woods", "grass_swamp", "grass_hill", "grass_swamp", "grass_swamp_c", "grass_woods", "grass_hill", "grass_woods", null, "grass_swamp_b", "grass_hill", "grass_woods", "grass_woods", "grass_swamp", null, null, null, null, null],
+  }, 
+  {
+    base: "grass",
+    tiles: [null, "grass_woods", "grass_swamp", "grass_hill", "grass_swamp_a", "grass_woods", "grass_hill", "grass_woods", "grass_woods", "grass_swamp_d", "grass_hill", "grass_swamp_a", "grass_swamp_b", "grass_woods", "grass_hill", "grass_woods", "grass_swamp_d", "grass_swamp_c", "grass_hill", "grass_swamp_a", "grass_woods", "grass_woods", "grass_woods", "grass_woods", "grass_swamp_d"],
+  }, 
+  {
+    base: "grass",
+    tiles: ["grass_hill", "grass_swamp_a", null, "grass_swamp_a", "grass_swamp_b", "grass_woods", "grass_swamp_d", "grass_woods", "grass_swamp_d", "grass_swamp_c", "grass_hill", null, "grass_woods", "grass_woods", null, "grass_swamp_a", "grass_swamp_b", "grass_hill", "grass_swamp_a", "grass_hill", "grass_swamp_d", "grass_swamp_c", null, "grass_swamp_d", "grass_woods"],
+  }, 
+  {
+    base: "grass",
+    tiles: ["grass_swamp", "grass_woods", "grass_swamp1", "grass_swamp2", "grass_woods", "grass_hill", "grass_woods", "grass_woods", "grass_hill", "grass_woods", "grass_swamp_x", "grass_swamp_y", "grass_swamp_y", "grass_swamp_y", "grass_swamp_z", "grass_hill", "grass_woods", "grass_woods", "grass_hill", "grass_woods", "grass_woods", "grass_swamp", "grass_woods", "grass_swamp", "grass_woods"],
+  }, 
+
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, "sand_thorns", null, "sand_thorns", null, "sand_thorns", null, null, null, null, null, null, "sand_thorns", null, "sand_thorns", null, null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, null, null, null, "sand_hill", "sand_thorns", "sand_thorns", "sand_thorns", null, "sand_thorns", "sand_thorns", "sand_thorns", "sand_hill", null, null, null, null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_hill", "sand_thorns", null, null, "sand_thorns", null, "sand_thorns", null, null, "sand_thorns", "sand_hill", "sand_thorns", null, null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, null, "sand_hill", null, null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: ["sand_thorns", null, null, null, null, null, null, "sand_thorns", "sand_hill", null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, "sand_hill", "sand_thorns", null, null, null, null, null, null, "sand_thorns"],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_lava", "sand_thorns", "sand_lava", null, null, "sand_hill", null, null, "sand_lava", "sand_thorns", "sand_lava", "sand_thorns", null, null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, "sand_thorns", null, null, null, "sand_hill", "sand_hill", null, null, "sand_thorns", null, "sand_lava1", "sand_lava2", "sand_thorns", null, null, null, "sand_hill", "sand_hill", null, null, null, "sand_thorns", null],
+  }, 
+  {
+    base: "sand",
+    tiles: [null, null, null, null, null, "sand_thorns", "sand_hill", "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2", "sand_thorns", "sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", "sand_hill", "sand_thorns", null, null, null, null, null],
+  }, 
+  {
+    base: "sand",
+    tiles: ["sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", null, null, "sand_thorns", "sand_lava_a", "sand_lava_b", "sand_lava_a", "sand_lava_b", "sand_hill", "sand_lava_d", "sand_lava_c", "sand_lava_d", "sand_lava_c", "sand_thorns", null, null, "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2"],
+  }, 
+  {
+    base: "sand",
+    tiles: ["sand_hill", "sand_thorns", null, "sand_thorns", "sand_hill", "sand_lava_a", "sand_lava_b", null, "sand_hill", "sand_hill", "sand_lava_d", "sand_lava_c", "sand_thorns", "sand_lava_a", "sand_lava_b", "sand_hill", "sand_hill", null, "sand_lava_d", "sand_lava_c", "sand_hill", "sand_thorns", null, "sand_thorns", "sand_hill"],
+  }, 
+
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null, null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, null, "snow_hill", "snow_woods", "snow_hill", null, null, "snow_woods", null, "snow_woods", null, null, "snow_hill", "snow_woods", "snow_hill", null, null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, "snow_woods", null, "snow_woods", null, "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", null, "snow_woods", null, "snow_woods", null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, "snow_hill", "snow_hill", "snow_ice", "snow_woods", "snow_woods", "snow_ice", "snow_woods", "snow_woods", "snow_ice", null, "snow_hill", "snow_hill", "snow_ice", "snow_hill", "snow_woods", null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: [null, null, null, null, null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null, "snow_ice", "snow_woods", "snow_ice", null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null, null, null, null, null],
+  }, 
+  {
+    base: "snow",
+    tiles: ["snow_hill", "snow_hill", null, null, null, "snow_woods", "snow_woods", null, "snow_ice_1", null, null, "snow_ice_1", "snow_hill", "snow_ice_1-1", null, null, "snow_ice_1-1", null, "snow_woods", "snow_woods", null, null, null, "snow_hill", "snow_hill"],
+  }, 
+  {
+    base: "snow",
+    tiles: ["snow_woods", "snow_woods", "snow_ice_1", "snow_woods", "snow_woods", "snow_hill", "snow_hill", "snow_ice_1-1", null, null, "snow_woods", "snow_woods", null, "snow_woods", "snow_woods", null, null, "snow_ice_1", "snow_hill", "snow_hill", "snow_woods", "snow_woods", "snow_ice_1-1", "snow_woods", "snow_woods"],
+  }, 
+  {
+    base: "snow",
+    tiles: ["snow_hill", "snow_hill", "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", null, null, null, "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", "snow_hill", "snow_hill"],
+  }, 
+  {
+    base: "snow",
+    tiles: ["snow_ice_a", "snow_ice_b", "snow_woods", "snow_ice_1", "snow_ice_1-1", "snow_ice_d", "snow_ice_c", "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_hill", "snow_ice", "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_ice_a", "snow_ice_b", "snow_ice_1", "snow_ice_1-1", "snow_hill", "snow_ice_d", "snow_ice_c"],
+  }, 
 ];
 
 export const ABILITY_SCHEME = [
