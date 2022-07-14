@@ -29,7 +29,6 @@ export class Unit {
   protected _power: number;
   protected _expirience: {
     value: number;
-    percentage: number;
     currentLevelExp: number;
     nextLevelExp: number;
   };
@@ -145,7 +144,6 @@ export class Unit {
     } else {
       this._expirience = {
         value: 0,
-        percentage: 0,
         currentLevelExp: 0,
         nextLevelExp: this.getExpForLevel(2)
       };
@@ -316,10 +314,6 @@ export class Unit {
   }
 
   public addExpirience(value): void {
-    if (this._level.next) {
-      return;
-    }
-
     if (this._tier === 1 && this._levelInt >= 16) {
       return;
     }
@@ -341,32 +335,23 @@ export class Unit {
     let currentExp = this._expirience.value;
     let currentLevel = this._level.current;
     let newLevel = currentLevel + 1;
+
     let currentLevelExpStart = this.getExpForLevel(currentLevel);
     let currentLevelExpEnd = this.getExpForLevel(newLevel);
 
-    while (this.getExpForLevel(newLevel) <= this._expirience.value) {
-      currentLevelExpStart = this.getExpForLevel(newLevel);
-      currentLevelExpEnd = this.getExpForLevel(newLevel + 1);
-      newLevel++;
-    }
-
-    if (newLevel > currentLevel + 1) {
-      newLevel--;
-      this._level.next = newLevel;
-      this._level.price = priceTable[newLevel - 1];
+    if (currentExp >= currentLevelExpEnd) {
+      this._level.next = currentLevel + 1;
+      this._level.price = priceTable[this._level.next - 1];
     } else {
       this._level.next = null;
       this._level.price = null;
     }
 
-    let expGap = currentLevelExpEnd - currentLevelExpStart;
+    let fullGap = currentLevelExpEnd - currentLevelExpStart;
     let currentGap = currentExp - currentLevelExpStart;
 
-    this._expirience.percentage = Math.floor(
-      currentGap * 100 / expGap
-    );
     this._expirience.currentLevelExp = currentGap;
-    this._expirience.nextLevelExp = expGap;
+    this._expirience.nextLevelExp = fullGap;
 
     //console.log("[addExpirience] Expirience result", this._expirience);
   }
@@ -381,6 +366,7 @@ export class Unit {
     this._level.next = null;
     this._level.price = null;
 
+    this.addExpirience(0);
     this.setCharacteristics();
     this.setPower();
     this.unlockAbilities();

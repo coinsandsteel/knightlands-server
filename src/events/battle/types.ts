@@ -48,7 +48,6 @@ export interface BattleUnit {
   power?: number;
   expirience?: {
     value: number;
-    percentage: number;
     currentLevelExp: number;
     nextLevelExp: number;
   };

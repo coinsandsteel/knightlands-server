@@ -88,10 +88,8 @@ export class BattleInventory {
 
   public async addExp(unitId: string, value: number) {
     const unit = this.getUnitById(unitId);
-    if (unit && !unit.level.next) {
-      unit.addExpirience(value);
-      this.updateUnitState(unit);
-    }
+    unit.addExpirience(value);
+    this.updateUnitState(unit);
   }
 
   protected updateUnitState(unit: Unit): void{
