@@ -19,6 +19,7 @@ import {
 
 export class Unit {
   protected _template: number;
+  protected _isEnemy: boolean;
   protected _fighterId: string;
   protected _unitId: string;
   protected _unitTribe: string; // 15
@@ -65,6 +66,10 @@ export class Unit {
     return this._fighterId;
   }
 
+  get isEnemy(): boolean {
+    return this._isEnemy;
+  }
+
   get unitId(): string {
     return this._unitId;
   }
@@ -89,6 +94,10 @@ export class Unit {
     return this._hp;
   }
 
+  get maxHp(): number {
+    return this._characteristics.hp;
+  }
+
   get speed(): number {
     return this._characteristics.speed;
   }
@@ -105,7 +114,11 @@ export class Unit {
     return this._moveCells;
   }
 
-  constructor(blueprint: BattleUnit) {
+  get buffs(): BattleBuff[] {
+    return this._buffs;
+  }
+
+  constructor(blueprint: BattleUnit, isEnemy?: boolean) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
@@ -113,6 +126,12 @@ export class Unit {
     
     if ("fighterId" in blueprint) {
       this._fighterId = blueprint.fighterId;
+    }
+    
+    if ("isEnemy" in blueprint) {
+      this._isEnemy = blueprint.isEnemy;
+    } else if (isEnemy !== undefined) {
+      this._isEnemy = isEnemy;
     }
     
     if ("tier" in blueprint) {
@@ -286,7 +305,7 @@ export class Unit {
         enabled: ability.enabled,
         cooldown: {
           enabled: false,
-          stepsLeft: 0
+          estimate: 0
         }
       } as BattleUnitAbility;
     });
@@ -294,6 +313,7 @@ export class Unit {
     const squadUnit = {
       template: this._template,
       fighterId: this._fighterId,
+      isEnemy: this._isEnemy,
       unitId: this._unitId,
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,
@@ -562,26 +582,57 @@ export class Unit {
       const abilityScheme = ABILITY_SCHEME[this._levelInt-1][abilityEntry.tier-1];
       abilityEntry.cooldown = {
         enabled: true,
-        stepsLeft: abilityScheme.cd
+        estimate: abilityScheme.cd
       }
     }
   }
 
-  public buff(abilityClass: string): boolean {
-    const index = this._buffs.findIndex(buff => buff.abilityClass === abilityClass);
-    if (index !== -1) {
-      return false;
-    }
+  public decreaseAbilitiesCooldownEstimate(): void {
+    this._abilities.forEach(ability => {
+      if (ability.cooldown && ability.cooldown.estimate > 0) {
+        const oldCooldown = _.clone(ability.cooldown.estimate);
+        ability.cooldown.estimate--;
+        const newCooldown = _.clone(ability.cooldown.estimate);
 
-    this._buffs.push({
-      abilityClass,
-      type: "speed_reduce",
-      value: 1.1,
-      probability: 0.5,
-      duration: 1
+        if (ability.cooldown.estimate === 0) {
+          ability.cooldown.enabled = false;
+        }
+
+        console.log("Ability cooldown", {
+          old: oldCooldown,
+          new: newCooldown,
+          cooldownEnabled: ability.cooldown.enabled
+        });
+      }
+    });
+  }
+
+  public buff(paylod: BattleBuff): BattleBuff {
+    this._buffs.push(paylod);
+    paylod.estimate = 3;
+    return paylod;
+  };
+
+  public removeBuffs(source: string, type?: string): void {
+    this._buffs = this._buffs.filter(buff => !(
+      buff.source === source && (!type || buff.type === type)
+    ));
+  };
+
+  public decreaseBuffsEstimate(): void {
+    this._buffs.forEach(buff => {
+      const oldEstimate = _.clone(buff.estimate);
+      buff.estimate--;
+      const newEstimate = _.clone(buff.estimate);
+
+      console.log("Buff estimate", {
+        old: oldEstimate,
+        new: newEstimate,
+        buffActive: buff.estimate > 0
+      });
     });
 
-    return true;
+    this._buffs = this._buffs.filter(buff => buff.estimate > 0);
   };
 
   public modifyHp(value: number): void {

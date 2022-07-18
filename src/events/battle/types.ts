@@ -42,6 +42,7 @@ export interface BattleUnit {
   unitClass: string; // 5
   unitId?: string;
   fighterId?: string;
+  isEnemy?: boolean;
   tier?: number; // 3, modify via merger (3 => 1)
   levelInt?: number;
   level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
@@ -126,7 +127,7 @@ export interface BattleUnitCharacteristics {
 
 export interface BattleTerrainMap {
   base: string;
-  tiles: string[]|null[];
+  tiles: (string|null)[];
 }
 
 export interface BattleUnitAbility {
@@ -140,7 +141,7 @@ export interface BattleUnitAbility {
   range?: number;
   cooldown?: {
     enabled: boolean;
-    stepsLeft: number;
+    estimate: number;
   }
 }
 
@@ -152,11 +153,12 @@ export interface BattleUnitAttribute {
 }
 
 export interface BattleBuff {
-  abilityClass: string;
+  source: string; // "squad_bonus", "buff", "de-buff", "terrain"
   type: string;
-  value: number;
-  probability: number;
-  duration: number;
+  modifier: number;
+  probability?: number;
+  max?: number;
+  estimate?: number;
 }
 
 export interface BattleSquadBonus {

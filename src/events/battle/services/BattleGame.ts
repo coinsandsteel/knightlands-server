@@ -26,11 +26,13 @@ export class BattleGame {
     this._ctrl = ctrl;
 
     this._userSquad = new BattleSquad(
-      state ? state.userSquad.units : null, 
+      state ? state.userSquad.units : null,
+      false,
       this._ctrl
     );
     this._enemySquad = new BattleSquad(
       state ? state.enemySquad.units : null, 
+      true,
       this._ctrl
     );
 
@@ -42,7 +44,7 @@ export class BattleGame {
 
     this._movement = new BattleMovement(this._ctrl);
     this._combat = new BattleCombat(this._ctrl);
-    this._terrain = new BattleTerrain(this._ctrl);
+    this._terrain = new BattleTerrain(this._state.terrain, this._ctrl);
   }
 
   get relativeEnemySquad(): Unit[] {
@@ -52,6 +54,10 @@ export class BattleGame {
 
   get movement(): BattleMovement {
     return this._movement;
+  }
+
+  get terrain(): BattleTerrain {
+    return this._terrain;
   }
 
   get combatStarted(): boolean {
@@ -72,7 +78,7 @@ export class BattleGame {
       userSquad: this._userSquad.getState(),
       enemySquad: this._enemySquad.getState(),
       initiativeRating: [],
-      terrain: {},
+      terrain: null,
 
       combat: {
         started: false,
@@ -92,12 +98,14 @@ export class BattleGame {
   public getState(): BattleGameState {
     this._state.userSquad = this._userSquad.getState();
     this._state.enemySquad = this._enemySquad.getState();
+    this._state.terrain = this._terrain.getState();
     return this._state;
   }
 
   public init(): void {
     this._userSquad.init();
     this._enemySquad.init();
+
     if (!this._state.initiativeRating ||!this._state.initiativeRating.length) {
       this.createInitiativeRating();
     }
@@ -188,7 +196,7 @@ export class BattleGame {
       [GAME_DIFFICULTY_LOW]: 2
     };
     const squad = this._enemyOptions[difficulties[difficulty]];
-    this._enemySquad = new BattleSquad(squad, this._ctrl);
+    this._enemySquad = new BattleSquad(squad, true, this._ctrl);
     this._enemyOptions = [[], [], []];
 
     // Prepare user Squad
@@ -203,8 +211,7 @@ export class BattleGame {
     this._ctrl.events.enemySquad(this._state.enemySquad);
     
     // Terrain
-    this._state.terrain = this._terrain.getRandomMap();
-    this._ctrl.events.terrain(this._state.terrain);
+    this._terrain.setRandomMap();
 
     // Start combat
     this.setCombatStarted(true);
@@ -251,6 +258,7 @@ export class BattleGame {
     let fighterId = null;
     const index = this._state.initiativeRating.findIndex(entry => entry.active === true);
 
+    let drawFinished = false;
     if (index === -1) {
       fighterId = this._state.initiativeRating[0].fighterId;
       this._state.initiativeRating[0].active = true;
@@ -262,11 +270,11 @@ export class BattleGame {
       } else {
         fighterId = this._state.initiativeRating[0].fighterId;
         this._state.initiativeRating[0].active = true;
+        drawFinished = true;
       }
     }
 
-    this._state.combat.activeFighterId = fighterId;
-    this._ctrl.events.activeFighterId(fighterId);
+    this.setActiveFighter(fighterId);
 
     // Find a fighter
     const fighter = this._userSquad.getFighter(fighterId) || this._enemySquad.getFighter(fighterId) || null;
@@ -278,17 +286,27 @@ export class BattleGame {
     console.log("Active fighter is", { fighterId: fighter.fighterId, isEnemy });
     
     if (this._enemySquad.includesFighter(fighterId)) {
-      this._ctrl.events.combatMoveCells([]);
+      this.setMoveCells([]);
       this.autoMove(fighter);
     } else {
       const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
-      this._ctrl.events.combatMoveCells(moveCells);
+      this.setMoveCells(moveCells);
     }
-    this._ctrl.events.combatAttackCells([]);
+
+    this.setAttackCells([]);
     
+    if (drawFinished) {
+      this.callbackDrawFinished();
+    }
+
     this._ctrl.events.flush();
   }
   
+  protected callbackDrawFinished(): void {
+    this._enemySquad.callbackDrawFinished();
+    this._userSquad.callbackDrawFinished();
+  }
+
   public createInitiativeRating(): void{
     this._state.initiativeRating = _.orderBy(
       _.union(
@@ -325,15 +343,15 @@ export class BattleGame {
 
     if (abilityClass === "move") {
       const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
-      this._ctrl.events.combatMoveCells(moveCells);
-      this._ctrl.events.combatAttackCells([]);
+      this.setMoveCells(moveCells);
+      this.setAttackCells([]);
     } else {
       if (!fighter.canUseAbility(abilityClass)) {
         return;
       }
       const attackCells = this._combat.getAttackCells(fighter, abilityClass, false);
-      this._ctrl.events.combatAttackCells(attackCells);
-      this._ctrl.events.combatMoveCells([]);
+      this.setAttackCells(attackCells);
+      this.setMoveCells([]);
     }
   }
 
@@ -445,6 +463,21 @@ export class BattleGame {
       return this._enemySquad;
     }
     throw errors.IncorrectArguments;
+  }
+
+  protected setMoveCells(cells: number[]): void {
+    this._state.combat.runtime.moveCells = cells;
+    this._ctrl.events.combatMoveCells(cells); 
+  }
+
+  protected setAttackCells(cells: number[]): void {
+    this._state.combat.runtime.attackCells = cells;
+    this._ctrl.events.combatAttackCells(cells);
+  }
+
+  protected setActiveFighter(fighterId: string): void {
+    this._state.combat.activeFighterId = fighterId;
+    this._ctrl.events.activeFighterId(fighterId);
   }
 
   public skip(): void {}

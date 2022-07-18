@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { SETTINGS } from "../meta";
+import { BUFFS, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 
 export class BattleCombat {
@@ -58,27 +58,33 @@ export class BattleCombat {
     
     // Adjust characteristics
     // Apply squad bonuses
-    const buffAdded = target.buff(abilityClass);
-    if (buffAdded) {
-      const abilityType = ABILITY_TYPES[abilityClass];
-      this._ctrl.events.effect({
-        action: abilityType,
-        source: {
-          fighterId: source.fighterId,
-          index: source.index
-        },
-        target: {
-          fighterId: target.fighterId,
-          index: target.index
-        },
-        buff: {
-          abilityClass,
-          type: "speed_reduce",
-          value: 1.1,
-          stepsLeft: 1
-        }
-      });
+    const abilityData = source.getAbilityByClass(abilityClass);
+    if (!abilityData) {
+      return;
     }
+
+    return;
+
+    const buff = BUFFS[abilityClass][abilityData.level];
+    
+    // TODO test
+    const buffState = target.buff({
+      source: abilityData.abilityType, ...buff 
+    });
+
+    const abilityType = ABILITY_TYPES[abilityClass];
+    this._ctrl.events.effect({
+      action: abilityType,
+      source: {
+        fighterId: source.fighterId,
+        index: source.index
+      },
+      target: {
+        fighterId: target.fighterId,
+        index: target.index
+      },
+      buff: buffState
+    });
   }
 
   public attack(source: Unit, target: Unit, abilityClass: string): void {

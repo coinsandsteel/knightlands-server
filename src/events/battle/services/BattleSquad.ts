@@ -9,14 +9,16 @@ export class BattleSquad {
   protected _state: BattleSquadState;
   protected _ctrl: BattleController;
 
+  protected _isEnemy: boolean;
   protected _units: Unit[];
 
   get units(): Unit[] {
     return this._units;
   }
   
-  constructor(units: BattleUnit[]|null, ctrl: BattleController) {
+  constructor(units: BattleUnit[]|null, isEnemy: boolean, ctrl: BattleController) {
     this._ctrl = ctrl;
+    this._isEnemy = isEnemy;
 
     this.setInitialState();
     this._state.units = units || [];
@@ -58,7 +60,7 @@ export class BattleSquad {
   }
   
   protected makeUnit(unit: BattleUnit): Unit {
-    return new Unit(unit);
+    return new Unit(unit, this._isEnemy);
   }
   
   public fillSlot(unitId: string, index: number): void {
@@ -187,5 +189,22 @@ export class BattleSquad {
 
   public getFighter(fighterId: string): Unit|null {
     return this._units.find(unit => unit.fighterId === fighterId) || null;
+  }
+
+  public callbackDrawFinished(): void {
+    this._units.forEach(unit => {
+      // Decrease the cooldown
+      unit.decreaseAbilitiesCooldownEstimate();
+      // Decrease the buff estimate
+      unit.decreaseBuffsEstimate();
+    });
+
+    this._units.forEach(unit => {
+      if (this._isEnemy) {
+        this._ctrl.events.enemyFighter(unit);
+      } else {
+        this._ctrl.events.userFighter(unit);
+      }
+    });
   }
 }
