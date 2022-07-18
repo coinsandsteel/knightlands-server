@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
@@ -341,7 +341,7 @@ export class BattleGame {
       return;
     }
 
-    if (abilityClass === "move") {
+    if (abilityClass === ABILITY_MOVE) {
       const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
@@ -405,7 +405,7 @@ export class BattleGame {
     const target = index === null ? null : this.getFighterByIndex(index);
 
     // Move
-    if (index !== null && ability === null && target === null) {
+    if (index !== null && ability === ABILITY_MOVE) {
       this._movement.moveFighter(fighter, index);
       
     // Heal
@@ -437,7 +437,7 @@ export class BattleGame {
       throw errors.IncorrectArguments;
     }
 
-    if (ability && ability !== ABILITY_ATTACK) {
+    if (ability && ![ABILITY_ATTACK, ABILITY_MOVE].includes(ability)) {
       fighter.enableAbilityCooldown(ability);
       console.log("Cooldown set", fighter.getAbilityByClass(ability));
     }

@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { ABILITY_TYPES } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, 
@@ -543,6 +543,10 @@ export class Unit {
   }
 
   public canUseAbility(ability: string): boolean {
+    if ([ABILITY_MOVE, ABILITY_ATTACK].includes(ability)) {
+      return true;
+    }
+
     const unitMeta = UNITS.find(unitData => unitData.template === this._template);
     if (!unitMeta.abilityList.includes(ability)) {
       return false;

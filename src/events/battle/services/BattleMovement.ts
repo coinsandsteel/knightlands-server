@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BattleController } from "../BattleController";
-import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL } from "../meta";
+import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../meta";
 import { Unit } from "../units/Unit";
 const Graph = require('node-dijkstra');
 
@@ -74,12 +74,18 @@ export class BattleMovement {
   public getRangeCells(unitIndex: number, range: number, scheme: string): number[] {
     const result = [];
     for (let index = 0; index < 35; index++) {
-      if (index === unitIndex) {
+      const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
+      // Skip unit's index and thorns
+      if (
+        index === unitIndex 
+        || 
+        terrain === TERRAIN_THORNS
+      ) {
         continue;
       }
       let path = this.getPath(unitIndex, index, scheme);
       if (
-        path 
+        path
         && 
         path.length <= range
       ) {
@@ -93,7 +99,11 @@ export class BattleMovement {
     const unitNodes = this._ctrl.game.allUnits
       .filter(unit => ![from, to].includes(unit.index))
       .map(unit => `${unit.index}`);
-    const thornsNodes = this._ctrl.game.terrain.getThornsIndexes();
+
+    const thornsNodes = this._ctrl.game.terrain
+      .getThornsIndexes()
+      .map(index => `${index}`);
+
     const path = this.routes[scheme].path(
       `${from}`, 
       `${to}`, 
@@ -144,13 +154,56 @@ export class BattleMovement {
     }
   }
 
+  protected handleTerrain(fighter: Unit, terrain: string, moving: boolean): { stop: boolean } {
+    let stop = false;
+    const source = "terrain";
+    switch (terrain) {
+      case TERRAIN_LAVA: {
+        const damage = this._ctrl.game.terrain.getLavaDamage(fighter.maxHp);
+        fighter.modifyHp(-damage);
+        console.log(`Passing through the ${terrain}`, { damage });
+        break;
+      }
+      case TERRAIN_ICE:
+      case TERRAIN_SWAMP: {
+        // Found an obstacle, stop
+        stop = true;
+        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
+        fighter.removeBuffs(source, SETTINGS.terrain[terrain].type);
+        // Add new buff
+        fighter.buff({ source, ...SETTINGS.terrain[terrain] });
+        this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
+        console.log(`Passing through the ${terrain}`, { buffs: fighter.buffs });
+        break;
+      }
+      case TERRAIN_HILL:
+      case TERRAIN_WOODS: {
+        if (moving) {
+          break;
+        }
+        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
+        fighter.removeBuffs(source, SETTINGS.terrain[terrain].type);
+        // Hills, highlands - Increase damage to enemies by 25%
+        // Forest - Increases unit's defense by 25%
+        fighter.buff({ source, ...SETTINGS.terrain[terrain] });
+        this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
+        console.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
+        break;
+      }
+      default: {
+        fighter.removeBuffs(source);
+        break;
+      }
+    }
+
+    return { stop };
+  }
+
   public moveFighter(fighter: Unit, index: number): void {
     const moveCells = this.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
     if (!moveCells.includes(index)) {
       return;
     }
-
-    const source = "terrain";
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
@@ -161,72 +214,20 @@ export class BattleMovement {
         continue;
       }
 
-     // Ice - Stops a unit and increases the damage it takes by 25%.    
-     // Swamp - Stops the unit and reduces the speed by 50% in the next turn
-      if ([TERRAIN_ICE, TERRAIN_SWAMP].includes(terrain)) {
+      let result = this.handleTerrain(fighter, terrain, true);
+      if (result.stop) {
         // Found an obstacle, stop
         index = +pathIndex;
-
-        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-        fighter.removeBuffs(source, SETTINGS.terrain[terrain].type);
-        
-        // Add new buff
-        fighter.buff({ source, ...SETTINGS.terrain[terrain] });
-        this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-
-        console.log(`Stepped into the ${terrain}`, { buffs: fighter.buffs });
         break;
-      }
-
-      // Lava - Deals damage equal to 5% of Max HP.
-      if (terrain === TERRAIN_LAVA) {
-        const damage = this._ctrl.game.terrain.getLavaDamage(fighter.maxHp);
-        fighter.modifyHp(-damage);
-
-        this._ctrl.events.effect({
-          action: "effect",
-          source: {
-            terrain,
-            index
-          },
-          target: {
-            fighterId: fighter.fighterId,
-            index,
-            newHp: fighter.hp
-          },
-          effect: {
-            effectClass: "heat",
-            damage
-          }
-        });
-
-        console.log(`Stepped into the ${terrain}`, { damage });
       }
     }
     
     // Change unit's index
     fighter.setIndex(index);
     
-    // Check target cell
+    // Handle target terrain
     const currentIndexTerrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
-    if ([TERRAIN_HILL, TERRAIN_WOODS].includes(currentIndexTerrain)) {
-      // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-      fighter.removeBuffs(source, SETTINGS.terrain[currentIndexTerrain].type);
-      
-      // Hills, highlands - Increase damage to enemies by 25%
-      // Forest - Increases unit's defense by 25%
-      fighter.buff({ source, ...SETTINGS.terrain[currentIndexTerrain] });
-      this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-      
-      console.log(`Stand on the ${currentIndexTerrain}`, { buffs: fighter.buffs });
-      
-    } else if (currentIndexTerrain === null) {
-      // Remove all the terrrain effects, except swamp
-      fighter.removeBuffs(source);
-      this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-
-      console.log(`Stand on the empty cell`, { buffs: fighter.buffs });
-    }
+    this.handleTerrain(fighter, currentIndexTerrain, false);
 
     // Send effects
     this._ctrl.events.effect({
