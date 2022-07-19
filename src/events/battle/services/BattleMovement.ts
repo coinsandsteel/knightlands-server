@@ -71,23 +71,29 @@ export class BattleMovement {
     this.graphs = graphs;
   }
 
-  public getRangeCells(unitIndex: number, range: number, scheme: string): number[] {
+  public getRangeCells(mode: "move"|"attack"|"jump", unitIndex: number, range: number, scheme: string): number[] {
     const result = [];
+    const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
-      // Skip unit's index and thorns
+      // Cannot move or jump to units and thorns
       if (
-        index === unitIndex 
-        || 
-        terrain === TERRAIN_THORNS
+        ["move", "jump"].includes(mode)
+        && 
+        (
+          terrain === TERRAIN_THORNS
+          ||
+          unitIndexes.includes(index)
+        )
       ) {
         continue;
       }
-      let path = this.getPath(unitIndex, index, scheme);
+
+      let path = this.getPath(mode, unitIndex, index, scheme);
       if (
         path
         && 
-        path.length <= range
+        path.length < range
       ) {
         result.push(index);
       }
@@ -95,19 +101,25 @@ export class BattleMovement {
     return result;
   }
 
-  public getPath(from: number, to: number, scheme: string): any {
-    const unitNodes = this._ctrl.game.allUnits
-      .filter(unit => ![from, to].includes(unit.index))
-      .map(unit => `${unit.index}`);
+  public getPath(mode: "move"|"attack"|"jump", from: number, to: number, scheme: string): any {
+    const avoidNodes  = [];
 
-    const thornsNodes = this._ctrl.game.terrain
-      .getThornsIndexes()
-      .map(index => `${index}`);
+    if (mode === "move") {
+      const unitNodes = this._ctrl.game.allUnits
+        .filter(unit => ![from, to].includes(unit.index))
+        .map(unit => `${unit.index}`);
+
+      const thornsNodes = this._ctrl.game.terrain
+          .getThornsIndexes()
+          .map(index => `${index}`);
+
+      avoidNodes.push(...unitNodes, ...thornsNodes);
+    }
 
     const path = this.routes[scheme].path(
-      `${from}`, 
-      `${to}`, 
-      { trim: true, avoid: [...unitNodes, ...thornsNodes] }
+      `${from}`,
+      `${to}`,
+      { trim: true, avoid: avoidNodes }
     );
     return path;
   }
@@ -173,7 +185,7 @@ export class BattleMovement {
         // Add new buff
         fighter.buff({ source, ...SETTINGS.terrain[terrain] });
         this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-        console.log(`Passing through the ${terrain}`, { buffs: fighter.buffs });
+        console.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         break;
       }
       case TERRAIN_HILL:
@@ -200,22 +212,24 @@ export class BattleMovement {
   }
 
   public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+    const moveCells = this.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
     if (!moveCells.includes(index)) {
       return;
     }
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
-    let path = this.getPath(fighter.index, index, SETTINGS.moveScheme);
-    for (let pathIndex in path) {
+    let path = this.getPath("move", fighter.index, index, SETTINGS.moveScheme);
+    for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
+      console.log(`[Tile]`, { index: +pathIndex, terrain });
       if (!terrain) {
         continue;
       }
 
       let result = this.handleTerrain(fighter, terrain, true);
       if (result.stop) {
+        console.log(`[Tile stopped the fighter]`, { index: +pathIndex});
         // Found an obstacle, stop
         index = +pathIndex;
         break;

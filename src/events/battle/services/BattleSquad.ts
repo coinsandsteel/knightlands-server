@@ -16,12 +16,12 @@ export class BattleSquad {
     return this._units;
   }
   
-  constructor(units: BattleUnit[]|null, isEnemy: boolean, ctrl: BattleController) {
+  constructor(units: BattleUnit[], isEnemy: boolean, ctrl: BattleController) {
     this._ctrl = ctrl;
     this._isEnemy = isEnemy;
 
     this.setInitialState();
-    this._state.units = units || [];
+    this._state.units = units;
 
     this.createUnits();
     this.updateStat();
@@ -60,12 +60,13 @@ export class BattleSquad {
   }
   
   protected makeUnit(unit: BattleUnit): Unit {
-    return new Unit(unit, this._isEnemy);
+    unit.isEnemy = this._isEnemy;
+    return new Unit(unit);
   }
   
   public fillSlot(unitId: string, index: number): void {
     if (!(index >= 0 && index <= 4)) {
-      throw errors.IncorrectArguments;
+      throw Error("Cannot fill this slot - no such a slot");
     }
     
     const unit = _.cloneDeep(this._ctrl.inventory.getUnitById(unitId) as Unit);
@@ -89,7 +90,7 @@ export class BattleSquad {
   
   public clearSlot(index: number): void {
     if (!(index >= 0 && index <= 4)) {
-      throw errors.IncorrectArguments;
+      throw Error("Cannot clear this slot - no such a slot");
     }
     
     // Fill slot
@@ -162,10 +163,6 @@ export class BattleSquad {
   
   public includesUnit(unitId: string): boolean {
     return this._units.findIndex(unit => unit.unitId === unitId) !== -1;
-  }
-
-  public includesFighter(fighterId: string): boolean {
-    return this._units.findIndex(unit => unit.fighterId === fighterId) !== -1;
   }
 
   protected updateStat(): void {

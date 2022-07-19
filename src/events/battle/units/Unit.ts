@@ -110,6 +110,10 @@ export class Unit {
     return this._characteristics.defence;
   }
 
+  get damage(): number {
+    return this._characteristics.damage;
+  }
+
   get moveCells(): number[] {
     return this._moveCells;
   }
@@ -118,7 +122,7 @@ export class Unit {
     return this._buffs;
   }
 
-  constructor(blueprint: BattleUnit, isEnemy?: boolean) {
+  constructor(blueprint: BattleUnit) {
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
@@ -130,8 +134,6 @@ export class Unit {
     
     if ("isEnemy" in blueprint) {
       this._isEnemy = blueprint.isEnemy;
-    } else if (isEnemy !== undefined) {
-      this._isEnemy = isEnemy;
     }
     
     if ("tier" in blueprint) {
@@ -614,10 +616,12 @@ export class Unit {
   public buff(paylod: BattleBuff): BattleBuff {
     this._buffs.push(paylod);
     paylod.estimate = 3;
+    console.log(`[Unit #${this._fighterId}] Buff added`, paylod);
     return paylod;
   };
-
+  
   public removeBuffs(source: string, type?: string): void {
+    console.log(`[Unit #${this._fighterId}] Remove buffs`, { source, type });
     this._buffs = this._buffs.filter(buff => !(
       buff.source === source && (!type || buff.type === type)
     ));
@@ -629,7 +633,7 @@ export class Unit {
       buff.estimate--;
       const newEstimate = _.clone(buff.estimate);
 
-      console.log("Buff estimate", {
+      console.log(`[Unit #${this._fighterId}] Decreased buff estimate`, {
         old: oldEstimate,
         new: newEstimate,
         buffActive: buff.estimate > 0
@@ -651,7 +655,7 @@ export class Unit {
       return entry.enabled && (!entry.cooldown || !entry.cooldown.enabled)
     }).map(entry => entry.abilityClass);
     
-    return _.last(enabledAbilities);
+    return enabledAbilities.length ? _.last(enabledAbilities) : ABILITY_ATTACK;
   }
 
   public getExpForLevel(level: number): number {

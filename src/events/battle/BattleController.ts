@@ -1,3 +1,4 @@
+import _ from "lodash";
 import Game from "../../game";
 import * as battle from "../../../src/knightlands-shared/battle";
 import User from "../../user";
@@ -8,7 +9,6 @@ import { BattleUser } from './BattleUser';
 import { BattleGame } from './services/BattleGame';
 import { BattleInventory } from './services/BattleInventory';
 import { BattleSaveData } from './types';
-import { BattleMovement } from "./services/BattleMovement";
 
 const isProd = process.env.ENV == "prod";
 
@@ -67,6 +67,7 @@ export class BattleController {
   }
 
   async dispose() {
+    this._battleGame.dispose();
     await this._save();
   }
 
@@ -114,7 +115,7 @@ export class BattleController {
     await this._battleGame.init();
     await this._battleInventory.init();
     
-    const state = this.getState();
+    const state = _.cloneDeep(this.getState());
     delete state.game.initiativeRating;
     return state;
   }

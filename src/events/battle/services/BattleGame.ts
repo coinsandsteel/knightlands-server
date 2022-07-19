@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE } from "../../../knightlands-shared/battle";
-import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
@@ -26,18 +25,19 @@ export class BattleGame {
     this._ctrl = ctrl;
 
     this._userSquad = new BattleSquad(
-      state ? state.userSquad.units : null,
+      state ? state.userSquad.units : [],
       false,
       this._ctrl
     );
     this._enemySquad = new BattleSquad(
-      state ? state.enemySquad.units : null, 
+      state ? state.enemySquad.units : [], 
       true,
       this._ctrl
     );
 
     if (state) {
       this._state = state;
+      console.log("[Game] Loaded initiative rating", this._state.initiativeRating);
     } else {
       this.setInitialState();
     }
@@ -45,11 +45,13 @@ export class BattleGame {
     this._movement = new BattleMovement(this._ctrl);
     this._combat = new BattleCombat(this._ctrl);
     this._terrain = new BattleTerrain(this._state.terrain, this._ctrl);
+
+    console.log("[Game] Loaded");
   }
 
   get relativeEnemySquad(): Unit[] {
-    const index = this._userSquad.units.findIndex(unit => unit.fighterId === this._state.combat.activeFighterId);
-    return index !== -1 ? this._enemySquad.units : this._userSquad.units;
+    const activeFighter = this.getActiveFighter();
+    return activeFighter.isEnemy ? this._userSquad.units : this._enemySquad.units;
   }
 
   get movement(): BattleMovement {
@@ -68,6 +70,10 @@ export class BattleGame {
     return [...this._userSquad.units, ...this._enemySquad.units];
   }
 
+  async dispose() {
+    console.log("[Game] Shutting down", this._state);
+  }
+  
   protected setInitialState() {
     this._state = {
       mode: null,
@@ -93,6 +99,8 @@ export class BattleGame {
         }
       }
     } as BattleGameState;
+
+    console.log("[Game] Initial state was set");
   }
 
   public getState(): BattleGameState {
@@ -103,11 +111,14 @@ export class BattleGame {
   }
 
   public init(): void {
+    console.log("[Game] Init", this._state);
+    
     this._userSquad.init();
     this._enemySquad.init();
 
-    if (!this._state.initiativeRating ||!this._state.initiativeRating.length) {
-      this.createInitiativeRating();
+    if (this._state.combat.started) {
+      console.log("[Game] Resuming combat", this._state);
+      this.launchFighter();
     }
 
     /*[
@@ -126,6 +137,11 @@ export class BattleGame {
     })*/
   }
   
+  protected getActiveFighter(): Unit|null {
+    const fighterId = this._state.combat.activeFighterId;
+    return this._userSquad.getFighter(fighterId) || this._enemySquad.getFighter(fighterId) || null;
+  }
+
   public squadIncludesUnit(unitId: string): boolean {
     return this._userSquad.includesUnit(unitId);
   }
@@ -252,50 +268,42 @@ export class BattleGame {
   
   public nextFighter(): void {
     if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
-      return;
+      throw Error("No initiative rating. Cannot choose next fighter.");
     }
 
-    let fighterId = null;
-    const index = this._state.initiativeRating.findIndex(entry => entry.active === true);
-
-    let drawFinished = false;
-    if (index === -1) {
-      fighterId = this._state.initiativeRating[0].fighterId;
-      this._state.initiativeRating[0].active = true;
-    } else {
-      this._state.initiativeRating[index].active = false;
-      if (this._state.initiativeRating[index+1]) {
-        fighterId = this._state.initiativeRating[index+1].fighterId;
-        this._state.initiativeRating[index+1].active = true;
-      } else {
-        fighterId = this._state.initiativeRating[0].fighterId;
-        this._state.initiativeRating[0].active = true;
-        drawFinished = true;
-      }
-    }
-
-    this.setActiveFighter(fighterId);
-
-    // Find a fighter
-    const fighter = this._userSquad.getFighter(fighterId) || this._enemySquad.getFighter(fighterId) || null;
-    if (!fighter) {
-      return;
-    }
-
-    const isEnemy = this._enemySquad.includesFighter(fighterId);
-    console.log("Active fighter is", { fighterId: fighter.fighterId, isEnemy });
+    console.log("[Game] Choosing the next fighter...");
     
-    if (this._enemySquad.includesFighter(fighterId)) {
-      this.setMoveCells([]);
-      this.autoMove(fighter);
+    // No active fighter
+    if (!this.getActiveFighter()) {
+      console.log("[Game] No active fighter. Choosing the first one.");
+      this.setActiveFighter(null);
+    // Next fighter
     } else {
-      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      const nextFighterId = this.getNextFighterId();
+      console.log(`[Game] Now active fighter is ${nextFighterId}`);
+      this.setActiveFighter(nextFighterId);
+    }
+
+    this.launchFighter();
+  }
+  
+  public launchFighter(): void {
+    const activeFighter = this.getActiveFighter();
+    if (activeFighter.isEnemy) {
+      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (enemy). Making a move...`);
+      this.setMoveCells([]);
+      this.autoMove(activeFighter);
+    } else {
+      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
+      const moveCells = this._movement.getRangeCells("move", activeFighter.index, activeFighter.speed, SETTINGS.moveScheme);
       this.setMoveCells(moveCells);
     }
 
     this.setAttackCells([]);
     
-    if (drawFinished) {
+    // No next fighter id = draw finished
+    if (!this.getNextFighterId()) {
+      console.log("[Game] Draw finished");
       this.callbackDrawFinished();
     }
 
@@ -307,7 +315,7 @@ export class BattleGame {
     this._userSquad.callbackDrawFinished();
   }
 
-  public createInitiativeRating(): void{
+  public createInitiativeRating(): void {
     this._state.initiativeRating = _.orderBy(
       _.union(
         this._userSquad.getState().units,
@@ -321,17 +329,19 @@ export class BattleGame {
       }),
       ["initiative", "desc"]
     );
+    console.log("[Game] Initiative rating was created", this._state.initiativeRating);
     //console.log("createInitiativeRating", { initiativeRating: this._state.initiativeRating });
   }
 
   public refreshInitiativeRating(){
     if (!this._state.initiativeRating) {
-      return;
+      throw Error("Cannot refresh empty initiativeRating");
     }
     this._state.initiativeRating = _.orderBy(
-      this._state.initiativeRating, 
+      this._state.initiativeRating,
       ["initiative", "desc"]
     );
+    console.log("[Game] Initiative rating was refreshed", this._state.initiativeRating);
   }
 
   public chooseAbility(abilityClass: string): void {
@@ -342,7 +352,7 @@ export class BattleGame {
     }
 
     if (abilityClass === ABILITY_MOVE) {
-      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      const moveCells = this._movement.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
     } else {
@@ -371,26 +381,25 @@ export class BattleGame {
   }
   
   public autoMove(fighter: Unit): void {
-    let ability = null;
     let index = null;
-
-    const attackCells = this._combat.getAttackCells(fighter, ability, true);
+    let ability = fighter.strongestEnabledAbility();
+    let attackCells = this._combat.getAttackCells(fighter, ability, true);
     if (attackCells.length) {
-      ability = fighter.strongestEnabledAbility();
       index = _.sample(attackCells);
-      console.log('Auto attack', { attackCells, index });
+      console.log('[Game] AI attacks', { attackCells, index });
     } else {
-      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed, SETTINGS.moveScheme);
+      ability = ABILITY_MOVE;
+      const moveCells = this._movement.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
       index = _.sample(moveCells);
-      console.log('Auto move', { moveCells, index });
+      console.log('[Game] AI moves', { moveCells, choosedIndex: index });
     }
 
     this.handleAction(fighter, index, ability, true);
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
-    console.log('handleAction', { fighter: fighter.fighterId, index, ability });
-
+    console.log("[Action] Data", { fighter, index, ability, timeout });
+    
     // Check if unit can use ability
     // Check ability cooldown
     if (
@@ -406,46 +415,60 @@ export class BattleGame {
 
     // Move
     if (index !== null && ability === ABILITY_MOVE) {
+      console.log("[Action] Move", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
     // Heal
     } else if (index !== null && abilityType === ABILITY_TYPE_HEALING && target !== null) {
+      console.log("[Action] Heal", { fighter, target, ability });
       this._combat.heal(fighter, target, ability);
 
     // Group heal
     } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
+      console.log("[Action] Group heal", { fighter, ability });
       this._combat.groupHeal(fighter, ability);
 
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
+      console.log("[Action] Jump", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
     // Buff / De-buff
     } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
+      console.log("[Action] Duff/De-buff", { fighter, target, ability });
       this._combat.buff(fighter, target, ability);
       
     // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
+      console.log("[Action] Self-buff", { fighter, ability });
       this._combat.buff(fighter, fighter, ability);
       
     // Attack
     } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK && target !== null) {
-      // Deal damage
+      console.log("[Action] Attack", { fighter, target, ability });
       this._combat.attack(fighter, target, ability);
 
     } else {
-      throw errors.IncorrectArguments;
+      throw Error("Unknown action");
     }
 
+    // Enable ability cooldown
     if (ability && ![ABILITY_ATTACK, ABILITY_MOVE].includes(ability)) {
       fighter.enableAbilityCooldown(ability);
-      console.log("Cooldown set", fighter.getAbilityByClass(ability));
+      console.log("[Game] Ability cooldown was set", fighter.getAbilityByClass(ability));
     }
 
     this._ctrl.events.flush();
 
     // Launch next unit turn
-    setTimeout(() => this.nextFighter(), timeout ? 1500 : 0);
+    if (timeout) {
+      const self = this;
+      setTimeout(function(){ 
+        self.nextFighter(); 
+      }, 1500);
+    } else {
+      this.nextFighter();
+    }
   }
 
   public getFighterByIndex(index: number): Unit|null {
@@ -456,13 +479,11 @@ export class BattleGame {
   }
 
   public getSquadByFighter(fighter: Unit): BattleSquad {
-    if (this._userSquad.includesFighter(fighter.fighterId)) {
+    if (fighter.isEnemy) {
+      return this._enemySquad;
+    } else {
       return this._userSquad;
     }
-    if (this._enemySquad.includesFighter(fighter.fighterId)) {
-      return this._enemySquad;
-    }
-    throw errors.IncorrectArguments;
   }
 
   protected setMoveCells(cells: number[]): void {
@@ -475,9 +496,40 @@ export class BattleGame {
     this._ctrl.events.combatAttackCells(cells);
   }
 
-  protected setActiveFighter(fighterId: string): void {
+  protected setActiveFighter(fighterId: string|null): void {
+    if (!this._state.initiativeRating.length) {
+      //this.createInitiativeRating();
+    }
+
+    this._state.initiativeRating.forEach(entry => {
+      entry.active = false;
+    });
+
+    if (!fighterId) {
+      fighterId = this._state.initiativeRating[0].fighterId;
+      this._state.initiativeRating[0].active = true;
+    } else {
+      const index = this._state.initiativeRating.findIndex(entry => entry.fighterId === fighterId);
+      this._state.initiativeRating[index].active = true;
+    }
+
     this._state.combat.activeFighterId = fighterId;
     this._ctrl.events.activeFighterId(fighterId);
+  }
+
+  protected getNextFighterId(): string|null {
+    if (!this._state.initiativeRating.length) {
+      //this.createInitiativeRating();
+    }
+    
+    let fighterId = null;
+    const index = this._state.initiativeRating.findIndex(entry => entry.active === true);
+    if (this._state.initiativeRating[index+1]) {
+      fighterId = this._state.initiativeRating[index+1].fighterId;
+    } else {
+      fighterId = null;
+    }
+    return fighterId;
   }
 
   public skip(): void {}

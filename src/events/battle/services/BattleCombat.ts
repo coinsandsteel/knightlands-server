@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { BUFFS, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
@@ -93,7 +93,7 @@ export class BattleCombat {
     }
 
     const abilityData = source.getAbilityByClass(abilityClass);
-    const dmgBase = abilityData.value;
+    const dmgBase = abilityClass === ABILITY_ATTACK ? source.damage : abilityData.value;
     const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
@@ -133,7 +133,7 @@ export class BattleCombat {
         return { range: 2, scheme: SETTINGS.attackScheme };
       }
       case UNIT_CLASS_MELEE: {
-        if (abilityClass === ABILITY_FLIGHT) {
+        if (abilityClass === ABILITY_FLIGHT || abilityClass === ABILITY_ATTACK) {
           return { range: 2, scheme: SETTINGS.jumpScheme };
         } else {
           return { range: 1, scheme: SETTINGS.attackScheme };
@@ -142,12 +142,17 @@ export class BattleCombat {
       case UNIT_CLASS_RANGE: {
         if (abilityClass === ABILITY_DASH) {
           return { range: fighter.speed + 2, scheme: SETTINGS.jumpScheme };
+        } else if (abilityClass === ABILITY_ATTACK) {
+          return { range: 2, scheme: SETTINGS.attackScheme };
         } else {
           return { range: 1, scheme: SETTINGS.attackScheme };
         }
       }
       case UNIT_CLASS_TANK: {
         switch (abilityClass) {
+          case ABILITY_ATTACK: {
+            return { range: 1, scheme: SETTINGS.attackScheme };
+          }
           case ABILITY_RUSH: {
             return { range: fighter.speed + 2, scheme: SETTINGS.jumpScheme };
           }
@@ -170,9 +175,17 @@ export class BattleCombat {
 
   public getAttackCells(fighter: Unit, abilityClass: string, onlyTargets: boolean): number[] {
     const rangeData = this.getRangeAndScheme(fighter, abilityClass);
-    const rangeCells = this._ctrl.game.movement.getRangeCells(fighter.index, rangeData.range, rangeData.scheme);
+    const abilityType = ABILITY_TYPES[abilityClass];
+    const rangeCells = this._ctrl.game.movement.getRangeCells(
+      abilityType === ABILITY_TYPE_JUMP ? "jump" : "attack", 
+      fighter.index,
+      rangeData.range,
+      rangeData.scheme
+    );
+
     if (onlyTargets) {
       const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
+      console.log("[Combat] Relative enemy indexes", enemyCells);
       return _.intersection(rangeCells, enemyCells);
     } else {
       return rangeCells;

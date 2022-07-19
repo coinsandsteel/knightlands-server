@@ -119,7 +119,7 @@ export class BattleInventory {
       ||
       !unit.canUpgradeLevel()
     ) {
-      throw errors.IncorrectArguments;
+      throw Error("Cannot upgrade a unit");
     }
 
     if (this._ctrl.user.coins < unit.level.price) {
@@ -146,7 +146,7 @@ export class BattleInventory {
       ||
       !unit.canUpgradeAbility(ability)
     ) {
-      throw errors.IncorrectArguments;
+      throw Error("Cannot upgrade a unit's ability");
     }
     
     if (this._ctrl.user.crystals < unit.level.price) {

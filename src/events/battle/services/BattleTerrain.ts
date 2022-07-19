@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BattleController } from "../BattleController";
-import { SETTINGS, TERRAIN } from "../meta";
+import { SETTINGS, TERRAIN, TERRAIN_HILL, TERRAIN_ICE, TERRAIN_LAVA, TERRAIN_SWAMP, TERRAIN_THORNS, TERRAIN_WOODS } from "../meta";
 import { BattleTerrainMap } from "../types";
 
 export class BattleTerrain {
@@ -14,6 +14,7 @@ export class BattleTerrain {
     if (state) {
       this._state = state;
       this.setCoreMap();
+      console.log("[Terrain] Old map was set", this._coreMap);
     }
   }
 
@@ -29,6 +30,7 @@ export class BattleTerrain {
 
   public setRandomMap(): void {
     this.setMap(_.cloneDeep(_.sample(TERRAIN)));
+    console.log("[Terrain] Random map was set", this._coreMap);
   }
 
   public setCoreMap(): void {
@@ -39,11 +41,12 @@ export class BattleTerrain {
     const coreMap = [];
     const slots = [null, null, null, null, null];
     const tileTypes = [
-      "woods",
-      "hill",
-      "swamp",
-      "thorns",
-      "lava"
+      TERRAIN_ICE,
+      TERRAIN_WOODS,
+      TERRAIN_HILL,
+      TERRAIN_SWAMP,
+      TERRAIN_THORNS,
+      TERRAIN_LAVA
     ];
 
     const terrain = this._state.tiles.map(asset => {
