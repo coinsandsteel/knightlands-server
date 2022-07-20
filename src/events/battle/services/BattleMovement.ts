@@ -163,6 +163,7 @@ export class BattleMovement {
       fighter.modifyHp(
         -this._ctrl.game.terrain.getLavaDamage(fighter.maxHp)
       );
+      this._ctrl.game.chekIfFighterIsDead(fighter);
     }
   }
 
@@ -173,6 +174,7 @@ export class BattleMovement {
       case TERRAIN_LAVA: {
         const damage = this._ctrl.game.terrain.getLavaDamage(fighter.maxHp);
         fighter.modifyHp(-damage);
+        this._ctrl.game.chekIfFighterIsDead(fighter);
         console.log(`Passing through the ${terrain}`, { damage });
         break;
       }

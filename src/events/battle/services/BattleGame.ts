@@ -114,8 +114,13 @@ export class BattleGame {
   public init(): void {
     console.log("[Game] Init", this._state);
     
-    this._userSquad.init();
-    this._enemySquad.init();
+    if (this._userSquad) {
+      this._userSquad.init();
+    }
+    
+    if (this._enemySquad) {
+      this._enemySquad.init();
+    }
 
     if (this._state.combat.started) {
       console.log("[Game] Resuming combat", this._state);
@@ -419,6 +424,10 @@ export class BattleGame {
     const abilityType = ability ? ABILITY_TYPES[ability] : null;
     const target = index === null ? null : this.getFighterByIndex(index);
 
+    if (target && target.isDead) {
+      return;
+    }
+
     // Move
     if (index !== null && ability === ABILITY_MOVE) {
       console.log("[Action] Move", { fighter, index });
@@ -542,6 +551,16 @@ export class BattleGame {
     return fighterId;
   }
 
+  public chekIfFighterIsDead(fighter: Unit): void {
+    if (fighter.hp <= 0) {
+      if (fighter.isEnemy) {
+        this._ctrl.events.enemyFighter(fighter);
+      } else {
+        this._ctrl.events.userFighter(fighter);
+      }
+    }
+  }
+
   public skip(): void {
     this.nextFighter();
   }
@@ -557,8 +576,8 @@ export class BattleGame {
     this.setMoveCells([]);
     this.setAttackCells([]);
 
-    this._state.enemySquad = null;
-    this._ctrl.events.enemySquad(null);
+    this._state.enemySquad = this._enemySquad.getInitialState();
+    this._ctrl.events.enemySquad(this._state.enemySquad);
     
     this._state.initiativeRating = [];
     this._ctrl.events.initiativeRating([]);

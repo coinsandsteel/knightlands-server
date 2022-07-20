@@ -20,6 +20,7 @@ import {
 export class Unit {
   protected _template: number;
   protected _isEnemy: boolean;
+  protected _isDead: boolean;
   protected _fighterId: string;
   protected _unitId: string;
   protected _unitTribe: string; // 15
@@ -68,6 +69,10 @@ export class Unit {
 
   get isEnemy(): boolean {
     return this._isEnemy;
+  }
+
+  get isDead(): boolean {
+    return this._isDead;
   }
 
   get unitId(): string {
@@ -134,6 +139,10 @@ export class Unit {
     
     if ("isEnemy" in blueprint) {
       this._isEnemy = blueprint.isEnemy;
+    }
+    
+    if ("isDead" in blueprint) {
+      this._isDead = blueprint.isDead;
     }
     
     if ("tier" in blueprint) {
@@ -316,6 +325,7 @@ export class Unit {
       template: this._template,
       fighterId: this._fighterId,
       isEnemy: this._isEnemy,
+      isDead: this._isDead || false,
       unitId: this._unitId,
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,
@@ -644,9 +654,12 @@ export class Unit {
   };
 
   public modifyHp(value: number): void {
+    if (this._isDead) {
+      return;
+    }
     this._hp += value;
     if (this._hp <= 0) {
-      this.destroy();
+      this._isDead = true;
     }
   };
 
@@ -658,6 +671,10 @@ export class Unit {
     return enabledAbilities.length ? _.last(enabledAbilities) : ABILITY_ATTACK;
   }
 
+  public resurrect(): void {
+    this._isDead = false;
+  }
+
   public getExpForLevel(level: number): number {
     let i = 0;
     let exp = 0;
@@ -666,9 +683,5 @@ export class Unit {
       i++;
     }
     return exp;
-  }
-
-  public destroy(): void {
-
   }
 }

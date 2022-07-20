@@ -100,6 +100,7 @@ export class BattleCombat {
 
     const oldHp = target.hp;
     target.modifyHp(-damage);
+    this._ctrl.game.chekIfFighterIsDead(target);
 
     // TODO add simple hit into meta
     // TODO critical hit logic

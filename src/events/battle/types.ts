@@ -43,6 +43,7 @@ export interface BattleUnit {
   unitId?: string;
   fighterId?: string;
   isEnemy?: boolean;
+  isDead?: boolean;
   tier?: number; // 3, modify via merger (3 => 1)
   levelInt?: number;
   level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade

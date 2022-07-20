@@ -20,7 +20,7 @@ export class BattleSquad {
     this._ctrl = ctrl;
     this._isEnemy = isEnemy;
 
-    this.setInitialState();
+    this._state = this.getInitialState();
     this._state.units = units;
 
     this.createUnits();
@@ -33,8 +33,8 @@ export class BattleSquad {
     //this._bonuses = [];
   }
   
-  public setInitialState() {
-    this._state = {
+  public getInitialState(): BattleSquadState {
+    return {
       power: 0,
       bonuses: [],
       units: []
@@ -75,6 +75,7 @@ export class BattleSquad {
     }
 
     unit.regenerateFighterId();
+    unit.resurrect();
 
     // Fill slot
     this._units[index] = unit;
