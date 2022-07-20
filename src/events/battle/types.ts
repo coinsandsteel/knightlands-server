@@ -80,7 +80,7 @@ export interface BattleGameState {
   enemySquad: BattleSquadState;
   initiativeRating: BattleInitiativeRatingEntry[];
 
-  terrain: BattleTerrainMap;
+  terrain: BattleTerrainMap|null;
   combat: BattleCombatState;
 }
 

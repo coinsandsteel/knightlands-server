@@ -33,7 +33,7 @@ export class BattleSquad {
     //this._bonuses = [];
   }
   
-  protected setInitialState() {
+  public setInitialState() {
     this._state = {
       power: 0,
       bonuses: [],

@@ -266,6 +266,11 @@ export class BattleGame {
     this._ctrl.events.combatStarted(value);
   }
   
+  public setCombatResult(value: string|null): void {
+    this._state.combat.result = value;
+    this._ctrl.events.combatResult(value);
+  }
+  
   public nextFighter(): void {
     if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
       throw Error("No initiative rating. Cannot choose next fighter.");
@@ -513,6 +518,10 @@ export class BattleGame {
       this._state.initiativeRating[index].active = true;
     }
 
+    this.setActiveFighterId(fighterId);
+  }
+
+  protected setActiveFighterId(fighterId: string|null): void {
     this._state.combat.activeFighterId = fighterId;
     this._ctrl.events.activeFighterId(fighterId);
   }
@@ -532,7 +541,25 @@ export class BattleGame {
     return fighterId;
   }
 
-  public skip(): void {}
+  public skip(): void {
+    this.nextFighter();
+  }
 
-  public exit(): void {}
+  public exit(): void {
+    this.setMode(null);
+    this.setDifficulty(null);
+    this.setCombatStarted(false);
+    this.setCombatResult(null);
+    this.setActiveFighterId(null);
+    this.setMoveCells([]);
+    this.setAttackCells([]);
+
+    this._state.enemySquad = null;
+    this._ctrl.events.enemySquad(null);
+    
+    this._state.initiativeRating = [];
+    this._ctrl.events.initiativeRating([]);
+
+    console.log("[Game] Exit");
+  }
 }

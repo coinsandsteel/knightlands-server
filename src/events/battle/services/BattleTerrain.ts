@@ -5,7 +5,7 @@ import { BattleTerrainMap } from "../types";
 
 export class BattleTerrain {
   protected _ctrl: BattleController;
-  protected _state: BattleTerrainMap;
+  protected _state: BattleTerrainMap|null;
   protected _coreMap: (string|null)[];
 
   constructor (state: BattleTerrainMap|null, ctrl: BattleController){
@@ -15,10 +15,12 @@ export class BattleTerrain {
       this._state = state;
       this.setCoreMap();
       console.log("[Terrain] Old map was set", this._coreMap);
+    } else {
+      this._state = null;
     }
   }
 
-  public getState(): BattleTerrainMap {
+  public getState(): BattleTerrainMap|null {
     return this._state;
   }
   
