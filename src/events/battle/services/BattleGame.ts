@@ -20,6 +20,7 @@ export class BattleGame {
   protected _combat: BattleCombat;
   protected _movement: BattleMovement;
   protected _terrain: BattleTerrain;
+  protected _aiMoveTimeout: ReturnType<typeof setTimeout>;
  
   constructor(state: BattleGameState|null, ctrl: BattleController) {
     this._ctrl = ctrl;
@@ -468,7 +469,7 @@ export class BattleGame {
     // Launch next unit turn
     if (timeout) {
       const self = this;
-      setTimeout(function(){ 
+      this._aiMoveTimeout = setTimeout(function(){ 
         self.nextFighter(); 
       }, 1500);
     } else {
@@ -546,6 +547,8 @@ export class BattleGame {
   }
 
   public exit(): void {
+    clearTimeout(this._aiMoveTimeout);
+
     this.setMode(null);
     this.setDifficulty(null);
     this.setCombatStarted(false);
