@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { ABILITY_ATTACK, ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { BUFFS, SETTINGS } from "../meta";
+import { SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 
 export class BattleCombat {
@@ -65,10 +65,10 @@ export class BattleCombat {
 
     return;
 
-    const buff = BUFFS[abilityClass][abilityData.level];
+    //const buff = BUFFS[abilityClass][abilityData.level];
     
     // TODO test
-    const buffState = target.buff({
+    /*const buffState = target.buff({
       source: abilityData.abilityType, ...buff 
     });
 
@@ -84,7 +84,7 @@ export class BattleCombat {
         index: target.index
       },
       buff: buffState
-    });
+    });*/
   }
 
   public attack(source: Unit, target: Unit, abilityClass: string): void {

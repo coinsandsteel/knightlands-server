@@ -70,290 +70,1035 @@ export const CHARACTERISTICS = {
 
 export const ABILITIES = {
   [battle.UNIT_CLASS_MELEE]: {
-    [battle.ABILITY_POWER_STRIKE]: [
-      [12, 14, 16, 17, 19], // Unit tier 1
-      [16, 19, 21, 24, 26], // Unit tier 2
-      [22, 25, 28, 32, 35], // Unit tier 3
-    ],
-    [battle.ABILITY_AXE_BLOW]: [
-      [12, 14, 16, 17, 19],
-      [16, 19, 21, 24, 26],
-      [22, 25, 28, 32, 35],
-    ],
-    [battle.ABILITY_SPEAR_STRIKE]: [
-      [12, 14, 16, 17, 19],
-      [16, 19, 21, 24, 26],
-      [22, 25, 28, 32, 35],
-    ],
-    [battle.ABILITY_STRONG_PUNCH]: [
-      [12, 14, 16, 17, 19],
-      [16, 19, 21, 24, 26],
-      [22, 25, 28, 32, 35],
-    ],
-    [battle.ABILITY_DRAGON_BITE]: [
-      [18, 20, 23, 26, 28],
-      [24, 27, 31, 35, 38],
-      [32, 37, 42, 47, 52],
-    ],
-    [battle.ABILITY_SWORD_CRUSH]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_AXE_CRUSH]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_WOLF_BITE]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_FURY_CLAWS]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_KUNAI_STRIKE]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_FIRE_BLADE]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_FROST_BLADE]: [
-      null,
-      [26, 30, 33, 37],
-      [35, 40, 45, 50],
-    ],
-    [battle.ABILITY_RUSH]: [
-      null,
-      [7, 8, 9, 10],
-      [10, 11, 13, 14],
-    ],
-    [battle.ABILITY_STUN_SHOT]: [
-      null,
-      [7, 8, 9, 10],
-      [10, 11, 13, 14],
-    ],
-    [battle.ABILITY_LETHAL_STRIKE]: [
-      null,
-      null,
-      [46, 56, 66],
-    ],
-    [battle.ABILITY_FATAL_STRIKE]: [
-      null,
-      null,
-      [46, 56, 66],
-    ],
-    [battle.ABILITY_BLADE_VORTEX]: [
-      null,
-      null,
-      [46, 56, 66],
-    ],
-    [battle.ABILITY_CRUSH_OF_DOOM]: [
-      null,
-      null,
-      [46, 56, 66],
-    ],
-    [battle.ABILITY_DRAGON_FURY]: [
-      null,
-      null,
-      [46, 56, 66],
-    ],
-    [battle.ABILITY_FROZEN_ABYSS]: [
-      null,
-      null,
-      [39, 47, 55],
-    ],
+    [battle.ABILITY_POWER_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [12, 14, 16, 17, 19],
+        [21, 23, 25, 26, 28],
+        [30, 32, 34, 35, 37]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_AXE_BLOW]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [12, 14, 16, 17, 19],
+        [21, 23, 25, 26, 28],
+        [30, 32, 34, 35, 37]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_SPEAR_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [12, 14, 16, 17, 19],
+        [21, 23, 25, 26, 28],
+        [30, 32, 34, 35, 37]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_STRONG_PUNCH]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [12, 14, 16, 17, 19],
+        [21, 23, 25, 26, 28],
+        [30, 32, 34, 35, 37]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_DRAGON_BITE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [18, 20, 23, 26, 28],
+        [31, 34, 36, 39, 42],
+        [44, 47, 49, 52, 55]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_SWORD_CRUSH]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_AXE_CRUSH]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_WOLF_BITE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FURY_CLAWS]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_KUNAI_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FIRE_BLADE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FROST_BLADE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [31, 34, 38, 42],
+        [45, 49, 52, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_STUN]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [null, [9, 10, 11, 12],
+        [13, 14, 15, 16]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: [ // Ability lvl
+        [{ type: "stun", probability: 0.5, estimate: 1 }], // Turns
+        [{ type: "stun", probability: 0.6, estimate: 1 }],
+        [{ type: "stun", probability: 0.7, estimate: 1 }],
+        [{ type: "stun", probability: 0.8, estimate: 1 }],
+        [{ type: "stun", probability: 0.9, estimate: 1 }],
+        [{ type: "stun", probability: 1, estimate: 1 }, ],
+        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.15, estimate: 2 }],
+        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.25, estimate: 2 }],
+      ],
+    },
+    [battle.ABILITY_RUSH]: {
+      abilityType: battle.ABILITY_TYPE_JUMP,
+      damage: [null, [9, 10, 11, 12],
+        [13, 14, 15, 16]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed+1",
+      attackRange: 1,
+      ignoreObstacles: [false, false, false, false, false, false, false, true],
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FLIGHT]: {
+      abilityType: battle.ABILITY_TYPE_FLIGHT,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: ["speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+3"],
+      attackRange: null,
+      ignoreObstacles: true,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_RAGE]: {
+      abilityType: battle.ABILITY_TYPE_SELF_BUFF,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: null,
+      ignoreObstacles: false,
+      duration: 3,
+      effects: [ // Ability lvl
+        { type: "power", modifier: 1.15 }, // Turns
+        { type: "power", modifier: 1.20 },
+        { type: "power", modifier: 1.25 },
+        { type: "power", modifier: 1.30 },
+        { type: "power", modifier: 1.35 },
+        { type: "power", modifier: 1.40 },
+        { type: "power", modifier: 1.45 },
+        { type: "power", modifier: 1.50 },
+      ],
+    },
+    [battle.ABILITY_ZEALOT]: {
+      abilityType: battle.ABILITY_TYPE_SELF_BUFF,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: null,
+      ignoreObstacles: false,
+      duration: 3,
+      effects: [
+        { type: "power", modifier: 1.15 }, // Turns
+        { type: "power", modifier: 1.20 },
+        { type: "power", modifier: 1.25 },
+        { type: "power", modifier: 1.30 },
+        { type: "power", modifier: 1.35 },
+        { type: "power", modifier: 1.40 },
+        { type: "power", modifier: 1.45 },
+        { type: "power", modifier: 1.50 },
+      ]
+    },
+    [battle.ABILITY_LETHAL_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [53, 60, 68]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FATAL_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [53, 60, 68]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_BLADE_VORTEX]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [53, 60, 68]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_CRUSH_OF_DOOM]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [53, 60, 68]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_DRAGON_FURY]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [53, 60, 68]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FROZEN_ABYSS]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [44, 50, 57]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: 1,
+      effects: [
+        { type: "speed", modifier: 0.8 },
+        { type: "speed", modifier: 0.7 },
+        { type: "speed", modifier: 0.6 },
+      ]
+    },
+    [battle.ABILITY_ATTACK]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: null,
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
   },
   [battle.UNIT_CLASS_RANGE]: {
-    [battle.ABILITY_JAVELIN_THROW]: [
-      [16, 18, 20, 23, 25],
-      [21, 24, 27, 31, 34],
-      [28, 33, 37, 41, 46],
-    ],
-    [battle.ABILITY_POWER_SHOT]: [
-      [16, 18, 20, 23, 25],
-      [21, 24, 27, 31, 34],
-      [28, 33, 37, 41, 46],
-    ],
-    [battle.ABILITY_DOUBLE_SHOT]: [
-      null,
-      [34, 39, 43, 48],
-      [46, 52, 59, 65],
-    ],
-    [battle.ABILITY_ACCURATE_SHOT]: [
-      null,
-      [34, 39, 43, 48],
-      [46, 52, 59, 65],
-    ],
-    [battle.ABILITY_ARROW_CRUSH]: [
-      null,
-      [34, 39, 43, 48],
-      [46, 52, 59, 65],
-    ],
-    [battle.ABILITY_STUN_SHOT]: [
-      null,
-      [10, 11, 12, 13],
-      [13, 15, 16, 18],
-    ],
-    [battle.ABILITY_DEATH_SHOT]: [
-      null,
-      null,
-      [60, 73, 85],
-    ],
-    [battle.ABILITY_LETHAL_SHOT]: [
-      null,
-      null,
-      [60, 73, 85],
-    ],
-    [battle.ABILITY_HAMSTRING]: [
-      null,
-      null,
-      [50, 61, 71],
-    ],
+    [battle.ABILITY_JAVELIN_THROW]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [16, 18, 20, 23, 25],
+        [27, 30, 32, 34, 37],
+        [39, 41, 44, 46, 48]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_POWER_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [16, 18, 20, 23, 25],
+        [27, 30, 32, 34, 37],
+        [39, 41, 44, 46, 48]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_DOUBLE_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [40, 45, 49, 54],
+        [59, 63, 68, 72]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_ACCURATE_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [40, 45, 49, 54],
+        [59, 63, 68, 72]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_ARROW_CRUSH]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [40, 45, 49, 54],
+        [59, 63, 68, 72]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_STUN_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [null, [11, 13, 14, 15],
+        [16, 18, 19, 20]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: [ // Ability lvl
+        [{ type: "stun", probability: 0.5, estimate: 1 }], // Turns
+        [{ type: "stun", probability: 0.6, estimate: 1 }],
+        [{ type: "stun", probability: 0.7, estimate: 1 }],
+        [{ type: "stun", probability: 0.8, estimate: 1 }],
+        [{ type: "stun", probability: 0.9, estimate: 1 }],
+        [{ type: "stun", probability: 1, estimate: 1 }, ],
+        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.15, estimate: 2 }],
+        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.25, estimate: 2 }],
+      ],
+      },
+    [battle.ABILITY_DASH]: {
+      abilityType: battle.ABILITY_TYPE_JUMP,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed+1",
+      attackRange: null,
+      ignoreObstacles: [false, false, false, false, false, false, false, true],
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FLIGHT]: {
+      abilityType: battle.ABILITY_TYPE_FLIGHT,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: ["speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+3"],
+      attackRange: null,
+      ignoreObstacles: true,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_HEAVY_ARROW]: {
+      abilityType: battle.ABILITY_TYPE_SELF_BUFF,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: null,
+      ignoreObstacles: false,
+      duration: 3,
+      effects: [ // Ability lvl
+        { type: "power", modifier: 1.15 }, // Turns
+        { type: "power", modifier: 1.20 },
+        { type: "power", modifier: 1.25 },
+        { type: "power", modifier: 1.30 },
+        { type: "power", modifier: 1.35 },
+        { type: "power", modifier: 1.40 },
+        { type: "power", modifier: 1.45 },
+        { type: "power", modifier: 1.50 },
+      ],
+    },
+    [battle.ABILITY_DEATH_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [69, 79, 88]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_LETHAL_SHOT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [69, 79, 88]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_HAMSTRING]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [57, 65, 74]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: 1,
+      effects: [
+        { type: "speed", modifier: 0.8 },
+        { type: "speed", modifier: 0.7 },
+        { type: "speed", modifier: 0.6 },
+      ]
+    },
+    [battle.ABILITY_ATTACK]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: null,
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
   },
   [battle.UNIT_CLASS_MAGE]: {
-    [battle.ABILITY_FLAME_STRIKE]: [
-      [18, 21, 23, 26, 29],
-      [24, 28, 32, 35, 39],
-      [33, 38, 43, 48, 53],
-    ],
-    [battle.ABILITY_ENERGY_BOLT]: [
-      null,
-      [39, 45, 50, 55],
-      [53, 60, 68, 75],
-    ],
-    [battle.ABILITY_HURRICANE]: [
-      null,
-      [39, 45, 50, 55],
-      [53, 60, 68, 75],
-    ],
-    [battle.ABILITY_DARK_VORTEX]: [
-      null,
-      null,
-      [70, 84, 99],
-    ],
+    [battle.ABILITY_FLAME_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [18, 21, 23, 26, 29],
+        [32, 34, 37, 40, 42],
+        [45, 48, 50, 53, 56]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_ENERGY_BOLT]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [46, 52, 57, 62],
+        [68, 73, 78, 84]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_HURRICANE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [46, 52, 57, 62],
+        [68, 73, 78, 84]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_DARK_VORTEX]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [80, 91, 102]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_ATTACK]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: null,
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
   },
   [battle.UNIT_CLASS_TANK]: {
-    [battle.ABILITY_HOLY_STRIKE]: [
-      [8 , 10, 11, 12, 13],
-      [11, 13, 15, 16, 18],
-      [15, 18, 20, 22, 25],
-    ],
-    [battle.ABILITY_MORTAL_BLOW]: [
-      [8 , 10, 11, 12, 13],
-      [11, 13, 15, 16, 18],
-      [15, 18, 20, 22, 25],
-    ],
-    [battle.ABILITY_HEAVY_STRIKE]: [
-      [8 , 10, 11, 12, 13],
-      [11, 13, 15, 16, 18],
-      [15, 18, 20, 22, 25],
-    ],
-    [battle.ABILITY_SHIELD_STRIKE]: [
-      null,
-      [18, 21, 23, 26],
-      [25, 28, 32, 35],
-    ],
-    [battle.ABILITY_RUSH]: [
-      null,
-      [5, 6, 7, 7],
-      [7, 8, 9, 10],
-    ],
-    [battle.ABILITY_HUMMER_BLOW]: [
-      null,
-      null,
-      [32, 39, 46],
-    ],
-    [battle.ABILITY_RETRIBUTION]: [
-      null,
-      null,
-      [32, 39, 46],
-    ],
-    [battle.ABILITY_SHIELD_STUN]: [
-      null,
-      null,
-      [8, 9, 11],
-    ],
+    [battle.ABILITY_AGRESSION]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [
+        [14, 16, 18, 20, 21],
+        [22, 24, 25, 27, 29],
+        [30, 32, 34, 37, 39]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: [ // Ability lvl
+        [{ type: "agro", probability: 0.50, estimate: 1 }], // Turns
+        [{ type: "agro", probability: 0.55, estimate: 1 }],
+        [{ type: "agro", probability: 0.60, estimate: 1 }],
+        [{ type: "agro", probability: 0.60, estimate: 1 }],
+        [{ type: "agro", probability: 0.65, estimate: 1 }],
+        [{ type: "agro", probability: 0.70, estimate: 1 }],
+        [{ type: "agro", probability: 0.75, estimate: 1 }],
+        [{ type: "agro", probability: 0.80, estimate: 1 }],
+        [{ type: "agro", probability: 0.80, estimate: 1 }],
+        [{ type: "agro", probability: 0.85, estimate: 1 }],
+        [{ type: "agro", probability: 0.90, estimate: 1 }],
+        [{ type: "agro", probability: 0.95, estimate: 1 }],
+        [{ type: "agro", probability: 1, estimate: 1 }, ],
+        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.10, estimate: 2 }],
+        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.20, estimate: 2 }],
+        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.30, estimate: 2 }],
+        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.40, estimate: 2 }],
+        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.50, estimate: 2 }],
+      ],
+    },
+    [battle.ABILITY_HOLY_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [8, 10, 11, 12, 13],
+        [15, 16, 17, 19, 20],
+        [21, 22, 24, 25, 26]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_MORTAL_BLOW]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [8, 10, 11, 12, 13],
+        [15, 16, 17, 19, 20],
+        [21, 22, 24, 25, 26]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_HEAVY_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [
+        [8, 10, 11, 12, 13],
+        [15, 16, 17, 19, 20],
+        [21, 22, 24, 25, 26]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_SHIELD_STRIKE]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, [22, 24, 27, 29],
+        [32, 34, 37, 39]
+      ],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_RUSH]: {
+      abilityType: battle.ABILITY_TYPE_JUMP,
+      damage: [null, [6, 7, 8, 9],
+        [10, 11, 12, 14]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed+1",
+      attackRange: 1,
+      ignoreObstacles: [false, false, false, false, false, false, false, true],
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_FLIGHT]: {
+      abilityType: battle.ABILITY_TYPE_FLIGHT,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: ["speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+3"],
+      attackRange: null,
+      ignoreObstacles: true,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_TELEPORTATION]: {
+      abilityType: battle.ABILITY_TYPE_FLIGHT,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: ["speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+2", "speed+3"],
+      attackRange: null,
+      ignoreObstacles: true,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_HUMMER_BLOW]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [37, 42, 48]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_RETRIBUTION]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: [null, null, [37, 42, 48]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_SHIELD_STUN]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [null, null, [9, 10, 11]],
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: [
+        [{ type: "stun", prabibility: 0.7, estimate: 1 }],
+        [{ type: "stun", prabibility: 1, estimate: 1 }],
+        [{ type: "stun", prabibility: 1, estimate: 1 }, { type: "stun", prabibility: 0.3, estimate: 2 }]
+      ]
+    },
+    [battle.ABILITY_SHIELD_WALL]: {
+      abilityType: battle.ABILITY_TYPE_SELF_BUFF,
+      damage: [null, null, [52, 63, 74]],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: null,
+      ignoreObstacles: false,
+      duration: 1,
+      effects: [
+        { type: "defence", modifier: 1.75, estimate: 1 },
+        { type: "defence", modifier: 2, estimate: 1 },
+        { type: "defence", modifier: 2.25, estimate: 1 },
+      ]
+    },
+    [battle.ABILITY_ATTACK]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: null,
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: true,
+      moveRange: "speed-1",
+      attackRange: 1,
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
   },
-  other: {
-    [battle.ABILITY_SHIELD]: [
-      [14, 16, 18, 20, 22],
-      [18, 21, 24, 26, 29],
-      [25, 28, 32, 36, 39],
-    ],
-    [battle.ABILITY_CURSE]: [
-      [14, 16, 18, 20, 22],
-      [18, 21, 24, 26, 29],
-      [25, 28, 32, 36, 39],
-    ],
-    [battle.ABILITY_AGRESSION]: [
-      [14, 16, 18, 20, 22],
-      [18, 21, 24, 26, 29],
-      [25, 28, 32, 36, 39],
-    ],
-    [battle.ABILITY_FLIGHT]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_RAGE]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_ZEALOT]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_DASH]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_HEAVY_ARROW]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_MIGHT]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_TELEPORTATION]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_WEAKNESS]: [
-      null,
-      [30, 34, 38, 42],
-      [40, 45, 51, 56],
-    ],
-    [battle.ABILITY_SHIELD_WALL]: [
-      null,
-      null,
-      [52, 63, 74],
-    ],
-    [battle.ABILITY_WIND_WALK]: [
-      null,
-      null,
-      [52, 63, 74],
-    ],
-    [battle.ABILITY_LAZINESS]: [
-      null,
-      null,
-      [52, 63, 74],
-    ],
-  },
+  [battle.UNIT_CLASS_SUPPORT]: {
+    [battle.ABILITY_HEAL]: {
+      abilityType: battle.ABILITY_TYPE_HEALING,
+      damage: [
+        [18, 20, 23, 26, 28],
+        [31, 34, 36, 39, 42],
+        [44, 47, 49, 52, 55]
+      ],
+      damageScheme: 1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_SHIELD]: {
+      abilityType: battle.ABILITY_TYPE_BUFF,
+      damage: [
+        [14, 16, 18, 20, 22],
+        [24, 26, 28, 30, 32],
+        [33, 34, 35, 37, 39]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [ // Ability lvl
+        { type: "defence", modifier: 1.15 },
+        { type: "defence", modifier: 1.18 },
+        { type: "defence", modifier: 1.20 },
+        { type: "defence", modifier: 1.21 },
+        { type: "defence", modifier: 1.24 },
+        { type: "defence", modifier: 1.27 },
+        { type: "defence", modifier: 1.30 },
+        { type: "defence", modifier: 1.32 },
+        { type: "defence", modifier: 1.35 },
+        { type: "defence", modifier: 1.38 },
+        { type: "defence", modifier: 1.40 },
+        { type: "defence", modifier: 1.42 },
+        { type: "defence", modifier: 1.45 },
+        { type: "defence", modifier: 1.48 },
+        { type: "defence", modifier: 1.50 },
+      ],
+    },
+    [battle.ABILITY_CURSE]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [
+        [14, 16, 18, 20, 22],
+        [24, 26, 28, 30, 32],
+        [33, 34, 35, 37, 39]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [ // Ability lvl
+        { type: "defence", modifier: 0.85 },
+        { type: "defence", modifier: 0.82 },
+        { type: "defence", modifier: 0.80 },
+        { type: "defence", modifier: 0.79 },
+        { type: "defence", modifier: 0.76 },
+        { type: "defence", modifier: 0.73 },
+        { type: "defence", modifier: 0.70 },
+        { type: "defence", modifier: 0.68 },
+        { type: "defence", modifier: 0.65 },
+        { type: "defence", modifier: 0.62 },
+        { type: "defence", modifier: 0.60 },
+        { type: "defence", modifier: 0.58 },
+        { type: "defence", modifier: 0.55 },
+        { type: "defence", modifier: 0.52 },
+        { type: "defence", modifier: 0.50 },
+      ],
+    },
+    [battle.ABILITY_MIGHT]: {
+      abilityType: battle.ABILITY_TYPE_BUFF,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [
+        { type: "power", modifier: 1.15 },
+        { type: "power", modifier: 1.20 },
+        { type: "power", modifier: 1.25 },
+        { type: "power", modifier: 1.30 },
+        { type: "power", modifier: 1.35 },
+        { type: "power", modifier: 1.40 },
+        { type: "power", modifier: 1.45 },
+        { type: "power", modifier: 1.50 },
+      ]
+    },
+    [battle.ABILITY_WEAKNESS]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [null, [30, 34, 38, 40],
+        [42, 45, 51, 56]
+      ],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [
+        { type: "power", modifier: 0.85 },
+        { type: "power", modifier: 0.80 },
+        { type: "power", modifier: 0.75 },
+        { type: "power", modifier: 0.70 },
+        { type: "power", modifier: 0.65 },
+        { type: "power", modifier: 0.60 },
+        { type: "power", modifier: 0.55 },
+        { type: "power", modifier: 0.50 },
+      ]
+    },
+    [battle.ABILITY_GROUP_HEAL]: {
+      abilityType: battle.ABILITY_TYPE_HEALING,
+      damage: [null, null, [30, 34, 38]],
+      damageScheme: 1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+    [battle.ABILITY_WIND_WALK]: {
+      abilityType: battle.ABILITY_TYPE_BUFF,
+      damage: [null, null, [52, 63, 74]],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [
+        { type: "speed", modifier: 1.2 },
+        { type: "speed", modifier: 1.25 },
+        { type: "speed", modifier: 1.3 },
+      ]
+    },
+    [battle.ABILITY_LAZINESS]: {
+      abilityType: battle.ABILITY_TYPE_DE_BUFF,
+      damage: [null, null, [52, 63, 74]],
+      damageScheme: null,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed+2",
+      ignoreObstacles: false,
+      duration: 2,
+      effects: [
+        { type: "initiative", modifier: 0.8 },
+        { type: "initiative", modifier: 0.75 },
+        { type: "initiative", modifier: 0.7 },
+      ]
+    },
+    [battle.ABILITY_ATTACK]: {
+      abilityType: battle.ABILITY_TYPE_ATTACK,
+      damage: null,
+      damageScheme: -1,
+      movePattern: PATH_SCHEME_ROOK,
+      canMove: false,
+      moveRange: null,
+      attackRange: "speed",
+      ignoreObstacles: false,
+      duration: null,
+      effects: []
+    },
+  }
 };
 
 export const UNITS = [
@@ -1621,35 +2366,80 @@ export const UNIT_LEVEL_UP_PRICES = [
 export const TERRAIN = [
   {
     base: "grass",
-    tiles: [null, null, null, null, null, null, "grass_woods", null, "grass_woods", null, null, null, null, null, null, null, "grass_woods", null, "grass_woods", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "grass_woods", null, "grass_woods", null,
+        null, null,
+        null, null,
+        null, null, "grass_woods", null, "grass_woods", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "grass",
-    tiles: [null, "grass_woods", null, null, null, null, null, null, null, "grass_woods", "grass_woods", "grass_woods", null, null, null, null, null, null, null, null, "grass_woods", null, null, "grass_woods", null],
+    tiles: [
+        null, "grass_woods", null,
+        null, null,
+        null, null,
+        null, null, "grass_woods", "grass_woods", "grass_woods", null,
+        null, null,
+        null, null,
+        null, null,
+        null, "grass_woods", null,
+        null, "grass_woods", null],
   }, 
   {
     base: "grass",
-    tiles: [null, "grass_woods", null, null, "grass_woods", null, null, null, null, null, "grass_woods", "grass_woods", null, "grass_woods", "grass_woods", null, null, null, null, null, null, "grass_woods", null, "grass_woods", null],
+    tiles: [
+        null, "grass_woods", null,
+        null, "grass_woods", null,
+        null, null,
+        null, null, "grass_woods", "grass_woods", null, "grass_woods", "grass_woods", null,
+        null, null,
+        null, null,
+        null, "grass_woods", null, "grass_woods", null],
   }, 
   {
     base: "grass",
-    tiles: [null, "grass_woods", null, null, null, null, "grass_hill", null, "grass_woods", "grass_woods", "grass_woods", "grass_woods", null, "grass_hill", null, null, "grass_hill", null, "grass_woods", "grass_woods", null, "grass_woods", null, null, null],
+    tiles: [
+        null, "grass_woods", null,
+        null, null,
+        null, "grass_hill", null, "grass_woods", "grass_woods", "grass_woods", "grass_woods", null, "grass_hill", null,
+        null, "grass_hill", null, "grass_woods", "grass_woods", null, "grass_woods", null,
+        null, null],
   }, 
   {
     base: "grass",
-    tiles: ["grass_woods", "grass_woods", null, null, null, "grass_woods", "grass_hill", null, "grass_woods", "grass_woods", null, null, "grass_hill", null, null, "grass_woods", "grass_woods", null, "grass_hill", "grass_woods", null, null, null, "grass_woods", "grass_woods"],
+    tiles: ["grass_woods", "grass_woods", null,
+        null, null, "grass_woods", "grass_hill", null, "grass_woods", "grass_woods", null,
+        null, "grass_hill", null,
+        null, "grass_woods", "grass_woods", null, "grass_hill", "grass_woods", null,
+        null, null, "grass_woods", "grass_woods"],
   }, 
   {
     base: "grass",
-    tiles: [null, null, null, "grass_woods", "grass_woods", "grass_swamp_c", "grass_woods", "grass_woods", null, "grass_hill", "grass_swamp_b", "grass_woods", null, null, null, null, null, "grass_hill", "grass_woods", "grass_swamp", null, null, "grass_woods", "grass_woods", null],
+    tiles: [
+        null,
+        null, null, "grass_woods", "grass_woods", "grass_swamp_c", "grass_woods", "grass_woods", null, "grass_hill", "grass_swamp_b", "grass_woods", null,
+        null, null,
+        null, null, "grass_hill", "grass_woods", "grass_swamp", null,
+        null, "grass_woods", "grass_woods", null],
   }, 
   {
     base: "grass",
-    tiles: [null, null, null, null, null, "grass_woods", "grass_woods", "grass_swamp", "grass_hill", "grass_swamp", "grass_swamp_c", "grass_woods", "grass_hill", "grass_woods", null, "grass_swamp_b", "grass_hill", "grass_woods", "grass_woods", "grass_swamp", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "grass_woods", "grass_woods", "grass_swamp", "grass_hill", "grass_swamp", "grass_swamp_c", "grass_woods", "grass_hill", "grass_woods", null, "grass_swamp_b", "grass_hill", "grass_woods", "grass_woods", "grass_swamp", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "grass",
-    tiles: [null, "grass_woods", "grass_swamp", "grass_hill", "grass_swamp_a", "grass_woods", "grass_hill", "grass_woods", "grass_woods", "grass_swamp_d", "grass_hill", "grass_swamp_a", "grass_swamp_b", "grass_woods", "grass_hill", "grass_woods", "grass_swamp_d", "grass_swamp_c", "grass_hill", "grass_swamp_a", "grass_woods", "grass_woods", "grass_woods", "grass_woods", "grass_swamp_d"],
+    tiles: [
+        null, "grass_woods", "grass_swamp", "grass_hill", "grass_swamp_a", "grass_woods", "grass_hill", "grass_woods", "grass_woods", "grass_swamp_d", "grass_hill", "grass_swamp_a", "grass_swamp_b", "grass_woods", "grass_hill", "grass_woods", "grass_swamp_d", "grass_swamp_c", "grass_hill", "grass_swamp_a", "grass_woods", "grass_woods", "grass_woods", "grass_woods", "grass_swamp_d"],
   }, 
   {
     base: "grass",
@@ -1662,39 +2452,100 @@ export const TERRAIN = [
 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, "sand_thorns", null, "sand_thorns", null, "sand_thorns", null, null, null, null, null, null, "sand_thorns", null, "sand_thorns", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "sand_thorns", null, "sand_thorns", null, "sand_thorns", null,
+        null, null,
+        null, null,
+        null, "sand_thorns", null, "sand_thorns", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, null, null, null, "sand_hill", "sand_thorns", "sand_thorns", "sand_thorns", null, "sand_thorns", "sand_thorns", "sand_thorns", "sand_hill", null, null, null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, null,
+        null, "sand_hill", "sand_thorns", "sand_thorns", "sand_thorns", null, "sand_thorns", "sand_thorns", "sand_thorns", "sand_hill", null,
+        null, null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_hill", "sand_thorns", null, null, "sand_thorns", null, "sand_thorns", null, null, "sand_thorns", "sand_hill", "sand_thorns", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "sand_thorns", "sand_hill", "sand_thorns", null,
+        null, "sand_thorns", null, "sand_thorns", null,
+        null, "sand_thorns", "sand_hill", "sand_thorns", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, null, "sand_hill", null, null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "sand_thorns", "sand_thorns", "sand_thorns", null,
+        null, null, "sand_hill", null,
+        null, null, "sand_thorns", "sand_thorns", "sand_thorns", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "sand",
-    tiles: ["sand_thorns", null, null, null, null, null, null, "sand_thorns", "sand_hill", null, null, "sand_thorns", "sand_thorns", "sand_thorns", null, null, "sand_hill", "sand_thorns", null, null, null, null, null, null, "sand_thorns"],
+    tiles: ["sand_thorns", null,
+        null, null,
+        null, null,
+        null, "sand_thorns", "sand_hill", null,
+        null, "sand_thorns", "sand_thorns", "sand_thorns", null,
+        null, "sand_hill", "sand_thorns", null,
+        null, null,
+        null, null,
+        null, "sand_thorns"],
   }, 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, null, "sand_thorns", "sand_lava", "sand_thorns", "sand_lava", null, null, "sand_hill", null, null, "sand_lava", "sand_thorns", "sand_lava", "sand_thorns", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "sand_thorns", "sand_lava", "sand_thorns", "sand_lava", null,
+        null, "sand_hill", null,
+        null, "sand_lava", "sand_thorns", "sand_lava", "sand_thorns", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "sand",
-    tiles: [null, null, "sand_thorns", null, null, null, "sand_hill", "sand_hill", null, null, "sand_thorns", null, "sand_lava1", "sand_lava2", "sand_thorns", null, null, null, "sand_hill", "sand_hill", null, null, null, "sand_thorns", null],
+    tiles: [
+        null,
+        null, "sand_thorns", null,
+        null, null, "sand_hill", "sand_hill", null,
+        null, "sand_thorns", null, "sand_lava1", "sand_lava2", "sand_thorns", null,
+        null, null, "sand_hill", "sand_hill", null,
+        null, null, "sand_thorns", null],
   }, 
   {
     base: "sand",
-    tiles: [null, null, null, null, null, "sand_thorns", "sand_hill", "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2", "sand_thorns", "sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", "sand_hill", "sand_thorns", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "sand_thorns", "sand_hill", "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2", "sand_thorns", "sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", "sand_hill", "sand_thorns", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "sand",
-    tiles: ["sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", null, null, "sand_thorns", "sand_lava_a", "sand_lava_b", "sand_lava_a", "sand_lava_b", "sand_hill", "sand_lava_d", "sand_lava_c", "sand_lava_d", "sand_lava_c", "sand_thorns", null, null, "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2"],
+    tiles: ["sand_lava1", "sand_lava2", "sand_hill", "sand_hill", "sand_thorns", null,
+        null, "sand_thorns", "sand_lava_a", "sand_lava_b", "sand_lava_a", "sand_lava_b", "sand_hill", "sand_lava_d", "sand_lava_c", "sand_lava_d", "sand_lava_c", "sand_thorns", null,
+        null, "sand_thorns", "sand_hill", "sand_hill", "sand_lava1", "sand_lava2"],
   }, 
   {
     base: "sand",
@@ -1703,39 +2554,80 @@ export const TERRAIN = [
 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "snow_woods", null, "snow_woods", null, "snow_woods", null, "snow_hill", null, "snow_hill", null, "snow_woods", null, "snow_woods", null, "snow_woods", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, null, "snow_hill", "snow_woods", "snow_hill", null, null, "snow_woods", null, "snow_woods", null, null, "snow_hill", "snow_woods", "snow_hill", null, null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null,
+        null, "snow_hill", "snow_woods", "snow_hill", null,
+        null, "snow_woods", null, "snow_woods", null,
+        null, "snow_hill", "snow_woods", "snow_hill", null,
+        null, null,
+        null, null, null],
   }, 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, "snow_woods", null, "snow_woods", null, "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", null, "snow_woods", null, "snow_woods", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "snow_woods", null, "snow_woods", null, "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", "snow_hill", "snow_woods", null, "snow_woods", null, "snow_woods", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, "snow_hill", "snow_hill", "snow_ice", "snow_woods", "snow_woods", "snow_ice", "snow_woods", "snow_woods", "snow_ice", null, "snow_hill", "snow_hill", "snow_ice", "snow_hill", "snow_woods", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "snow_hill", "snow_hill", "snow_ice", "snow_woods", "snow_woods", "snow_ice", "snow_woods", "snow_woods", "snow_ice", null, "snow_hill", "snow_hill", "snow_ice", "snow_hill", "snow_woods", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "snow",
-    tiles: [null, null, null, null, null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null, "snow_ice", "snow_woods", "snow_ice", null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null, null, null, null, null],
+    tiles: [
+        null,
+        null, null,
+        null, null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null, "snow_ice", "snow_woods", "snow_ice", null, "snow_woods", "snow_woods", "snow_hill", "snow_woods", "snow_woods", null,
+        null, null,
+        null, null],
   }, 
   {
     base: "snow",
-    tiles: ["snow_hill", "snow_hill", null, null, null, "snow_woods", "snow_woods", null, "snow_ice_1", null, null, "snow_ice_1", "snow_hill", "snow_ice_1-1", null, null, "snow_ice_1-1", null, "snow_woods", "snow_woods", null, null, null, "snow_hill", "snow_hill"],
+    tiles: ["snow_hill", "snow_hill", null,
+        null, null, "snow_woods", "snow_woods", null, "snow_ice_1", null,
+        null, "snow_ice_1", "snow_hill", "snow_ice_1-1", null,
+        null, "snow_ice_1-1", null, "snow_woods", "snow_woods", null,
+        null, null, "snow_hill", "snow_hill"],
   }, 
   {
     base: "snow",
-    tiles: ["snow_woods", "snow_woods", "snow_ice_1", "snow_woods", "snow_woods", "snow_hill", "snow_hill", "snow_ice_1-1", null, null, "snow_woods", "snow_woods", null, "snow_woods", "snow_woods", null, null, "snow_ice_1", "snow_hill", "snow_hill", "snow_woods", "snow_woods", "snow_ice_1-1", "snow_woods", "snow_woods"],
+    tiles: ["snow_woods", "snow_woods", "snow_ice_1", "snow_woods", "snow_woods", "snow_hill", "snow_hill", "snow_ice_1-1", null,
+        null, "snow_woods", "snow_woods", null, "snow_woods", "snow_woods", null,
+        null, "snow_ice_1", "snow_hill", "snow_hill", "snow_woods", "snow_woods", "snow_ice_1-1", "snow_woods", "snow_woods"],
   }, 
   {
     base: "snow",
-    tiles: ["snow_hill", "snow_hill", "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", null, null, null, "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", "snow_hill", "snow_hill"],
+    tiles: ["snow_hill", "snow_hill", "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", null,
+        null, null, "snow_woods", "snow_ice_a", "snow_ice_b", "snow_woods", "snow_hill", "snow_woods", "snow_ice_d", "snow_ice_c", "snow_woods", "snow_hill", "snow_hill"],
   }, 
   {
     base: "snow",
@@ -1792,5 +2684,3 @@ export const ABILITY_SCHEME = [
   [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
   [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
 ];
-
-export const BUFFS = [];
