@@ -240,7 +240,6 @@ export class Unit {
     }
 
     this.setPower();
-    this.unlockAbilities();
   }
 
   public regenerateFighterId(): void {
