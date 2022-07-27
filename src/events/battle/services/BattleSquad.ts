@@ -72,7 +72,7 @@ export class BattleSquad {
     
     const unit = _.cloneDeep(this._ctrl.inventory.getUnitById(unitId) as Unit);
     if (!unit) {
-      throw Error("Unit not found");
+      throw Error(`Unit ${unitId} not found`);
     }
 
     unit.regenerateFighterId();
@@ -88,6 +88,8 @@ export class BattleSquad {
 
     // Event
     this._ctrl.events.userSquad(this._state);
+
+    console.log(`[Squad] Unit ${unitId} was set into slot #${index}`);
   }
   
   public clearSlot(index: number): void {

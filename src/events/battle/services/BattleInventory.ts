@@ -50,8 +50,7 @@ export class BattleInventory {
   }
 
   public getRandomUnitByProps(params: { unitTribe?: string, unitClass?: string }, tier: number): Unit {
-    const filteredUnits = _.find(_.cloneDeep(UNITS), params);
-
+    const filteredUnits = _.filter(_.cloneDeep(UNITS), params);
     const unitBlueprint = _.sample(filteredUnits);
     unitBlueprint.tier = tier;
 
@@ -60,23 +59,24 @@ export class BattleInventory {
     return unit;
   }
 
-  public addUnit(unit: Unit) {
-    // Search by template
-    const index = this._units.findIndex(inventoryUnit => inventoryUnit.template === unit.template && inventoryUnit.tier === unit.tier);
-
-    console.log("Add unit", unit.unitId);
+  public addUnit(unit: Unit): Unit {
+    console.log("[Inventory] Add unit", { unitId: unit.unitId, template: unit.template, tier: unit.tier });
     
+    // Search by template
+    const index = this._units.findIndex(entry => entry.template === unit.template && entry.tier === unit.tier);
     // Add or increase quantity
     if (index === -1) {
       this._units.push(unit);
       this._state.push(unit.serialize());
       this._ctrl.events.addUnit(unit);
-      console.log("Unit added", unit.unitId);
+      console.log("[Inventory] Unit added", unit.unitId);
     } else {
       this._units[index].updateQuantity(unit.quantity);
       this.updateUnitState(unit);
-      console.log("Unit stacked", unit.unitId);
+      console.log("[Inventory] Unit stacked", unit.unitId);
     }
+
+    return this._units.find(entry => entry.template === unit.template && entry.tier === unit.tier);
   }
 
   public setUnits(units: Unit[]) {

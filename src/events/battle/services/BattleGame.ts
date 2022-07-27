@@ -170,31 +170,31 @@ export class BattleGame {
     const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const tier = _.random(1, 3);
 
-    console.log("Build squad", { unitTribe, tier });
+    console.log("[Game] Build squad", { unitTribe, tier });
     for (let squadIndex = 0; squadIndex < 5; squadIndex++) {
       this.addUnitToSquad({ unitTribe }, tier, squadIndex);
     }
   }
 
   public addUnitToSquad(params: { unitTribe?: string, unitClass?: string }, tier: number, squadIndex: number) {
-    const unit = this._ctrl.inventory.getRandomUnitByProps(params, tier);
-    console.log("Squad member", { unitId: unit.unitId, tribe: unit.tribe, unitClass: unit.class, tier: unit.tier });
-    
-    const existingUnit = this._ctrl.inventory.getUnitByFilter({ template: unit.template, tier });
-    console.log("Existing member", { 
-      existingUnit
+    const blueprint = this._ctrl.inventory.getRandomUnitByProps(params, tier);
+    console.log("[Game] New squad member blueprint", { 
+      unitId: blueprint.unitId, 
+      tribe: blueprint.tribe, 
+      unitClass: blueprint.class, 
+      tier: blueprint.tier 
     });
     
-    if (!existingUnit) {
-      this._ctrl.inventory.addUnit(unit);
+    let unit = this._ctrl.inventory.getUnitByFilter({ template: blueprint.template, tier });
+    if (!unit) {
+      unit = this._ctrl.inventory.addUnit(blueprint);
     }
     
-    const resultUnit = existingUnit ? existingUnit : unit;
     if (game.battleManager.autoCombat) {
-      resultUnit.maximize();
+      unit.maximize();
     }
 
-    this._userSquad.fillSlot(resultUnit.unitId, squadIndex);
+    this._userSquad.fillSlot(unit.unitId, squadIndex);
   }
 
   public clearSquad(): void {
@@ -432,7 +432,7 @@ export class BattleGame {
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
-    console.log("[Action] Data", { fighter, index, ability, timeout });
+    console.log("[Game action] Data", { fighter, index, ability, timeout });
     
     // Check if unit can use ability
     // Check ability cooldown
@@ -453,12 +453,12 @@ export class BattleGame {
 
     // Move
     if (index !== null && ability === ABILITY_MOVE) {
-      console.log("[Action] Move", { fighter, index });
+      console.log("[Game action] Move", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
     // Heal
     } else if (index !== null && abilityType === ABILITY_TYPE_HEALING && target !== null) {
-      console.log("[Action] Heal", { fighter, target, ability });
+      console.log("[Game action] Heal", { fighter, target, ability });
       this._combat.heal(fighter, target, ability);
 
     // Group heal
@@ -468,22 +468,22 @@ export class BattleGame {
 
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
-      console.log("[Action] Jump", { fighter, index });
+      console.log("[Game action] Jump", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
     // Buff / De-buff
     } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
-      console.log("[Action] Duff/De-buff", { fighter, target, ability });
+      console.log("[Game action] Duff/De-buff", { fighter, target, ability });
       this._combat.buff(fighter, target, ability);
       
     // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
-      console.log("[Action] Self-buff", { fighter, ability });
+      console.log("[Game action] Self-buff", { fighter, ability });
       this._combat.buff(fighter, fighter, ability);
       
     // Attack
     } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK && target !== null) {
-      console.log("[Action] Attack", { fighter, target, ability });
+      console.log("[Game action] Attack", { fighter, target, ability });
       this._combat.attack(fighter, target, ability);
 
     } else {
