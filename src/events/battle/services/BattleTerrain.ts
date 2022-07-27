@@ -1,4 +1,5 @@
 import _ from "lodash";
+import game from "../../../game";
 import { BattleController } from "../BattleController";
 import { SETTINGS, TERRAIN, TERRAIN_HILL, TERRAIN_ICE, TERRAIN_LAVA, TERRAIN_SWAMP, TERRAIN_THORNS, TERRAIN_WOODS } from "../meta";
 import { BattleTerrainMap } from "../types";
@@ -31,8 +32,13 @@ export class BattleTerrain {
   }
 
   public setRandomMap(): void {
-    this.setMap(_.cloneDeep(_.sample(TERRAIN)));
-    console.log("[Terrain] Random map was set", this._coreMap);
+    if (game.battleManager.autoCombat) {
+      this.setMap({ base: "grass", tiles: new Array(25).fill(null) });
+      console.log("[Terrain] Empty map was set");
+    } else {
+      this.setMap(_.cloneDeep(_.sample(TERRAIN)));
+      console.log("[Terrain] Random map was set", this._coreMap);
+    }
   }
 
   public setCoreMap(): void {

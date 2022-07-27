@@ -8,6 +8,7 @@ import {
   AVG_DMG, 
   AVG_HP, 
   CHARACTERISTICS,
+  SETTINGS,
   UNITS,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
@@ -201,8 +202,8 @@ export class Unit {
           levelInt: !index ? 1 : 0,
           level: {
             current: !index ? 1 : 0, // Unlock only the first ability
-            next: !index ? 2 : null,
-            price: !index ? this.getAbilityUpgradePrice(tier, 2) : null,
+            next: null,
+            price: null
           },  
           value: this.getAbilityValue(abilityClass, 1),
           enabled: !index ? true : false
@@ -239,6 +240,7 @@ export class Unit {
     }
 
     this.setPower();
+    this.unlockAbilities();
   }
 
   public regenerateFighterId(): void {
@@ -248,9 +250,7 @@ export class Unit {
   protected getAbilityValue(ability: string, level?: number): number|null {
     const abilities =  _.cloneDeep(ABILITIES);
     const abilityData = (
-      (abilities[this._unitClass] ? abilities[this._unitClass][ability] : null)
-      ||
-      (abilities.other[ability] || null)
+      abilities[this._unitClass] ? abilities[this._unitClass][ability] : null
     );
 
     /*console.log("getAbilityValue", {
@@ -259,7 +259,7 @@ export class Unit {
     });*/
     
     if (!abilityData) {
-      return 1;
+      throw Error(`Unit ${this._unitClass} has no "${ability}" ability`);
     }
 
     // TODO use ability tier!!! sic...
@@ -346,18 +346,18 @@ export class Unit {
   }
 
   public addExpirience(value): void {
-    if (this._tier === 1 && this._levelInt >= 16) {
+    if (this._tier === 1 && this._levelInt >= SETTINGS.maxUnitTierLevel[1]) {
       return;
     }
 
-    if (this._tier === 2 && this._levelInt >= 31) {
+    if (this._tier === 2 && this._levelInt >= SETTINGS.maxUnitTierLevel[2]) {
       return;
     }
 
     this._expirience.value += value;
  
-    const lastLevelExpEnd = this.getExpForLevel(45);
-    if (this._levelInt >= 44 && this._expirience.value > lastLevelExpEnd) {
+    const lastLevelExpEnd = this.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
+    if (this._levelInt >= SETTINGS.maxUnitTierLevel[3]-1 && this._expirience.value > lastLevelExpEnd) {
       this._expirience.value = lastLevelExpEnd;
       return;
     }
@@ -411,7 +411,12 @@ export class Unit {
     const meta = characteristicsMeta[unitClass];
 
     let percentage = (level - 1) * 0.05;
-    let boundary = (level <= 15 ? 0 : (level <= 30 ? 1 : 2));
+    let boundary = (
+      level <= SETTINGS.maxUnitTierLevel[1] ? 
+        0
+        :
+        (level <= SETTINGS.maxUnitTierLevel[2] ? 1 : 2)
+    );
     let base = _.cloneDeep(meta.base[boundary]);
 
     // hp
@@ -424,8 +429,8 @@ export class Unit {
 
     // defence
     let defenceBase = 0;
-    if (base.defence === "lvl-6" && level >= 16) {
-      let minus6LvlStats = Unit.getCharacteristics(unitClass, (boundary * 15 + 1) - (boundary === 1 ? 6 : 7));
+    if (base.defence === "lvl-6" && level >= SETTINGS.maxUnitTierLevel[1] + 1) {
+      let minus6LvlStats = Unit.getCharacteristics(unitClass, (boundary * SETTINGS.maxUnitTierLevel[1] + 1) - (boundary === 1 ? 6 : 7));
       defenceBase = minus6LvlStats.defence;
     } else if (_.isNumber(base.defence)) {
       defenceBase = base.defence;
@@ -433,7 +438,7 @@ export class Unit {
       throw Error("Invalid defence scheme was used");
     }
 
-    let innerTierLvl = level - 1 - 15 * boundary;
+    let innerTierLvl = level - 1 - SETTINGS.maxUnitTierLevel[1] * boundary;
     let defence = defenceBase + base.defIncrement * innerTierLvl;
 
     //console.log({ level, defenceBase, innerTierLvl });
@@ -466,37 +471,36 @@ export class Unit {
   }
 
   protected unlockAbilities(): void {
-    let abilityTier = 2;
-    if (
-      this._level.current >= 16
-      &&
-      this._abilities[abilityTier-1].level.current === 0
-    ) {
-      // Unlock tier 2 ability
-      let abilityData = this._abilities[abilityTier-1];
-      this._abilities[abilityTier-1].enabled = true;
-      this._abilities[abilityTier-1].level.current = 1;
-      this._abilities[abilityTier-1].level.next = 2;
-      this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
-      this._abilities[abilityTier-1].value = this.getAbilityValue(abilityData.abilityClass, 1);
-      console.log("[Unit] Ability tier 2 unlocked");
-    }
-    
-    abilityTier = 3;
-    if (
-      this._level.current >= 31
-      &&
-      this._abilities[abilityTier-1].level.current === 0
-      ) {
-        // Unlock tier 3 ability
-        let abilityData = this._abilities[abilityTier-1];
-        this._abilities[abilityTier-1].enabled = true;
-        this._abilities[abilityTier-1].level.current = 1;
-        this._abilities[abilityTier-1].level.next = 2;
-        this._abilities[abilityTier-1].level.price = this.getAbilityUpgradePrice(abilityTier, 2);
-        this._abilities[abilityTier-1].value = this.getAbilityValue(abilityData.abilityClass, 1);
-        console.log("[Unit] Ability tier 3 unlocked");
-    }
+    this._abilities.forEach(ability => {
+      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
+      if (abilityScheme) {
+        // Unlock ability
+        if (ability.level.current === 0) {
+          ability.enabled = true;
+          ability.level.current = 1;
+          ability.value = this.getAbilityValue(ability.abilityClass, ability.level.current);
+          console.log(`[Unit] Ability is enabled`, ability);
+        }
+        
+        const canUpgradeMore = ability.level.current < abilityScheme.lvl;
+        ability.level.next = canUpgradeMore ? ability.level.current + 1 : null;
+        ability.level.price = canUpgradeMore ? this.getAbilityUpgradePrice(ability.tier, ability.level.next) : null;
+        if (canUpgradeMore) {
+          console.log(`[Unit] Ability is allowed to upgrade to ${abilityScheme.lvl} lvl`, ability);
+        }
+      }
+    });
+  }
+
+  public maximize() {
+    this._levelInt = SETTINGS.maxUnitTierLevel[3];
+    this._level.current = SETTINGS.maxUnitTierLevel[3];
+    this._level.next = null;
+    this._expirience.value = SETTINGS.maxExp;
+    this._expirience.currentLevelExp = 0;
+    this._expirience.nextLevelExp = 0;
+
+    this.unlockAbilities();
   }
 
   public canUpgradeLevel(): boolean {
@@ -509,11 +513,14 @@ export class Unit {
     }
 
     const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
+    const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
     ability.enabled = true;
     ability.level.current++;
-    ability.level.next = ability.level.next + 1;
-    ability.level.price = this.getAbilityUpgradePrice(ability.tier, ability.level.next);
     ability.value = this.getAbilityValue(abilityClass, ability.level.current);
+
+    const canUpgradeMore = ability.level.current < abilityScheme.lvl;
+    ability.level.next = canUpgradeMore ? ability.level.next + 1 : null;
+    ability.level.price = canUpgradeMore ? this.getAbilityUpgradePrice(ability.tier, ability.level.next) : null;
 
     this.setPower();
 
@@ -526,18 +533,15 @@ export class Unit {
 
   public canUpgradeAbility(abilityClass: string): boolean {
     const ability = this.getAbilityByClass(abilityClass);
+    const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
     return (
-      !!ability 
+      !!ability
       &&
-      !!ability.level.next 
+      !!ability.level.next
       &&
-      (
-        (ability.tier === 1 && ability.level.current < 15)
-        ||
-        (ability.tier === 2 && ability.level.current < 8)
-        ||
-        (ability.tier === 3 && ability.level.current < 3)
-      )
+      abilityScheme
+      &&
+      ability.level.current < abilityScheme.lvl
     );
   }
 
@@ -662,6 +666,14 @@ export class Unit {
       this._isDead = true;
     }
   };
+
+  public randomAbility(): string {
+    const enabledAbilities = this._abilities.filter(entry => {
+      return entry.enabled && (!entry.cooldown || !entry.cooldown.enabled)
+    }).map(entry => entry.abilityClass);
+    
+    return enabledAbilities.length ? _.sample(enabledAbilities) : ABILITY_ATTACK;
+  }
 
   public strongestEnabledAbility(): string {
     const enabledAbilities = this._abilities.filter(entry => {

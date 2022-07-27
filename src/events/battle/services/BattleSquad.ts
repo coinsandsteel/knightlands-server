@@ -4,6 +4,7 @@ import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
 import errors from "../../../knightlands-shared/errors";
 import { SQUAD_BONUSES } from "../meta";
+import game from "../../../game";
 
 export class BattleSquad {
   protected _state: BattleSquadState;
@@ -172,8 +173,9 @@ export class BattleSquad {
   }
 
   public setInitialIndexes(onTop: boolean): void {
+    const test = game.battleManager.autoCombat;
     this._units.forEach((unit, index) => {
-      unit.setIndex(index + (onTop ? 0 : 30));
+      unit.setIndex(index + (onTop ? 0 : (test ? 5 : 30)));
     });
     this.syncUnits();
   }

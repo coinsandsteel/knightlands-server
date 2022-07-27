@@ -224,6 +224,10 @@ export class BattleController {
         this._battleGame.buildSquad();
         break;
       }
+      case 'testAbilities':{
+        this._battleGame.testAbilities();
+        break;
+      }
     }
     this._events.flush();
   }

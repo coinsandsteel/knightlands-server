@@ -9,10 +9,15 @@ export class BattleManager {
   protected _meta: any;
   protected _saveCollection: Collection;
   protected _rankCollection: Collection;
+  protected _mode: string = null;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
+  }
+  
+  get autoCombat() {
+    return this._mode === "auto";
   }
   
   get eventStartDate() {
@@ -91,4 +96,12 @@ export class BattleManager {
 
   public async addTestRatings(){
   };
+
+  public resetMode() {
+    this._mode = null;
+  }
+
+  public enableAutoCombat() {
+    this._mode = "auto";
+  }
 }

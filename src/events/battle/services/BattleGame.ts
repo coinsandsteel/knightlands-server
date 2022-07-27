@@ -1,7 +1,9 @@
 import _ from "lodash";
+import game from "../../../game";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE } from "../../../knightlands-shared/battle";
+import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
-import { SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
+import { ABILITIES, SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
 import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleCombat } from "./BattleCombat";
@@ -15,7 +17,7 @@ export class BattleGame {
   
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
-  protected _enemyOptions: any[][];
+  protected _enemyOptions: (any[][]|null) = null;
 
   protected _combat: BattleCombat;
   protected _movement: BattleMovement;
@@ -165,26 +167,34 @@ export class BattleGame {
   }
 
   public buildSquad(): void {
-    const tribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const tier = _.random(1, 3);
 
-    console.log("Build squad", { tribe, tier });
-
-    for (let index = 0; index < 5; index++) {
-      const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
-      console.log("Squad member", { unitId: unit.unitId, tribe: unit.tribe, unitClass: unit.class, tier: unit.tier });
-      
-      const existingUnit = this._ctrl.inventory.getUnitByTemplateAndTier(unit.template, tier);
-      console.log("Existing member", { 
-        existingUnit
-      });
-      
-      if (!existingUnit) {
-        this._ctrl.inventory.addUnit(unit);
-      }
-      
-      this._userSquad.fillSlot(existingUnit ? existingUnit.unitId : unit.unitId, index);
+    console.log("Build squad", { unitTribe, tier });
+    for (let squadIndex = 0; squadIndex < 5; squadIndex++) {
+      this.addUnitToSquad({ unitTribe }, tier, squadIndex);
     }
+  }
+
+  public addUnitToSquad(params: { unitTribe?: string, unitClass?: string }, tier: number, squadIndex: number) {
+    const unit = this._ctrl.inventory.getRandomUnitByProps(params, tier);
+    console.log("Squad member", { unitId: unit.unitId, tribe: unit.tribe, unitClass: unit.class, tier: unit.tier });
+    
+    const existingUnit = this._ctrl.inventory.getUnitByFilter({ template: unit.template, tier });
+    console.log("Existing member", { 
+      existingUnit
+    });
+    
+    if (!existingUnit) {
+      this._ctrl.inventory.addUnit(unit);
+    }
+    
+    const resultUnit = existingUnit ? existingUnit : unit;
+    if (game.battleManager.autoCombat) {
+      resultUnit.maximize();
+    }
+
+    this._userSquad.fillSlot(resultUnit.unitId, squadIndex);
   }
 
   public clearSquad(): void {
@@ -217,9 +227,14 @@ export class BattleGame {
       [GAME_DIFFICULTY_MEDIUM]: 1,
       [GAME_DIFFICULTY_LOW]: 2
     };
+
+    if (!this._enemyOptions) {
+      throw errors.IncorrectArguments;
+    }
+
     const squad = this._enemyOptions[difficulties[difficulty]];
     this._enemySquad = new BattleSquad(squad, true, this._ctrl);
-    this._enemyOptions = [[], [], []];
+    this._enemyOptions = null;
 
     // Prepare user Squad
     this._userSquad.setInitialIndexes(false);
@@ -238,16 +253,17 @@ export class BattleGame {
     // Start combat
     this.setCombatStarted(true);
     this.createInitiativeRating();
+
     this.nextFighter();
   }
   
   public getDuelOptions() {
-    const tribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const squads = [[], [], []];
     
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
-        const unit = this._ctrl.inventory.getRandomUnitByProps(tribe, tier);
+        const unit = this._ctrl.inventory.getRandomUnitByProps({ unitTribe }, tier);
         squads[tier-1].push(unit.serializeForSquad());
       }
     }
@@ -300,10 +316,16 @@ export class BattleGame {
   
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
-    if (activeFighter.isEnemy) {
+    if (game.battleManager.autoCombat) {
+      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId}. Making a move...`);
+      this.setMoveCells([]);
+      this.autoMove(activeFighter);
+
+    } else if (activeFighter.isEnemy) {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (enemy). Making a move...`);
       this.setMoveCells([]);
       this.autoMove(activeFighter);
+
     } else {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
       const moveCells = this._movement.getRangeCells("move", activeFighter.index, activeFighter.speed, SETTINGS.moveScheme);
@@ -393,7 +415,7 @@ export class BattleGame {
   
   public autoMove(fighter: Unit): void {
     let index = null;
-    let ability = fighter.strongestEnabledAbility();
+    let ability = fighter.randomAbility();
     let attackCells = this._combat.getAttackCells(fighter, ability, true);
     if (attackCells.length) {
       index = _.sample(attackCells);
@@ -405,7 +427,8 @@ export class BattleGame {
       console.log('[Game] AI moves', { moveCells, choosedIndex: index });
     }
 
-    this.handleAction(fighter, index, ability, true);
+    const timeout = !game.battleManager.autoCombat;
+    this.handleAction(fighter, index, ability, timeout);
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
@@ -559,6 +582,29 @@ export class BattleGame {
         this._ctrl.events.userFighter(fighter);
       }
     }
+  }
+
+  public testAbilities() {
+    game.battleManager.enableAutoCombat();
+
+    const allClasses = [
+      UNIT_CLASS_MELEE,
+      UNIT_CLASS_RANGE, 
+      UNIT_CLASS_SUPPORT, 
+      UNIT_CLASS_TANK
+    ];
+
+    // Build a squad of 4
+    this.clearSquadSlot(4);
+    allClasses.forEach((unitClass, index) => this.addUnitToSquad({ unitClass }, 3, index));
+
+    // Make duel options
+    this.getDuelOptions();
+    
+    // Enter duel
+    this.enterDuel(GAME_DIFFICULTY_MEDIUM);
+
+    game.battleManager.resetMode();
   }
 
   public skip(): void {

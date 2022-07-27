@@ -102,7 +102,6 @@ export class BattleCombat {
     target.modifyHp(-damage);
     this._ctrl.game.chekIfFighterIsDead(target);
 
-    // TODO add simple hit into meta
     // TODO critical hit logic
 
     this._ctrl.events.effect({

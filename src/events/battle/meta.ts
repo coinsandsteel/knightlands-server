@@ -12,9 +12,15 @@ export const TERRAIN_HILL = "hill";
 
 export const SETTINGS = {
   lavaDamage: 0.05, // by maxHp
+  maxExp: 99000,
   moveScheme: PATH_SCHEME_ROOK,
   attackScheme: PATH_SCHEME_QUEEN,
   jumpScheme: PATH_SCHEME_QUEEN,
+  maxUnitTierLevel: {
+    1: 15, 
+    2: 30, 
+    3: 45
+  },
   terrain: {
     [TERRAIN_ICE]: { type: "incoming_damage", modifier: 1.25 },
     [TERRAIN_HILL]: { type: "outcoming_damage", modifier: 1.25 },
@@ -1344,7 +1350,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_TYPE_HEALING,
+      battle.ABILITY_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ORC
@@ -1497,7 +1503,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_TYPE_HEALING,
+      battle.ABILITY_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_SKELETON
@@ -1599,7 +1605,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_TYPE_HEALING,
+      battle.ABILITY_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ICE
@@ -1701,7 +1707,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_TYPE_HEALING,
+      battle.ABILITY_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ELDRITCH
@@ -2639,48 +2645,48 @@ export const ABILITY_SCHEME = [
   [{cd: 5, lvl: 1}, null, null], // unit lvl 1
   [{cd: 5, lvl: 1}, null, null],
   [{cd: 5, lvl: 1}, null, null],
-  [{cd: 4, lvl: 2}, null, null], // unit lvl 4
-  [{cd: 4, lvl: 2}, null, null], 
-  [{cd: 4, lvl: 2}, null, null], 
-  [{cd: 3, lvl: 3}, null, null], // unit lvl 7
-  [{cd: 3, lvl: 3}, null, null],
-  [{cd: 3, lvl: 3}, null, null],
-  [{cd: 3, lvl: 4}, null, null], // unit lvl 10
-  [{cd: 3, lvl: 4}, null, null], 
-  [{cd: 3, lvl: 4}, null, null], 
-  [{cd: 3, lvl: 5}, null, null], // unit lvl 13
-  [{cd: 3, lvl: 5}, null, null],
-  [{cd: 3, lvl: 5}, null, null],
+  [{cd: 5, lvl: 2}, null, null], // unit lvl 4
+  [{cd: 5, lvl: 2}, null, null], 
+  [{cd: 5, lvl: 2}, null, null], 
+  [{cd: 5, lvl: 3}, null, null], // unit lvl 7
+  [{cd: 5, lvl: 3}, null, null],
+  [{cd: 5, lvl: 3}, null, null],
+  [{cd: 5, lvl: 4}, null, null], // unit lvl 10
+  [{cd: 5, lvl: 4}, null, null], 
+  [{cd: 5, lvl: 4}, null, null], 
+  [{cd: 5, lvl: 5}, null, null], // unit lvl 13
+  [{cd: 5, lvl: 5}, null, null],
+  [{cd: 5, lvl: 5}, null, null],
   
-  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null], // unit lvl 16
-  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null],
-  [{cd: 3, lvl: 6}, {cd: 5, lvl: 1}, null],
-  [{cd: 3, lvl: 7}, {cd: 5, lvl: 1}, null], // unit lvl 19
-  [{cd: 3, lvl: 7}, {cd: 4, lvl: 2}, null], // unit lvl 20
-  [{cd: 3, lvl: 7}, {cd: 4, lvl: 2}, null],
-  [{cd: 3, lvl: 8}, {cd: 4, lvl: 2}, null], // unit lvl 22
-  [{cd: 3, lvl: 8}, {cd: 4, lvl: 2}, null],
-  [{cd: 3, lvl: 8}, {cd: 3, lvl: 3}, null], // unit lvl 24
-  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null], // unit lvl 25
-  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null],
-  [{cd: 3, lvl: 9}, {cd: 3, lvl: 3}, null],
-  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null], // unit lvl 28
-  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null],
-  [{cd: 3, lvl: 10}, {cd: 3, lvl: 4}, null],
+  [{cd: 4, lvl: 6}, {cd: 5, lvl: 1}, null], // unit lvl 16
+  [{cd: 4, lvl: 6}, {cd: 5, lvl: 1}, null],
+  [{cd: 4, lvl: 6}, {cd: 5, lvl: 1}, null],
+  [{cd: 4, lvl: 7}, {cd: 5, lvl: 1}, null], // unit lvl 19
+  [{cd: 4, lvl: 7}, {cd: 5, lvl: 2}, null], // unit lvl 20
+  [{cd: 4, lvl: 7}, {cd: 5, lvl: 2}, null],
+  [{cd: 4, lvl: 8}, {cd: 5, lvl: 2}, null], // unit lvl 22
+  [{cd: 4, lvl: 8}, {cd: 5, lvl: 2}, null],
+  [{cd: 4, lvl: 8}, {cd: 5, lvl: 3}, null], // unit lvl 24
+  [{cd: 4, lvl: 9}, {cd: 5, lvl: 3}, null], // unit lvl 25
+  [{cd: 4, lvl: 9}, {cd: 5, lvl: 3}, null],
+  [{cd: 4, lvl: 9}, {cd: 5, lvl: 3}, null],
+  [{cd: 4, lvl: 10}, {cd: 5, lvl: 4}, null], // unit lvl 28
+  [{cd: 4, lvl: 10}, {cd: 5, lvl: 4}, null],
+  [{cd: 4, lvl: 10}, {cd: 5, lvl: 4}, null],
 
-  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 31
-  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}],
-  [{cd: 3, lvl: 11}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}],
-  [{cd: 3, lvl: 12}, {cd: 3, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 34
-  [{cd: 3, lvl: 12}, {cd: 3, lvl: 6}, {cd: 5, lvl: 1}], // unit lvl 35
-  [{cd: 3, lvl: 12}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}], // unit lvl 36
-  [{cd: 3, lvl: 13}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}], // unit lvl 37
-  [{cd: 3, lvl: 13}, {cd: 3, lvl: 6}, {cd: 4, lvl: 2}],
-  [{cd: 3, lvl: 13}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 39
+  [{cd: 3, lvl: 11}, {cd: 4, lvl: 4}, {cd: 5, lvl: 1}], // unit lvl 31
+  [{cd: 3, lvl: 11}, {cd: 4, lvl: 5}, {cd: 5, lvl: 1}],
+  [{cd: 3, lvl: 11}, {cd: 4, lvl: 5}, {cd: 5, lvl: 1}],
+  [{cd: 3, lvl: 12}, {cd: 4, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 34
+  [{cd: 3, lvl: 12}, {cd: 4, lvl: 5}, {cd: 5, lvl: 1}], // unit lvl 35
+  [{cd: 3, lvl: 12}, {cd: 4, lvl: 6}, {cd: 5, lvl: 1}], // unit lvl 36
+  [{cd: 3, lvl: 13}, {cd: 4, lvl: 6}, {cd: 5, lvl: 1}], // unit lvl 37
+  [{cd: 3, lvl: 13}, {cd: 4, lvl: 6}, {cd: 4, lvl: 2}],
+  [{cd: 3, lvl: 13}, {cd: 4, lvl: 6}, {cd: 4, lvl: 2}], // unit lvl 39
   [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 40
   [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}],
-  [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 3, lvl: 3}], // unit lvl 42
-  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}], // unit lvl 43
-  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
+  [{cd: 3, lvl: 14}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 42
+  [{cd: 3, lvl: 15}, {cd: 3, lvl: 7}, {cd: 4, lvl: 2}], // unit lvl 43
+  [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 4, lvl: 2}],
   [{cd: 3, lvl: 15}, {cd: 3, lvl: 8}, {cd: 3, lvl: 3}],
 ];

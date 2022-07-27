@@ -49,9 +49,8 @@ export class BattleInventory {
     return unit;
   }
 
-  public getRandomUnitByProps(tribe: string, tier: number): Unit {
-    const filteredUnits = _.cloneDeep(UNITS)
-      .filter(unit => unit.unitTribe === tribe);
+  public getRandomUnitByProps(params: { unitTribe?: string, unitClass?: string }, tier: number): Unit {
+    const filteredUnits = _.find(_.cloneDeep(UNITS), params);
 
     const unitBlueprint = _.sample(filteredUnits);
     unitBlueprint.tier = tier;
@@ -104,12 +103,8 @@ export class BattleInventory {
     }) || null;
   }
 
-  public getUnitByTemplate(template: number): Unit|null {
-    return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template) || null;
-  }
-
-  public getUnitByTemplateAndTier(template: number, tier: number): Unit|null {
-    return this._units.find((inventoryUnit: Unit) => inventoryUnit.template === template && inventoryUnit.tier === tier) || null;
+  public getUnitByFilter(params: { unitTribe?: string, unitClass?: string, tier?: number, template?: number }): Unit|null {
+    return _.head(_.find(this._units, params)) || null;
   }
 
   public upgradeUnitLevel(unitId: string): void {
