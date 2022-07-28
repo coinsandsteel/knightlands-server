@@ -29,9 +29,11 @@ export class BattleSquad {
   }
   
   public init() {
+    // Set iitial indexes
+    this.setInitialIndexes();
+
     // Apply squad bonuses
-    // https://docs.google.com/spreadsheets/d/1BzNKygvM41HFggswJLnMWzaN3F4mI6D7iWpRMCEm_QM/edit#gid=1792408341
-    //this._bonuses = [];
+    this.updateStat();
   }
   
   public getInitialState(): BattleSquadState {
@@ -154,7 +156,12 @@ export class BattleSquad {
 
     this._state.bonuses = bonuses;
 
-    //console.log("Squad bonuses", { bonuses });
+    // Apply bonuses
+    this._units.forEach(unit => {
+      bonuses.forEach(bonus => unit.buff(bonus));
+    });
+
+    // console.log("Squad bonuses", { bonuses });
   }
   
   protected setPower(): void {
@@ -174,10 +181,10 @@ export class BattleSquad {
     this.setPower();
   }
 
-  public setInitialIndexes(onTop: boolean): void {
+  public setInitialIndexes(): void {
     const test = game.battleManager.autoCombat;
     this._units.forEach((unit, index) => {
-      unit.setIndex(index + (onTop ? 0 : (test ? 5 : 30)));
+      unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
     });
     this.syncUnits();
   }

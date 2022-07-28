@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
+import { threadId } from "worker_threads";
 import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES } from "../../../knightlands-shared/battle";
 import {
   ABILITIES,
@@ -626,13 +627,51 @@ export class Unit {
     });
   }
 
-  public buff(paylod: BattleBuff): BattleBuff {
-    this._buffs.push(paylod);
+  public buff(paylod: BattleBuff|BattleBuff[]): void {
+    // TODO squad_bonus
+    // TODO buff / de-buff
+    // TODO terrain
+    if (Array.isArray(paylod)) {
+      paylod.forEach(buff => this.applyBuff(buff));
+    } else {
+      this.applyBuff(paylod);
+    }
+
+    /*this._buffs.push(paylod);
     paylod.estimate = 3;
     console.log(`[Unit #${this._fighterId}] Buff added`, paylod);
-    return paylod;
+    return paylod;*/
   };
   
+  protected applyBuff(buff: BattleBuff) {
+    this._buffs.push(buff);
+
+    // "squad_bonus", "buff", "de-buff", "terrain"
+    if (buff.source === "squad_bonus") {
+      switch (buff.type) {
+        case "attack": {
+          break;
+        }
+        case "swamp_speed":
+        case "defence_stack": {
+          break;
+        }
+      }
+    } else if (buff.source === "buff") {
+
+    } else if (buff.source === "de-buff") {
+
+    } else if (buff.source === "terrain") {
+
+    }
+  }
+
+  public getBuff(params: { source?: string, type?: string }): BattleBuff {
+    const choosedBuffs = _.sortBy(_.filter(this._buffs, params), "modifier");
+    console.log("[Unit] getBuff", { params, result: choosedBuffs });
+    return _.tail(choosedBuffs);
+  }
+
   public removeBuffs(source: string, type?: string): void {
     console.log(`[Unit #${this._fighterId}] Remove buffs`, { source, type });
     this._buffs = this._buffs.filter(buff => !(

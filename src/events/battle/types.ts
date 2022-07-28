@@ -158,6 +158,8 @@ export interface BattleBuff {
   type: string;
   modifier: number;
   probability?: number;
+  terrain: string;
+  conditions: string[];
   max?: number;
   estimate?: number;
 }

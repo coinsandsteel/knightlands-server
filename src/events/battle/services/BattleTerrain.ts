@@ -72,6 +72,7 @@ export class BattleTerrain {
   }
 
   public getLavaDamage(maxHp: number): number {
+    // TODO add bonus
     return Math.round(maxHp * SETTINGS.lavaDamage);
   }
 

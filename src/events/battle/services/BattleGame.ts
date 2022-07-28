@@ -3,7 +3,7 @@ import game from "../../../game";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
-import { ABILITIES, SETTINGS, SQUAD_BONUSES, TERRAIN } from "../meta";
+import { SETTINGS, SQUAD_BONUSES } from "../meta";
 import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleCombat } from "./BattleCombat";
@@ -237,12 +237,12 @@ export class BattleGame {
     this._enemyOptions = null;
 
     // Prepare user Squad
-    this._userSquad.setInitialIndexes(false);
+    this._userSquad.init();
     this._state.userSquad = this._userSquad.getState();
     this._ctrl.events.userSquad(this._state.userSquad);
     
     // Prepare enemy squad
-    this._enemySquad.setInitialIndexes(true);
+    this._enemySquad.init();
     this._enemySquad.regenerateFighterIds();
     this._state.enemySquad = this._enemySquad.getState();
     this._ctrl.events.enemySquad(this._state.enemySquad);

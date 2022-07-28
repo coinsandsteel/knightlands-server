@@ -93,16 +93,31 @@ export class BattleCombat {
     }
 
     const abilityData = source.getAbilityByClass(abilityClass);
-    const dmgBase = abilityClass === ABILITY_ATTACK ? source.damage : abilityData.value;
-    const defBase = target.defence;
+    const damageModifier = this.getModifier(
+      abilityClass === ABILITY_ATTACK ? "attack" : "abilities", 
+      source
+    );
+    const dmgBase = (abilityClass === ABILITY_ATTACK ? source.damage : abilityData.value) * damageModifier;
+    const defenceModifier = this.getModifier("defence", target);
+    const defBase = target.defence * defenceModifier;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
+
+    console.log("[Combat] Attack", {
+      dmgBase,
+      damageModifier,
+      defBase,
+      defenceModifier,
+      percentBlocked,
+      damage
+    });
 
     const oldHp = target.hp;
     target.modifyHp(-damage);
     this._ctrl.game.chekIfFighterIsDead(target);
-
-    // TODO critical hit logic
+    if (target.hp > 0) {
+      this.attackCallback()
+    }
 
     this._ctrl.events.effect({
       action: ABILITY_TYPE_ATTACK,
@@ -122,6 +137,11 @@ export class BattleCombat {
         criticalHit: false
       }
     });
+  }
+
+  protected attackCallback() {
+    // TODO Defence stack
+    // TODO Counter attack
   }
 
   public getRangeAndScheme(fighter: Unit, abilityClass: string): { range: number, scheme: string } {
@@ -190,5 +210,36 @@ export class BattleCombat {
     } else {
       return rangeCells;
     }
+  }
+
+  // TODO modifiers
+  protected getModifier(type: string, fighter: Unit): number {
+    switch (type) {
+      // Damage
+      case "power": {
+      }
+      case "attack": {
+      }
+      case "abilities": {
+      }
+      case "crit": {
+      }
+      
+      // Characteristics
+      case "speed": {
+      }
+      case "defence": {
+      }
+      case "hp": {
+      }
+      case "speed": {
+      }
+      
+      // Terrain
+      case "lava_damage": {
+      }
+    }
+    
+    return 1;
   }
 }
