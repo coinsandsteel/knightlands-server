@@ -93,12 +93,12 @@ export class BattleCombat {
     }
 
     const abilityData = source.getAbilityByClass(abilityClass);
-    const damageModifier = this.getModifier(
+    const damageModifier = this.getCharacteristicsModifier(
       abilityClass === ABILITY_ATTACK ? "attack" : "abilities", 
       source
     );
     const dmgBase = (abilityClass === ABILITY_ATTACK ? source.damage : abilityData.value) * damageModifier;
-    const defenceModifier = this.getModifier("defence", target);
+    const defenceModifier = this.getCharacteristicsModifier("defence", target);
     const defBase = target.defence * defenceModifier;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
@@ -212,17 +212,33 @@ export class BattleCombat {
     }
   }
 
+  // TODO stun
+  // TODO agro
+  // TODO counter-attack
+
+  // TODO incrementing effects
+  // TODO conditions
+  //  - incoming_damage
+  //  - debuff
+  // TODO terrain
+  // - ice
+  // - swamp
+  // - hill
+  // - woods
+
   // TODO modifiers
-  protected getModifier(type: string, fighter: Unit): number {
+  protected getCharacteristicsModifier(type: string, fighter: Unit): number {
     switch (type) {
+      // Incoming damage
+      case "damage": {
+      }
+
       // Damage
       case "power": {
       }
       case "attack": {
       }
       case "abilities": {
-      }
-      case "crit": {
       }
       
       // Characteristics
@@ -234,9 +250,7 @@ export class BattleCombat {
       }
       case "speed": {
       }
-      
-      // Terrain
-      case "lava_damage": {
+      case "initiative": {
       }
     }
     

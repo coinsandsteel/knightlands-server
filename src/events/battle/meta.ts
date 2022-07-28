@@ -22,11 +22,56 @@ export const SETTINGS = {
     3: 45
   },
   terrain: {
-    [TERRAIN_ICE]:   { type: "damage",  modifier: [1.25,  1.187,  1.12,   1.0625, 1] },
-    [TERRAIN_HILL]:  { type: "power",   modifier: [1.25,  1.3125, 1.375,  1.4375, 1.5] },
-    [TERRAIN_WOODS]: { type: "defence", modifier: [1.25,  1.3125, 1.375,  1.4375, 1.5] },
-    [TERRAIN_SWAMP]: { type: "speed",   modifier: [0.5,   0.375,  0.25,   0.125,  0], estimate: 1 },
-    [TERRAIN_LAVA]:  { type: "damage",  modifier: [0.05,  0.0375, 0.025,  0.0125, 0] },
+    [TERRAIN_ICE]: { 
+      type: "damage",  
+      modifiers: {
+        "ice-0": 1.25,
+        "ice-1": 1.187,
+        "ice-2": 1.12,   
+        "ice-3": 1.0625,
+        "ice-4": 1
+      }
+    },
+    [TERRAIN_HILL]:  { 
+      type: "power",   
+      modifiers: {
+        "hill-0": 1.25,
+        "hill-1": 1.3125,
+        "hill-2": 1.375,   
+        "hill-3": 1.4375,
+        "hill-4": 1.5
+      }
+    },
+    [TERRAIN_WOODS]: { 
+      type: "defence", 
+      modifier: {
+        "woods-0": 1.25,
+        "woods-1": 1.3125,
+        "woods-2": 1.375,   
+        "woods-3": 1.4375,
+        "woods-4": 1.5
+      }
+    },
+    [TERRAIN_SWAMP]: { 
+      type: "speed",   
+      modifier: {
+        "swamp-0": 0.5,
+        "swamp-1": 0.375,
+        "swamp-2": 0.25,   
+        "swamp-3": 0.125,
+        "swamp-4": 0
+      }
+    },
+    [TERRAIN_LAVA]:  { 
+      type: "damage",  
+      modifier: {
+        "ice-0": 0.05,
+        "ice-1": 0.0375,
+        "ice-2": 0.025,   
+        "ice-3": 0.0125,
+        "ice-4": 0
+      }
+    },
   }
 };
 
@@ -1931,10 +1976,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Swamp speed
-      { type: "speed", terrain: "swamp", modifier: 1.25 },
-      { type: "speed", terrain: "swamp", modifier: 1.50 },
-      { type: "speed", terrain: "swamp", modifier: 1.75 },
-      { type: "speed", terrain: "swamp", modifier: 2 },
+      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
     ],
     // Tier 3
     [
@@ -1956,10 +2001,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: 1.25 },
-      { type: "power", terrain: "hill", modifier: 1.50 },
-      { type: "power", terrain: "hill", modifier: 1.75 },
-      { type: "power", terrain: "hill", modifier: 2 },
+      { type: "power", terrain: "hill", modifier: "hill-1" },
+      { type: "power", terrain: "hill", modifier: "hill-2" },
+      { type: "power", terrain: "hill", modifier: "hill-3" },
+      { type: "power", terrain: "hill", modifier: "hill-4" },
     ],
     // Tier 3
     [
@@ -1982,10 +2027,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: 1.25 },
-      { type: "defence", terrain: "woods", modifier: 1.5 },
-      { type: "defence", terrain: "woods", modifier: 1.75 },
-      { type: "defence", terrain: "woods", modifier: 2 },
+      { type: "defence", terrain: "woods", modifier: "woods-1" },
+      { type: "defence", terrain: "woods", modifier: "woods-2" },
+      { type: "defence", terrain: "woods", modifier: "woods-3" },
+      { type: "defence", terrain: "woods", modifier: "woods-4" },
     ],
     // Tier 3
     [
@@ -2008,10 +2053,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: 1.25 },
-      { type: "defence", terrain: "woods", modifier: 1.50 },
-      { type: "defence", terrain: "woods", modifier: 1.75 },
-      { type: "defence", terrain: "woods", modifier: 2 },
+      { type: "defence", terrain: "woods", modifier: "woods-1" },
+      { type: "defence", terrain: "woods", modifier: "woods-2" },
+      { type: "defence", terrain: "woods", modifier: "woods-3" },
+      { type: "defence", terrain: "woods", modifier: "woods-4" },
     ],
     // Tier 3
     [
@@ -2034,10 +2079,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Swamp slows down by 25% less
-      { type: "speed", terrain: "swamp", modifier: 1.25 },
-      { type: "speed", terrain: "swamp", modifier: 1.50 },
-      { type: "speed", terrain: "swamp", modifier: 1.75 },
-      { type: "speed", terrain: "swamp", modifier: 2 },
+      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
     ],
     // Tier 3
     [
@@ -2060,10 +2105,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: 1.25 },
-      { type: "power", terrain: "hill", modifier: 1.50 },
-      { type: "power", terrain: "hill", modifier: 1.75 },
-      { type: "power", terrain: "hill", modifier: 2 },
+      { type: "power", terrain: "hill", modifier: "hill-1" },
+      { type: "power", terrain: "hill", modifier: "hill-2" },
+      { type: "power", terrain: "hill", modifier: "hill-3" },
+      { type: "power", terrain: "hill", modifier: "hill-4" },
     ],
     // Tier 3
     [
@@ -2086,10 +2131,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Swamp speed
-      { type: "speed", terrain: "swamp", modifier: 1.25 },
-      { type: "speed", terrain: "swamp", modifier: 1.50 },
-      { type: "speed", terrain: "swamp", modifier: 1.75 },
-      { type: "speed", terrain: "swamp", modifier: 2 },
+      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
+      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
     ],
     // Tier 3
     [
@@ -2112,10 +2157,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense on ice
-      { type: "defence", terrain: "ice", modifier: 1.25 },
-      { type: "defence", terrain: "ice", modifier: 1.50 },
-      { type: "defence", terrain: "ice", modifier: 1.75 },
-      { type: "defence", terrain: "ice", modifier: 2 },
+      { type: "defence", terrain: "ice", modifier: "ice-1" },
+      { type: "defence", terrain: "ice", modifier: "ice-2" },
+      { type: "defence", terrain: "ice", modifier: "ice-3" },
+      { type: "defence", terrain: "ice", modifier: "ice-4" },
     ],
     // Tier 3
     [
@@ -2138,10 +2183,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Lava deals 25% less damage
-      { type: "lava_damage", terrain: "lava", modifier: 0.75 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.50 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.25 },
-      { type: "lava_damage", terrain: "lava", modifier: 0 },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
     ],
     // Tier 3
     [
@@ -2164,10 +2209,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { type: "lava_damage", terrain: "lava", modifier: 0.75 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.50 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.25 },
-      { type: "lava_damage", terrain: "lava", modifier: 0 },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
     ],
     // Tier 3
     [
@@ -2190,10 +2235,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: 1.25 },
-      { type: "defence", terrain: "woods", modifier: 1.50 },
-      { type: "defence", terrain: "woods", modifier: 1.75 },
-      { type: "defence", terrain: "woods", modifier: 2 },
+      { type: "defence", terrain: "woods", modifier: "woods-1" },
+      { type: "defence", terrain: "woods", modifier: "woods-2" },
+      { type: "defence", terrain: "woods", modifier: "woods-3" },
+      { type: "defence", terrain: "woods", modifier: "woods-4" },
     ],
     // Tier 3
     [
@@ -2216,10 +2261,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense on ice
-      { type: "defence", terrain: "ice", modifier: 1.25 },
-      { type: "defence", terrain: "ice", modifier: 1.50 },
-      { type: "defence", terrain: "ice", modifier: 1.75 },
-      { type: "defence", terrain: "ice", modifier: 2 },
+      { type: "defence", terrain: "ice", modifier: "ice-1" },
+      { type: "defence", terrain: "ice", modifier: "ice-2" },
+      { type: "defence", terrain: "ice", modifier: "ice-3" },
+      { type: "defence", terrain: "ice", modifier: "ice-4" },
     ],
     // Tier 3
     [
@@ -2242,10 +2287,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: 1.25 },
-      { type: "power", terrain: "hill", modifier: 1.50 },
-      { type: "power", terrain: "hill", modifier: 1.75 },
-      { type: "power", terrain: "hill", modifier: 1.100 },
+      { type: "power", terrain: "hill", modifier: "hill-1" },
+      { type: "power", terrain: "hill", modifier: "hill-2" },
+      { type: "power", terrain: "hill", modifier: "hill-3" },
+      { type: "power", terrain: "hill", modifier: "hill-4" },
     ],
     // Tier 3
     [
@@ -2268,10 +2313,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defence on ice
-      { type: "defence", terrain: "ice", modifier: 0.75 },
-      { type: "defence", terrain: "ice", modifier: 0.50 },
-      { type: "defence", terrain: "ice", modifier: 0.25 },
-      { type: "defence", terrain: "ice", modifier: 0 },
+      { type: "defence", terrain: "ice", modifier: "ice-1" },
+      { type: "defence", terrain: "ice", modifier: "ice-2" },
+      { type: "defence", terrain: "ice", modifier: "ice-3" },
+      { type: "defence", terrain: "ice", modifier: "ice-4" },
     ],
     // Tier 3
     [
@@ -2294,10 +2339,10 @@ export const SQUAD_BONUSES = {
     // Tier 2
     [
       // Defense on ice
-      { type: "lava_damage", terrain: "lava", modifier: 0.75 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.50 },
-      { type: "lava_damage", terrain: "lava", modifier: 0.25 },
-      { type: "lava_damage", terrain: "lava", modifier: 0 },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
+      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
     ],
     // Tier 3
     [
