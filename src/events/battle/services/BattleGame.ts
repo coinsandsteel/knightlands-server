@@ -316,6 +316,10 @@ export class BattleGame {
   
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
+    if (activeFighter.isStunned) {
+      this.skip();
+    }
+
     if (game.battleManager.autoCombat) {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId}. Making a move...`);
       this.setMoveCells([]);
@@ -328,7 +332,7 @@ export class BattleGame {
 
     } else {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
-      const moveCells = this._movement.getRangeCells("move", activeFighter.index, activeFighter.speed, SETTINGS.moveScheme);
+      const moveCells = this._movement.getRangeCells(activeFighter.index, activeFighter.speed);
       this.setMoveCells(moveCells);
     }
 
@@ -385,7 +389,7 @@ export class BattleGame {
     }
 
     if (abilityClass === ABILITY_MOVE) {
-      const moveCells = this._movement.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
+      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
     } else {
@@ -415,14 +419,14 @@ export class BattleGame {
   
   public autoMove(fighter: Unit): void {
     let index = null;
-    let ability = fighter.randomAbility();
+    let ability = fighter.strongestEnabledAbility();
     let attackCells = this._combat.getAttackCells(fighter, ability, true);
     if (attackCells.length) {
       index = _.sample(attackCells);
       console.log('[Game] AI attacks', { attackCells, index });
     } else {
       ability = ABILITY_MOVE;
-      const moveCells = this._movement.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
+      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed);
       index = _.sample(moveCells);
       console.log('[Game] AI moves', { moveCells, choosedIndex: index });
     }
@@ -432,7 +436,7 @@ export class BattleGame {
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
-    console.log("[Game action] Data", { fighter, index, ability, timeout });
+    //tion] Data", { fighter, index, ability, timeout });
     
     // Check if unit can use ability
     // Check ability cooldown
@@ -473,7 +477,7 @@ export class BattleGame {
       
     // Buff / De-buff
     } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
-      console.log("[Game action] Duff/De-buff", { fighter, target, ability });
+      console.log("[Game action] Buff/De-buff", { fighter, target, ability });
       this._combat.buff(fighter, target, ability);
       
     // Self-buff
@@ -487,7 +491,7 @@ export class BattleGame {
       this._combat.attack(fighter, target, ability);
 
     } else {
-      throw Error("Unknown action");
+      return;
     }
 
     // Enable ability cooldown
@@ -572,16 +576,6 @@ export class BattleGame {
       fighterId = null;
     }
     return fighterId;
-  }
-
-  public chekIfFighterIsDead(fighter: Unit): void {
-    if (fighter.hp <= 0) {
-      if (fighter.isEnemy) {
-        this._ctrl.events.enemyFighter(fighter);
-      } else {
-        this._ctrl.events.userFighter(fighter);
-      }
-    }
   }
 
   public testAbilities() {

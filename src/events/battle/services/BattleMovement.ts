@@ -71,25 +71,21 @@ export class BattleMovement {
     this.graphs = graphs;
   }
 
-  public getRangeCells(mode: "move"|"attack"|"jump", unitIndex: number, range: number, scheme: string): number[] {
+  public getRangeCells(unitIndex: number, range: number): number[] {
     const result = [];
     const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
-      // Cannot move or jump to units and thorns
+      // Cannot get onto units and thorns
       if (
-        ["move", "jump"].includes(mode)
-        && 
-        (
-          terrain === TERRAIN_THORNS
-          ||
-          unitIndexes.includes(index)
-        )
+        terrain === TERRAIN_THORNS
+        ||
+        unitIndexes.includes(index)
       ) {
         continue;
       }
 
-      let path = this.getPath(mode, unitIndex, index, scheme);
+      let path = this.getPath(unitIndex, index);
       if (
         path
         && 
@@ -101,22 +97,17 @@ export class BattleMovement {
     return result;
   }
 
-  public getPath(mode: "move"|"attack"|"jump", from: number, to: number, scheme: string): any {
+  public getPath(from: number, to: number): any {
     const avoidNodes  = [];
+    const unitNodes = this._ctrl.game.allUnits
+      .filter(unit => ![from, to].includes(unit.index))
+      .map(unit => `${unit.index}`);
+    const thornsNodes = this._ctrl.game.terrain
+        .getThornsIndexes()
+        .map(index => `${index}`);
+    avoidNodes.push(...unitNodes, ...thornsNodes);
 
-    if (mode === "move") {
-      const unitNodes = this._ctrl.game.allUnits
-        .filter(unit => ![from, to].includes(unit.index))
-        .map(unit => `${unit.index}`);
-
-      const thornsNodes = this._ctrl.game.terrain
-          .getThornsIndexes()
-          .map(index => `${index}`);
-
-      avoidNodes.push(...unitNodes, ...thornsNodes);
-    }
-
-    const path = this.routes[scheme].path(
+    const path = this.routes[SETTINGS.moveScheme].path(
       `${from}`,
       `${to}`,
       { trim: true, avoid: avoidNodes }
@@ -157,37 +148,20 @@ export class BattleMovement {
     return (vIndex * 5) + hIndex;
   }
 
-  public tryLavaDamage(fighter: Unit): void {
-    const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(fighter.index);
-    if (terrain === TERRAIN_LAVA) {
-      fighter.modifyHp(
-        -this._ctrl.game.terrain.getLavaDamage(fighter.maxHp)
-      );
-      this._ctrl.game.chekIfFighterIsDead(fighter);
-    }
-  }
-
-  protected handleTerrain(fighter: Unit, terrain: string, moving: boolean): { stop: boolean } {
+  protected handleTerrain(fighter: Unit, terrain: string|null, moving: boolean): { stop: boolean } {
     let stop = false;
-    const source = "terrain";
     switch (terrain) {
       case TERRAIN_LAVA: {
-        const damage = this._ctrl.game.terrain.getLavaDamage(fighter.maxHp);
-        fighter.modifyHp(-damage);
-        this._ctrl.game.chekIfFighterIsDead(fighter);
-        console.log(`Passing through the ${terrain}`, { damage });
+        console.log(`[Movement] Passing through the ${terrain}`);
+        fighter.launchTerrainEffect(terrain);
         break;
       }
       case TERRAIN_ICE:
       case TERRAIN_SWAMP: {
+        console.log("[Movement] " +(moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         // Found an obstacle, stop
         stop = true;
-        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-        fighter.removeBuffs(source, SETTINGS.terrain[terrain].type);
-        // Add new buff
-        fighter.buff({ source, ...SETTINGS.terrain[terrain] });
-        this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-        console.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
+        fighter.launchTerrainEffect(terrain);
         break;
       }
       case TERRAIN_HILL:
@@ -195,17 +169,12 @@ export class BattleMovement {
         if (moving) {
           break;
         }
-        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-        fighter.removeBuffs(source, SETTINGS.terrain[terrain].type);
-        // Hills, highlands - Increase damage to enemies by 25%
-        // Forest - Increases unit's defense by 25%
-        fighter.buff({ source, ...SETTINGS.terrain[terrain] });
-        this._ctrl.events.buffs(fighter.fighterId, fighter.buffs);
-        console.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
+        console.log(`[Movement] Stand on the ${terrain}`, { buffs: fighter.buffs });
+        fighter.launchTerrainEffect(terrain);
         break;
       }
       default: {
-        fighter.removeBuffs(source);
+        fighter.launchTerrainEffect(terrain);
         break;
       }
     }
@@ -214,14 +183,14 @@ export class BattleMovement {
   }
 
   public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this.getRangeCells("move", fighter.index, fighter.speed, SETTINGS.moveScheme);
+    const moveCells = this.getRangeCells(fighter.index, fighter.speed);
     if (!moveCells.includes(index)) {
       return;
     }
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
-    let path = this.getPath("move", fighter.index, index, SETTINGS.moveScheme);
+    let path = this.getPath(fighter.index, index);
     for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
       console.log(`[Tile]`, { index: +pathIndex, terrain });
@@ -241,7 +210,7 @@ export class BattleMovement {
     // Change unit's index
     fighter.setIndex(index);
     
-    // Handle target terrain
+    // Handle destination terrain
     const currentIndexTerrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
     this.handleTerrain(fighter, currentIndexTerrain, false);
 

@@ -64,7 +64,7 @@ export class BattleSquad {
   
   protected makeUnit(unit: BattleUnit): Unit {
     unit.isEnemy = this._isEnemy;
-    return new Unit(unit);
+    return new Unit(unit, this._ctrl.events);
   }
   
   public fillSlot(unitId: string, index: number): void {

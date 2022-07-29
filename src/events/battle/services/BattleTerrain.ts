@@ -71,11 +71,6 @@ export class BattleTerrain {
     return this._coreMap[index];
   }
 
-  public getLavaDamage(maxHp: number): number {
-    // TODO add bonus
-    return Math.round(maxHp * SETTINGS.lavaDamage);
-  }
-
   public getThornsIndexes(): number[] {
     const indexes = [];
     this._coreMap.forEach((asset, index) => {

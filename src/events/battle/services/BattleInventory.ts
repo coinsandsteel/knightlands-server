@@ -33,7 +33,7 @@ export class BattleInventory {
   }
   
   protected makeUnit(unit: BattleUnit): Unit {
-    return new Unit(unit);
+    return new Unit(unit, this._ctrl.events);
   }
   
   getState(): BattleUnit[] {

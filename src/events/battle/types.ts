@@ -154,12 +154,15 @@ export interface BattleUnitAttribute {
 }
 
 export interface BattleBuff {
-  source: string; // "squad_bonus", "buff", "de-buff", "terrain"
+  source: "squad"|"buff"|"self-buff"|"de-buff"|"terrain";
   type: string;
-  modifier: number;
+  modifier?: number|string;
+  delta?: number;
   probability?: number;
-  terrain: string;
-  conditions: string[];
+  terrain?: string;
+  conditions?: string[];
+  percents?: boolean;
+  fullSquad?: boolean;
   max?: number;
   estimate?: number;
 }

@@ -82,24 +82,24 @@ export class BattleEvents {
   }
 
   buffs(fighterId: string, buffs: BattleBuff[]) {
-    this._events.buffs = {
-      fighterId,
-      buffs
-    };
+    if (this._events.buffs === undefined) {
+      this._events.buffs = {};
+    }
+    this._events.buffs[fighterId] = buffs;
   }
 
-  userFighter(data: BattleFighterUpdate) {
+  userFighter(data: Unit) {
     if (this._events.userFighter === undefined) {
       this._events.userFighter = [];
     }
-    this._events.userFighter.push(data);
+    this._events.userFighter.push(data.serializeForSquad());
   }
 
-  enemyFighter(data: BattleFighterUpdate) {
+  enemyFighter(data: Unit) {
     if (this._events.enemyFighter === undefined) {
       this._events.enemyFighter = [];
     }
-    this._events.enemyFighter.push(data);
+    this._events.enemyFighter.push(data.serializeForSquad());
   }
 
   terrain(terrain: BattleTerrainMap) {

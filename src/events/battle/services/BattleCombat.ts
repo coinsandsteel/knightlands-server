@@ -1,8 +1,18 @@
 import _ from "lodash";
-import { ABILITY_ATTACK, ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { SETTINGS } from "../meta";
+import { ABILITIES, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
+
+// TODO incrementing effects
+// TODO conditions
+//  - incoming_damage
+//  - debuff
+// TODO terrain
+// - ice
+// - swamp
+// - hill
+// - woods
 
 export class BattleCombat {
   protected _ctrl: BattleController;
@@ -26,8 +36,7 @@ export class BattleCombat {
       return;
     }
 
-    const abilityData = source.getAbilityByClass(abilityClass);
-    const value = abilityData.value;
+    const value = source.getAbilityValue(abilityClass);
     const oldHp = target.hp;
     target.modifyHp(+value);
 
@@ -51,23 +60,16 @@ export class BattleCombat {
     });
   }
 
+  // TODO apply buff
   public buff(source: Unit, target: Unit, abilityClass: string): void {
     if (!this.canAffect(source, target, abilityClass)) {
       return;
     }
     
-    // Adjust characteristics
-    // Apply squad bonuses
-    const abilityData = source.getAbilityByClass(abilityClass);
-    if (!abilityData) {
-      return;
-    }
-
+    const abilityStat = source.getAbilityStat(abilityClass);
     return;
 
     //const buff = BUFFS[abilityClass][abilityData.level];
-    
-    // TODO test
     /*const buffState = target.buff({
       source: abilityData.abilityType, ...buff 
     });
@@ -92,29 +94,20 @@ export class BattleCombat {
       return;
     }
 
-    const abilityData = source.getAbilityByClass(abilityClass);
-    const damageModifier = this.getCharacteristicsModifier(
-      abilityClass === ABILITY_ATTACK ? "attack" : "abilities", 
-      source
-    );
-    const dmgBase = (abilityClass === ABILITY_ATTACK ? source.damage : abilityData.value) * damageModifier;
-    const defenceModifier = this.getCharacteristicsModifier("defence", target);
-    const defBase = target.defence * defenceModifier;
+    const dmgBase = source.getAbilityValue(abilityClass);
+    const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
     console.log("[Combat] Attack", {
       dmgBase,
-      damageModifier,
       defBase,
-      defenceModifier,
       percentBlocked,
       damage
     });
 
     const oldHp = target.hp;
     target.modifyHp(-damage);
-    this._ctrl.game.chekIfFighterIsDead(target);
     if (target.hp > 0) {
       this.attackCallback()
     }
@@ -140,52 +133,8 @@ export class BattleCombat {
   }
 
   protected attackCallback() {
-    // TODO Defence stack
+    // TODO Stack
     // TODO Counter attack
-  }
-
-  public getRangeAndScheme(fighter: Unit, abilityClass: string): { range: number, scheme: string } {
-    switch (fighter.class) {
-      case UNIT_CLASS_SUPPORT: {
-        return { range: 2, scheme: SETTINGS.attackScheme };
-      }
-      case UNIT_CLASS_MAGE: {
-        return { range: 2, scheme: SETTINGS.attackScheme };
-      }
-      case UNIT_CLASS_MELEE: {
-        if (abilityClass === ABILITY_FLIGHT || abilityClass === ABILITY_ATTACK) {
-          return { range: 2, scheme: SETTINGS.jumpScheme };
-        } else {
-          return { range: 1, scheme: SETTINGS.attackScheme };
-        }
-      }
-      case UNIT_CLASS_RANGE: {
-        if (abilityClass === ABILITY_DASH) {
-          return { range: fighter.speed + 2, scheme: SETTINGS.jumpScheme };
-        } else if (abilityClass === ABILITY_ATTACK) {
-          return { range: 2, scheme: SETTINGS.attackScheme };
-        } else {
-          return { range: 1, scheme: SETTINGS.attackScheme };
-        }
-      }
-      case UNIT_CLASS_TANK: {
-        switch (abilityClass) {
-          case ABILITY_ATTACK: {
-            return { range: 1, scheme: SETTINGS.attackScheme };
-          }
-          case ABILITY_RUSH: {
-            return { range: fighter.speed + 2, scheme: SETTINGS.jumpScheme };
-          }
-          case ABILITY_TELEPORTATION:
-          case ABILITY_FLIGHT: {
-            return { range: 2, scheme: SETTINGS.jumpScheme };
-          }
-          default: {
-            return { range: 1, scheme: SETTINGS.attackScheme };
-          }
-        }
-      }
-    }
   }
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
@@ -194,14 +143,17 @@ export class BattleCombat {
   }
 
   public getAttackCells(fighter: Unit, abilityClass: string, onlyTargets: boolean): number[] {
-    const rangeData = this.getRangeAndScheme(fighter, abilityClass);
-    const abilityType = ABILITY_TYPES[abilityClass];
-    const rangeCells = this._ctrl.game.movement.getRangeCells(
-      abilityType === ABILITY_TYPE_JUMP ? "jump" : "attack", 
-      fighter.index,
-      rangeData.range,
-      rangeData.scheme
-    );
+    const abilityStat = fighter.getAbilityStat(abilityClass);
+    if (!abilityStat.attackRange || !abilityStat.damageScheme) {
+      return [];
+    }
+
+    const range = abilityStat.canMove ?
+      abilityStat.moveRange + abilityStat.attackRange
+      :
+      abilityStat.attackRange;
+
+    const rangeCells = this._ctrl.game.movement.getRangeCells(fighter.index, range);
 
     if (onlyTargets) {
       const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
@@ -210,50 +162,5 @@ export class BattleCombat {
     } else {
       return rangeCells;
     }
-  }
-
-  // TODO stun
-  // TODO agro
-  // TODO counter-attack
-
-  // TODO incrementing effects
-  // TODO conditions
-  //  - incoming_damage
-  //  - debuff
-  // TODO terrain
-  // - ice
-  // - swamp
-  // - hill
-  // - woods
-
-  // TODO modifiers
-  protected getCharacteristicsModifier(type: string, fighter: Unit): number {
-    switch (type) {
-      // Incoming damage
-      case "damage": {
-      }
-
-      // Damage
-      case "power": {
-      }
-      case "attack": {
-      }
-      case "abilities": {
-      }
-      
-      // Characteristics
-      case "speed": {
-      }
-      case "defence": {
-      }
-      case "hp": {
-      }
-      case "speed": {
-      }
-      case "initiative": {
-      }
-    }
-    
-    return 1;
   }
 }

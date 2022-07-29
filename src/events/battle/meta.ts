@@ -14,8 +14,6 @@ export const SETTINGS = {
   lavaDamage: 0.05, // by maxHp
   maxExp: 99000,
   moveScheme: PATH_SCHEME_ROOK,
-  attackScheme: PATH_SCHEME_QUEEN,
-  jumpScheme: PATH_SCHEME_QUEEN,
   maxUnitTierLevel: {
     1: 15, 
     2: 30, 
@@ -44,7 +42,7 @@ export const SETTINGS = {
     },
     [TERRAIN_WOODS]: { 
       type: "defence", 
-      modifier: {
+      modifiers: {
         "woods-0": 1.25,
         "woods-1": 1.3125,
         "woods-2": 1.375,   
@@ -54,7 +52,7 @@ export const SETTINGS = {
     },
     [TERRAIN_SWAMP]: { 
       type: "speed",   
-      modifier: {
+      modifiers: {
         "swamp-0": 0.5,
         "swamp-1": 0.375,
         "swamp-2": 0.25,   
@@ -64,12 +62,12 @@ export const SETTINGS = {
     },
     [TERRAIN_LAVA]:  { 
       type: "damage",  
-      modifier: {
-        "ice-0": 0.05,
-        "ice-1": 0.0375,
-        "ice-2": 0.025,   
-        "ice-3": 0.0125,
-        "ice-4": 0
+      modifiers: {
+        "lava-0": 0.05,
+        "lava-1": 0.0375,
+        "lava-2": 0.025,   
+        "lava-3": 0.0125,
+        "lava-4": 0
       }
     },
   }
@@ -134,7 +132,7 @@ export const ABILITIES = {
       canMove: true,
       moveRange: "speed-1",
       attackRange: 1,
-      ignoreObstacles: false,
+      ignoreObstacles: false, // TODO implement
       duration: null,
       effects: []
     },
@@ -2086,7 +2084,7 @@ export const SQUAD_BONUSES = {
     ],
     // Tier 3
     [
-      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      { type: "defence", conditions: ["incoming_damage"], modifier: 1, max: 3 },
+      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      
       { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 3 },
       { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
       { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 5 },
@@ -2113,10 +2111,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's attack is increased by 2,5% (max. 15%)      
-      { type: "attack", delta: 2.5, percents: true, max: 15 },
-      { type: "attack", delta: 2.5, percents: true, max: 20 },
-      { type: "attack", delta: 3, percents: true, max: 25 },
-      { type: "attack", delta: 3, percents: true, max: 30 },
+      { type: "attack", delta: 2.5, fullSquad: true, percents: true, max: 15 },
+      { type: "attack", delta: 2.5, fullSquad: true, percents: true, max: 20 },
+      { type: "attack", delta: 3,   fullSquad: true, percents: true, max: 25 },
+      { type: "attack", delta: 3,   fullSquad: true, percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_ASSEMBLING]: [
@@ -2191,10 +2189,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", modifier: 2.5, percents: true, max: 15 },
-      { type: "power", modifier: 2.5, percents: true, max: 20 },
-      { type: "power", modifier: 3, percents: true, max: 25 },
-      { type: "power", modifier: 3, percents: true, max: 30 },
+      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 15 },
+      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 20 },
+      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 25 },
+      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_ELDRITCH]: [
@@ -2269,10 +2267,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", modifier: 2.5, percents: true, max: 15 },
-      { type: "power", modifier: 2.5, percents: true, max: 20 },
-      { type: "power", modifier: 3, percents: true, max: 25 },
-      { type: "power", modifier: 3, percents: true, max: 30 },
+      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 15 },
+      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 20 },
+      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 25 },
+      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_FALLEN_KING]: [

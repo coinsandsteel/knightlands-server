@@ -2,6 +2,8 @@ import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { threadId } from "worker_threads";
 import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES } from "../../../knightlands-shared/battle";
+import { BattleController } from "../BattleController";
+import { BattleEvents } from "../BattleEvents";
 import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, 
@@ -10,6 +12,11 @@ import {
   AVG_HP, 
   CHARACTERISTICS,
   SETTINGS,
+  TERRAIN_HILL,
+  TERRAIN_ICE,
+  TERRAIN_LAVA,
+  TERRAIN_SWAMP,
+  TERRAIN_WOODS,
   UNITS,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
@@ -20,6 +27,8 @@ import {
 } from "../types";
 
 export class Unit {
+  protected _events: BattleEvents;
+
   protected _template: number;
   protected _isEnemy: boolean;
   protected _isDead: boolean;
@@ -44,8 +53,52 @@ export class Unit {
   // Combat
   protected _hp: number;
   protected _index: number;
-  protected _buffs: BattleBuff[];
+  protected _buffs: BattleBuff[] = [
+    // Abilities
+    { source: "self-buff", type: "power", modifier: 1.15 },
+    { source: "self-buff", type: "speed", modifier: 1.2 },
+    { source: "buff", type: "defence", modifier: 1.75, estimate: 1 },
+    { source: "buff", type: "defence", modifier: 1.15 },
+    { source: "buff", type: "initiative", modifier: 0.8 },
+    { source: "de-buff", type: "stun", probability: 1, estimate: 1 }, 
+    { source: "de-buff", type: "stun", probability: 0.25, estimate: 2 },
+    { source: "de-buff", type: "speed", modifier: 0.8 },
+    { source: "de-buff", type: "agro", probability: 1, estimate: 1 }, 
+    { source: "de-buff", type: "agro", probability: 0.10, estimate: 2 },
+    
+    // Squad bonus
+    { source: "squad", type: "power", terrain: "hill", modifier: "hill-1" },
+    { source: "squad", type: "power", modifier: 1.3, probability: 0.07 },
+    { source: "squad", type: "power", modifier: 2.5, percents: true, max: 15 },
+    { source: "squad", type: "attack", modifier: 1.5 },
+    { source: "squad", type: "attack", delta: 2.5, percents: true, max: 15 },
+    { source: "squad", type: "abilities", modifier: 1.05 },
+    { source: "squad", type: "defence", terrain: "woods", modifier: "woods-1" },
+    { source: "squad", type: "defence", terrain: "ice", modifier: "ice-1" },
+    { source: "squad", type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
+    { source: "squad", type: "defence", modifier: 1.05 },
+    { source: "squad", type: "hp", modifier: 1.05 },
+    { source: "squad", type: "hp", modifier: 1.05 },
+    { source: "squad", type: "speed", terrain: "swamp", modifier: "swamp-1" },
+    { source: "squad", type: "speed", conditions: ["debuff"], delta: 1 },
+    { source: "squad", type: "speed", terrain: "swamp", modifier: "swamp-1" },
+    { source: "squad", type: "counter_attack", probability: 0.07 },
+    { source: "squad", type: "lava_damage", terrain: "lava", modifier: "lava-1" },
 
+    // Terrain
+    { source: "terrain", type: "damage", terrain: "ice", modifier: "ice-1" },
+    { source: "terrain", type: "damage", terrain: "hill", modifier: "hill-1" },
+    { source: "terrain", type: "damage", terrain: "defence", modifier: "woods-1" },
+    { source: "terrain", type: "damage", terrain: "speed", modifier: "swamp-1", estimate: 1 },
+  ];
+
+  protected _terrainModifiers = {
+    [TERRAIN_ICE]: "ice-0",
+    [TERRAIN_HILL]: "hill-0",
+    [TERRAIN_WOODS]: "woods-0",
+    [TERRAIN_SWAMP]: "swamp-0",
+    [TERRAIN_LAVA]: "lava-0"
+  }; 
   protected _moveCells: number[];
   protected _attackCells: number[];
 
@@ -129,7 +182,14 @@ export class Unit {
     return this._buffs;
   }
 
-  constructor(blueprint: BattleUnit) {
+  get isStunned(): boolean {
+    // TODO stun
+    return false;
+  }
+
+  constructor(blueprint: BattleUnit, events: BattleEvents) {
+    this._events = events;
+
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
@@ -206,7 +266,7 @@ export class Unit {
             next: null,
             price: null
           },  
-          value: this.getAbilityValue(abilityClass, 1),
+          value: this.getAbilityValue(abilityClass),
           enabled: !index ? true : false
         };  
       });  
@@ -247,31 +307,27 @@ export class Unit {
     this._fighterId = uuidv4().split('-').pop();
   }
 
-  protected getAbilityValue(ability: string, level?: number): number|null {
-    const abilities =  _.cloneDeep(ABILITIES);
-    const abilityData = (
-      abilities[this._unitClass] ? abilities[this._unitClass][ability] : null
-    );
-
-    /*console.log("getAbilityValue", {
-      byUnitClass: (abilities[this._unitClass] ? abilities[this._unitClass][ability] : null),
-      byAbility: ABILITIES.other[ability] || null
-    });*/
+  public getAbilityValue(ability: string): number|null {
+    let abilityValue = 0;
     
-    if (!abilityData) {
-      throw Error(`Unit ${this._unitClass} has no "${ability}" ability`);
+    if (ability === ABILITY_ATTACK) {
+      abilityValue = this.damage;
+    } else {
+      const abilityData = this.getAbilityByClass(ability);
+      const abilityLevel = abilityData ? abilityData.levelInt : 1;
+      if (!ABILITIES[this._unitClass][ability]) {
+        throw Error(`Unit ${this._unitClass} hasn't "${ability}" ability`);
+      }
+      if (!ABILITIES[this._unitClass][ability].damage[this._tier - 1]) {
+        return 0;
+      }
+      abilityValue = ABILITIES[this._unitClass][ability].damage[this._tier - 1][abilityLevel - 1];
     }
 
-    // TODO use ability tier!!! sic...
-    const abilityTierData = abilityData[this._tier - 1];
-    if (!abilityTierData) {
-      return null;
-    }
-
-    const abilityValue = abilityTierData[level - 1];
-    if (!abilityValue) {
-      return null;
-    }
+    // TODO squad bonuses
+    // TODO buffs
+    // TODO de-buffs
+    // TODO terrain
 
     return abilityValue;
   }
@@ -478,7 +534,8 @@ export class Unit {
         if (ability.level.current === 0) {
           ability.enabled = true;
           ability.level.current = 1;
-          ability.value = this.getAbilityValue(ability.abilityClass, ability.level.current);
+          ability.levelInt = 1;
+          ability.value = this.getAbilityValue(ability.abilityClass);
           console.log(`[Unit] Ability is enabled`, ability);
         }
         
@@ -516,7 +573,8 @@ export class Unit {
     const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
     ability.enabled = true;
     ability.level.current++;
-    ability.value = this.getAbilityValue(abilityClass, ability.level.current);
+    ability.levelInt++;
+    ability.value = this.getAbilityValue(abilityClass);
 
     const canUpgradeMore = ability.level.current < abilityScheme.lvl;
     ability.level.next = canUpgradeMore ? ability.level.next + 1 : null;
@@ -546,7 +604,10 @@ export class Unit {
   }
 
   public getAbilityByClass(abilityClass: string): BattleUnitAbility|null {
-    const ability = this._abilities.find(entry => entry.abilityClass === abilityClass);
+    const ability = this._abilities ? 
+      this._abilities.find(entry => entry.abilityClass === abilityClass)
+      :
+      null;
     return ability || null;
   }
 
@@ -627,91 +688,104 @@ export class Unit {
     });
   }
 
-  public buff(paylod: BattleBuff|BattleBuff[]): void {
-    // TODO squad_bonus
-    // TODO buff / de-buff
-    // TODO terrain
-    if (Array.isArray(paylod)) {
-      paylod.forEach(buff => this.applyBuff(buff));
-    } else {
-      this.applyBuff(paylod);
-    }
+  public getLavaDamage(): number {
+    // TODO add bonus
+    return Math.round(this._characteristics.hp * SETTINGS.lavaDamage);
+  }
 
-    /*this._buffs.push(paylod);
-    paylod.estimate = 3;
-    console.log(`[Unit #${this._fighterId}] Buff added`, paylod);
-    return paylod;*/
-  };
-  
-  protected applyBuff(buff: BattleBuff) {
-    this._buffs.push(buff);
-
-    // "squad_bonus", "buff", "de-buff", "terrain"
-    if (buff.source === "squad_bonus") {
-      switch (buff.type) {
-        case "attack": {
-          break;
-        }
-        case "swamp_speed":
-        case "defence_stack": {
-          break;
-        }
+  public launchTerrainEffect(terrain?: string): void {
+    switch (terrain) {
+      case TERRAIN_LAVA: {
+        const damage = this.getLavaDamage();
+        this.modifyHp(-damage);
+        console.log(`[Unit] Lava damage is ${damage}`);
+        break;
       }
-    } else if (buff.source === "buff") {
-
-    } else if (buff.source === "de-buff") {
-
-    } else if (buff.source === "terrain") {
-
+      case TERRAIN_ICE:
+      case TERRAIN_SWAMP:
+      case TERRAIN_HILL:
+      case TERRAIN_WOODS: {
+        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
+        this.removeBuffs({
+          source: "terrain",
+          type: SETTINGS.terrain[terrain].type
+        });
+        
+        // Hills, highlands - Increase damage to enemies by 25%
+        // Forest - Increases unit's defense by 25%
+        this.buff({
+          source: "terrain",
+          type: SETTINGS.terrain[terrain].type,
+          modifier: this.getTerrainModifier(terrain)
+        });
+        break;
+      }
+      default: {
+        this.removeBuffs({
+          source: "terrain"
+        });
+        break;
+      }
     }
   }
 
+  public buff(buff: BattleBuff): void {
+    this._buffs.push(buff);
+    this._events.buffs(this.fighterId, this.buffs);
+  };
+  
   public getBuff(params: { source?: string, type?: string }): BattleBuff {
     const choosedBuffs = _.sortBy(_.filter(this._buffs, params), "modifier");
-    console.log("[Unit] getBuff", { params, result: choosedBuffs });
+    console.log("[Unit] Get the strongest buff", { params, result: choosedBuffs });
     return _.tail(choosedBuffs);
   }
 
-  public removeBuffs(source: string, type?: string): void {
-    console.log(`[Unit #${this._fighterId}] Remove buffs`, { source, type });
-    this._buffs = this._buffs.filter(buff => !(
-      buff.source === source && (!type || buff.type === type)
-    ));
+  public removeBuffs(params: { source?: string, type?: string }): void {
+    console.log(`[Unit #${this._fighterId}] Remove buffs`, params);
+    this._buffs = _.remove(this._buffs, params);
   };
 
   public decreaseBuffsEstimate(): void {
     this._buffs.forEach(buff => {
-      const oldEstimate = _.clone(buff.estimate);
-      buff.estimate--;
-      const newEstimate = _.clone(buff.estimate);
-
-      console.log(`[Unit #${this._fighterId}] Decreased buff estimate`, {
-        old: oldEstimate,
-        new: newEstimate,
-        buffActive: buff.estimate > 0
-      });
+      if (
+        _.isNumber(buff.estimate)
+        &&
+        buff.estimate >= 0
+      ) {
+        const oldEstimate = _.clone(buff.estimate);
+        buff.estimate--;
+        const newEstimate = _.clone(buff.estimate);
+  
+        console.log(`[Unit #${this._fighterId}] Decreased buff estimate`, {
+          old: oldEstimate,
+          new: newEstimate,
+          buffActive: buff.estimate > 0
+        });
+      }
     });
 
-    this._buffs = this._buffs.filter(buff => buff.estimate > 0);
+    this._buffs = _.remove(
+      this._buffs, 
+      buff => _.isNumber(buff.estimate) && buff.estimate < 0
+    );
   };
 
   public modifyHp(value: number): void {
     if (this._isDead) {
       return;
     }
+
     this._hp += value;
+
     if (this._hp <= 0) {
       this._isDead = true;
+      if (this._isEnemy) {
+        this._events.enemyFighter(this);
+      } else {
+        this._events.userFighter(this);
+      }
     }
   };
-
-  public randomAbility(): string {
-    const enabledAbilities = this._abilities.filter(entry => {
-      return entry.enabled && (!entry.cooldown || !entry.cooldown.enabled)
-    }).map(entry => entry.abilityClass);
-    
-    return enabledAbilities.length ? _.sample(enabledAbilities) : ABILITY_ATTACK;
-  }
 
   public strongestEnabledAbility(): string {
     const enabledAbilities = this._abilities.filter(entry => {
@@ -733,5 +807,107 @@ export class Unit {
       i++;
     }
     return exp;
+  }
+
+  public getTerrainModifier(terrain: string): number {
+    return SETTINGS.terrain[terrain].modifiers[
+      this._terrainModifiers[terrain]
+    ]  
+  }
+
+  public setTerrainModifier(terrain: string, value: number): void {
+    this._terrainModifiers[terrain] = value;
+  }
+
+  public getValueByFormula(formula: string) {
+    return {
+      "speed-1": this.speed - 1,
+      "speed":   this.speed,
+      "speed+1": this.speed + 1,
+      "speed+2": this.speed + 2,
+      "speed+3": this.speed + 3
+    }[formula];
+  }
+
+  public getAbilityRange(abilityClass: string, type: string): number {
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+
+    let result;
+    if (
+      (type === "move" && abilityMeta.canMove)
+      ||
+      (type === "attack" && abilityMeta.damageScheme)
+    ) {
+      result = abilityMeta[type + "Range"];
+      if (_.isArray(result)) {
+        result = result[abilityData.levelInt-1];
+      }
+      if (_.isString(result)) {
+        result = this.getValueByFormula(result);
+      }
+      console.log("[Unit] Ability range", { abilityMeta, type, result });
+    }
+
+    return result || 0;
+  }
+
+  public getAbilityIgnoreObstacles(abilityClass: string): boolean {
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+
+    let ignoreObstacles = abilityMeta.ignoreObstacles;
+    if (_.isArray(ignoreObstacles)) {
+      ignoreObstacles = ignoreObstacles[abilityData.levelInt-1];
+    }
+
+    return ignoreObstacles || false;
+  }
+
+  public getAbilityStat(abilityClass: string): any {
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+    return {
+      ...abilityMeta,
+      damage: this.getAbilityValue(abilityClass),
+      moveRange: this.getAbilityRange(abilityClass, "move"),
+      attackRange: this.getAbilityRange(abilityClass, "attack"),
+      ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
+      effects: abilityData ? 
+        abilityMeta.effects[abilityData.levelInt-1]
+        :
+        []
+    };
+  }
+
+  // TODO modifiers
+  protected getCharacteristicsModifier(type: string, fighter: Unit): number {
+    switch (type) {
+      // Incoming damage
+      case "damage": {
+      }
+
+      // Damage
+      case "power": {
+      }
+      case "attack": {
+      }
+      case "abilities": {
+      }
+      
+      // Characteristics
+      case "speed": {
+      }
+      case "defence": {
+      }
+      case "hp": {
+      }
+      case "speed": {
+      }
+      case "initiative": {
+      }
+    }
+    
+    return 1;
   }
 }
