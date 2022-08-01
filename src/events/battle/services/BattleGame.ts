@@ -332,7 +332,7 @@ export class BattleGame {
 
     } else {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
-      const moveCells = this._movement.getRangeCells(activeFighter.index, activeFighter.speed);
+      const moveCells = this._movement.getMoveCells(activeFighter.index, activeFighter.speed);
       this.setMoveCells(moveCells);
     }
 
@@ -389,14 +389,14 @@ export class BattleGame {
     }
 
     if (abilityClass === ABILITY_MOVE) {
-      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed);
+      const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
     } else {
       if (!fighter.canUseAbility(abilityClass)) {
         return;
       }
-      const attackCells = this._combat.getAttackCells(fighter, abilityClass, false);
+      const attackCells = this._combat.getAttackCells(fighter, abilityClass, true, false);
       this.setAttackCells(attackCells);
       this.setMoveCells([]);
     }
@@ -420,13 +420,13 @@ export class BattleGame {
   public autoMove(fighter: Unit): void {
     let index = null;
     let ability = fighter.strongestEnabledAbility();
-    let attackCells = this._combat.getAttackCells(fighter, ability, true);
+    let attackCells = this._combat.getAttackCells(fighter, ability, true, true);
     if (attackCells.length) {
       index = _.sample(attackCells);
       console.log('[Game] AI attacks', { attackCells, index });
     } else {
       ability = ABILITY_MOVE;
-      const moveCells = this._movement.getRangeCells(fighter.index, fighter.speed);
+      const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
       index = _.sample(moveCells);
       console.log('[Game] AI moves', { moveCells, choosedIndex: index });
     }
@@ -460,36 +460,46 @@ export class BattleGame {
       console.log("[Game action] Move", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
-    // Heal
-    } else if (index !== null && abilityType === ABILITY_TYPE_HEALING && target !== null) {
-      console.log("[Game action] Heal", { fighter, target, ability });
-      this._combat.heal(fighter, target, ability);
-
-    // Group heal
-    } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
-      console.log("[Action] Group heal", { fighter, ability });
-      this._combat.groupHeal(fighter, ability);
-
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
       console.log("[Game action] Jump", { fighter, index });
       this._movement.moveFighter(fighter, index);
       
-    // Buff / De-buff
-    } else if (index !== null && [ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType) && target !== null) {
-      console.log("[Game action] Buff/De-buff", { fighter, target, ability });
-      this._combat.buff(fighter, target, ability);
-      
-    // Self-buff
+      // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
       console.log("[Game action] Self-buff", { fighter, ability });
       this._combat.buff(fighter, fighter, ability);
       
-    // Attack
-    } else if (index !== null && abilityType === ABILITY_TYPE_ATTACK && target !== null) {
-      console.log("[Game action] Attack", { fighter, target, ability });
-      this._combat.attack(fighter, target, ability);
+      // Group heal
+    } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
+      console.log("[Action] Group heal", { fighter, ability });
+      this._combat.groupHeal(fighter, ability);
 
+    } else if (index !== null && target !== null) {
+      // Can't reach
+      const attackCells = this._combat.getAttackCells(fighter, ability, true, true);
+      if (!attackCells.includes(target.index)) {
+        return;
+      }
+
+      // Approach enemy if necessery
+      this._combat.tryApproachEnemy(fighter, target, ability);
+
+      // Buff / De-buff
+      if ([ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
+        console.log("[Game action] Buff/De-buff", { fighter, target, ability });
+        this._combat.buff(fighter, target, ability);
+
+      // Heal
+      } else if (abilityType === ABILITY_TYPE_HEALING) {
+        console.log("[Game action] Heal", { fighter, target, ability });
+        this._combat.heal(fighter, target, ability);
+
+      // Attack
+      } else if (abilityType === ABILITY_TYPE_ATTACK) {
+        console.log("[Game action] Attack", { fighter, target, ability });
+        this._combat.attack(fighter, target, ability);
+      }
     } else {
       return;
     }

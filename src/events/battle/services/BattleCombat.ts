@@ -1,18 +1,7 @@
 import _ from "lodash";
-import { ABILITY_ATTACK, ABILITY_DASH, ABILITY_FLIGHT, ABILITY_RUSH, ABILITY_TELEPORTATION, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, UNIT_CLASS_MAGE, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_SUPPORT, UNIT_CLASS_TANK } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_HEALING } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { ABILITIES, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
-
-// TODO incrementing effects
-// TODO conditions
-//  - incoming_damage
-//  - debuff
-// TODO terrain
-// - ice
-// - swamp
-// - hill
-// - woods
 
 export class BattleCombat {
   protected _ctrl: BattleController;
@@ -138,29 +127,62 @@ export class BattleCombat {
   }
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
-    const attackCells = this.getAttackCells(source, abilityClass, true);
+    const attackCells = this.getAttackCells(source, abilityClass, true, true);
     return attackCells.includes(target.index);
   }
 
-  public getAttackCells(fighter: Unit, abilityClass: string, onlyTargets: boolean): number[] {
+  public getAttackCells(fighter: Unit, abilityClass: string, canMove: boolean, onlyTargets: boolean): number[] {
     const abilityStat = fighter.getAbilityStat(abilityClass);
-    if (!abilityStat.attackRange || !abilityStat.damageScheme) {
+    if (!abilityStat.attackRange) {
       return [];
     }
 
-    const range = abilityStat.canMove ?
-      abilityStat.moveRange + abilityStat.attackRange
-      :
-      abilityStat.attackRange;
-
-    const rangeCells = this._ctrl.game.movement.getRangeCells(fighter.index, range);
+    const attackCells = this._ctrl.game.movement.getAttackCells(
+      fighter.index, 
+      canMove ? abilityStat.moveRange : 0,
+      abilityStat.attackRange
+    );
 
     if (onlyTargets) {
       const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
       console.log("[Combat] Relative enemy indexes", enemyCells);
-      return _.intersection(rangeCells, enemyCells);
+      return _.intersection(attackCells, enemyCells);
     } else {
-      return rangeCells;
+      return attackCells;
+    }
+  }
+
+  public tryApproachEnemy(fighter: Unit, target: Unit, abilityClass: string) {
+    const attackCellsNoMoving =  this.getAttackCells(fighter, abilityClass, false, true);
+    // Need to approach
+    if (!attackCellsNoMoving.includes(target.index)) {
+      console.log("[Combat] Need to approach the enemy");
+      const abilityStat = fighter.getAbilityStat(abilityClass);
+      
+      // Calc all the move cells
+      const moveCells = this._ctrl.game.movement.getMoveCells(fighter.index, abilityStat.moveRange);
+      
+      // Iterate move cells to check if fighter can reach enemy from there
+      let canAttackFrom = [];
+      moveCells.forEach(moveCell => {
+        const attackPath = this._ctrl.game.movement.getPath(fighter.index, moveCell, false);
+        if (attackPath.length < abilityStat.attackRange) {
+          canAttackFrom.push({ index: moveCell, range: attackPath.length });
+        }
+      });
+      
+      // Have spots to approach
+      if (canAttackFrom.length) {
+        // Move to a closest move cell
+        const closestCell = _.head(_.sortBy(canAttackFrom, "range"));
+        if (closestCell) {
+          canAttackFrom = _.filter(canAttackFrom, { range: closestCell.range });
+        }
+        // Move to attack spot
+        const targetIndex = _.sample(canAttackFrom).index;
+        this._ctrl.game.movement.moveFighter(fighter, targetIndex);
+        console.log(`[Combat] Approaching enemy onto index ${targetIndex}`);
+      }
     }
   }
 }

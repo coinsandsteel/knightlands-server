@@ -797,6 +797,11 @@ export class Unit {
 
   public resurrect(): void {
     this._isDead = false;
+    this._hp = this._characteristics.hp;
+  }
+
+  public resetBuffs(): void {
+    this._buffs = [];
   }
 
   public getExpForLevel(level: number): number {
@@ -846,7 +851,7 @@ export class Unit {
       if (_.isString(result)) {
         result = this.getValueByFormula(result);
       }
-      console.log("[Unit] Ability range", { abilityMeta, type, result });
+      //console.log("[Unit] Ability range", { abilityMeta, type, result });
     }
 
     return result || 0;

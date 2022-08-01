@@ -29,8 +29,8 @@ export class BattleSquad {
   }
   
   public init() {
-    // Set iitial indexes
-    this.setInitialIndexes();
+    // Set initial indexes
+    this.resetState();
 
     // Apply squad bonuses
     this.updateStat();
@@ -179,12 +179,19 @@ export class BattleSquad {
   protected updateStat(): void {
     this.setBonuses();
     this.setPower();
+    this.syncUnits();
   }
 
-  public setInitialIndexes(): void {
+  public resetState(): void {
     const test = game.battleManager.autoCombat;
     this._units.forEach((unit, index) => {
+      // Reset indexes
       unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
+      // Resurrect
+      unit.resurrect();
+      // Clear buffs
+      // TODO enable
+      //unit.resetBuffs();
     });
     this.syncUnits();
   }

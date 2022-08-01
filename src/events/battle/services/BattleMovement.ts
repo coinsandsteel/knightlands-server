@@ -71,7 +71,29 @@ export class BattleMovement {
     this.graphs = graphs;
   }
 
-  public getRangeCells(unitIndex: number, range: number): number[] {
+  public getAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
+    let result = [];
+    const moveCells = this.getMoveCells(unitIndex, moveRange);
+    moveCells.push(unitIndex);
+    moveCells.forEach(moveCell => {
+      for (let index = 0; index < 35; index++) {
+        let path = this.getPath(moveCell, index, false);
+        console.log("[Movement] Path", { from: moveCell, to: index, path });
+        if (
+          path
+          &&
+          path.length < attackRange
+        ) {
+          result.push(index);
+        }
+      }
+    });
+    result = _.uniq(result);
+    console.log("[Movement] Attack cells", { unitIndex, moveRange, attackRange, result });
+    return result;
+  };
+
+  public getMoveCells(unitIndex: number, range: number): number[] {
     const result = [];
     const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
@@ -85,7 +107,7 @@ export class BattleMovement {
         continue;
       }
 
-      let path = this.getPath(unitIndex, index);
+      let path = this.getPath(unitIndex, index, true);
       if (
         path
         && 
@@ -95,17 +117,25 @@ export class BattleMovement {
       }
     }
     return result;
-  }
+  };
 
-  public getPath(from: number, to: number): any {
+  public approachEnemy(fighter: Unit, target: Unit): void {
+  } 
+
+  public getPath(from: number, to: number, avoidObstacles: boolean): any {
     const avoidNodes  = [];
-    const unitNodes = this._ctrl.game.allUnits
-      .filter(unit => ![from, to].includes(unit.index))
-      .map(unit => `${unit.index}`);
-    const thornsNodes = this._ctrl.game.terrain
-        .getThornsIndexes()
-        .map(index => `${index}`);
-    avoidNodes.push(...unitNodes, ...thornsNodes);
+
+    if (avoidObstacles) {
+      const unitNodes = this._ctrl.game.allUnits
+        .filter(unit => ![from, to].includes(unit.index))
+        .map(unit => `${unit.index}`);
+  
+      const thornsNodes = this._ctrl.game.terrain
+          .getThornsIndexes()
+          .map(index => `${index}`);
+  
+      avoidNodes.push(...unitNodes, ...thornsNodes);
+    }
 
     const path = this.routes[SETTINGS.moveScheme].path(
       `${from}`,
@@ -183,14 +213,14 @@ export class BattleMovement {
   }
 
   public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this.getRangeCells(fighter.index, fighter.speed);
+    const moveCells = this.getMoveCells(fighter.index, fighter.speed);
     if (!moveCells.includes(index)) {
       return;
     }
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
-    let path = this.getPath(fighter.index, index);
+    let path = this.getPath(fighter.index, index, true);
     for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
       console.log(`[Tile]`, { index: +pathIndex, terrain });
