@@ -70,7 +70,11 @@ export class BattleGame {
   }
 
   get allUnits(): Unit[] {
-    return [...this._userSquad.units, ...this._enemySquad.units];
+    const allUnits = [
+      ...this._userSquad.units, 
+      ...this._enemySquad.units
+    ].filter(unit => !unit.isDead);
+    return allUnits;
   }
 
   async dispose() {
@@ -293,7 +297,7 @@ export class BattleGame {
     this._ctrl.events.combatResult(value);
   }
   
-  public nextFighter(): void {
+  public nextFighter(skipLaunch?: boolean): void {
     if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
       throw Error("No initiative rating. Cannot choose next fighter.");
     }
@@ -311,7 +315,14 @@ export class BattleGame {
       this.setActiveFighter(nextFighterId);
     }
 
-    this.launchFighter();
+    const activeFighter = this.getActiveFighter();
+    if (activeFighter.isDead) {
+      this.nextFighter(true);
+    }
+
+    if (!skipLaunch) {
+      this.launchFighter();
+    }
   }
   
   public launchFighter(): void {
@@ -421,9 +432,9 @@ export class BattleGame {
     let index = null;
     let ability = fighter.strongestEnabledAbility();
     let attackCells = this._combat.getAttackCells(fighter, ability, true, true);
-    if (attackCells.length) {
+    if (attackCells.length && ability) {
       index = _.sample(attackCells);
-      console.log('[Game] AI attacks', { attackCells, index });
+      console.log('[Game] AI attacks', { attackCells, index, ability });
     } else {
       ability = ABILITY_MOVE;
       const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
@@ -507,7 +518,7 @@ export class BattleGame {
     // Enable ability cooldown
     if (ability && ![ABILITY_ATTACK, ABILITY_MOVE].includes(ability)) {
       fighter.enableAbilityCooldown(ability);
-      console.log("[Game] Ability cooldown was set", fighter.getAbilityByClass(ability));
+      console.log(`[Game] Ability "${ability}" cooldown was set`, fighter.getAbilityByClass(ability).cooldown);
     }
 
     this._ctrl.events.flush();

@@ -72,24 +72,26 @@ export class BattleMovement {
   }
 
   public getAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
+    console.log("[Movement] Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
     const moveCells = this.getMoveCells(unitIndex, moveRange);
     moveCells.push(unitIndex);
     moveCells.forEach(moveCell => {
       for (let index = 0; index < 35; index++) {
         let path = this.getPath(moveCell, index, false);
-        console.log("[Movement] Path", { from: moveCell, to: index, path });
+        //console.log("[Movement] Attack path", { from: moveCell, to: index, path });
         if (
           path
           &&
           path.length < attackRange
         ) {
+          //console.log(`[Movement] Attack path accepted (path.length=${path.length} < attackRange=${path.length})`, { pathLength: moveCell, to: index, path });
           result.push(index);
         }
       }
     });
     result = _.uniq(result);
-    console.log("[Movement] Attack cells", { unitIndex, moveRange, attackRange, result });
+    //console.log("[Movement] Attack cells", { unitIndex, moveRange, attackRange, result });
     return result;
   };
 
@@ -108,19 +110,19 @@ export class BattleMovement {
       }
 
       let path = this.getPath(unitIndex, index, true);
+      //console.log("[Movement] Move path", { from: unitIndex, to: index, path });
       if (
         path
         && 
         path.length < range
       ) {
+        //console.log(`[Movement] Move path accepted (path.length=${path.length} < range=${range})`, { pathLength: path.length, to: index, path });
         result.push(index);
       }
     }
+    //console.log("[Movement] Move cells", { unitIndex, range, result });
     return result;
   };
-
-  public approachEnemy(fighter: Unit, target: Unit): void {
-  } 
 
   public getPath(from: number, to: number, avoidObstacles: boolean): any {
     const avoidNodes  = [];
@@ -223,7 +225,7 @@ export class BattleMovement {
     let path = this.getPath(fighter.index, index, true);
     for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
-      console.log(`[Tile]`, { index: +pathIndex, terrain });
+      //console.log(`[Tile]`, { index: +pathIndex, terrain });
       if (!terrain) {
         continue;
       }

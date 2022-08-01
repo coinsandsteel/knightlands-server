@@ -83,7 +83,12 @@ export class BattleCombat {
       return;
     }
 
-    const dmgBase = source.getAbilityValue(abilityClass);
+    const abilityData = source.getAbilityByClass(abilityClass);
+    const dmgBase = abilityData.value;
+    if (!_.isNumber(dmgBase)) {
+      console.log("[Error data]", { abilityData });
+      throw Error("");
+    }
     const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
@@ -165,8 +170,9 @@ export class BattleCombat {
       // Iterate move cells to check if fighter can reach enemy from there
       let canAttackFrom = [];
       moveCells.forEach(moveCell => {
-        const attackPath = this._ctrl.game.movement.getPath(fighter.index, moveCell, false);
+        const attackPath = this._ctrl.game.movement.getPath(moveCell, target.index, false);
         if (attackPath.length < abilityStat.attackRange) {
+          console.log(`[Combat] Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})`, { attackPath });
           canAttackFrom.push({ index: moveCell, range: attackPath.length });
         }
       });

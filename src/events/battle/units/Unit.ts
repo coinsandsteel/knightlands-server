@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { threadId } from "worker_threads";
-import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES, ABILITY_TYPE_ATTACK } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { BattleEvents } from "../BattleEvents";
 import {
@@ -182,6 +182,10 @@ export class Unit {
     return this._buffs;
   }
 
+  get abilities(): BattleUnitAbility[] {
+    return this._abilities;
+  }
+
   get isStunned(): boolean {
     // TODO stun
     return false;
@@ -266,12 +270,13 @@ export class Unit {
             next: null,
             price: null
           },  
-          value: this.getAbilityValue(abilityClass),
+          value: 0,
           enabled: !index ? true : false
         };  
-      });  
-
-      this._abilities = abilities;
+      });
+      this._abilities = [this.getAbilityByClass(ABILITY_ATTACK), ...abilities];
+      this._abilities.forEach(ability => ability.value = this.getAbilityValue(ability.abilityClass));
+      //this._abilities.push(this.getAbilityByClass(ABILITY_ATTACK));
     } else {
       throw Error("Abilities was not set");
     }
@@ -314,7 +319,7 @@ export class Unit {
       abilityValue = this.damage;
     } else {
       const abilityData = this.getAbilityByClass(ability);
-      const abilityLevel = abilityData ? abilityData.levelInt : 1;
+      const abilityLevel = abilityData.levelInt !== 0 ? abilityData.levelInt : 1;
       if (!ABILITIES[this._unitClass][ability]) {
         throw Error(`Unit ${this._unitClass} hasn't "${ability}" ability`);
       }
@@ -368,6 +373,7 @@ export class Unit {
         abilityClass: ability.abilityClass,
         abilityType: ability.abilityType,
         tier: ability.tier,
+        levelInt: ability.levelInt,
         value: ability.value,
         enabled: ability.enabled,
         cooldown: {
@@ -603,17 +609,38 @@ export class Unit {
     );
   }
 
-  public getAbilityByClass(abilityClass: string): BattleUnitAbility|null {
-    const ability = this._abilities ? 
+  public getAbilityByClass(abilityClass: string): BattleUnitAbility {
+    if (abilityClass === ABILITY_ATTACK) {
+      return {
+        abilityClass,
+        abilityType: ABILITY_TYPE_ATTACK,
+        tier: 1,
+        levelInt: 1,
+        level: {
+          current: 1,
+          next: null,
+          price: null
+        },  
+        value: this._characteristics.damage,
+        enabled: true
+      }
+    }
+
+    const ability = this._abilities ?
       this._abilities.find(entry => entry.abilityClass === abilityClass)
       :
       null;
-    return ability || null;
+
+    if (!ability) {
+      throw new Error(`[Unit] Unit of class "${this._unitClass}" haven't ability "${abilityClass}"`);
+    }
+    
+    return ability;
   }
 
   public setIndex(index: number): void {
     if (index < 0 || index > 34) {
-      throw Error("Unit index overflow");
+      throw Error("[Unit] Unit index overflow");
     }
     this._index = index;
     this._moveCells = [];
@@ -874,7 +901,6 @@ export class Unit {
     const abilityMeta = ABILITIES[this.class][abilityClass];
     return {
       ...abilityMeta,
-      damage: this.getAbilityValue(abilityClass),
       moveRange: this.getAbilityRange(abilityClass, "move"),
       attackRange: this.getAbilityRange(abilityClass, "attack"),
       ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
