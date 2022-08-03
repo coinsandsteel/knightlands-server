@@ -17,6 +17,10 @@ export class BattleSquad {
     return this._units;
   }
   
+  get liveUnits(): Unit[] {
+    return this._units.filter(unit => !unit.isDead);
+  }
+  
   constructor(units: BattleUnit[], isEnemy: boolean, ctrl: BattleController) {
     this._ctrl = ctrl;
     this._isEnemy = isEnemy;

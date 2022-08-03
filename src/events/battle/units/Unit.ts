@@ -1,8 +1,6 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { threadId } from "worker_threads";
 import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES, ABILITY_TYPE_ATTACK } from "../../../knightlands-shared/battle";
-import { BattleController } from "../BattleController";
 import { BattleEvents } from "../BattleEvents";
 import {
   ABILITIES,
@@ -393,6 +391,7 @@ export class Unit {
       unitClass: this._unitClass,
       tier: this._tier,
       levelInt: this._level.current,
+      characteristics: this._characteristics,
       power: this._power,
       index: this._index,
       hp: this._hp,
