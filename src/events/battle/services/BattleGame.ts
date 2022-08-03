@@ -128,6 +128,8 @@ export class BattleGame {
       this._enemySquad.init();
     }
 
+    this.sync();
+
     if (this._state.combat.started) {
       console.log("[Game] Resuming combat", this._state);
       this.launchFighter();
@@ -227,14 +229,10 @@ export class BattleGame {
 
     // Prepare user Squad
     this._userSquad.init();
-    this._state.userSquad = this._userSquad.getState();
-    this._ctrl.events.userSquad(this._state.userSquad);
     
     // Prepare enemy squad
     this._enemySquad.init();
     this._enemySquad.regenerateFighterIds();
-    this._state.enemySquad = this._enemySquad.getState();
-    this._ctrl.events.enemySquad(this._state.enemySquad);
     
     // Terrain
     this._terrain.setRandomMap();
@@ -243,9 +241,18 @@ export class BattleGame {
     this.setCombatStarted(true);
     this.createInitiativeRating();
 
+    // Sync & flush
+    this.sync();
+    this._ctrl.events.flush();
+
     this.nextFighter();
   }
   
+  public sync() {
+    this._ctrl.events.userSquad(this._userSquad.getState());
+    this._ctrl.events.enemySquad(this._enemySquad.getState());
+  }
+
   public getDuelOptions() {
     const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const squads = [[], [], []];
@@ -319,7 +326,9 @@ export class BattleGame {
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
     if (activeFighter.isStunned) {
+      console.log(`[Game] Active fighter ${this._state.combat.activeFighterId} is stunned. Skip...`);
       this.skip();
+      return;
     }
 
     if (game.battleManager.autoCombat) {
@@ -355,28 +364,38 @@ export class BattleGame {
   }
 
   public createInitiativeRating(): void {
-    this._state.initiativeRating = _.orderBy(
-      this.allUnits.map(unit => {
+    const entries = _.cloneDeep(this.allUnits)
+      .map(unit => {
         return {
           fighterId: unit.fighterId,
           initiative: unit.initiative,
           active: false
         } as BattleInitiativeRatingEntry;
-      }),
-      ["initiative", "desc"]
-    );
+      });
+
+    const rating = _.orderBy(entries, "initiative", "desc");
+    
+    this._userSquad.setInitiativeRating(rating);
+    this._enemySquad.setInitiativeRating(rating);
+    this._state.initiativeRating = rating;
+
     console.log("[Game] Initiative rating was created", this._state.initiativeRating);
-    //console.log("createInitiativeRating", { initiativeRating: this._state.initiativeRating });
   }
 
   public refreshInitiativeRating(){
     if (!this._state.initiativeRating) {
       throw Error("Cannot refresh empty initiativeRating");
     }
-    this._state.initiativeRating = _.orderBy(
+    const rating = _.orderBy(
       this._state.initiativeRating,
-      ["initiative", "desc"]
+      "initiative", 
+      "desc"
     );
+
+    this._userSquad.setInitiativeRating(rating);
+    this._enemySquad.setInitiativeRating(rating);
+    this._state.initiativeRating = rating;
+
     console.log("[Game] Initiative rating was refreshed", this._state.initiativeRating);
   }
 

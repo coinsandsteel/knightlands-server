@@ -47,6 +47,7 @@ export interface BattleUnit {
   tier?: number; // 3, modify via merger (3 => 1)
   levelInt?: number;
   level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  ratingIndex?: number;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   power?: number;
   expirience?: {
     value: number;

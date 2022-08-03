@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { BattleSquadBonus, BattleSquadState, BattleUnit } from "../types";
+import { BattleInitiativeRatingEntry, BattleSquadBonus, BattleSquadState, BattleUnit } from "../types";
 import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
 import errors from "../../../knightlands-shared/errors";
@@ -60,7 +60,7 @@ export class BattleSquad {
     });
   }
   
-  protected syncUnits(): void {
+  public syncUnits(): void {
     this._units.forEach((unit: Unit, index: number) => {
       this._state.units[index] = unit.serializeForSquad();
     });
@@ -129,6 +129,15 @@ export class BattleSquad {
     this._ctrl.events.userSquad(this._state);
   }
   
+  public setInitiativeRating(rating: BattleInitiativeRatingEntry[]) {
+    this._units.forEach(unit => {
+      const ratingIndex = _.findIndex(rating, { fighterId: unit.fighterId });
+      if (ratingIndex !== -1) {
+        unit.setRatingIndex(ratingIndex+1);
+      }
+    });
+  }
+
   protected setBonuses(): void {
     if (!this._units.length) {
       return;
@@ -183,7 +192,6 @@ export class BattleSquad {
   protected updateStat(): void {
     this.setBonuses();
     this.setPower();
-    this.syncUnits();
   }
 
   public resetState(): void {
@@ -191,20 +199,18 @@ export class BattleSquad {
     this._units.forEach((unit, index) => {
       // Reset indexes
       unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
-      // Resurrect
-      unit.resurrect();
+      // Reset
+      unit.reset();
       // Clear buffs
       // TODO enable
       //unit.resetBuffs();
     });
-    this.syncUnits();
   }
 
   public regenerateFighterIds(): void {
     this._units.forEach((unit, index) => {
       unit.regenerateFighterId();
     });
-    this.syncUnits();
   }
 
   public getFighter(fighterId: string): Unit|null {

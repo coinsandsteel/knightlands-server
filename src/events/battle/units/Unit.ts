@@ -49,6 +49,7 @@ export class Unit {
   protected _quantity: number;
   
   // Combat
+  protected _ratingIndex: number;
   protected _hp: number;
   protected _index: number;
   protected _buffs: BattleBuff[] = [
@@ -391,6 +392,7 @@ export class Unit {
       unitClass: this._unitClass,
       tier: this._tier,
       levelInt: this._level.current,
+      ratingIndex: this._ratingIndex,
       characteristics: this._characteristics,
       power: this._power,
       index: this._index,
@@ -813,6 +815,10 @@ export class Unit {
     }
   };
 
+  public setRatingIndex(value: number) {
+    this._ratingIndex = value;
+  }
+
   public strongestEnabledAbility(): string {
     const enabledAbilities = this._abilities.filter(entry => {
       return entry.enabled && (!entry.cooldown || !entry.cooldown.enabled)
@@ -821,7 +827,7 @@ export class Unit {
     return enabledAbilities.length ? _.last(enabledAbilities) : ABILITY_ATTACK;
   }
 
-  public resurrect(): void {
+  public reset(): void {
     this._isDead = false;
     this._hp = this._characteristics.hp;
   }
