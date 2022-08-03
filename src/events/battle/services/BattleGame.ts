@@ -451,7 +451,7 @@ export class BattleGame {
     const abilityType = ability ? ABILITY_TYPES[ability] : null;
     const target = index === null ? null : this.getFighterByIndex(index);
 
-    if (target && target.isDead) {
+    if (ability !== ABILITY_MOVE && target && target.isDead) {
       console.log("[Game] Target is dead. Abort.");
       return;
     }

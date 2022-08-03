@@ -705,9 +705,9 @@ export class Unit {
           ability.cooldown.enabled = false;
         }
 
-        console.log("Ability cooldown", {
-          old: oldCooldown,
-          new: newCooldown,
+        console.log(`[Unit #${this._fighterId}] Ability cooldown updated`, {
+          ability: ability.abilityClass,
+          newValue: newCooldown,
           cooldownEnabled: ability.cooldown.enabled
         });
       }
@@ -724,7 +724,7 @@ export class Unit {
       case TERRAIN_LAVA: {
         const damage = this.getLavaDamage();
         this.modifyHp(-damage);
-        console.log(`[Unit] Lava damage is ${damage}`);
+        console.log(`[Unit #${this._fighterId}] Lava damage is ${damage}`);
         break;
       }
       case TERRAIN_ICE:
@@ -762,7 +762,7 @@ export class Unit {
   
   public getBuff(params: { source?: string, type?: string }): BattleBuff {
     const choosedBuffs = _.sortBy(_.filter(this._buffs, params), "modifier");
-    console.log("[Unit] Get the strongest buff", { params, result: choosedBuffs });
+    console.log("[Unit #${this._fighterId}] Get the strongest buff", { params, result: choosedBuffs });
     return _.tail(choosedBuffs);
   }
 
@@ -782,7 +782,7 @@ export class Unit {
         buff.estimate--;
         const newEstimate = _.clone(buff.estimate);
   
-        console.log(`[Unit #${this._fighterId}] Decreased buff estimate`, {
+        console.log(`[Unit #${this._fighterId}] Buff estimate updated`, {
           old: oldEstimate,
           new: newEstimate,
           buffActive: buff.estimate > 0
