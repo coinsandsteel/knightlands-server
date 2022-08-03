@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import game from "../../game";
 import events from "../../knightlands-shared/events";
-import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry } from "./types";
+import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility } from "./types";
 import { Unit } from "./units/Unit";
 
 export class BattleEvents {
@@ -86,6 +86,13 @@ export class BattleEvents {
       this._events.buffs = {};
     }
     this._events.buffs[fighterId] = buffs;
+  }
+
+  abilities(fighterId: string, abilities: BattleUnitAbility[]) {
+    if (this._events.abilities === undefined) {
+      this._events.abilities = {};
+    }
+    this._events.abilities[fighterId] = abilities;
   }
 
   userFighter(data: Unit) {

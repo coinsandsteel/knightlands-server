@@ -268,7 +268,7 @@ export class Unit {
             current: !index ? 1 : 0, // Unlock only the first ability
             next: null,
             price: null
-          },  
+          },
           value: 0,
           enabled: !index ? true : false
         };  
@@ -830,6 +830,10 @@ export class Unit {
   public reset(): void {
     this._isDead = false;
     this._hp = this._characteristics.hp;
+    this._abilities.forEach(ability => {
+      delete ability.cooldown;
+      ability.value = this.getAbilityValue(ability.abilityClass)
+    });
   }
 
   public resetBuffs(): void {
@@ -872,9 +876,9 @@ export class Unit {
 
     let result;
     if (
-      (type === "move" && abilityMeta.canMove)
+      (type === "move" && abilityMeta.moveRange)
       ||
-      (type === "attack" && abilityMeta.damageScheme)
+      (type === "attack" && abilityMeta.attackRange)
     ) {
       result = abilityMeta[type + "Range"];
       if (_.isArray(result)) {

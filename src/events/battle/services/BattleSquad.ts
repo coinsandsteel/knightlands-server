@@ -82,7 +82,7 @@ export class BattleSquad {
     }
 
     unit.regenerateFighterId();
-    unit.resurrect();
+    unit.reset();
 
     // Fill slot
     this._units[index] = unit;
@@ -221,16 +221,11 @@ export class BattleSquad {
     this._units.forEach(unit => {
       // Decrease the cooldown
       unit.decreaseAbilitiesCooldownEstimate();
+      this._ctrl.events.abilities(unit.fighterId, unit.abilities)
+      
       // Decrease the buff estimate
       unit.decreaseBuffsEstimate();
-    });
-
-    this._units.forEach(unit => {
-      if (this._isEnemy) {
-        this._ctrl.events.enemyFighter(unit);
-      } else {
-        this._ctrl.events.userFighter(unit);
-      }
+      this._ctrl.events.buffs(unit.fighterId, unit.buffs)
     });
   }
 }

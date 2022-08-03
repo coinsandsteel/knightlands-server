@@ -527,6 +527,7 @@ export class BattleGame {
     // Enable ability cooldown
     if (ability && ![ABILITY_ATTACK, ABILITY_MOVE].includes(ability)) {
       fighter.enableAbilityCooldown(ability);
+      this._ctrl.events.abilities(fighter.fighterId, fighter.abilities);
       console.log(`[Game] Ability "${ability}" cooldown was set`, fighter.getAbilityByClass(ability).cooldown);
     }
 
@@ -539,6 +540,8 @@ export class BattleGame {
       this.setCombatResult("loose");
     }
 
+    this._ctrl.events.flush();
+
     // Finish the combat
     if (this._state.combat.result !== null) {
       return;
@@ -549,7 +552,7 @@ export class BattleGame {
       const self = this;
       this._aiMoveTimeout = setTimeout(function(){ 
         self.nextFighter(); 
-      }, 1500);
+      }, 500);
     } else {
       this.nextFighter();
     }
