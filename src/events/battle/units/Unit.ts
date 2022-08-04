@@ -1043,7 +1043,8 @@ export class Unit {
 
     console.log(`[Unit #${this._fighterId}] Unit stats recalculated`, {
       ...this.result,
-      terrainModifiers: this._terrainModifiers
+      terrainModifiers: this._terrainModifiers,
+      buffs: this._buffs
     });
   }
 
