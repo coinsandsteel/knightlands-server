@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_HEALING } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
+import { BattleBuff } from "../types";
 import { Unit } from "../units/Unit";
 
 export class BattleCombat {
@@ -11,10 +12,11 @@ export class BattleCombat {
   }
 
   public groupHeal(source: Unit, abilityClass: string): void {
+    const attackCells = this.getAttackCells(source, abilityClass, true, true);
     const squad = this._ctrl.game.getSquadByFighter(source);
     const targets = squad.units;
     targets.forEach(target => {
-      if (this.canAffect(source, target, abilityClass)) {
+      if (attackCells.includes(target.index)) {
         this.heal(source, target, abilityClass);
       }
     });
@@ -49,23 +51,26 @@ export class BattleCombat {
     });
   }
 
-  // TODO apply buff
   public buff(source: Unit, target: Unit, abilityClass: string): void {
     if (!this.canAffect(source, target, abilityClass)) {
       return;
     }
     
     const abilityStat = source.getAbilityStat(abilityClass);
-    return;
+    const effects = abilityStat.effects;
+    if (!effects) {
+      throw Error(`Buff ${abilityClass} has no effects`);
+    }
 
-    //const buff = BUFFS[abilityClass][abilityData.level];
-    /*const buffState = target.buff({
-      source: abilityData.abilityType, ...buff 
+    effects.forEach(effect => {
+      target.buff({
+        source: abilityStat.abilityType,
+        ...effect
+      });
     });
 
-    const abilityType = ABILITY_TYPES[abilityClass];
     this._ctrl.events.effect({
-      action: abilityType,
+      action: abilityStat.abilityType,
       source: {
         fighterId: source.fighterId,
         index: source.index
@@ -74,8 +79,10 @@ export class BattleCombat {
         fighterId: target.fighterId,
         index: target.index
       },
-      buff: buffState
-    });*/
+      ability: {
+        abilityClass
+      }
+    });
   }
 
   public attack(source: Unit, target: Unit, abilityClass: string): void {
@@ -89,7 +96,7 @@ export class BattleCombat {
       console.log("[Error data]", { abilityData });
       throw Error("");
     }
-    const defBase = target.defence;
+    const defBase = target.result.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
@@ -102,8 +109,8 @@ export class BattleCombat {
 
     const oldHp = target.hp;
     target.modifyHp(-damage);
-    if (target.hp > 0) {
-      this.attackCallback()
+    if (!target.isDead) {
+      this.attackCallback(target);
     }
 
     this._ctrl.events.effect({
@@ -126,8 +133,10 @@ export class BattleCombat {
     });
   }
 
-  protected attackCallback() {
-    // TODO Stack
+  protected attackCallback(target: Unit) {
+    // Stack
+    target.attackCallback();
+
     // TODO Counter attack
   }
 

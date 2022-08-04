@@ -368,7 +368,7 @@ export class BattleGame {
       .map(unit => {
         return {
           fighterId: unit.fighterId,
-          initiative: unit.initiative,
+          initiative: unit.result.initiative,
           active: false
         } as BattleInitiativeRatingEntry;
       });

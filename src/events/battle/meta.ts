@@ -1,4 +1,5 @@
 import * as battle from "./../../knightlands-shared/battle";
+import { BattleUnitAbilityBlueprint } from "./types";
 
 export const PATH_SCHEME_ROOK = "rook";
 export const PATH_SCHEME_QUEEN = "queen";
@@ -117,6 +118,12 @@ export const CHARACTERISTICS = {
     ]
   },
 };
+
+export const BUFF_SOURCE_SQUAD = 'squad';
+export const BUFF_SOURCE_TERRAIN = 'terrain';
+export const BUFF_SOURCE_BUFF = 'buff';
+export const BUFF_SOURCE_SELF_BUFF = 'self_buff';
+export const BUFF_SOURCE_DE_BUFF = 'de_buff';
 
 export const ABILITIES = {
   [battle.UNIT_CLASS_MELEE]: {
@@ -312,14 +319,14 @@ export const ABILITIES = {
       duration: null,
       effects: [ // Ability lvl
         // TODO stun
-        [{ type: "stun", probability: 0.5, estimate: 1 }], // Turns
-        [{ type: "stun", probability: 0.6, estimate: 1 }],
-        [{ type: "stun", probability: 0.7, estimate: 1 }],
-        [{ type: "stun", probability: 0.8, estimate: 1 }],
-        [{ type: "stun", probability: 0.9, estimate: 1 }],
-        [{ type: "stun", probability: 1, estimate: 1 }, ],
-        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.15, estimate: 2 }],
-        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.25, estimate: 2 }],
+        [{ type: "stun", mode: "burst", probability: 0.5, estimate: 1 }], // Turns
+        [{ type: "stun", mode: "burst", probability: 0.6, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.7, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.8, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.9, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, ],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, { type: "stun", mode: "burst", probability: 0.15, estimate: 2 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, { type: "stun", mode: "burst", probability: 0.25, estimate: 2 }],
       ],
     },
     [battle.ABILITY_RUSH]: {
@@ -363,14 +370,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 3,
       effects: [ // Ability lvl
-        { type: "power", modifier: 1.15 },
-        { type: "power", modifier: 1.20 },
-        { type: "power", modifier: 1.25 },
-        { type: "power", modifier: 1.30 },
-        { type: "power", modifier: 1.35 },
-        { type: "power", modifier: 1.40 },
-        { type: "power", modifier: 1.45 },
-        { type: "power", modifier: 1.50 },
+        [{ type: "power", mode: "constant", modifier: 1.15 }],
+        [{ type: "power", mode: "constant", modifier: 1.20 }],
+        [{ type: "power", mode: "constant", modifier: 1.25 }],
+        [{ type: "power", mode: "constant", modifier: 1.30 }],
+        [{ type: "power", mode: "constant", modifier: 1.35 }],
+        [{ type: "power", mode: "constant", modifier: 1.40 }],
+        [{ type: "power", mode: "constant", modifier: 1.45 }],
+        [{ type: "power", mode: "constant", modifier: 1.50 }],
       ],
     },
     [battle.ABILITY_ZEALOT]: {
@@ -386,14 +393,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 3,
       effects: [
-        { type: "power", modifier: 1.15 },
-        { type: "power", modifier: 1.20 },
-        { type: "power", modifier: 1.25 },
-        { type: "power", modifier: 1.30 },
-        { type: "power", modifier: 1.35 },
-        { type: "power", modifier: 1.40 },
-        { type: "power", modifier: 1.45 },
-        { type: "power", modifier: 1.50 },
+        [{ type: "power", mode: "constant", modifier: 1.15 }],
+        [{ type: "power", mode: "constant", modifier: 1.20 }],
+        [{ type: "power", mode: "constant", modifier: 1.25 }],
+        [{ type: "power", mode: "constant", modifier: 1.30 }],
+        [{ type: "power", mode: "constant", modifier: 1.35 }],
+        [{ type: "power", mode: "constant", modifier: 1.40 }],
+        [{ type: "power", mode: "constant", modifier: 1.45 }],
+        [{ type: "power", mode: "constant", modifier: 1.50 }],
       ]
     },
     [battle.ABILITY_LETHAL_STRIKE]: {
@@ -467,9 +474,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 1,
       effects: [
-        { type: "speed", modifier: 0.8 },
-        { type: "speed", modifier: 0.7 },
-        { type: "speed", modifier: 0.6 },
+        [{ type: "speed", mode: "constant", modifier: 0.8 }],
+        [{ type: "speed", mode: "constant", modifier: 0.7 }],
+        [{ type: "speed", mode: "constant", modifier: 0.6 }],
       ]
     },
     [battle.ABILITY_ATTACK]: {
@@ -573,14 +580,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: null,
       effects: [ // Ability lvl
-        [{ type: "stun", probability: 0.5, estimate: 1 }], // Turns
-        [{ type: "stun", probability: 0.6, estimate: 1 }],
-        [{ type: "stun", probability: 0.7, estimate: 1 }],
-        [{ type: "stun", probability: 0.8, estimate: 1 }],
-        [{ type: "stun", probability: 0.9, estimate: 1 }],
-        [{ type: "stun", probability: 1, estimate: 1 }, ],
-        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.15, estimate: 2 }],
-        [{ type: "stun", probability: 1, estimate: 1 }, { type: "stun", probability: 0.25, estimate: 2 }],
+        [{ type: "stun", mode: "burst", probability: 0.5, estimate: 1 }], // Turns
+        [{ type: "stun", mode: "burst", probability: 0.6, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.7, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.8, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 0.9, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, ],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, { type: "stun", mode: "burst", probability: 0.15, estimate: 2 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, { type: "stun", mode: "burst", probability: 0.25, estimate: 2 }],
       ],
       },
     [battle.ABILITY_DASH]: {
@@ -624,14 +631,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 3,
       effects: [ // Ability lvl
-        { type: "power", modifier: 1.15 },
-        { type: "power", modifier: 1.20 },
-        { type: "power", modifier: 1.25 },
-        { type: "power", modifier: 1.30 },
-        { type: "power", modifier: 1.35 },
-        { type: "power", modifier: 1.40 },
-        { type: "power", modifier: 1.45 },
-        { type: "power", modifier: 1.50 },
+        [{ type: "power", mode: "constant", modifier: 1.15 }],
+        [{ type: "power", mode: "constant", modifier: 1.20 }],
+        [{ type: "power", mode: "constant", modifier: 1.25 }],
+        [{ type: "power", mode: "constant", modifier: 1.30 }],
+        [{ type: "power", mode: "constant", modifier: 1.35 }],
+        [{ type: "power", mode: "constant", modifier: 1.40 }],
+        [{ type: "power", mode: "constant", modifier: 1.45 }],
+        [{ type: "power", mode: "constant", modifier: 1.50 }],
       ],
     },
     [battle.ABILITY_DEATH_SHOT]: {
@@ -669,9 +676,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 1,
       effects: [
-        { type: "speed", modifier: 0.8 },
-        { type: "speed", modifier: 0.7 },
-        { type: "speed", modifier: 0.6 },
+        [{ type: "speed", mode: "constant", modifier: 0.8 }],
+        [{ type: "speed", mode: "constant", modifier: 0.7 }],
+        [{ type: "speed", mode: "constant", modifier: 0.6 }],
       ]
     },
     [battle.ABILITY_ATTACK]: {
@@ -773,24 +780,24 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: null,
       effects: [ // Ability lvl
-        [{ type: "agro", probability: 0.50, estimate: 1 }], // Turns
-        [{ type: "agro", probability: 0.55, estimate: 1 }],
-        [{ type: "agro", probability: 0.60, estimate: 1 }],
-        [{ type: "agro", probability: 0.60, estimate: 1 }],
-        [{ type: "agro", probability: 0.65, estimate: 1 }],
-        [{ type: "agro", probability: 0.70, estimate: 1 }],
-        [{ type: "agro", probability: 0.75, estimate: 1 }],
-        [{ type: "agro", probability: 0.80, estimate: 1 }],
-        [{ type: "agro", probability: 0.80, estimate: 1 }],
-        [{ type: "agro", probability: 0.85, estimate: 1 }],
-        [{ type: "agro", probability: 0.90, estimate: 1 }],
-        [{ type: "agro", probability: 0.95, estimate: 1 }],
-        [{ type: "agro", probability: 1, estimate: 1 }, ],
-        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.10, estimate: 2 }],
-        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.20, estimate: 2 }],
-        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.30, estimate: 2 }],
-        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.40, estimate: 2 }],
-        [{ type: "agro", probability: 1, estimate: 1 }, { type: "agro", probability: 0.50, estimate: 2 }],
+        [{ type: "agro", mode: "burst", probability: 0.50, estimate: 1 }], // Turns
+        [{ type: "agro", mode: "burst", probability: 0.55, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.60, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.60, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.65, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.70, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.75, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.80, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.80, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.85, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.90, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 0.95, estimate: 1 }],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, ],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, { type: "agro", probability: 0.10, estimate: 2 }],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, { type: "agro", probability: 0.20, estimate: 2 }],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, { type: "agro", probability: 0.30, estimate: 2 }],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, { type: "agro", probability: 0.40, estimate: 2 }],
+        [{ type: "agro", mode: "burst", probability: 1, estimate: 1 }, { type: "agro", probability: 0.50, estimate: 2 }],
       ],
     },
     [battle.ABILITY_HOLY_STRIKE]: {
@@ -932,9 +939,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: null,
       effects: [
-        [{ type: "stun", prabibility: 0.7, estimate: 1 }],
-        [{ type: "stun", prabibility: 1, estimate: 1 }],
-        [{ type: "stun", prabibility: 1, estimate: 1 }, { type: "stun", prabibility: 0.3, estimate: 2 }]
+        [{ type: "stun", mode: "burst", probability: 0.7, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }],
+        [{ type: "stun", mode: "burst", probability: 1, estimate: 1 }, { type: "stun", probability: 0.3, estimate: 2 }]
       ]
     },
     [battle.ABILITY_SHIELD_WALL]: {
@@ -948,9 +955,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 1,
       effects: [
-        { type: "defence", modifier: 1.75, estimate: 1 },
-        { type: "defence", modifier: 2, estimate: 1 },
-        { type: "defence", modifier: 2.25, estimate: 1 },
+        [{ type: "defence", mode: "constant", modifier: 1.75, estimate: 1 }],
+        [{ type: "defence", mode: "constant", modifier: 2, estimate: 1 }],
+        [{ type: "defence", mode: "constant", modifier: 2.25, estimate: 1 }],
       ]
     },
     [battle.ABILITY_ATTACK]: {
@@ -998,21 +1005,21 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [ // Ability lvl
-        { type: "defence", modifier: 1.15 },
-        { type: "defence", modifier: 1.18 },
-        { type: "defence", modifier: 1.20 },
-        { type: "defence", modifier: 1.21 },
-        { type: "defence", modifier: 1.24 },
-        { type: "defence", modifier: 1.27 },
-        { type: "defence", modifier: 1.30 },
-        { type: "defence", modifier: 1.32 },
-        { type: "defence", modifier: 1.35 },
-        { type: "defence", modifier: 1.38 },
-        { type: "defence", modifier: 1.40 },
-        { type: "defence", modifier: 1.42 },
-        { type: "defence", modifier: 1.45 },
-        { type: "defence", modifier: 1.48 },
-        { type: "defence", modifier: 1.50 },
+        [{ type: "defence", mode: "constant", modifier: 1.15 }],
+        [{ type: "defence", mode: "constant", modifier: 1.18 }],
+        [{ type: "defence", mode: "constant", modifier: 1.20 }],
+        [{ type: "defence", mode: "constant", modifier: 1.21 }],
+        [{ type: "defence", mode: "constant", modifier: 1.24 }],
+        [{ type: "defence", mode: "constant", modifier: 1.27 }],
+        [{ type: "defence", mode: "constant", modifier: 1.30 }],
+        [{ type: "defence", mode: "constant", modifier: 1.32 }],
+        [{ type: "defence", mode: "constant", modifier: 1.35 }],
+        [{ type: "defence", mode: "constant", modifier: 1.38 }],
+        [{ type: "defence", mode: "constant", modifier: 1.40 }],
+        [{ type: "defence", mode: "constant", modifier: 1.42 }],
+        [{ type: "defence", mode: "constant", modifier: 1.45 }],
+        [{ type: "defence", mode: "constant", modifier: 1.48 }],
+        [{ type: "defence", mode: "constant", modifier: 1.50 }],
       ],
     },
     [battle.ABILITY_CURSE]: {
@@ -1030,21 +1037,21 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [ // Ability lvl
-        { type: "defence", modifier: 0.85 },
-        { type: "defence", modifier: 0.82 },
-        { type: "defence", modifier: 0.80 },
-        { type: "defence", modifier: 0.79 },
-        { type: "defence", modifier: 0.76 },
-        { type: "defence", modifier: 0.73 },
-        { type: "defence", modifier: 0.70 },
-        { type: "defence", modifier: 0.68 },
-        { type: "defence", modifier: 0.65 },
-        { type: "defence", modifier: 0.62 },
-        { type: "defence", modifier: 0.60 },
-        { type: "defence", modifier: 0.58 },
-        { type: "defence", modifier: 0.55 },
-        { type: "defence", modifier: 0.52 },
-        { type: "defence", modifier: 0.50 },
+        [{ type: "defence", mode: "constant", modifier: 0.85 }],
+        [{ type: "defence", mode: "constant", modifier: 0.82 }],
+        [{ type: "defence", mode: "constant", modifier: 0.80 }],
+        [{ type: "defence", mode: "constant", modifier: 0.79 }],
+        [{ type: "defence", mode: "constant", modifier: 0.76 }],
+        [{ type: "defence", mode: "constant", modifier: 0.73 }],
+        [{ type: "defence", mode: "constant", modifier: 0.70 }],
+        [{ type: "defence", mode: "constant", modifier: 0.68 }],
+        [{ type: "defence", mode: "constant", modifier: 0.65 }],
+        [{ type: "defence", mode: "constant", modifier: 0.62 }],
+        [{ type: "defence", mode: "constant", modifier: 0.60 }],
+        [{ type: "defence", mode: "constant", modifier: 0.58 }],
+        [{ type: "defence", mode: "constant", modifier: 0.55 }],
+        [{ type: "defence", mode: "constant", modifier: 0.52 }],
+        [{ type: "defence", mode: "constant", modifier: 0.50 }],
       ],
     },
     [battle.ABILITY_MIGHT]: {
@@ -1060,14 +1067,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [
-        { type: "power", modifier: 1.15 },
-        { type: "power", modifier: 1.20 },
-        { type: "power", modifier: 1.25 },
-        { type: "power", modifier: 1.30 },
-        { type: "power", modifier: 1.35 },
-        { type: "power", modifier: 1.40 },
-        { type: "power", modifier: 1.45 },
-        { type: "power", modifier: 1.50 },
+        [{ type: "power", mode: "constant", modifier: 1.15 }],
+        [{ type: "power", mode: "constant", modifier: 1.20 }],
+        [{ type: "power", mode: "constant", modifier: 1.25 }],
+        [{ type: "power", mode: "constant", modifier: 1.30 }],
+        [{ type: "power", mode: "constant", modifier: 1.35 }],
+        [{ type: "power", mode: "constant", modifier: 1.40 }],
+        [{ type: "power", mode: "constant", modifier: 1.45 }],
+        [{ type: "power", mode: "constant", modifier: 1.50 }],
       ]
     },
     [battle.ABILITY_WEAKNESS]: {
@@ -1083,14 +1090,14 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [
-        { type: "power", modifier: 0.85 },
-        { type: "power", modifier: 0.80 },
-        { type: "power", modifier: 0.75 },
-        { type: "power", modifier: 0.70 },
-        { type: "power", modifier: 0.65 },
-        { type: "power", modifier: 0.60 },
-        { type: "power", modifier: 0.55 },
-        { type: "power", modifier: 0.50 },
+        [{ type: "power", mode: "constant", modifier: 0.85 }],
+        [{ type: "power", mode: "constant", modifier: 0.80 }],
+        [{ type: "power", mode: "constant", modifier: 0.75 }],
+        [{ type: "power", mode: "constant", modifier: 0.70 }],
+        [{ type: "power", mode: "constant", modifier: 0.65 }],
+        [{ type: "power", mode: "constant", modifier: 0.60 }],
+        [{ type: "power", mode: "constant", modifier: 0.55 }],
+        [{ type: "power", mode: "constant", modifier: 0.50 }],
       ]
     },
     [battle.ABILITY_GROUP_HEAL]: {
@@ -1116,9 +1123,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [
-        { type: "speed", modifier: 1.2 },
-        { type: "speed", modifier: 1.25 },
-        { type: "speed", modifier: 1.3 },
+        [{ type: "speed", mode: "constant", modifier: 1.2 }],
+        [{ type: "speed", mode: "constant", modifier: 1.25 }],
+        [{ type: "speed", mode: "constant", modifier: 1.3 }],
       ]
     },
     [battle.ABILITY_LAZINESS]: {
@@ -1132,9 +1139,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 2,
       effects: [
-        { type: "initiative", modifier: 0.8 },
-        { type: "initiative", modifier: 0.75 },
-        { type: "initiative", modifier: 0.7 },
+        [{ type: "initiative", mode: "constant", modifier: 0.8 }],
+        [{ type: "initiative", mode: "constant", modifier: 0.75 }],
+        [{ type: "initiative", mode: "constant", modifier: 0.7 }],
       ]
     },
     [battle.ABILITY_ATTACK]: {
@@ -1149,6 +1156,10 @@ export const ABILITIES = {
       duration: null,
       effects: []
     },
+  }
+} as { 
+  [unitClass: string]: {
+    [abilityClass: string]: BattleUnitAbilityBlueprint 
   }
 };
 
@@ -1966,389 +1977,390 @@ export const SQUAD_BONUSES = {
     // Tier 1
     [
       // Attack +5%
-      { type: "attack", modifier: 1.5 },
-      { type: "attack", modifier: 1.7 },
-      { type: "attack", modifier: 1.10 },
-      { type: "attack", modifier: 1.15 },
+      { type: "attack", mode: "constant", modifier: 1.5 },
+      { type: "attack", mode: "constant", modifier: 1.7 },
+      { type: "attack", mode: "constant", modifier: 1.10 },
+      { type: "attack", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Swamp speed
-      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-1" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-2" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-3" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-4" },
     ],
     // Tier 3
     [
-      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      { type: "defence", conditions: ["incoming_damage"], modifier: 1, max: 3 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 5 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 6 },
+      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_DWARF]: [
     // Tier 1
     [
       // Attack +5%
-      { type: "hp", modifier: 1.05 },
-      { type: "hp", modifier: 1.07 },
-      { type: "hp", modifier: 1.1 },
-      { type: "hp", modifier: 1.15 },
+      { type: "hp", mode: "constant", modifier: 1.05 },
+      { type: "hp", mode: "constant", modifier: 1.07 },
+      { type: "hp", mode: "constant", modifier: 1.1 },
+      { type: "hp", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: "hill-1" },
-      { type: "power", terrain: "hill", modifier: "hill-2" },
-      { type: "power", terrain: "hill", modifier: "hill-3" },
-      { type: "power", terrain: "hill", modifier: "hill-4" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-1" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-2" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-3" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-4" },
     ],
     // Tier 3
     [
-      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      { type: "defence", conditions: ["incoming_damage"], modifier: 1, max: 3 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 3 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 5 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 6 },
+      // When a squad member takes damage the squad's defense is increased by +1 (max. 3)
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_EGYPTIAN]: [
     // Tier 1
     [
       // Attack +5%
-      { type: "attack", modifier: 1.05 },
-      { type: "attack", modifier: 1.07 },
-      { type: "attack", modifier: 1.1 },
-      { type: "attack", modifier: 1.15 },
+      { type: "attack", mode: "constant", modifier: 1.05 },
+      { type: "attack", mode: "constant", modifier: 1.07 },
+      { type: "attack", mode: "constant", modifier: 1.1 },
+      { type: "attack", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: "woods-1" },
-      { type: "defence", terrain: "woods", modifier: "woods-2" },
-      { type: "defence", terrain: "woods", modifier: "woods-3" },
-      { type: "defence", terrain: "woods", modifier: "woods-4" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-1" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-2" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-3" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-4" },
     ],
     // Tier 3
     [
       // Chance of a counterattack 7%
-      { type: "counter_attack", probability: 0.07 },
-      { type: "counter_attack", probability: 0.10 },
-      { type: "counter_attack", probability: 0.12 },
-      { type: "counter_attack", probability: 0.15 },
+      { type: "counter_attack", mode: "burst", probability: 0.07 },
+      { type: "counter_attack", mode: "burst", probability: 0.10 },
+      { type: "counter_attack", mode: "burst", probability: 0.12 },
+      { type: "counter_attack", mode: "burst", probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_GOBLIN]: [
     // Tier 1
     [
       // HP +5%
-      { type: "hp", modifier: 1.05 },
-      { type: "hp", modifier: 1.07 },
-      { type: "hp", modifier: 1.10 },
-      { type: "hp", modifier: 1.15 },
+      { type: "hp", mode: "constant", modifier: 1.05 },
+      { type: "hp", mode: "constant", modifier: 1.07 },
+      { type: "hp", mode: "constant", modifier: 1.10 },
+      { type: "hp", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: "woods-1" },
-      { type: "defence", terrain: "woods", modifier: "woods-2" },
-      { type: "defence", terrain: "woods", modifier: "woods-3" },
-      { type: "defence", terrain: "woods", modifier: "woods-4" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-1" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-2" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-3" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-4" },
     ],
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by +1      
-      { type: "speed", conditions: ["debuff"], delta: 1 },
-      { type: "speed", conditions: ["debuff"], delta: 2 },
-      { type: "speed", conditions: ["debuff"], delta: 3 },
-      { type: "speed", conditions: ["debuff"], delta: 4 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 1 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 2 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 3 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 4 },
     ],
   ],
   [battle.UNIT_TRIBE_INSECT]: [
     // Tier 1
     [
       // Defense +5%
-      { type: "defence", modifier: 1.05 },
-      { type: "defence", modifier: 1.07 },
-      { type: "defence", modifier: 1.10 },
-      { type: "defence", modifier: 1.15 },
+      { type: "defence", mode: "constant", modifier: 1.05 },
+      { type: "defence", mode: "constant", modifier: 1.07 },
+      { type: "defence", mode: "constant", modifier: 1.10 },
+      { type: "defence", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Swamp slows down by 25% less
-      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-1" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-2" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-3" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-4" },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 3 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 5 },
-      { type: "defence", conditions: ["incoming_damage"], delta: 1, max: 6 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_ORC]: [
     // Tier 1
     [
       // Attack +5%
-      { type: "attack", modifier: 1.05 },
-      { type: "attack", modifier: 1.07 },
-      { type: "attack", modifier: 1.10 },
-      { type: "attack", modifier: 1.15 },
+      { type: "attack", mode: "constant", modifier: 1.05 },
+      { type: "attack", mode: "constant", modifier: 1.07 },
+      { type: "attack", mode: "constant", modifier: 1.10 },
+      { type: "attack", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: "hill-1" },
-      { type: "power", terrain: "hill", modifier: "hill-2" },
-      { type: "power", terrain: "hill", modifier: "hill-3" },
-      { type: "power", terrain: "hill", modifier: "hill-4" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-1" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-2" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-3" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-4" },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's attack is increased by 2,5% (max. 15%)      
-      { type: "attack", delta: 2.5, fullSquad: true, percents: true, max: 15 },
-      { type: "attack", delta: 2.5, fullSquad: true, percents: true, max: 20 },
-      { type: "attack", delta: 3,   fullSquad: true, percents: true, max: 25 },
-      { type: "attack", delta: 3,   fullSquad: true, percents: true, max: 30 },
+      { type: "attack", mode: "constant", delta: 2.5, percents: true, max: 15 },
+      { type: "attack", mode: "constant", delta: 2.5, percents: true, max: 20 },
+      { type: "attack", mode: "constant", delta: 3,   percents: true, max: 25 },
+      { type: "attack", mode: "constant", delta: 3,   percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_ASSEMBLING]: [
     // Tier 1
     [
       // Abilities power +5%
-      { type: "abilities", modifier: 1.05 },
-      { type: "abilities", modifier: 1.07 },
-      { type: "abilities", modifier: 1.10 },
-      { type: "abilities", modifier: 1.15 },
+      { type: "abilities", mode: "constant", modifier: 1.05 },
+      { type: "abilities", mode: "constant", modifier: 1.07 },
+      { type: "abilities", mode: "constant", modifier: 1.10 },
+      { type: "abilities", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Swamp speed
-      { type: "speed", terrain: "swamp", modifier: "swamp-1" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-2" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-3" },
-      { type: "speed", terrain: "swamp", modifier: "swamp-4" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-1" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-2" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-3" },
+      { type: "speed", mode: "constant", terrain: "swamp", scheme: "swamp-4" },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { type: "power", modifier: 1.3, probability: 0.07 },
-      { type: "power", modifier: 1.5, probability: 0.10 },
-      { type: "power", modifier: 1.7, probability: 0.12 },
-      { type: "power", modifier: 2, probability: 0.15 },
+      { type: "power", mode: "burst", modifier: 1.3, probability: 0.07 },
+      { type: "power", mode: "burst", modifier: 1.5, probability: 0.10 },
+      { type: "power", mode: "burst", modifier: 1.7, probability: 0.12 },
+      { type: "power", mode: "burst", modifier: 2, probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_ICE]: [
     // Tier 1
     [
       // Defense +5%
-      { type: "defence", modifier: 1.05 },
-      { type: "defence", modifier: 1.07 },
-      { type: "defence", modifier: 1.10 },
-      { type: "defence", modifier: 1.15 },
+      { type: "defence", mode: "constant", modifier: 1.05 },
+      { type: "defence", mode: "constant", modifier: 1.07 },
+      { type: "defence", mode: "constant", modifier: 1.10 },
+      { type: "defence", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense on ice
-      { type: "defence", terrain: "ice", modifier: "ice-1" },
-      { type: "defence", terrain: "ice", modifier: "ice-2" },
-      { type: "defence", terrain: "ice", modifier: "ice-3" },
-      { type: "defence", terrain: "ice", modifier: "ice-4" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-1" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-2" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-3" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-4" },
     ],
     // Tier 3
     [
       //When a unit is debuffed, their speed is increased by +1      
-      { type: "speed", conditions: ["debuff"], delta: 1 },
-      { type: "speed", conditions: ["debuff"], delta: 2 },
-      { type: "speed", conditions: ["debuff"], delta: 3 },
-      { type: "speed", conditions: ["debuff"], delta: 4 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 1 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 2 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 3 },
+      { type: "speed", mode: "constant", trigger: "debuff", delta: 4 },
     ],
   ],
   [battle.UNIT_TRIBE_CLOCKWORK]: [
     // Tier 1
     [
       // Defense +5%
-      { type: "defence", modifier: 1.05 },
-      { type: "defence", modifier: 1.07 },
-      { type: "defence", modifier: 1.10 },
-      { type: "defence", modifier: 1.15 },
+      { type: "defence", mode: "constant", modifier: 1.05 },
+      { type: "defence", mode: "constant", modifier: 1.07 },
+      { type: "defence", mode: "constant", modifier: 1.10 },
+      { type: "defence", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Lava deals 25% less damage
-      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-1" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-2" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-3" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-4" },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 15 },
-      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 20 },
-      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 25 },
-      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 30 },
+      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 15 },
+      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 20 },
+      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 25 },
+      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_ELDRITCH]: [
     // Tier 1
     [
       // Defense +5%
-      { type: "hp", modifier: 1.05 },
-      { type: "hp", modifier: 1.07 },
-      { type: "hp", modifier: 1.10 },
-      { type: "hp", modifier: 1.15 },
+      { type: "hp", mode: "constant", modifier: 1.05 },
+      { type: "hp", mode: "constant", modifier: 1.07 },
+      { type: "hp", mode: "constant", modifier: 1.10 },
+      { type: "hp", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Ice defense reduction is 25% weaker
-      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-1" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-2" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-3" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-4" },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { type: "power", modifier: 1.3, probability: 0.07 },
-      { type: "power", modifier: 1.5, probability: 0.10 },
-      { type: "power", modifier: 1.7, probability: 0.12 },
-      { type: "power", modifier: 2, probability: 0.15 },
+      { type: "power", mode: "burst", modifier: 1.3, probability: 0.07 },
+      { type: "power", mode: "burst", modifier: 1.5, probability: 0.10 },
+      { type: "power", mode: "burst", modifier: 1.7, probability: 0.12 },
+      { type: "power", mode: "burst", modifier: 2, probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_ELF]: [
     // Tier 1
     [
       // Abilities power +5%
-      { type: "abilities", modifier: 1.05 },
-      { type: "abilities", modifier: 1.07 },
-      { type: "abilities", modifier: 1.10 },
-      { type: "abilities", modifier: 1.15 },
+      { type: "abilities", mode: "constant", modifier: 1.05 },
+      { type: "abilities", mode: "constant", modifier: 1.07 },
+      { type: "abilities", mode: "constant", modifier: 1.10 },
+      { type: "abilities", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense in the woods is 25% higher
-      { type: "defence", terrain: "woods", modifier: "woods-1" },
-      { type: "defence", terrain: "woods", modifier: "woods-2" },
-      { type: "defence", terrain: "woods", modifier: "woods-3" },
-      { type: "defence", terrain: "woods", modifier: "woods-4" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-1" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-2" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-3" },
+      { type: "defence", mode: "constant", terrain: "woods", scheme: "woods-4" },
     ],
     // Tier 3
     [
       // Chance of a counterattack 7%
-      { type: "counter_attack", probability: 0.07 },
-      { type: "counter_attack", probability: 0.10 },
-      { type: "counter_attack", probability: 0.12 },
-      { type: "counter_attack", probability: 0.15 },
+      { type: "counter_attack", mode: "burst", probability: 0.07 },
+      { type: "counter_attack", mode: "burst", probability: 0.10 },
+      { type: "counter_attack", mode: "burst", probability: 0.12 },
+      { type: "counter_attack", mode: "burst", probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_SKELETON]: [
     // Tier 1
     [
       // Abilities power +5%
-      { type: "hp", modifier: 1.05 },
-      { type: "hp", modifier: 1.07 },
-      { type: "hp", modifier: 1.10 },
-      { type: "hp", modifier: 1.15 },
+      { type: "hp", mode: "constant", modifier: 1.05 },
+      { type: "hp", mode: "constant", modifier: 1.07 },
+      { type: "hp", mode: "constant", modifier: 1.10 },
+      { type: "hp", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense on ice
-      { type: "defence", terrain: "ice", modifier: "ice-1" },
-      { type: "defence", terrain: "ice", modifier: "ice-2" },
-      { type: "defence", terrain: "ice", modifier: "ice-3" },
-      { type: "defence", terrain: "ice", modifier: "ice-4" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-1" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-2" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-3" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-4" },
     ],
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 15 },
-      { type: "power", modifier: 2.5, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 20 },
-      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 25 },
-      { type: "power", modifier: 3, conditions: ["incoming_damage"], fullSquad: true, percents: true, max: 30 },
+      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 15 },
+      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 20 },
+      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 25 },
+      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 30 },
     ],
   ],
   [battle.UNIT_TRIBE_FALLEN_KING]: [
     // Tier 1
     [
       // Attack +5%
-      { type: "attack", modifier: 1.05 },
-      { type: "attack", modifier: 1.07 },
-      { type: "attack", modifier: 1.10 },
-      { type: "attack", modifier: 1.15 },
+      { type: "attack", mode: "constant", modifier: 1.05 },
+      { type: "attack", mode: "constant", modifier: 1.07 },
+      { type: "attack", mode: "constant", modifier: 1.10 },
+      { type: "attack", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Attack on hills is 25% higher
-      { type: "power", terrain: "hill", modifier: "hill-1" },
-      { type: "power", terrain: "hill", modifier: "hill-2" },
-      { type: "power", terrain: "hill", modifier: "hill-3" },
-      { type: "power", terrain: "hill", modifier: "hill-4" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-1" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-2" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-3" },
+      { type: "power", mode: "constant", terrain: "hill", scheme: "hill-4" },
     ],
     // Tier 3
     [
       // Chance to deal a critical hit 7% (damage x1.3)
-      { type: "power", modifier: 1.3, probability: 0.07 },
-      { type: "power", modifier: 1.5, probability: 0.10 },
-      { type: "power", modifier: 1.7, probability: 0.12 },
-      { type: "power", modifier: 2, probability: 0.15 },
+      { type: "power", mode: "burst", modifier: 1.3, probability: 0.07 },
+      { type: "power", mode: "burst", modifier: 1.5, probability: 0.10 },
+      { type: "power", mode: "burst", modifier: 1.7, probability: 0.12 },
+      { type: "power", mode: "burst", modifier: 2, probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_LEGENDARY]: [
     // Tier 1
     [
       // Attack +5%
-      { type: "attack", modifier: 1.05 },
-      { type: "attack", modifier: 1.07 },
-      { type: "attack", modifier: 1.10 },
-      { type: "attack", modifier: 1.15 },
+      { type: "attack", mode: "constant", modifier: 1.05 },
+      { type: "attack", mode: "constant", modifier: 1.07 },
+      { type: "attack", mode: "constant", modifier: 1.10 },
+      { type: "attack", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defence on ice
-      { type: "defence", terrain: "ice", modifier: "ice-1" },
-      { type: "defence", terrain: "ice", modifier: "ice-2" },
-      { type: "defence", terrain: "ice", modifier: "ice-3" },
-      { type: "defence", terrain: "ice", modifier: "ice-4" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-1" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-2" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-3" },
+      { type: "defence", mode: "constant", terrain: "ice", scheme: "ice-4" },
     ],
     // Tier 3
     [
       // Chance of a counterattack 7%
-      { type: "counter_attack", probability: 0.07 },
-      { type: "counter_attack", probability: 0.10 },
-      { type: "counter_attack", probability: 0.12 },
-      { type: "counter_attack", probability: 0.15 },
+      { type: "counter_attack", mode: "burst", probability: 0.07 },
+      { type: "counter_attack", mode: "burst", probability: 0.10 },
+      { type: "counter_attack", mode: "burst", probability: 0.12 },
+      { type: "counter_attack", mode: "burst", probability: 0.15 },
     ],
   ],
   [battle.UNIT_TRIBE_TITAN]: [
     // Tier 1
     [
       // Abilities power +5%
-      { type: "abilities", modifier: 1.05 },
-      { type: "abilities", modifier: 1.07 },
-      { type: "abilities", modifier: 1.10 },
-      { type: "abilities", modifier: 1.15 },
+      { type: "abilities", mode: "constant", modifier: 1.05 },
+      { type: "abilities", mode: "constant", modifier: 1.07 },
+      { type: "abilities", mode: "constant", modifier: 1.10 },
+      { type: "abilities", mode: "constant", modifier: 1.15 },
     ],
     // Tier 2
     [
       // Defense on ice
-      { type: "lava_damage", terrain: "lava", modifier: "lava-1" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-2" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-3" },
-      { type: "lava_damage", terrain: "lava", modifier: "lava-4" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-1" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-2" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-3" },
+      { type: "lava_damage", mode: "constant", terrain: "lava", scheme: "lava-4" },
     ],
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by +1
-      { type: "speed", conditions: ["debuff"], modifier: 1 },
-      { type: "speed", conditions: ["debuff"], modifier: 2 },
-      { type: "speed", conditions: ["debuff"], modifier: 3 },
-      { type: "speed", conditions: ["debuff"], modifier: 4 },
+      { type: "speed", mode: "constant", trigger: "debuff", modifier: 1 },
+      { type: "speed", mode: "constant", trigger: "debuff", modifier: 2 },
+      { type: "speed", mode: "constant", trigger: "debuff", modifier: 3 },
+      { type: "speed", mode: "constant", trigger: "debuff", modifier: 4 },
     ],
   ],
 };

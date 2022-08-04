@@ -8,6 +8,10 @@ import {
   ABILITY_SCHEME, 
   AVG_DMG, 
   AVG_HP, 
+  BUFF_SOURCE_BUFF, 
+  BUFF_SOURCE_DE_BUFF, 
+  BUFF_SOURCE_SELF_BUFF, 
+  BUFF_SOURCE_TERRAIN, 
   CHARACTERISTICS,
   SETTINGS,
   TERRAIN_HILL,
@@ -21,6 +25,7 @@ import {
 import {
   BattleBuff, BattleLevelScheme,
   BattleUnit, BattleUnitAbility,
+  BattleUnitAbilityStat,
   BattleUnitCharacteristics
 } from "../types";
 
@@ -53,43 +58,56 @@ export class Unit {
   protected _hp: number;
   protected _index: number;
   protected _buffs: BattleBuff[] = [
-    // Abilities
-    { source: "self-buff", type: "power", modifier: 1.15 },
-    { source: "self-buff", type: "speed", modifier: 1.2 },
-    { source: "buff", type: "defence", modifier: 1.75, estimate: 1 },
-    { source: "buff", type: "defence", modifier: 1.15 },
-    { source: "buff", type: "initiative", modifier: 0.8 },
-    { source: "de-buff", type: "stun", probability: 1, estimate: 1 }, 
-    { source: "de-buff", type: "stun", probability: 0.25, estimate: 2 },
-    { source: "de-buff", type: "speed", modifier: 0.8 },
-    { source: "de-buff", type: "agro", probability: 1, estimate: 1 }, 
-    { source: "de-buff", type: "agro", probability: 0.10, estimate: 2 },
+    // Attack
+    //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
+    //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 },
+    //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" },
+    // { source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    
+    //{ source: "squad", mode: "stack", type: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    //{ source: "squad", mode: "constant", type: "attack", modifier: 1.5 },
+   
+    //{ source: "squad", mode: "constant", type: "abilities", modifier: 1.05 },
+
+    // Defence
+    //{ source: "squad", mode: "stack", type: "defence", trigger: "damage", delta: 1, max: 4 },
+    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.75, estimate: 1 },
+    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.15 },
+    //{ source: "squad", mode: "constant", type: "defence", terrain: "woods", scheme: "woods-1" },
+    //{ source: "squad", mode: "constant", type: "defence", terrain: "ice", scheme: "ice-1" },
+    //{ source: "squad", mode: "constant", type: "defence", modifier: 1.05 },
+    //{ source: "terrain", mode: "constant", type: "defence", terrain: "woods", scheme: "woods-1" },
+   
+    // Speed
+    //{ source: "squad", mode: "stack", type: "speed", trigger: "debuff", delta: 1 },
+    //{ source: "squad", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1" },
+    //{ source: "squad", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1" },
+    //{ source: "de-buff", mode: "constant", type: "speed", modifier: 0.8 },
+    //{ source: "self-buff", mode: "constant", type: "speed", modifier: 1.2 },
+    //{ source: "terrain", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1", estimate: 1 },
+    
+    // Initiative
+    //{ source: "buff", mode: "constant", type: "initiative", modifier: 0.8 },
     
     // Squad bonus
-    { source: "squad", type: "power", terrain: "hill", modifier: "hill-1" },
-    { source: "squad", type: "power", modifier: 1.3, probability: 0.07 },
-    { source: "squad", type: "power", modifier: 2.5, percents: true, max: 15 },
-    { source: "squad", type: "attack", modifier: 1.5 },
-    { source: "squad", type: "attack", delta: 2.5, percents: true, max: 15 },
-    { source: "squad", type: "abilities", modifier: 1.05 },
-    { source: "squad", type: "defence", terrain: "woods", modifier: "woods-1" },
-    { source: "squad", type: "defence", terrain: "ice", modifier: "ice-1" },
-    { source: "squad", type: "defence", conditions: ["incoming_damage"], delta: 1, max: 4 },
-    { source: "squad", type: "defence", modifier: 1.05 },
-    { source: "squad", type: "hp", modifier: 1.05 },
-    { source: "squad", type: "hp", modifier: 1.05 },
-    { source: "squad", type: "speed", terrain: "swamp", modifier: "swamp-1" },
-    { source: "squad", type: "speed", conditions: ["debuff"], delta: 1 },
-    { source: "squad", type: "speed", terrain: "swamp", modifier: "swamp-1" },
-    { source: "squad", type: "counter_attack", probability: 0.07 },
-    { source: "squad", type: "lava_damage", terrain: "lava", modifier: "lava-1" },
-
-    // Terrain
-    { source: "terrain", type: "damage", terrain: "ice", modifier: "ice-1" },
-    { source: "terrain", type: "damage", terrain: "hill", modifier: "hill-1" },
-    { source: "terrain", type: "damage", terrain: "defence", modifier: "woods-1" },
-    { source: "terrain", type: "damage", terrain: "speed", modifier: "swamp-1", estimate: 1 },
+    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
+    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
+    
+    // Damage
+    //{ source: "terrain", mode: "constant", type: "damage", terrain: "ice", scheme: "ice-1" },
+    //{ source: "terrain", mode: "constant", type: "damage", terrain: "hill", scheme: "hill-1" },
+    { source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
+    
+    // State
+    { source: "de-buff", mode: "constant", type: "stun", probability: 1, estimate: 1 }, 
+    { source: "de-buff", mode: "constant", type: "stun", probability: 0.25, estimate: 2 },
+    { source: "de-buff", mode: "constant", type: "agro", probability: 1, estimate: 1 }, 
+    { source: "de-buff", mode: "constant", type: "agro", probability: 0.10, estimate: 2 },
+    { source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
   ];
+
+  protected _moveCells: number[];
+  protected _attackCells: number[];
 
   protected _terrainModifiers = {
     [TERRAIN_ICE]: "ice-0",
@@ -98,8 +116,19 @@ export class Unit {
     [TERRAIN_SWAMP]: "swamp-0",
     [TERRAIN_LAVA]: "lava-0"
   }; 
-  protected _moveCells: number[];
-  protected _attackCells: number[];
+
+  public result: {
+    speed: number;
+    initiative: number;
+    defence: number;
+    damage: number;
+    powerBonus: number;
+    attackBonus: number;
+    abilitiesBonus: number;
+    abilities: { 
+      [abilityClass: string]: BattleUnitAbilityStat 
+    }
+  };
 
   get index(): number {
     return this._index;
@@ -115,6 +144,10 @@ export class Unit {
 
   get class(): string {
     return this._unitClass;
+  }
+
+  get ratingIndex(): number {
+    return this._ratingIndex;
   }
 
   get fighterId(): string {
@@ -193,10 +226,25 @@ export class Unit {
   constructor(blueprint: BattleUnit, events: BattleEvents) {
     this._events = events;
 
+    this.result = {
+      speed: 0,
+      initiative: 0,
+      defence: 0,
+      damage: 0,
+      powerBonus: 0,
+      attackBonus: 0,
+      abilitiesBonus: 0,
+      abilities: {}
+    };
+      
     this._template = blueprint.template;
     this._unitId = blueprint.unitId || uuidv4().split('-').pop();
     this._unitTribe = blueprint.unitTribe;
     this._unitClass = blueprint.unitClass;
+    
+    if ("ratingIndex" in blueprint) {
+      this._ratingIndex = blueprint.ratingIndex;
+    }
     
     if ("fighterId" in blueprint) {
       this._fighterId = blueprint.fighterId;
@@ -273,9 +321,10 @@ export class Unit {
           enabled: !index ? true : false
         };  
       });
-      this._abilities = [this.getAbilityByClass(ABILITY_ATTACK), ...abilities];
-      this._abilities.forEach(ability => ability.value = this.getAbilityValue(ability.abilityClass));
-      //this._abilities.push(this.getAbilityByClass(ABILITY_ATTACK));
+      this._abilities = [
+        this.getAbilityByClass(ABILITY_ATTACK), 
+        ...abilities
+      ];
     } else {
       throw Error("Abilities was not set");
     }
@@ -303,19 +352,31 @@ export class Unit {
     } else {
       this._buffs = [];
     }
-
+    
+    this.calcResult();
     this.setPower();
   }
 
+  public reset(): void {
+    this._isDead = false;
+    
+    this._abilities.forEach(ability => {
+      delete ability.cooldown;
+    });
+
+    this.resetBuffs();
+    this.calcResult(true);
+  }
+  
   public regenerateFighterId(): void {
     this._fighterId = uuidv4().split('-').pop();
   }
 
   public getAbilityValue(ability: string): number|null {
-    let abilityValue = 0;
+    let base = 0;
     
     if (ability === ABILITY_ATTACK) {
-      abilityValue = this.damage;
+      base = this.damage;
     } else {
       const abilityData = this.getAbilityByClass(ability);
       const abilityLevel = abilityData.levelInt !== 0 ? abilityData.levelInt : 1;
@@ -325,17 +386,214 @@ export class Unit {
       if (!ABILITIES[this._unitClass][ability].damage[this._tier - 1]) {
         return 0;
       }
-      abilityValue = ABILITIES[this._unitClass][ability].damage[this._tier - 1][abilityLevel - 1];
+      base = ABILITIES[this._unitClass][ability].damage[this._tier - 1][abilityLevel - 1];
     }
 
-    // TODO squad bonuses
-    // TODO buffs
-    // TODO de-buffs
-    // TODO terrain
+    let abilityValue = 0;
+    if (ability === ABILITY_ATTACK) {
+      abilityValue = base * this.result.powerBonus * this.result.attackBonus;
+    } else {
+      abilityValue = base * this.result.powerBonus * this.result.abilitiesBonus;
+    }
+    
+    console.log(`[Unit #${this._fighterId}] Ability "${ability}" value: base=${base} * power=${this.result.powerBonus} * attack=${this.result.attackBonus} * abilities=${this.result.abilitiesBonus} = ${abilityValue}`);
 
-    return abilityValue;
+    return Math.round(abilityValue);
+  }
+  
+  public enableAbilityCooldown(ability: string): void {
+    const abilityEntry = this.getAbilityByClass(ability);
+    if (
+      abilityEntry 
+      && 
+      abilityEntry.enabled
+      && 
+      (!abilityEntry.cooldown || !abilityEntry.cooldown.enabled)
+    ) {
+      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][abilityEntry.tier-1];
+      abilityEntry.cooldown = {
+        enabled: true,
+        estimate: abilityScheme.cd
+      }
+    }
   }
 
+  public decreaseAbilitiesCooldownEstimate(): void {
+    this._abilities.forEach(ability => {
+      if (ability.cooldown && ability.cooldown.estimate > 0) {
+        const oldCooldown = _.clone(ability.cooldown.estimate);
+        ability.cooldown.estimate--;
+        const newCooldown = _.clone(ability.cooldown.estimate);
+
+        if (ability.cooldown.estimate === 0) {
+          ability.cooldown.enabled = false;
+        }
+
+        console.log(`[Unit #${this._fighterId}] Ability cooldown updated`, {
+          ability: ability.abilityClass,
+          newValue: newCooldown,
+          cooldownEnabled: ability.cooldown.enabled
+        });
+      }
+    });
+  }
+
+  public attackCallback() {
+    // { source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    // { source: "squad", mode: "stack", type: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    // { source: "squad", mode: "stack", type: "defence", trigger: "damage", delta: 1, max: 4 },
+    const buffs = this.getBuffs({ trigger: "damage" });
+    if (buffs.length) {
+      buffs.forEach(buff => {
+        // Stack
+        if (
+          buff.mode === "stack"
+          && 
+          buff.stackValue < buff.max
+        ) {
+          buff.stackValue += buff.delta * (buff.percents ? 0.01 : 1);
+          console.log(`[Unit #${this._fighterId}] ${buff.type} stacked`, buff);
+        }
+      });
+    }
+  }
+
+  public buff(buff: BattleBuff): void {
+    if (buff.type === "stack") {
+      buff.stackValue = 1 + buff.delta * (buff.percents ? 0.01 : 1);
+    }
+
+    console.log(`[Unit #${this._fighterId}] Buff added`, buff);
+    this._buffs.push(buff);
+
+    this.calcResult();
+    this._events.buffs(this.fighterId, this.buffs);
+    
+    if (["power", "attack", "abilities"].includes(buff.type)) {
+      this._events.abilities(this._fighterId, this.serializeAbilities());
+    }
+  };
+
+  public getBuffs(params: { source?: string, type?: string, trigger?: string }): BattleBuff[] {
+    return _.filter(this._buffs, params);
+  }
+
+  public getBuffModifier(params: { source?: string, type?: string }): number {
+    const buffs = this.getBuffs(params);
+    if (!buffs.length) {
+      return 1;
+    }
+
+    let modifier = 1;
+    buffs.forEach(buff => {
+      // Constant
+      if (buff.mode === "constant") {
+        //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 }
+        //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" }
+        modifier = modifier * (
+          buff.terrain ? 
+            this.getTerrainModifier(buff.terrain)
+            :
+            buff.modifier
+        );
+      
+      // Burst
+      } else if (buff.mode === "burst") {
+        //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
+        modifier = modifier * (Math.random() <= buff.probability ? buff.modifier : 1);
+      
+      // Stacked
+      } else if (buff.mode === "stack") {
+        modifier = modifier * buff.stackValue;
+      }
+    });
+
+    return modifier;
+  }
+
+  public removeBuffs(params: { source?: string, type?: string }): void {
+    console.log(`[Unit #${this._fighterId}] Remove buffs`, params);
+    this._buffs = _.remove(this._buffs, params);
+  };
+
+  public decreaseBuffsEstimate(): void {
+    this._buffs.forEach(buff => {
+      if (
+        _.isNumber(buff.estimate)
+        &&
+        buff.estimate >= 0
+      ) {
+        buff.estimate--;
+      }
+    });
+
+    this._buffs = _.remove(
+      this._buffs, 
+      buff => _.isNumber(buff.estimate) && buff.estimate < 0
+    );
+
+    this.calcResult();
+  };
+
+  public getAbilityRange(abilityClass: string, type: string): number {
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+
+    let result;
+    if (
+      (type === "move" && abilityMeta.moveRange)
+      ||
+      (type === "attack" && abilityMeta.attackRange)
+    ) {
+      result = abilityMeta[type + "Range"];
+      if (_.isArray(result)) {
+        result = result[abilityData.levelInt-1];
+      }
+      if (_.isString(result)) {
+        result = this.getValueByFormula(result);
+      }
+    }
+
+    return result || 0;
+  }
+
+  public getAbilityIgnoreObstacles(abilityClass: string): boolean {
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+
+    let ignoreObstacles = abilityMeta.ignoreObstacles;
+    return _.isArray(ignoreObstacles) ? 
+      ignoreObstacles[abilityData.levelInt-1]
+      :
+      ignoreObstacles;
+  }
+
+  public getAbilityStat(abilityClass: string, force?: boolean): BattleUnitAbilityStat {
+    if (!force && this.result.abilities[abilityClass]) {
+      return this.result.abilities[abilityClass];
+    }
+
+    const abilityData = this.getAbilityByClass(abilityClass);
+    const abilityMeta = ABILITIES[this.class][abilityClass];
+    const effects = abilityData ?
+      abilityMeta.effects[abilityData.levelInt-1]
+      :
+      [];
+
+    const abilityStat = {
+      ...abilityMeta,
+      damage: this.getAbilityValue(abilityClass),
+      moveRange: this.getAbilityRange(abilityClass, "move"),
+      attackRange: this.getAbilityRange(abilityClass, "attack"),
+      ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
+      effects
+    } as BattleUnitAbilityStat;
+
+    this.result.abilities[abilityClass] = abilityStat;
+
+    return abilityStat;
+  }
+  
   protected setPower() {
     const statsSum = 
       this._characteristics.hp + 
@@ -366,8 +624,8 @@ export class Unit {
     return _.cloneDeep(unit);
   }
 
-  public serializeForSquad(): BattleUnit {
-    const abilities = this._abilities.map(ability => {
+  public serializeAbilities(): BattleUnitAbility[] {
+    return this._abilities.map(ability => {
       return {
         abilityClass: ability.abilityClass,
         abilityType: ability.abilityType,
@@ -381,7 +639,9 @@ export class Unit {
         }
       } as BattleUnitAbility;
     });
+  }
 
+  public serializeForSquad(): BattleUnit {
     const squadUnit = {
       template: this._template,
       fighterId: this._fighterId,
@@ -397,7 +657,7 @@ export class Unit {
       power: this._power,
       index: this._index,
       hp: this._hp,
-      abilities,
+      abilities: this.serializeAbilities(),
       buffs: this._buffs
     } as BattleUnit;
 
@@ -679,43 +939,6 @@ export class Unit {
     return true;
   }
 
-  public enableAbilityCooldown(ability: string): void {
-    const abilityEntry = this.getAbilityByClass(ability);
-    if (
-      abilityEntry 
-      && 
-      abilityEntry.enabled
-      && 
-      (!abilityEntry.cooldown || !abilityEntry.cooldown.enabled)
-    ) {
-      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][abilityEntry.tier-1];
-      abilityEntry.cooldown = {
-        enabled: true,
-        estimate: abilityScheme.cd
-      }
-    }
-  }
-
-  public decreaseAbilitiesCooldownEstimate(): void {
-    this._abilities.forEach(ability => {
-      if (ability.cooldown && ability.cooldown.estimate > 0) {
-        const oldCooldown = _.clone(ability.cooldown.estimate);
-        ability.cooldown.estimate--;
-        const newCooldown = _.clone(ability.cooldown.estimate);
-
-        if (ability.cooldown.estimate === 0) {
-          ability.cooldown.enabled = false;
-        }
-
-        console.log(`[Unit #${this._fighterId}] Ability cooldown updated`, {
-          ability: ability.abilityClass,
-          newValue: newCooldown,
-          cooldownEnabled: ability.cooldown.enabled
-        });
-      }
-    });
-  }
-
   public getLavaDamage(): number {
     // TODO add bonus
     return Math.round(this._characteristics.hp * SETTINGS.lavaDamage);
@@ -743,6 +966,7 @@ export class Unit {
         // Forest - Increases unit's defense by 25%
         this.buff({
           source: "terrain",
+          mode: "constant",
           type: SETTINGS.terrain[terrain].type,
           modifier: this.getTerrainModifier(terrain)
         });
@@ -756,47 +980,6 @@ export class Unit {
       }
     }
   }
-
-  public buff(buff: BattleBuff): void {
-    this._buffs.push(buff);
-    this._events.buffs(this.fighterId, this.buffs);
-  };
-  
-  public getBuff(params: { source?: string, type?: string }): BattleBuff {
-    const choosedBuffs = _.sortBy(_.filter(this._buffs, params), "modifier");
-    console.log("[Unit #${this._fighterId}] Get the strongest buff", { params, result: choosedBuffs });
-    return _.tail(choosedBuffs);
-  }
-
-  public removeBuffs(params: { source?: string, type?: string }): void {
-    console.log(`[Unit #${this._fighterId}] Remove buffs`, params);
-    this._buffs = _.remove(this._buffs, params);
-  };
-
-  public decreaseBuffsEstimate(): void {
-    this._buffs.forEach(buff => {
-      if (
-        _.isNumber(buff.estimate)
-        &&
-        buff.estimate >= 0
-      ) {
-        const oldEstimate = _.clone(buff.estimate);
-        buff.estimate--;
-        const newEstimate = _.clone(buff.estimate);
-  
-        console.log(`[Unit #${this._fighterId}] Buff estimate updated`, {
-          old: oldEstimate,
-          new: newEstimate,
-          buffActive: buff.estimate > 0
-        });
-      }
-    });
-
-    this._buffs = _.remove(
-      this._buffs, 
-      buff => _.isNumber(buff.estimate) && buff.estimate < 0
-    );
-  };
 
   public modifyHp(value: number): void {
     if (this._isDead) {
@@ -827,17 +1010,45 @@ export class Unit {
     return enabledAbilities.length ? _.last(enabledAbilities) : ABILITY_ATTACK;
   }
 
-  public reset(): void {
-    this._isDead = false;
-    this._hp = this._characteristics.hp;
+  public calcResult(initial?: boolean): void {
+    this.result.defence = Math.round(this.getBuffModifier({ type: "defence" }));
+    this.result.speed = Math.round(this.getBuffModifier({ type: "speed" }));
+    this.result.initiative = Math.round(this.getBuffModifier({ type: "initiative" }));
+
+    this.result.powerBonus = this.getBuffModifier({ type: "power" });
+    this.result.attackBonus = this.getBuffModifier({ type: "attack" });
+    this.result.abilitiesBonus = this.getBuffModifier({ type: "abilities" });
+    
+    this._buffs.forEach(buff => {
+      // Terrain
+      if (buff.terrain && buff.scheme) {
+        this._terrainModifiers[buff.terrain] = buff.scheme;
+      }
+      // HP
+      if (initial && buff.type === "hp") {
+        this._hp = Math.round(this.maxHp * this.getBuffModifier({ type: "hp" }));
+      }
+    });
+    
+    // Abilities value
     this._abilities.forEach(ability => {
-      delete ability.cooldown;
-      ability.value = this.getAbilityValue(ability.abilityClass)
+      // Set value
+      ability.value = this.getAbilityValue(ability.abilityClass);
+      // Set ability stat
+      this.result.abilities[ability.abilityClass] = this.getAbilityStat(ability.abilityClass, true);
+    });
+
+    console.log(`[Unit #${this._fighterId}] Unit stats recalculated`, {
+      ...this.result,
+      terrainModifiers: this._terrainModifiers
     });
   }
 
   public resetBuffs(): void {
-    this._buffs = [];
+    this.removeBuffs({ source: BUFF_SOURCE_TERRAIN });
+    this.removeBuffs({ source: BUFF_SOURCE_BUFF });
+    this.removeBuffs({ source: BUFF_SOURCE_DE_BUFF });
+    this.removeBuffs({ source: BUFF_SOURCE_SELF_BUFF });
   }
 
   public getExpForLevel(level: number): number {
@@ -868,86 +1079,5 @@ export class Unit {
       "speed+2": this.speed + 2,
       "speed+3": this.speed + 3
     }[formula];
-  }
-
-  public getAbilityRange(abilityClass: string, type: string): number {
-    const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = ABILITIES[this.class][abilityClass];
-
-    let result;
-    if (
-      (type === "move" && abilityMeta.moveRange)
-      ||
-      (type === "attack" && abilityMeta.attackRange)
-    ) {
-      result = abilityMeta[type + "Range"];
-      if (_.isArray(result)) {
-        result = result[abilityData.levelInt-1];
-      }
-      if (_.isString(result)) {
-        result = this.getValueByFormula(result);
-      }
-      //console.log("[Unit] Ability range", { abilityMeta, type, result });
-    }
-
-    return result || 0;
-  }
-
-  public getAbilityIgnoreObstacles(abilityClass: string): boolean {
-    const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = ABILITIES[this.class][abilityClass];
-
-    let ignoreObstacles = abilityMeta.ignoreObstacles;
-    if (_.isArray(ignoreObstacles)) {
-      ignoreObstacles = ignoreObstacles[abilityData.levelInt-1];
-    }
-
-    return ignoreObstacles || false;
-  }
-
-  public getAbilityStat(abilityClass: string): any {
-    const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = ABILITIES[this.class][abilityClass];
-    return {
-      ...abilityMeta,
-      moveRange: this.getAbilityRange(abilityClass, "move"),
-      attackRange: this.getAbilityRange(abilityClass, "attack"),
-      ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
-      effects: abilityData ? 
-        abilityMeta.effects[abilityData.levelInt-1]
-        :
-        []
-    };
-  }
-
-  // TODO modifiers
-  protected getCharacteristicsModifier(type: string, fighter: Unit): number {
-    switch (type) {
-      // Incoming damage
-      case "damage": {
-      }
-
-      // Damage
-      case "power": {
-      }
-      case "attack": {
-      }
-      case "abilities": {
-      }
-      
-      // Characteristics
-      case "speed": {
-      }
-      case "defence": {
-      }
-      case "hp": {
-      }
-      case "speed": {
-      }
-      case "initiative": {
-      }
-    }
-    
-    return 1;
   }
 }

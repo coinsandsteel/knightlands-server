@@ -107,7 +107,7 @@ export interface BattleCombatState {
 
 export interface BattleSquadState {
   power: number;
-  bonuses: BattleSquadBonus[];
+  bonuses: BattleBuff[];
   units: BattleUnit[];
 }
 
@@ -147,6 +147,32 @@ export interface BattleUnitAbility {
   }
 }
 
+export interface BattleUnitAbilityBlueprint {
+  abilityType: string; //
+  damage: number[][];
+  damageScheme: number|null;
+  movePattern: string;
+  canMove: boolean;
+  moveRange: number|string|string[]|null;
+  attackRange: number|string|null;
+  ignoreObstacles: boolean|boolean[];
+  duration: number|null;
+  effects: BattleBuff[][];
+}
+
+export interface BattleUnitAbilityStat {
+  abilityType: string;
+  damage: number;
+  damageScheme: number|null;
+  movePattern: string;
+  canMove: boolean;
+  moveRange: number;
+  attackRange: number;
+  ignoreObstacles: boolean;
+  duration: number|null;
+  effects: BattleBuff[];
+}
+
 export interface BattleUnitAttribute {
   attributeClass: string;
   level: number;
@@ -155,22 +181,18 @@ export interface BattleUnitAttribute {
 }
 
 export interface BattleBuff {
-  source: "squad"|"buff"|"self-buff"|"de-buff"|"terrain";
+  source?: string;
   type: string;
-  modifier?: number|string;
+  mode: string;
+  stackValue?: number;
+  modifier?: number;
+  scheme?: string;
   delta?: number;
   probability?: number;
   terrain?: string;
-  conditions?: string[];
+  trigger?: string;
   percents?: boolean;
   fullSquad?: boolean;
   max?: number;
   estimate?: number;
-}
-
-export interface BattleSquadBonus {
-  bonusClass: string;
-  modifier: number;
-  max?: number;
-  probability?: number;
 }

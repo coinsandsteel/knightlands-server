@@ -1,8 +1,7 @@
 import _ from "lodash";
-import { BattleInitiativeRatingEntry, BattleSquadBonus, BattleSquadState, BattleUnit } from "../types";
+import { BattleInitiativeRatingEntry, BattleSquadState, BattleUnit } from "../types";
 import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
-import errors from "../../../knightlands-shared/errors";
 import { SQUAD_BONUSES } from "../meta";
 import game from "../../../game";
 
@@ -33,10 +32,7 @@ export class BattleSquad {
   }
   
   public init() {
-    // Set initial indexes
     this.resetState();
-
-    // Apply squad bonuses
     this.updateStat();
   }
   
@@ -201,9 +197,6 @@ export class BattleSquad {
       unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
       // Reset
       unit.reset();
-      // Clear buffs
-      // TODO enable
-      //unit.resetBuffs();
     });
   }
 
@@ -221,11 +214,13 @@ export class BattleSquad {
     this._units.forEach(unit => {
       // Decrease the cooldown
       unit.decreaseAbilitiesCooldownEstimate();
-      this._ctrl.events.abilities(unit.fighterId, unit.abilities)
-      
       // Decrease the buff estimate
       unit.decreaseBuffsEstimate();
-      this._ctrl.events.buffs(unit.fighterId, unit.buffs)
+      // Re-calc buffs
+      unit.calcResult();
+
+      this._ctrl.events.abilities(unit.fighterId, unit.abilities)
+      this._ctrl.events.buffs(unit.fighterId, unit.buffs);
     });
   }
 }
