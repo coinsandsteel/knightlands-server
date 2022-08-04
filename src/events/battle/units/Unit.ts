@@ -96,14 +96,17 @@ export class Unit {
     // Damage
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "ice", scheme: "ice-1" },
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "hill", scheme: "hill-1" },
-    { source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
+    
+    
+    
+    /*{ source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
     
     // State
     { source: "de-buff", mode: "constant", type: "stun", probability: 1, estimate: 1 }, 
     { source: "de-buff", mode: "constant", type: "stun", probability: 0.25, estimate: 2 },
     { source: "de-buff", mode: "constant", type: "agro", probability: 1, estimate: 1 }, 
     { source: "de-buff", mode: "constant", type: "agro", probability: 0.10, estimate: 2 },
-    { source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
+    { source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },*/
   ];
 
   protected _moveCells: number[];
