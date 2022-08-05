@@ -71,7 +71,7 @@ export class BattleMovement {
     this.graphs = graphs;
   }
 
-  public getAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
+  public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
     console.log("[Movement] Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
     const moveCells = this.getMoveCells(unitIndex, moveRange);

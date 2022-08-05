@@ -218,9 +218,6 @@ export class BattleSquad {
       unit.decreaseBuffsEstimate();
       // Re-calc buffs
       unit.calcResult();
-
-      this._ctrl.events.abilities(unit.fighterId, unit.abilities)
-      this._ctrl.events.buffs(unit.fighterId, unit.buffs);
     });
   }
 }

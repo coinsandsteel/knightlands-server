@@ -48,6 +48,7 @@ export interface BattleUnit {
   levelInt?: number;
   level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
   ratingIndex?: number;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  isStunned?: boolean;
   power?: number;
   expirience?: {
     value: number;
@@ -184,6 +185,7 @@ export interface BattleBuff {
   source?: string;
   type: string;
   mode: string;
+  targetFighterId?: string;
   stackValue?: number;
   modifier?: number;
   scheme?: string;

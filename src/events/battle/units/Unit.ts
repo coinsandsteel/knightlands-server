@@ -55,6 +55,7 @@ export class Unit {
   
   // Combat
   protected _ratingIndex: number;
+  protected _isStunned: boolean;
   protected _hp: number;
   protected _index: number;
   protected _buffs: BattleBuff[] = [
@@ -96,17 +97,14 @@ export class Unit {
     // Damage
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "ice", scheme: "ice-1" },
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "hill", scheme: "hill-1" },
-    
-    
-    
-    /*{ source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
+    //{ source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
     
     // State
-    { source: "de-buff", mode: "constant", type: "stun", probability: 1, estimate: 1 }, 
-    { source: "de-buff", mode: "constant", type: "stun", probability: 0.25, estimate: 2 },
-    { source: "de-buff", mode: "constant", type: "agro", probability: 1, estimate: 1 }, 
-    { source: "de-buff", mode: "constant", type: "agro", probability: 0.10, estimate: 2 },
-    { source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },*/
+    //{ source: "de-buff", mode: "constant", type: "stun", probability: 1, estimate: 1 }, 
+    //{ source: "de-buff", mode: "constant", type: "stun", probability: 0.25, estimate: 2 },
+    //{ source: "de-buff", mode: "constant", type: "agro", probability: 1, estimate: 1 }, 
+    //{ source: "de-buff", mode: "constant", type: "agro", probability: 0.10, estimate: 2 },
+    //{ source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
   ];
 
   protected _moveCells: number[];
@@ -222,8 +220,19 @@ export class Unit {
   }
 
   get isStunned(): boolean {
-    // TODO stun
-    return false;
+    return this._isStunned;
+  }
+
+  get hasAgro(): boolean {
+    return !!this.getBuffs({ type: "agro" }).length;
+  }
+
+  get agroTargets(): string[] {
+    return this.getBuffs({ type: "agro" }).map(buff => buff.targetFighterId);
+  }
+
+  get wantToCounterAttack(): boolean {
+    return !this.isStunned && this.getBuffs({ type: "counter_attack" }).some(buff => Math.random() <= buff.probability);
   }
 
   constructor(blueprint: BattleUnit, events: BattleEvents) {
@@ -247,6 +256,12 @@ export class Unit {
     
     if ("ratingIndex" in blueprint) {
       this._ratingIndex = blueprint.ratingIndex;
+    }
+    
+    if ("isStunned" in blueprint) {
+      this._isStunned = blueprint.isStunned;
+    } else {
+      this._isStunned = false;
     }
     
     if ("fighterId" in blueprint) {
@@ -656,6 +671,7 @@ export class Unit {
       tier: this._tier,
       levelInt: this._level.current,
       ratingIndex: this._ratingIndex,
+      isStunned: this._isStunned,
       characteristics: this._characteristics,
       power: this._power,
       index: this._index,
@@ -943,8 +959,8 @@ export class Unit {
   }
 
   public getLavaDamage(): number {
-    // TODO add bonus
-    return Math.round(this._characteristics.hp * SETTINGS.lavaDamage);
+    const lavaBonus = this.getTerrainModifier(TERRAIN_LAVA);
+    return Math.round(this._characteristics.hp * SETTINGS.lavaDamage * lavaBonus);
   }
 
   public launchTerrainEffect(terrain?: string): void {
@@ -1014,10 +1030,12 @@ export class Unit {
   }
 
   public calcResult(initial?: boolean): void {
+    // Characteristics
     this.result.defence = Math.round(this.getBuffModifier({ type: "defence" }));
     this.result.speed = Math.round(this.getBuffModifier({ type: "speed" }));
     this.result.initiative = Math.round(this.getBuffModifier({ type: "initiative" }));
 
+    // Attack bonuses
     this.result.powerBonus = this.getBuffModifier({ type: "power" });
     this.result.attackBonus = this.getBuffModifier({ type: "attack" });
     this.result.abilitiesBonus = this.getBuffModifier({ type: "abilities" });
@@ -1031,8 +1049,20 @@ export class Unit {
       if (initial && buff.type === "hp") {
         this._hp = Math.round(this.maxHp * this.getBuffModifier({ type: "hp" }));
       }
+      // Stun
+      if (buff.type === "stun") {
+        this._hp = Math.round(this.maxHp * this.getBuffModifier({ type: "hp" }));
+      }
     });
     
+    // Stun
+    const stunBuffs = this.getBuffs({ type: "stun" });
+    if (stunBuffs.length) {
+      this._isStunned = stunBuffs.some(buff => Math.random() <= buff.probability);
+    } else {
+      this._isStunned = false;
+    }
+
     // Abilities value
     this._abilities.forEach(ability => {
       // Set value

@@ -361,6 +361,7 @@ export class BattleGame {
   protected callbackDrawFinished(): void {
     this._enemySquad.callbackDrawFinished();
     this._userSquad.callbackDrawFinished();
+    this.sync();
   }
 
   public createInitiativeRating(): void {
@@ -414,7 +415,7 @@ export class BattleGame {
       if (!fighter.canUseAbility(abilityClass)) {
         return;
       }
-      const attackCells = this._combat.getAttackCells(fighter, abilityClass, true, false);
+      const attackCells = this._combat.getMoveAttackCells(fighter, abilityClass, true, false);
       this.setAttackCells(attackCells);
       this.setMoveCells([]);
     }
@@ -438,7 +439,7 @@ export class BattleGame {
   public autoMove(fighter: Unit): void {
     let index = null;
     let ability = fighter.strongestEnabledAbility();
-    let attackCells = this._combat.getAttackCells(fighter, ability, true, true);
+    let attackCells = this._combat.getMoveAttackCells(fighter, ability, true, true);
     if (attackCells.length && ability) {
       index = _.sample(attackCells);
       console.log('[Game] AI attacks', { attackCells, index, ability });
@@ -477,27 +478,27 @@ export class BattleGame {
 
     // Move
     if (index !== null && ability === ABILITY_MOVE) {
-      console.log("[Game action] Move", { fighter, index });
+      console.log("[Game action] Move", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, index);
       
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
-      console.log("[Game action] Jump", { fighter, index });
+      console.log("[Game action] Jump", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, index);
       
       // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
-      console.log("[Game action] Self-buff", { fighter, ability });
+      console.log("[Game action] Self-buff", { fighter: fighter.fighterId, ability });
       this._combat.buff(fighter, fighter, ability);
       
       // Group heal
     } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
-      console.log("[Action] Group heal", { fighter, ability });
+      console.log("[Action] Group heal", { fighter: fighter.fighterId, ability });
       this._combat.groupHeal(fighter, ability);
 
     } else if (index !== null && target !== null) {
       // Can't reach
-      const attackCells = this._combat.getAttackCells(fighter, ability, true, true);
+      const attackCells = this._combat.getMoveAttackCells(fighter, ability, true, true);
       if (!attackCells.includes(target.index)) {
         return;
       }
@@ -507,18 +508,27 @@ export class BattleGame {
 
       // Buff / De-buff
       if ([ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
-        console.log("[Game action] Buff/De-buff", { fighter, target, ability });
+        console.log("[Game action] Buff/De-buff", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.buff(fighter, target, ability);
 
       // Heal
       } else if (abilityType === ABILITY_TYPE_HEALING) {
-        console.log("[Game action] Heal", { fighter, target, ability });
+        console.log("[Game action] Heal", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.heal(fighter, target, ability);
 
       // Attack
       } else if (abilityType === ABILITY_TYPE_ATTACK) {
-        console.log("[Game action] Attack", { fighter, target, ability });
+        console.log("[Game action] Attack", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.attack(fighter, target, ability);
+
+        // Counter-attack
+        if (target.wantToCounterAttack) {
+          console.log("[Game action] Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId, ability });
+          const attackCells = this._combat.getMoveAttackCells(fighter, ability, false, true);
+          if (attackCells.includes(fighter.index)) {
+            this._combat.attack(target, fighter, ABILITY_ATTACK);
+          }
+        }
       }
     } else {
       return;
@@ -528,7 +538,7 @@ export class BattleGame {
     if (ability && ![ABILITY_ATTACK, ABILITY_MOVE].includes(ability)) {
       fighter.enableAbilityCooldown(ability);
       this._ctrl.events.abilities(fighter.fighterId, fighter.abilities);
-      console.log(`[Game] Ability "${ability}" cooldown was set`, fighter.getAbilityByClass(ability).cooldown);
+      console.log(`[Game] Ability "${ability}" cooldown has been set`, fighter.getAbilityByClass(ability).cooldown);
     }
 
     // Enemy loose
@@ -565,11 +575,19 @@ export class BattleGame {
     ).find(unit => unit.index === index) || null;
   }
 
-  public getSquadByFighter(fighter: Unit): BattleSquad {
+  public getSquadByFighter(fighter: Unit): Unit[] {
     if (fighter.isEnemy) {
-      return this._enemySquad;
+      return this._enemySquad.liveUnits;
     } else {
-      return this._userSquad;
+      return this._userSquad.liveUnits;
+    }
+  }
+
+  public getEnemySquadByFighter(fighter: Unit): Unit[] {
+    if (fighter.isEnemy) {
+      return this._userSquad.liveUnits;
+    } else {
+      return this._enemySquad.liveUnits;
     }
   }
 

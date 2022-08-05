@@ -12,9 +12,8 @@ export class BattleCombat {
   }
 
   public groupHeal(source: Unit, abilityClass: string): void {
-    const attackCells = this.getAttackCells(source, abilityClass, true, true);
-    const squad = this._ctrl.game.getSquadByFighter(source);
-    const targets = squad.units;
+    const attackCells = this.getMoveAttackCells(source, abilityClass, true, true);
+    const targets = this._ctrl.game.getSquadByFighter(source);
     targets.forEach(target => {
       if (attackCells.includes(target.index)) {
         this.heal(source, target, abilityClass);
@@ -63,10 +62,14 @@ export class BattleCombat {
     }
 
     effects.forEach(effect => {
-      target.buff({
+      const buff = {
         source: abilityStat.abilityType,
         ...effect
-      });
+      };
+      if (effect.type === "agro") {
+        buff.targetFighterId = source.fighterId;
+      }
+      target.buff(buff);
     });
 
     this._ctrl.events.effect({
@@ -100,7 +103,10 @@ export class BattleCombat {
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
-    console.log("[Combat] Attack", {
+    console.log("[Combat] Attack details", {
+      source: source.fighterId,
+      target: target.fighterId,
+      abilityClass,
       dmgBase,
       defBase,
       percentBlocked,
@@ -141,25 +147,33 @@ export class BattleCombat {
   }
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
-    const attackCells = this.getAttackCells(source, abilityClass, true, true);
+    const attackCells = this.getMoveAttackCells(source, abilityClass, true, true);
     return attackCells.includes(target.index);
   }
 
-  public getAttackCells(fighter: Unit, abilityClass: string, canMove: boolean, onlyTargets: boolean): number[] {
+  public getMoveAttackCells(fighter: Unit, abilityClass: string, canMove: boolean, onlyTargets: boolean): number[] {
     const abilityStat = fighter.getAbilityStat(abilityClass);
     if (!abilityStat.attackRange) {
       return [];
     }
 
-    const attackCells = this._ctrl.game.movement.getAttackCells(
+    let attackCells = this._ctrl.game.movement.getMoveAttackCells(
       fighter.index, 
       canMove ? abilityStat.moveRange : 0,
       abilityStat.attackRange
     );
 
+    if (fighter.hasAgro) {
+      const agroTargets = fighter.agroTargets;
+      const cellsNotAllowedToAttack = this._ctrl.game.getEnemySquadByFighter(fighter)
+        .filter(fighter => !agroTargets.includes(fighter.fighterId))
+        .map(fighter => fighter.index);
+      attackCells = _.difference(cellsNotAllowedToAttack, attackCells);
+    }
+
     if (onlyTargets) {
       const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
-      console.log("[Combat] Relative enemy indexes", enemyCells);
+      //console.log("[Combat] Relative enemy indexes", enemyCells);
       return _.intersection(attackCells, enemyCells);
     } else {
       return attackCells;
@@ -167,7 +181,7 @@ export class BattleCombat {
   }
 
   public tryApproachEnemy(fighter: Unit, target: Unit, abilityClass: string) {
-    const attackCellsNoMoving =  this.getAttackCells(fighter, abilityClass, false, true);
+    const attackCellsNoMoving =  this.getMoveAttackCells(fighter, abilityClass, false, true);
     // Need to approach
     if (!attackCellsNoMoving.includes(target.index)) {
       console.log("[Combat] Need to approach the enemy");
