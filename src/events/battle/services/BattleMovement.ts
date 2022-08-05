@@ -185,7 +185,19 @@ export class BattleMovement {
     switch (terrain) {
       case TERRAIN_LAVA: {
         console.log(`[Movement] Passing through the ${terrain}`);
+        const oldHp = fighter.hp;
         fighter.launchTerrainEffect(terrain);
+
+        this._ctrl.events.effect({
+          action: "terrain",
+          type: TERRAIN_LAVA,
+          target: {
+            fighterId: fighter.fighterId,
+            index: fighter.index,
+            oldHp,
+            newHp: fighter.hp
+          }
+        });
         break;
       }
       case TERRAIN_ICE:
