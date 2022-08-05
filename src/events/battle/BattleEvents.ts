@@ -133,6 +133,10 @@ export class BattleEvents {
     this._events.combatAttackCells = value;
   }
 
+  combatTargetCells(value: number[]) {
+    this._events.combaTargetCells = value;
+  }
+
   effect(payload) {
     this._events.effects = this._events.effects || [];
     this._events.effects.push(payload);

@@ -394,7 +394,7 @@ export class Unit {
     let base = 0;
     
     if (ability === ABILITY_ATTACK) {
-      base = this.damage;
+      base = this.result.damage;
     } else {
       const abilityData = this.getAbilityByClass(ability);
       const abilityLevel = abilityData.levelInt !== 0 ? abilityData.levelInt : 1;

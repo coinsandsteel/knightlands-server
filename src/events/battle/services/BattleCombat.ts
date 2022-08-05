@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_HEALING } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { BattleBuff } from "../types";
 import { Unit } from "../units/Unit";
@@ -12,7 +12,7 @@ export class BattleCombat {
   }
 
   public groupHeal(source: Unit, abilityClass: string): void {
-    const attackCells = this.getMoveAttackCells(source, abilityClass, true, true);
+    const attackCells = this.getMoveAttackCells(source, abilityClass, false, true);
     const targets = this._ctrl.game.getSquadByFighter(source);
     targets.forEach(target => {
       if (attackCells.includes(target.index)) {
@@ -140,15 +140,39 @@ export class BattleCombat {
   }
 
   protected attackCallback(target: Unit) {
-    // Stack
     target.attackCallback();
-
-    // TODO Counter attack
   }
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
-    const attackCells = this.getMoveAttackCells(source, abilityClass, true, true);
+    const abilityData = source.getAbilityStat(abilityClass);
+    const attackCells = this.getMoveAttackCells(source, abilityClass, abilityData.canMove, true);
     return attackCells.includes(target.index);
+  }
+
+  public getTargetCells(fighter: Unit, abilityClass: string, attackCells: number[]): number[] {
+    let cells = [];
+    const abilityData = fighter.getAbilityStat(abilityClass);
+    switch (abilityData.abilityType) {
+      case ABILITY_TYPE_JUMP:
+      case ABILITY_TYPE_DE_BUFF:
+      case ABILITY_TYPE_ATTACK: {
+        // Enemies
+        cells = this._ctrl.game.getEnemySquadByFighter(fighter).map(fighter => fighter.index);
+        break;
+      }
+      case ABILITY_TYPE_HEALING:
+      case ABILITY_TYPE_BUFF: {
+        // Allies
+        cells = this._ctrl.game.getSquadByFighter(fighter).map(fighter => fighter.index);
+        break;
+      }
+      case ABILITY_TYPE_SELF_BUFF: {
+        // Self
+        cells = [fighter.index];
+        break;
+      }
+    }
+    return cells;
   }
 
   public getMoveAttackCells(fighter: Unit, abilityClass: string, canMove: boolean, onlyTargets: boolean): number[] {

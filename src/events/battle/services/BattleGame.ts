@@ -1,6 +1,6 @@
 import _ from "lodash";
 import game from "../../../game";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE, ABILITY_FLIGHT } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES } from "../meta";
@@ -102,7 +102,8 @@ export class BattleGame {
           selectedIndex: null,
           selectedAbilityClass: null,
           moveCells: [],
-          attackCells: []
+          attackCells: [],
+          targetCells: []
         }
       }
     } as BattleGameState;
@@ -343,7 +344,7 @@ export class BattleGame {
 
     } else {
       console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
-      const moveCells = this._movement.getMoveCells(activeFighter.index, activeFighter.speed);
+      const moveCells = this._movement.getMoveCells(activeFighter.index, activeFighter.result.speed);
       this.setMoveCells(moveCells);
     }
 
@@ -407,7 +408,7 @@ export class BattleGame {
       return;
     }
 
-    if (abilityClass === ABILITY_MOVE) {
+    if (abilityClass === ABILITY_MOVE || abilityClass === ABILITY_FLIGHT) {
       const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
@@ -417,6 +418,10 @@ export class BattleGame {
       }
       const attackCells = this._combat.getMoveAttackCells(fighter, abilityClass, true, false);
       this.setAttackCells(attackCells);
+
+      const targetCells = this._combat.getTargetCells(fighter, abilityClass, attackCells);
+      this.setTargetCells(targetCells);
+
       this.setMoveCells([]);
     }
   }
@@ -445,7 +450,7 @@ export class BattleGame {
       console.log('[Game] AI attacks', { attackCells, index, ability });
     } else {
       ability = ABILITY_MOVE;
-      const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
+      const moveCells = this._movement.getMoveCells(fighter.index, fighter.result.speed);
       index = _.sample(moveCells);
       console.log('[Game] AI moves', { moveCells, choosedIndex: index });
     }
@@ -601,6 +606,11 @@ export class BattleGame {
     this._ctrl.events.combatAttackCells(cells);
   }
 
+  protected setTargetCells(cells: number[]): void {
+    this._state.combat.runtime.targetCells = cells;
+    this._ctrl.events.combatTargetCells(cells);
+  }
+
   protected setActiveFighter(fighterId: string|null): void {
     if (!this._state.initiativeRating.length) {
       //this.createInitiativeRating();
@@ -677,6 +687,7 @@ export class BattleGame {
     this.setActiveFighterId(null);
     this.setMoveCells([]);
     this.setAttackCells([]);
+    this.setTargetCells([]);
     this.setCombatResult(result || null);
     
     this._state.enemySquad = this._enemySquad.getInitialState();

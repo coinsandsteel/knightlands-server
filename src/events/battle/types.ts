@@ -103,6 +103,7 @@ export interface BattleCombatState {
     selectedAbilityClass: string|null;
     moveCells: number[];
     attackCells: number[];
+    targetCells: number[];
   };
 }
 
