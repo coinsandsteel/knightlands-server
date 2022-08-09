@@ -163,15 +163,10 @@ export interface BattleUnitAbilityBlueprint {
 }
 
 export interface BattleUnitAbilityStat {
-  abilityType: string;
-  damage: number;
-  damageScheme: number|null;
-  movePattern: string;
-  canMove: boolean;
+  value: number;
   moveRange: number;
   attackRange: number;
   ignoreObstacles: boolean;
-  duration: number|null;
   effects: BattleBuff[];
 }
 

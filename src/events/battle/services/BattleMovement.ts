@@ -227,7 +227,7 @@ export class BattleMovement {
   }
 
   public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this.getMoveCells(fighter.index, fighter.result.speed);
+    const moveCells = this.getMoveCells(fighter.index, fighter.speed);
     if (!moveCells.includes(index)) {
       return;
     }

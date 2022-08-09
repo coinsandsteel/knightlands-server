@@ -1,6 +1,7 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
+import { ABILITIES } from "../meta";
 import { BattleBuff } from "../types";
 import { Unit } from "../units/Unit";
 
@@ -19,6 +20,8 @@ export class BattleCombat {
         this.heal(source, target, abilityClass);
       }
     });
+
+    this.enableCooldown(source, abilityClass);
   }
 
   public heal(source: Unit, target: Unit, abilityClass: string): void {
@@ -26,9 +29,9 @@ export class BattleCombat {
       return;
     }
 
-    const value = source.getAbilityValue(abilityClass);
+    const abilityData = source.getAbilityByClass(abilityClass);
     const oldHp = target.hp;
-    target.modifyHp(+value);
+    target.modifyHp(+abilityData.value);
 
     this._ctrl.events.effect({
       action: ABILITY_TYPE_HEALING,
@@ -44,10 +47,12 @@ export class BattleCombat {
       },
       ability: {
         abilityClass,
-        value,
+        value: abilityData.value,
         criticalHit: false
       }
     });
+
+    this.enableCooldown(source, abilityClass);
   }
 
   public buff(source: Unit, target: Unit, abilityClass: string): void {
@@ -61,9 +66,10 @@ export class BattleCombat {
       throw Error(`Buff ${abilityClass} has no effects`);
     }
 
+    const abilityData = source.getAbilityByClass(abilityClass);
     effects.forEach(effect => {
       const buff = {
-        source: abilityStat.abilityType,
+        source: abilityData.abilityType,
         ...effect
       };
       if (effect.type === "agro") {
@@ -73,7 +79,7 @@ export class BattleCombat {
     });
 
     this._ctrl.events.effect({
-      action: abilityStat.abilityType,
+      action: abilityData.abilityType,
       source: {
         fighterId: source.fighterId,
         index: source.index
@@ -86,6 +92,8 @@ export class BattleCombat {
         abilityClass
       }
     });
+
+    this.enableCooldown(source, abilityClass);
   }
 
   public attack(source: Unit, target: Unit, abilityClass: string): void {
@@ -99,7 +107,7 @@ export class BattleCombat {
       console.log("[Error data]", { abilityData });
       throw Error("");
     }
-    const defBase = target.result.defence;
+    const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
@@ -137,6 +145,8 @@ export class BattleCombat {
         criticalHit: false
       }
     });
+
+    this.enableCooldown(source, abilityClass);
   }
 
   protected attackCallback(target: Unit) {
@@ -144,14 +154,14 @@ export class BattleCombat {
   }
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
-    const abilityData = source.getAbilityStat(abilityClass);
-    const attackCells = this.getMoveAttackCells(source, abilityClass, abilityData.canMove, true);
+    const abilityMeta = ABILITIES[source.class][abilityClass];
+    const attackCells = this.getMoveAttackCells(source, abilityClass, abilityMeta.canMove, true);
     return attackCells.includes(target.index);
   }
 
   public getTargetCells(fighter: Unit, abilityClass: string, attackCells: number[]): number[] {
     let cells = [];
-    const abilityData = fighter.getAbilityStat(abilityClass);
+    const abilityData = fighter.getAbilityByClass(abilityClass);
     switch (abilityData.abilityType) {
       case ABILITY_TYPE_JUMP:
       case ABILITY_TYPE_DE_BUFF:
@@ -172,10 +182,11 @@ export class BattleCombat {
         break;
       }
     }
-    return cells;
+    return _.intersection(attackCells, cells);
   }
 
   public getMoveAttackCells(fighter: Unit, abilityClass: string, canMove: boolean, onlyTargets: boolean): number[] {
+    const abilityData = fighter.getAbilityByClass(abilityClass);
     const abilityStat = fighter.getAbilityStat(abilityClass);
     if (!abilityStat.attackRange) {
       return [];
@@ -196,9 +207,29 @@ export class BattleCombat {
     }
 
     if (onlyTargets) {
-      const enemyCells = this._ctrl.game.relativeEnemySquad.map(unit => unit.index);
+      let targetCells = [];
+      switch (abilityData.abilityType) {
+        case ABILITY_TYPE_JUMP:
+        case ABILITY_TYPE_DE_BUFF:
+        case ABILITY_TYPE_ATTACK: {
+          // Enemies
+          targetCells = this._ctrl.game.getEnemySquadByFighter(fighter).map(fighter => fighter.index);
+          break;
+        }
+        case ABILITY_TYPE_HEALING:
+        case ABILITY_TYPE_BUFF: {
+          // Allies
+          targetCells = this._ctrl.game.getSquadByFighter(fighter).map(fighter => fighter.index);
+          break;
+        }
+        case ABILITY_TYPE_SELF_BUFF: {
+          // Self
+          targetCells = [fighter.index];
+          break;
+        }
+      }
       //console.log("[Combat] Relative enemy indexes", enemyCells);
-      return _.intersection(attackCells, enemyCells);
+      return _.intersection(attackCells, targetCells);
     } else {
       return attackCells;
     }
@@ -236,6 +267,13 @@ export class BattleCombat {
         this._ctrl.game.movement.moveFighter(fighter, targetIndex);
         console.log(`[Combat] Approaching enemy onto index ${targetIndex}`);
       }
+    }
+  }
+
+  protected enableCooldown(fighter: Unit, abilityClass: string): void {
+    if (![ABILITY_ATTACK, ABILITY_MOVE].includes(abilityClass)) {
+      fighter.enableAbilityCooldown(abilityClass);
+      this._ctrl.events.abilities(fighter.fighterId, fighter.abilities);
     }
   }
 }

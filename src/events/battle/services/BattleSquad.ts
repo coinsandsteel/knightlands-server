@@ -193,10 +193,10 @@ export class BattleSquad {
   public resetState(): void {
     const test = game.battleManager.autoCombat;
     this._units.forEach((unit, index) => {
-      // Reset indexes
-      unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
       // Reset
       unit.reset();
+      // Reset indexes
+      unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
     });
   }
 
@@ -216,8 +216,6 @@ export class BattleSquad {
       unit.decreaseAbilitiesCooldownEstimate();
       // Decrease the buff estimate
       unit.decreaseBuffsEstimate();
-      // Re-calc buffs
-      unit.calcResult();
     });
   }
 }
