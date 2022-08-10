@@ -526,6 +526,9 @@ export class BattleGame extends BattleService {
       return;
     }
 
+    this.log("Emenies left", this._enemySquad.liveUnits.length);
+    this.log("Aliies left", this._userSquad.liveUnits.length);
+
     // Enemy loose
     if (!this._enemySquad.liveUnits.length) {
       this.setCombatResult("win");
@@ -538,7 +541,7 @@ export class BattleGame extends BattleService {
     this._ctrl.events.flush();
 
     // Finish the combat
-    if (this._state.combat.result !== null) {
+    if (this._state.combat.result) {
       return;
     }
 
