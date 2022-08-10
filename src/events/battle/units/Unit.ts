@@ -1093,6 +1093,7 @@ export class Unit {
     }
 
     this.updateAbilities();
+    this.setPower();
 
     this.log(`Commit finish`, this.variables);
   }

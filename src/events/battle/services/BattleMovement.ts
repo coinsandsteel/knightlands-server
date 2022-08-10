@@ -110,17 +110,17 @@ export class BattleMovement {
       }
 
       let path = this.getPath(unitIndex, index, true);
-      //console.log("[Movement] Move path", { from: unitIndex, to: index, path });
+      console.log("[Movement] Move path", { from: unitIndex, to: index, path });
       if (
         path
         && 
         path.length < range
       ) {
-        //console.log(`[Movement] Move path accepted (path.length=${path.length} < range=${range})`, { pathLength: path.length, to: index, path });
+        console.log(`[Movement] Move path accepted (path.length=${path.length} < range=${range})`, { pathLength: path.length, to: index, path });
         result.push(index);
       }
     }
-    //console.log("[Movement] Move cells", { unitIndex, range, result });
+    console.log("[Movement] Move cells", { unitIndex, range, result });
     return result;
   };
 
