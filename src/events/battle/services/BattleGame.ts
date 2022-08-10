@@ -8,10 +8,11 @@ import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleCombat } from "./BattleCombat";
 import { BattleMovement } from "./BattleMovement";
+import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
 
-export class BattleGame {
+export class BattleGame extends BattleService {
   protected _state: BattleGameState;
   protected _ctrl: BattleController;
   
@@ -25,6 +26,7 @@ export class BattleGame {
   protected _aiMoveTimeout: ReturnType<typeof setTimeout>;
  
   constructor(state: BattleGameState|null, ctrl: BattleController) {
+    super();
     this._ctrl = ctrl;
 
     this._userSquad = new BattleSquad(
@@ -40,7 +42,7 @@ export class BattleGame {
 
     if (state) {
       this._state = state;
-      console.log("[Game] Loaded initiative rating", this._state.initiativeRating);
+      this.log("Loaded initiative rating", this._state.initiativeRating);
     } else {
       this.setInitialState();
     }
@@ -50,7 +52,7 @@ export class BattleGame {
     this._combat = new BattleCombat(this._ctrl);
     this._terrain = new BattleTerrain(this._state.terrain, this._ctrl);
 
-    console.log("[Game] Loaded");
+    this.log("Loaded");
   }
 
   get relativeEnemySquad(): Unit[] {
@@ -78,7 +80,7 @@ export class BattleGame {
   }
 
   async dispose() {
-    console.log("[Game] Shutting down", this._state);
+    this.log("Shutting down", this._state);
   }
   
   protected setInitialState() {
@@ -108,7 +110,7 @@ export class BattleGame {
       }
     } as BattleGameState;
 
-    console.log("[Game] Initial state was set");
+    this.log("Initial state was set");
   }
 
   public getState(): BattleGameState {
@@ -119,7 +121,7 @@ export class BattleGame {
   }
 
   public init(): void {
-    console.log("[Game] Init", this._state);
+    this.log("Init", this._state);
     
     if (this._userSquad) {
       this._userSquad.init();
@@ -132,7 +134,7 @@ export class BattleGame {
     this.sync();
 
     if (this._state.combat.started) {
-      console.log("[Game] Resuming combat", this._state);
+      this.log("Resuming combat", this._state);
       this.launchFighter();
     }
   }
@@ -162,7 +164,7 @@ export class BattleGame {
     const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const tier = _.random(1, 3);
 
-    //console.log("[Game] Build squad", { unitTribe, tier });
+    //this.log("Build squad", { unitTribe, tier });
     for (let squadIndex = 0; squadIndex < 5; squadIndex++) {
       this.addUnitToSquad({ unitTribe }, tier, squadIndex);
     }
@@ -170,7 +172,7 @@ export class BattleGame {
 
   public addUnitToSquad(params: { unitTribe?: string, unitClass?: string }, tier: number, squadIndex: number) {
     const blueprint = this._ctrl.inventory.getRandomUnitByProps(params, tier);
-    /*console.log("[Game] New squad member blueprint", { 
+    /*this.log("New squad member blueprint", { 
       unitId: blueprint.unitId, 
       tribe: blueprint.tribe, 
       unitClass: blueprint.class, 
@@ -290,7 +292,7 @@ export class BattleGame {
     this._ctrl.events.combatResult(value);
     
     if (value) {
-      console.log("[Game] Combat finished", { result: value});
+      this.log("Combat finished", { result: value});
       this.exit(value);
     }
   }
@@ -300,22 +302,22 @@ export class BattleGame {
       throw Error("No initiative rating. Cannot choose next fighter.");
     }
 
-    console.log("[Game] Choosing the next fighter...", { skipLaunch });
+    this.log("Choosing the next fighter...", { skipLaunch });
     
     // No active fighter
     if (!this.getActiveFighter()) {
-      console.log("[Game] No active fighter. Choosing the first one.");
+      this.log("No active fighter. Choosing the first one.");
       this.setActiveFighter(null);
     // Next fighter
     } else {
       const nextFighterId = this.getNextFighterId();
-      console.log(`[Game] Now active fighter is ${nextFighterId}`);
+      this.log(`[Game] Now active fighter is ${nextFighterId}`);
       this.setActiveFighter(nextFighterId);
     }
 
     const activeFighter = this.getActiveFighter();
     if (activeFighter.isDead) {
-      console.log("[Game] Active fighter is dead. Choosing the next one.");
+      this.log("Active fighter is dead. Choosing the next one.");
       this.nextFighter(true);
     }
 
@@ -327,23 +329,23 @@ export class BattleGame {
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
     if (activeFighter.isStunned) {
-      console.log(`[Game] Active fighter ${this._state.combat.activeFighterId} is stunned. Skip...`);
+      this.log(`[Game] Active fighter ${this._state.combat.activeFighterId} is stunned. Skip...`);
       this.skip();
       return;
     }
 
     if (game.battleManager.autoCombat) {
-      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId}. Making a move...`);
+      this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId}. Making a move...`);
       this.setMoveCells([]);
       this.autoMove(activeFighter);
 
     } else if (activeFighter.isEnemy) {
-      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (enemy). Making a move...`);
+      this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (enemy). Making a move...`);
       this.setMoveCells([]);
       this.autoMove(activeFighter);
       
     } else {
-      console.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
+      this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
       const moveCells = this._movement.getMoveCells(activeFighter.index, activeFighter.speed);
       this.setMoveCells(moveCells);
     }
@@ -353,7 +355,7 @@ export class BattleGame {
     
     // No next fighter id = draw finished
     if (!this.getNextFighterId()) {
-      console.log("[Game] Draw finished");
+      this.log("Draw finished");
       this.callbackDrawFinished();
     }
 
@@ -423,7 +425,7 @@ export class BattleGame {
     }
 
     this.handleAction(fighter, index, ability, false);
-    //console.log(this._userSquad.units);
+    //this.log(this._userSquad.units);
   }
   
   public autoMove(fighter: Unit): void {
@@ -432,12 +434,12 @@ export class BattleGame {
     let attackCells = this._combat.getMoveAttackCells(fighter, ability, true, true);
     if (attackCells.length && ability) {
       index = _.sample(attackCells);
-      console.log('[Game] AI attacks', { attackCells, index, ability });
+      this.log("AI attacks", { attackCells, index, ability });
     } else {
       ability = ABILITY_MOVE;
       const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
       index = _.sample(moveCells);
-      console.log('[Game] AI moves', { moveCells, choosedIndex: index });
+      this.log("AI moves", { moveCells, choosedIndex: index });
     }
 
     const timeout = !game.battleManager.autoCombat;
@@ -445,7 +447,7 @@ export class BattleGame {
   }
   
   protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
-    console.log("[Game] Action", { fighter: fighter.fighterId, index, ability, timeout });
+    this.log("Action", { fighter: fighter.fighterId, index, ability, timeout });
     
     // Check if unit can use ability
     // Check ability cooldown
@@ -454,7 +456,7 @@ export class BattleGame {
       &&
       !fighter.canUseAbility(ability)
     ) {
-      console.log("[Game] Fighter cannot use this ability. Abort.");
+      this.log("Fighter cannot use this ability. Abort.");
       return;
     }
 
@@ -462,28 +464,28 @@ export class BattleGame {
     const target = index === null ? null : this.getFighterByIndex(index);
 
     if (ability !== ABILITY_MOVE && target && target.isDead) {
-      console.log("[Game] Target is dead. Abort.");
+      this.log("Target is dead. Abort.");
       return;
     }
 
     // Move
     if (index !== null && ability === ABILITY_MOVE) {
-      console.log("[Game action] Move", { fighter: fighter.fighterId, index });
+      this.log("Move", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, index);
       
     // Jump
     } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
-      console.log("[Game action] Jump", { fighter: fighter.fighterId, index });
+      this.log("Jump", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, index);
       
     // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
-      console.log("[Game action] Self-buff", { fighter: fighter.fighterId, ability });
+      this.log("Self-buff", { fighter: fighter.fighterId, ability });
       this._combat.buff(fighter, fighter, ability);
       
     // Group heal
     } else if (index === null && abilityType === ABILITY_TYPE_HEALING && ability === ABILITY_GROUP_HEAL) {
-      console.log("[Action] Group heal", { fighter: fighter.fighterId, ability });
+      this.log("Group heal", { fighter: fighter.fighterId, ability });
       this._combat.groupHeal(fighter, ability);
 
     } else if (index !== null && target !== null) {
@@ -498,22 +500,22 @@ export class BattleGame {
 
       // Buff / De-buff
       if ([ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
-        console.log("[Game action] Buff/De-buff", { fighter: fighter.fighterId, target: target.fighterId, ability });
+        this.log("Buff/De-buff", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.buff(fighter, target, ability);
 
       // Heal
       } else if (abilityType === ABILITY_TYPE_HEALING) {
-        console.log("[Game action] Heal", { fighter: fighter.fighterId, target: target.fighterId, ability });
+        this.log("Heal", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.heal(fighter, target, ability);
 
       // Attack
       } else if (abilityType === ABILITY_TYPE_ATTACK) {
-        console.log("[Game action] Attack", { fighter: fighter.fighterId, target: target.fighterId, ability });
+        this.log("Attack", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.attack(fighter, target, ability);
 
         // Counter-attack
         if (target.wantToCounterAttack) {
-          console.log("[Game action] Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId, ability });
+          this.log("Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId, ability });
           const attackCells = this._combat.getMoveAttackCells(fighter, ability, false, true);
           if (attackCells.includes(fighter.index)) {
             this._combat.attack(target, fighter, ABILITY_ATTACK);
@@ -603,7 +605,7 @@ export class BattleGame {
     }
     this._ctrl.events.initiativeRating(this._state.initiativeRating);
 
-    console.log("[Game] Initiative rating", this._state.initiativeRating);
+    this.log("Initiative rating", this._state.initiativeRating);
     
     this.setActiveFighterId(fighterId);
   }
@@ -669,6 +671,6 @@ export class BattleGame {
     this._state.initiativeRating = [];
     this._ctrl.events.initiativeRating([]);
 
-    console.log("[Game] Exit");
+    this.log("Exit");
   }
 }

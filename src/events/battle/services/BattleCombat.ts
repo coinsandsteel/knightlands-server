@@ -2,13 +2,14 @@ import _ from "lodash";
 import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { ABILITIES } from "../meta";
-import { BattleBuff } from "../types";
 import { Unit } from "../units/Unit";
+import { BattleService } from "./BattleService";
 
-export class BattleCombat {
+export class BattleCombat extends BattleService {
   protected _ctrl: BattleController;
 
   constructor(ctrl: BattleController) {
+    super();
     this._ctrl = ctrl;
   }
 
@@ -104,14 +105,14 @@ export class BattleCombat {
     const abilityData = source.getAbilityByClass(abilityClass);
     const dmgBase = abilityData.value;
     if (!_.isNumber(dmgBase)) {
-      console.log("[Error data]", { abilityData });
+      this.log("[Error data]", { abilityData });
       throw Error("");
     }
     const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
-    console.log("[Combat] Attack details", {
+    this.log("Attack details", {
       source: source.fighterId,
       target: target.fighterId,
       abilityClass,
@@ -228,7 +229,6 @@ export class BattleCombat {
           break;
         }
       }
-      //console.log("[Combat] Relative enemy indexes", enemyCells);
       return _.intersection(attackCells, targetCells);
     } else {
       return attackCells;
@@ -239,7 +239,7 @@ export class BattleCombat {
     const attackCellsNoMoving =  this.getMoveAttackCells(fighter, abilityClass, false, true);
     // Need to approach
     if (!attackCellsNoMoving.includes(target.index)) {
-      console.log("[Combat] Need to approach the enemy");
+      this.log("Need to approach the enemy");
       const abilityStat = fighter.getAbilityStat(abilityClass);
       
       // Calc all the move cells
@@ -250,7 +250,7 @@ export class BattleCombat {
       moveCells.forEach(moveCell => {
         const attackPath = this._ctrl.game.movement.getPath(moveCell, target.index, false);
         if (attackPath.length < abilityStat.attackRange) {
-          console.log(`[Combat] Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})`, { attackPath });
+          this.log("Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})", { attackPath });
           canAttackFrom.push({ index: moveCell, range: attackPath.length });
         }
       });
@@ -265,7 +265,7 @@ export class BattleCombat {
         // Move to attack spot
         const targetIndex = _.sample(canAttackFrom).index;
         this._ctrl.game.movement.moveFighter(fighter, targetIndex);
-        console.log(`[Combat] Approaching enemy onto index ${targetIndex}`);
+        this.log(`Approaching enemy onto index ${targetIndex}`);
       }
     }
   }

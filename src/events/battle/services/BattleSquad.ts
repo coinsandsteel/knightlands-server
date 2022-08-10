@@ -4,8 +4,9 @@ import { BattleController } from "../BattleController";
 import { Unit } from "../units/Unit";
 import { SQUAD_BONUSES } from "../meta";
 import game from "../../../game";
+import { BattleService } from "./BattleService";
 
-export class BattleSquad {
+export class BattleSquad extends BattleService {
   protected _state: BattleSquadState;
   protected _ctrl: BattleController;
 
@@ -21,6 +22,8 @@ export class BattleSquad {
   }
   
   constructor(units: BattleUnit[], isEnemy: boolean, ctrl: BattleController) {
+    super();
+    
     this._ctrl = ctrl;
     this._isEnemy = isEnemy;
 
@@ -91,7 +94,7 @@ export class BattleSquad {
     // Event
     this._ctrl.events.userSquad(this._state);
 
-    console.log(`[Squad] Unit ${unitId} was set into slot #${index}`);
+    this.log(`Unit ${unitId} was set into slot #${index}`);
   }
   
   public clearSlot(index: number): void {
@@ -142,7 +145,7 @@ export class BattleSquad {
     let stat = {};
 
     this._units.forEach(unit => {
-      //console.log("Bonuses", { unit });
+      //this.log("Bonuses", { unit });
       stat = {
         ...stat, 
         [unit.tribe]: { 
@@ -170,7 +173,7 @@ export class BattleSquad {
       bonuses.forEach(bonus => unit.buff(bonus));
     });
 
-    // console.log("Squad bonuses", { bonuses });
+    // this.log("Squad bonuses", { bonuses });
   }
   
   protected setPower(): void {

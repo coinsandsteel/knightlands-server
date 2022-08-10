@@ -2,14 +2,16 @@ import _ from "lodash";
 import { BattleController } from "../BattleController";
 import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../meta";
 import { Unit } from "../units/Unit";
+import { BattleService } from "./BattleService";
 const Graph = require('node-dijkstra');
 
-export class BattleMovement {
+export class BattleMovement extends BattleService {
   protected _ctrl: BattleController;
   protected routes;
   protected graphs;
 
   constructor (ctrl: BattleController){
+    super();
     this._ctrl = ctrl;
 
     this.setGraphs();
@@ -72,26 +74,26 @@ export class BattleMovement {
   }
 
   public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
-    console.log("[Movement] Attack cells calculation", { unitIndex, moveRange, attackRange });
+    this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
     const moveCells = this.getMoveCells(unitIndex, moveRange);
     moveCells.push(unitIndex);
     moveCells.forEach(moveCell => {
       for (let index = 0; index < 35; index++) {
         let path = this.getPath(moveCell, index, false);
-        //console.log("[Movement] Attack path", { from: moveCell, to: index, path });
+        this.log("Attack path", { from: moveCell, to: index, path });
         if (
           path
           &&
           path.length < attackRange
         ) {
-          //console.log(`[Movement] Attack path accepted (path.length=${path.length} < attackRange=${path.length})`, { pathLength: moveCell, to: index, path });
+          this.log("Attack path accepted (path.length=${path.length} < attackRange=${path.length})", { pathLength: moveCell, to: index, path });
           result.push(index);
         }
       }
     });
     result = _.uniq(result);
-    //console.log("[Movement] Attack cells", { unitIndex, moveRange, attackRange, result });
+    this.log("Attack cells", { unitIndex, moveRange, attackRange, result });
     return result;
   };
 
@@ -110,17 +112,17 @@ export class BattleMovement {
       }
 
       let path = this.getPath(unitIndex, index, true);
-      console.log("[Movement] Move path", { from: unitIndex, to: index, path });
+      //this.log("Move path", { from: unitIndex, to: index, path });
       if (
         path
         && 
         path.length < range
       ) {
-        console.log(`[Movement] Move path accepted (path.length=${path.length} < range=${range})`, { pathLength: path.length, to: index, path });
+        //this.log("Move path accepted (path.length=${path.length} < range=${range})", { pathLength: path.length, to: index, path });
         result.push(index);
       }
     }
-    console.log("[Movement] Move cells", { unitIndex, range, result });
+    //this.log("Move cells", { unitIndex, range, result });
     return result;
   };
 
@@ -184,7 +186,7 @@ export class BattleMovement {
     let stop = false;
     switch (terrain) {
       case TERRAIN_LAVA: {
-        console.log(`[Movement] Passing through the ${terrain}`);
+        this.log(`Passing through the ${terrain}`);
         const oldHp = fighter.hp;
         fighter.launchTerrainEffect(terrain);
 
@@ -202,7 +204,7 @@ export class BattleMovement {
       }
       case TERRAIN_ICE:
       case TERRAIN_SWAMP: {
-        console.log("[Movement] " +(moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
+        this.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         // Found an obstacle, stop
         stop = true;
         fighter.launchTerrainEffect(terrain);
@@ -213,7 +215,7 @@ export class BattleMovement {
         if (moving) {
           break;
         }
-        console.log(`[Movement] Stand on the ${terrain}`, { buffs: fighter.buffs });
+        this.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
         fighter.launchTerrainEffect(terrain);
         break;
       }
@@ -237,14 +239,14 @@ export class BattleMovement {
     let path = this.getPath(fighter.index, index, true);
     for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
-      //console.log(`[Tile]`, { index: +pathIndex, terrain });
+      //this.log(`[Tile]`, { index: +pathIndex, terrain });
       if (!terrain) {
         continue;
       }
 
       let result = this.handleTerrain(fighter, terrain, true);
       if (result.stop) {
-        console.log(`[Tile stopped the fighter]`, { index: +pathIndex});
+        this.log(`Tile stopped the fighter`, { index: +pathIndex});
         // Found an obstacle, stop
         index = +pathIndex;
         break;

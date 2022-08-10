@@ -108,9 +108,6 @@ export class Unit {
     //{ source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
   ];
 
-  protected _moveCells: number[];
-  protected _attackCells: number[];
-
   protected _terrainModifiers = {
     [TERRAIN_ICE]: "ice-0",
     [TERRAIN_HILL]: "hill-0",
@@ -210,10 +207,6 @@ export class Unit {
 
   get abilitiesStat(): BattleUnitAbilityStat[] {
     return this._abilitiesStat;
-  }
-
-  get moveCells(): number[] {
-    return this._moveCells;
   }
   
   get buffs(): BattleBuff[] {
@@ -460,7 +453,7 @@ export class Unit {
           enabled: true,
           estimate: abilityScheme.cd
         }
-        console.log(`[Unit] Ability "${abilityClass}" cooldown has been set`, abilityEntry.cooldown);
+        this.log(`Ability "${abilityClass}" cooldown has been set`, abilityEntry.cooldown);
       }
     });
   }
@@ -757,7 +750,7 @@ export class Unit {
     this._expirience.currentLevelExp = currentGap;
     this._expirience.nextLevelExp = fullGap;
 
-    //console.log("[addExpirience] Expirience result", this._expirience);
+    //BattleManager.log("addExpirience", "Expirience result", this._expirience);
   }
 
   public upgradeLevel(): boolean {
@@ -813,8 +806,6 @@ export class Unit {
     let innerTierLvl = level - 1 - SETTINGS.maxUnitTierLevel[1] * boundary;
     let defence = defenceBase + base.defIncrement * innerTierLvl;
 
-    //console.log({ level, defenceBase, innerTierLvl });
-
     // speed
     let speed = base.speed;
 
@@ -851,14 +842,14 @@ export class Unit {
           ability.enabled = true;
           ability.level.current = 1;
           ability.levelInt = 1;
-          console.log(`[Unit] Ability is enabled`, ability);
+          this.log(`Ability enabled`, ability);
         }
         
         const canUpgradeMore = ability.level.current < abilityScheme.lvl;
         ability.level.next = canUpgradeMore ? ability.level.current + 1 : null;
         ability.level.price = canUpgradeMore ? this.getAbilityUpgradePrice(ability.tier, ability.level.next) : null;
         if (canUpgradeMore) {
-          console.log(`[Unit] Ability is allowed to upgrade to ${abilityScheme.lvl} lvl`, ability);
+          this.log(`Ability allowed to upgrade to ${abilityScheme.lvl} lvl`, ability);
         }
       }
     });
@@ -954,7 +945,6 @@ export class Unit {
       throw Error("[Unit] Unit index overflow");
     }
     this._index = index;
-    this._moveCells = [];
   }
 
   public canUseAbility(ability: string): boolean {
@@ -969,20 +959,6 @@ export class Unit {
     
     const abilityEntry = this._abilities.find(entry => entry.abilityClass === ability);
     if (abilityEntry && abilityEntry.cooldown && abilityEntry.cooldown.enabled) {
-      return false;
-    }
-
-    return true;
-  }
-
-  public canMoveToCell(index: number): boolean {
-    if (
-      !this._moveCells
-      ||
-      !this._moveCells.length
-      ||
-      !this._moveCells.includes(index)
-    ) {
       return false;
     }
 

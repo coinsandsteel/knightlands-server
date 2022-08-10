@@ -1,21 +1,24 @@
 import _ from "lodash";
 import game from "../../../game";
 import { BattleController } from "../BattleController";
-import { SETTINGS, TERRAIN, TERRAIN_HILL, TERRAIN_ICE, TERRAIN_LAVA, TERRAIN_SWAMP, TERRAIN_THORNS, TERRAIN_WOODS } from "../meta";
+import { TERRAIN, TERRAIN_HILL, TERRAIN_ICE, TERRAIN_LAVA, TERRAIN_SWAMP, TERRAIN_THORNS, TERRAIN_WOODS } from "../meta";
 import { BattleTerrainMap } from "../types";
+import { BattleService } from "./BattleService";
 
-export class BattleTerrain {
+export class BattleTerrain extends BattleService {
   protected _ctrl: BattleController;
   protected _state: BattleTerrainMap|null;
   protected _coreMap: (string|null)[];
 
   constructor (state: BattleTerrainMap|null, ctrl: BattleController){
+    super();
+
     this._ctrl = ctrl;
 
     if (state) {
       this._state = state;
       this.setCoreMap();
-      console.log("[Terrain] Old map was set", this._coreMap);
+      this.log("Old map was set", this._coreMap);
     } else {
       this._state = null;
     }
@@ -34,10 +37,10 @@ export class BattleTerrain {
   public setRandomMap(): void {
     if (game.battleManager.autoCombat) {
       this.setMap({ base: "grass", tiles: new Array(25).fill(null) });
-      console.log("[Terrain] Empty map was set");
+      this.log("Empty map was set");
     } else {
       this.setMap(_.cloneDeep(_.sample(TERRAIN)));
-      console.log("[Terrain] Random map was set", this._coreMap);
+      this.log("Random map was set", this._coreMap);
     }
   }
 

@@ -5,14 +5,16 @@ import { BattleController } from "../BattleController";
 import { BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
 import { UNITS } from "./../meta"
+import { BattleService } from "./BattleService";
 
-export class BattleInventory {
+export class BattleInventory extends BattleService {
   protected _ctrl: BattleController;
 
   protected _state: BattleUnit[];
   protected _units: Unit[];
 
   constructor(state: BattleUnit[], ctrl: BattleController) {
+    super();
     this._state = state || [];
     this._ctrl = ctrl;
   }
@@ -60,7 +62,7 @@ export class BattleInventory {
   }
 
   public addUnit(unit: Unit): Unit {
-    console.log("[Inventory] Add unit", { unitId: unit.unitId, template: unit.template, tier: unit.tier });
+    this.log("Add unit", { unitId: unit.unitId, template: unit.template, tier: unit.tier });
     
     // Search by template
     const index = this._units.findIndex(entry => entry.template === unit.template && entry.tier === unit.tier);
@@ -69,11 +71,11 @@ export class BattleInventory {
       this._units.push(unit);
       this._state.push(unit.serialize());
       this._ctrl.events.addUnit(unit);
-      console.log("[Inventory] Unit added", unit.unitId);
+      this.log("Unit added", unit.unitId);
     } else {
       this._units[index].updateQuantity(unit.quantity);
       this.updateUnitState(unit);
-      console.log("[Inventory] Unit stacked", unit.unitId);
+      this.log("Unit stacked", unit.unitId);
     }
 
     return this._units.find(entry => entry.template === unit.template && entry.tier === unit.tier);

@@ -2,20 +2,22 @@ import { ObjectId } from "mongodb";
 
 import game from "../../game";
 import events from "../../knightlands-shared/events";
+import { BattleService } from "./services/BattleService";
 import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility } from "./types";
 import { Unit } from "./units/Unit";
 
-export class BattleEvents {
+export class BattleEvents extends BattleService {
   protected _events: any;
   protected _userId: ObjectId;
 
   constructor(userId: ObjectId) {
-      this._userId = userId;
-      this._events = {};
+    super();
+    this._userId = userId;
+    this._events = {};
   }
 
   flush() {
-    //console.log("Event flush", this._events);
+    this.log("Event flush", this._events);
     game.emitPlayerEvent(this._userId, events.BattleUpdate, this._events);
     this._events = {};
   }
