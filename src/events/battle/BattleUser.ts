@@ -37,9 +37,9 @@ export class BattleUser {
   public setInitialState() {
     this._state = {
       balance: {
-        [COMMODITY_ENERGY]: 10000,
-        [COMMODITY_COINS]: 5000,
-        [COMMODITY_CRYSTALS]: 2000,
+        [COMMODITY_ENERGY]: 1000000,
+        [COMMODITY_COINS]: 1000000,
+        [COMMODITY_CRYSTALS]: 1000000,
       },
       timers: {
         energy: 0
