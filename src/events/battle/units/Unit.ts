@@ -8,10 +8,6 @@ import {
   ABILITY_SCHEME, 
   AVG_DMG, 
   AVG_HP, 
-  BUFF_SOURCE_BUFF, 
-  BUFF_SOURCE_DE_BUFF, 
-  BUFF_SOURCE_SELF_BUFF, 
-  BUFF_SOURCE_TERRAIN, 
   CHARACTERISTICS,
   SETTINGS,
   TERRAIN_HILL,
@@ -55,6 +51,7 @@ export class Unit {
   protected _quantity: number;
   
   // Combat
+  protected _info: any;
   protected _ratingIndex: number;
   protected _isStunned: boolean;
   protected _hp: number;
@@ -186,19 +183,44 @@ export class Unit {
   }
 
   get speed(): number {
-    return Math.round(this._characteristics.speed * this.modifiers.speed);
+    const bonusDelta = this.getBonusDelta("speed");
+    this._info["speed"] = {
+      base: this._characteristics.speed,
+      modifier: this.modifiers.speed,
+      delta: bonusDelta
+    }
+    return Math.round(this._characteristics.speed * this.modifiers.speed) + bonusDelta;
   }
   
   get initiative(): number {
-    return Math.round(this._characteristics.initiative * this.modifiers.initiative);
+    const bonusDelta = this.getBonusDelta("initiative");
+    this._info["initiative"] = {
+      base: this._characteristics.initiative,
+      modifier: this.modifiers.initiative,
+      delta: bonusDelta
+    }
+    return Math.round(this._characteristics.initiative * this.modifiers.initiative) + bonusDelta;
   }
   
   get defence(): number {
-    return Math.round(this._characteristics.defence * this.modifiers.defence);
+    const bonusDelta = this.getBonusDelta("defence");
+    this._info["defence"] = {
+      base: this._characteristics.defence,
+      modifier: this.modifiers.defence,
+      delta: bonusDelta
+    }
+    return Math.round(this._characteristics.defence * this.modifiers.defence) + bonusDelta;
   }
   
   get damage(): number {
-    return Math.round(this._characteristics.damage * this.modifiers.power * this.modifiers.attack);
+    const bonusDelta = this.getBonusDelta("damage");
+    this._info["damage"] = {
+      base: this._characteristics.damage,
+      power: this.modifiers.power,
+      attack: this.modifiers.attack,
+      delta: bonusDelta
+    }
+    return Math.round(this._characteristics.damage * this.modifiers.power * this.modifiers.attack) + bonusDelta;
   }
   
   get abilities(): BattleUnitAbility[] {
@@ -244,6 +266,7 @@ export class Unit {
   }
 
   constructor(blueprint: BattleUnit, events: BattleEvents) {
+    this._info = {};
     this._events = events;
 
     this.modifiers = {
@@ -405,8 +428,8 @@ export class Unit {
     this._abilities.forEach(ability => {
       delete ability.cooldown;
     });
+    this._buffs = [];
 
-    this.resetBuffs();
     this.commit(true);
 
     this.log(`Reset finished`, this.variables);
@@ -487,9 +510,11 @@ export class Unit {
         if (
           buff.mode === "stack"
           && 
+          typeof buff.stackValue !== 'undefined'
+          &&
           buff.stackValue < buff.max
         ) {
-          buff.stackValue += buff.delta * (buff.percents ? 0.01 : 1);
+          buff.stackValue += buff.delta;
           this.log(`${buff.type} stacked`, buff);
         }
       });
@@ -497,8 +522,8 @@ export class Unit {
   }
 
   public buff(buff: BattleBuff): void {
-    if (buff.type === "stack") {
-      buff.stackValue = 1 + buff.delta * (buff.percents ? 0.01 : 1);
+    if (buff.mode === "stack") {
+      buff.stackValue = 0;
     }
 
     this.log(`Buff added (need commit)`, buff);
@@ -541,8 +566,25 @@ export class Unit {
         modifier = modifier * (Math.random() <= buff.probability ? buff.modifier : 1);
       
       // Stacked
-      } else if (buff.mode === "stack") {
-        modifier = modifier * buff.stackValue;
+      } else if (buff.mode === "stack" && buff.multiply) {
+        modifier = modifier * (1 + buff.stackValue);
+      }
+    });
+
+    return modifier;
+  }
+
+  public getBonusDelta(type: string): number {
+    const buffs = this.getBuffs({ type });
+    if (!buffs.length) {
+      return 0;
+    }
+
+    let modifier = 0;
+    buffs.forEach(buff => {
+      // Stacked
+      if (buff.mode === "stack" && buff.sum) {
+        modifier += buff.stackValue;
       }
     });
 
@@ -704,7 +746,8 @@ export class Unit {
       index: this._index,
       hp: this._hp,
       abilities: this.serializeAbilities(),
-      buffs: this._buffs
+      buffs: this._buffs,
+      info: this._info
     } as BattleUnit;
 
     return _.cloneDeep(squadUnit);
@@ -861,27 +904,30 @@ export class Unit {
   }
 
   public maximize() {
+    this._tier = 3;
     this._levelInt = SETTINGS.maxUnitTierLevel[this._tier];
     this._level.current = SETTINGS.maxUnitTierLevel[this._tier];
     this._level.next = null;
-    this._expirience.value = this.getExpForLevel(this._levelInt+1);
+    this._expirience.value = this.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
     this._expirience.currentLevelExp = 0;
     this._expirience.nextLevelExp = 0;
 
-    this._abilities.forEach(ability => {
-      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
-      if (abilityScheme) {
-        ability.enabled = true;
-        ability.level = {
-          current: abilityScheme.lvl,
-          next: null,
-          price: null
-        };
-        ability.levelInt = abilityScheme.lvl;
-        ability.level.next = null;
-        ability.level.price = null;
-      }
-    });
+    if (false) {
+      this._abilities.forEach(ability => {
+        const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
+        if (abilityScheme) {
+          ability.enabled = true;
+          ability.level = {
+            current: abilityScheme.lvl,
+            next: null,
+            price: null
+          };
+          ability.levelInt = abilityScheme.lvl;
+          ability.level.next = null;
+          ability.level.price = null;
+        }
+      });
+    }
 
     this.updateAbilities();
     this.setPower();
@@ -1096,10 +1142,7 @@ export class Unit {
   }
 
   public resetBuffs(): void {
-    this.removeBuffs({ source: BUFF_SOURCE_TERRAIN });
-    this.removeBuffs({ source: BUFF_SOURCE_BUFF });
-    this.removeBuffs({ source: BUFF_SOURCE_DE_BUFF });
-    this.removeBuffs({ source: BUFF_SOURCE_SELF_BUFF });
+    this._buffs = [];
   }
 
   public getExpForLevel(level: number): number {
@@ -1133,6 +1176,6 @@ export class Unit {
   }
 
   protected log(message: string, payload?: any) {
-    console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
+    //console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
   }
 }

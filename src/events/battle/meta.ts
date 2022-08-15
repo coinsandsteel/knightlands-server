@@ -1993,10 +1993,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_DWARF]: [
@@ -2019,10 +2019,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by +1 (max. 3)
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_EGYPTIAN]: [
@@ -2097,10 +2097,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by +1 (max. 3)      
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 3 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 4 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 5 },
-      { type: "defence", mode: "stack", trigger: "damage", delta: 1, max: 6 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 3 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 4 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 5 },
+      { type: "defence", mode: "stack", trigger: "damage", sum: true, delta: 1, max: 6 },
     ],
   ],
   [battle.UNIT_TRIBE_ORC]: [
@@ -2123,10 +2123,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's attack is increased by 2,5% (max. 15%)      
-      { type: "attack", mode: "constant", delta: 2.5, percents: true, max: 15 },
-      { type: "attack", mode: "constant", delta: 2.5, percents: true, max: 20 },
-      { type: "attack", mode: "constant", delta: 3,   percents: true, max: 25 },
-      { type: "attack", mode: "constant", delta: 3,   percents: true, max: 30 },
+      { type: "attack", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.15 },
+      { type: "attack", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.20 },
+      { type: "attack", mode: "stack", delta: 0.03,  trigger: "damage", multiply: true, max: 0.25 },
+      { type: "attack", mode: "stack", delta: 0.03,  trigger: "damage", multiply: true, max: 0.30 },
     ],
   ],
   [battle.UNIT_TRIBE_ASSEMBLING]: [
@@ -2201,10 +2201,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 15 },
-      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 20 },
-      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 25 },
-      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 30 },
+      { type: "power", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.15 },
+      { type: "power", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.20 },
+      { type: "power", mode: "stack", delta: 0.03,  trigger: "damage", multiply: true, max: 0.25 },
+      { type: "power", mode: "stack", delta: 0.03,  trigger: "damage", multiply: true, max: 0.30 },
     ],
   ],
   [battle.UNIT_TRIBE_ELDRITCH]: [
@@ -2279,10 +2279,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a squad member takes damage the squad's defense is increased by 1% (max. 5%)
-      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 15 },
-      { type: "power", mode: "stack", modifier: 2.5, trigger: "damage", percents: true, max: 20 },
-      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 25 },
-      { type: "power", mode: "stack", modifier: 3, trigger: "damage", percents: true, max: 30 },
+      { type: "power", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.15 },
+      { type: "power", mode: "stack", delta: 0.025, trigger: "damage", multiply: true, max: 0.20 },
+      { type: "power", mode: "stack", delta: 0.03, trigger: "damage", multiply: true, max: 0.25 },
+      { type: "power", mode: "stack", delta: 0.03, trigger: "damage", multiply: true, max: 0.30 },
     ],
   ],
   [battle.UNIT_TRIBE_FALLEN_KING]: [

@@ -63,6 +63,7 @@ export interface BattleUnit {
   index?: number; // 0-34
   hp?: number;
   buffs?: BattleBuff[];
+  info?: any
 }
 
 export interface BattleLevelScheme {
@@ -189,7 +190,8 @@ export interface BattleBuff {
   probability?: number;
   terrain?: string;
   trigger?: string;
-  percents?: boolean;
+  multiply?: boolean;
+  sum?: boolean;
   fullSquad?: boolean;
   max?: number;
   estimate?: number;
