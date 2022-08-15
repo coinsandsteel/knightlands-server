@@ -224,6 +224,10 @@ export class BattleController {
         this._battleGame.buildSquad();
         break;
       }
+      case 'maxSquad':{
+        this._battleGame.maximizeUserSquad();
+        break;
+      }
       case 'testAbilities':{
         this._battleGame.testAbilities();
         break;

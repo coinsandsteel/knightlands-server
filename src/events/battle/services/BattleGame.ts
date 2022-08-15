@@ -191,6 +191,10 @@ export class BattleGame extends BattleService {
     this._userSquad.fillSlot(unit.unitId, squadIndex);
   }
 
+  public maximizeUserSquad(): void {
+    this._userSquad.maximize();
+  }
+
   public clearSquad(): void {
     for (let index = 0; index < 5; index++) {
       this._userSquad.clearSlot(index);

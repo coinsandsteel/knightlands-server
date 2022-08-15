@@ -85,14 +85,11 @@ export class BattleSquad extends BattleService {
 
     // Fill slot
     this._units[index] = unit;
-    
-    // Update state
-    this._state.units[index] = unit.serializeForSquad();
 
     this.updateStat();
 
     // Event
-    this._ctrl.events.userSquad(this._state);
+    this.sync();
 
     this.log(`Unit ${unitId} was set into slot #${index}`);
   }
@@ -104,14 +101,11 @@ export class BattleSquad extends BattleService {
     
     // Fill slot
     delete this._units[index];
-    
-    // Update state
-    delete this._state.units[index];
 
     this.updateStat();
 
     // Event
-    this._ctrl.events.userSquad(this._state);
+    this.sync();
   }
   
   public proxyUnit(unitId: string): void {
@@ -125,9 +119,14 @@ export class BattleSquad extends BattleService {
       }
     }
 
-    this._ctrl.events.userSquad(this._state);
+    this.sync();
   }
   
+  public sync(): void {
+    this.syncUnits();
+    this._ctrl.events.userSquad(this._state);
+  }
+
   public setInitiativeRating(rating: BattleInitiativeRatingEntry[]) {
     this._units.forEach(unit => {
       const ratingIndex = _.findIndex(rating, { fighterId: unit.fighterId });
@@ -176,7 +175,7 @@ export class BattleSquad extends BattleService {
     // this.log("Squad bonuses", { bonuses });
   }
   
-  protected setPower(): void {
+  public setPower(): void {
     if (!this._units.length) {
       return;
     }
@@ -220,5 +219,11 @@ export class BattleSquad extends BattleService {
       // Decrease the buff estimate
       unit.decreaseBuffsEstimate();
     });
+  }
+
+  public maximize(): void {
+    this._units.forEach(unit => unit.maximize());
+    this.setPower();
+    this.sync();
   }
 }

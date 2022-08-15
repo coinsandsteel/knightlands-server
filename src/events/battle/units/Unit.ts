@@ -430,7 +430,11 @@ export class Unit {
       if (!ABILITIES[this._unitClass][ability].damage[this._tier - 1]) {
         return 0;
       }
-      base = ABILITIES[this._unitClass][ability].damage[this._tier - 1][abilityLevel - 1];
+      let damageValues = _.flattenDeep(
+        ABILITIES[this._unitClass][ability].damage
+          .filter(n => n)
+      );
+      base = damageValues[abilityLevel-1];
     }
 
     const abilityValue = base * this.modifiers.power * this.modifiers.abilities;
@@ -607,7 +611,7 @@ export class Unit {
   protected _getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = ABILITIES[this.class][abilityClass];
-    const effects = abilityData ?
+    const effects = abilityMeta.effects.length ?
       abilityMeta.effects[abilityData.levelInt-1]
       :
       [];
@@ -767,6 +771,7 @@ export class Unit {
     this.setCharacteristics();
     this.setPower();
     this.unlockAbilities();
+    this.updateAbilities();
 
     return true;
   }
@@ -853,8 +858,6 @@ export class Unit {
         }
       }
     });
-
-    this.updateAbilities();
   }
 
   public maximize() {
@@ -865,7 +868,19 @@ export class Unit {
     this._expirience.currentLevelExp = 0;
     this._expirience.nextLevelExp = 0;
 
-    this.unlockAbilities();
+    this._abilities.forEach(ability => {
+      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
+      if (abilityScheme) {
+        ability.enabled = true;
+        ability.level.current = abilityScheme.lvl;
+        ability.levelInt = abilityScheme.lvl;
+        ability.level.next = null;
+        ability.level.price = null;
+      }
+    });
+
+    this.updateAbilities();
+    this.setPower();
   }
 
   public canUpgradeLevel(): boolean {
@@ -1112,6 +1127,6 @@ export class Unit {
   }
 
   protected log(message: string, payload?: any) {
-    console.log(`[Unit @${this._unitId} #${this._fighterId}] ${message}`, payload);
+    console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
   }
 }
