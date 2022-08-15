@@ -861,10 +861,10 @@ export class Unit {
   }
 
   public maximize() {
-    this._levelInt = SETTINGS.maxUnitTierLevel[3];
-    this._level.current = SETTINGS.maxUnitTierLevel[3];
+    this._levelInt = SETTINGS.maxUnitTierLevel[this._tier];
+    this._level.current = SETTINGS.maxUnitTierLevel[this._tier];
     this._level.next = null;
-    this._expirience.value = SETTINGS.maxExp;
+    this._expirience.value = this.getExpForLevel(this._levelInt+1);
     this._expirience.currentLevelExp = 0;
     this._expirience.nextLevelExp = 0;
 
@@ -872,7 +872,11 @@ export class Unit {
       const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
       if (abilityScheme) {
         ability.enabled = true;
-        ability.level.current = abilityScheme.lvl;
+        ability.level = {
+          current: abilityScheme.lvl,
+          next: null,
+          price: null
+        };
         ability.levelInt = abilityScheme.lvl;
         ability.level.next = null;
         ability.level.price = null;
@@ -1036,6 +1040,8 @@ export class Unit {
       } else {
         this._events.userFighter(this);
       }
+    } else if (this._hp > this.maxHp) {
+      this._hp = this.maxHp;
     }
   };
 
