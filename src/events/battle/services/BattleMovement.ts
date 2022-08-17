@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { ABILITY_MOVE } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
 import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../meta";
 import { Unit } from "../units/Unit";
@@ -76,7 +77,7 @@ export class BattleMovement extends BattleService {
   public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
     this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
-    const moveCells = this.getMoveCells(unitIndex, moveRange);
+    const moveCells = this.getMoveCellsByRange(unitIndex, moveRange);
     moveCells.push(unitIndex);
     moveCells.forEach(moveCell => {
       for (let index = 0; index < 35; index++) {
@@ -97,7 +98,19 @@ export class BattleMovement extends BattleService {
     return result;
   };
 
-  public getMoveCells(unitIndex: number, range: number): number[] {
+  public getMoveCellsByAbility(fighter: Unit, abilityClass: string): number[] {
+    let range = 0;
+    if (abilityClass === ABILITY_MOVE) {
+      range = fighter.speed;
+    } else {
+      const abilityStat = fighter.getAbilityStat(abilityClass);
+      range = abilityStat.moveRange;
+    }
+
+    return this.getMoveCellsByRange(fighter.index, range);
+  };
+
+  public getMoveCellsByRange(unitIndex: number, range: number): number[] {
     const result = [];
     const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
@@ -182,20 +195,24 @@ export class BattleMovement extends BattleService {
     return (vIndex * 5) + hIndex;
   }
 
-  protected handleTerrain(fighter: Unit, terrain: string|null, moving: boolean): { stop: boolean } {
-    let stop = false;
+  protected handleTerrain(fighter: Unit, index: number, terrain: string|null, moving: boolean): { effects: any[], stop: boolean } {
+    const result = {
+      effects: [],
+      stop: false
+    };
     switch (terrain) {
       case TERRAIN_LAVA: {
         this.log(`Passing through the ${terrain}`);
-        const oldHp = fighter.hp;
+
+        const oldHp = _.clone(fighter.hp);
         fighter.launchTerrainEffect(terrain);
 
-        this._ctrl.events.effect({
+        result.effects.push({
           action: "terrain",
           type: TERRAIN_LAVA,
           target: {
             fighterId: fighter.fighterId,
-            index: fighter.index,
+            index,
             oldHp,
             newHp: fighter.hp
           }
@@ -206,7 +223,7 @@ export class BattleMovement extends BattleService {
       case TERRAIN_SWAMP: {
         this.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         // Found an obstacle, stop
-        stop = true;
+        result.stop = true;
         fighter.launchTerrainEffect(terrain);
         break;
       }
@@ -225,14 +242,16 @@ export class BattleMovement extends BattleService {
       }
     }
 
-    return { stop };
+    return result;
   }
 
-  public moveFighter(fighter: Unit, index: number): void {
-    const moveCells = this.getMoveCells(fighter.index, fighter.speed);
+  public moveFighter(fighter: Unit, abilityClass: string, index: number): void {
+    const moveCells = this.getMoveCellsByAbility(fighter, abilityClass);
     if (!moveCells.includes(index)) {
       return;
     }
+
+    const effects = [];
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
@@ -244,12 +263,15 @@ export class BattleMovement extends BattleService {
         continue;
       }
 
-      let result = this.handleTerrain(fighter, terrain, true);
+      let result = this.handleTerrain(fighter, pathIndex, terrain, true);
       if (result.stop) {
         this.log(`Tile stopped the fighter`, { index: +pathIndex});
         // Found an obstacle, stop
         index = +pathIndex;
         break;
+      }
+      if (result.effects.length) {
+        effects.push(...result.effects);
       }
     }
     
@@ -258,7 +280,10 @@ export class BattleMovement extends BattleService {
     
     // Handle destination terrain
     const currentIndexTerrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
-    this.handleTerrain(fighter, currentIndexTerrain, false);
+    let result = this.handleTerrain(fighter, fighter.index, currentIndexTerrain, false);
+    if (result.effects.length) {
+      effects.push(...result.effects);
+    }
 
     // Send effects
     this._ctrl.events.effect({
@@ -266,6 +291,7 @@ export class BattleMovement extends BattleService {
       fighterId: fighter.fighterId,
       newIndex: index
     });
+    effects.forEach(effect => this._ctrl.events.effect(effect));
 
     // Void move cells
     this._ctrl.events.combatMoveCells([]);

@@ -1,6 +1,6 @@
 import _ from "lodash";
 import game from "../../../game";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE, ABILITY_FLIGHT } from "../../../knightlands-shared/battle";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_TYPE_FLIGHT, ABILITY_DASH, ABILITY_RUSH } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleController } from "../BattleController";
 import { SQUAD_BONUSES } from "../meta";
@@ -332,6 +332,10 @@ export class BattleGame extends BattleService {
   
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
+    if (!activeFighter) {
+      return;
+    }
+
     if (activeFighter.isStunned) {
       this.log(`[Game] Active fighter ${this._state.combat.activeFighterId} is stunned. Skip...`);
       this.skip();
@@ -350,7 +354,7 @@ export class BattleGame extends BattleService {
       
     } else {
       this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
-      const moveCells = this._movement.getMoveCells(activeFighter.index, activeFighter.speed);
+      const moveCells = this._movement.getMoveCellsByAbility(activeFighter, ABILITY_MOVE);
       this.setMoveCells(moveCells);
     }
     
@@ -398,8 +402,8 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    if (abilityClass === ABILITY_MOVE || abilityClass === ABILITY_FLIGHT) {
-      const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
+    if ([ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(abilityClass)) {
+      const moveCells = this._movement.getMoveCellsByAbility(fighter, abilityClass);
       this.setMoveCells(moveCells);
       this.setAttackCells([]);
       this.setTargetCells([]);
@@ -441,7 +445,7 @@ export class BattleGame extends BattleService {
       this.log("AI attacks", { attackCells, index, ability });
     } else {
       ability = ABILITY_MOVE;
-      const moveCells = this._movement.getMoveCells(fighter.index, fighter.speed);
+      const moveCells = this._movement.getMoveCellsByAbility(fighter, ability);
       index = _.sample(moveCells);
       this.log("AI moves", { moveCells, choosedIndex: index });
     }
@@ -472,15 +476,14 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    // Move
-    if (index !== null && ability === ABILITY_MOVE) {
+    // Dash >
+    // Flight >
+    // Rush >+
+
+    // Move / Dash / Flight
+    if (index !== null && [ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(ability)) {
       this.log("Move", { fighter: fighter.fighterId, index });
-      this._movement.moveFighter(fighter, index);
-      
-    // Jump
-    } else if (index !== null && abilityType === ABILITY_TYPE_JUMP && target === null) {
-      this.log("Jump", { fighter: fighter.fighterId, index });
-      this._movement.moveFighter(fighter, index);
+      this._movement.moveFighter(fighter, ability, index);
       
     // Self-buff
     } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF && target === null) {
@@ -513,14 +516,14 @@ export class BattleGame extends BattleService {
         this._combat.heal(fighter, target, ability);
 
       // Attack
-      } else if (abilityType === ABILITY_TYPE_ATTACK) {
+      } else if (abilityType === ABILITY_TYPE_ATTACK || ability === ABILITY_RUSH) {
         this.log("Attack", { fighter: fighter.fighterId, target: target.fighterId, ability });
         this._combat.attack(fighter, target, ability);
 
         // Counter-attack
         if (target.wantToCounterAttack) {
-          this.log("Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId, ability });
-          const attackCells = this._combat.getMoveAttackCells(fighter, ability, false, true);
+          this.log("Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId });
+          const attackCells = this._combat.getMoveAttackCells(fighter, ABILITY_ATTACK, false, true);
           if (attackCells.includes(fighter.index)) {
             this._combat.attack(target, fighter, ABILITY_ATTACK);
           }

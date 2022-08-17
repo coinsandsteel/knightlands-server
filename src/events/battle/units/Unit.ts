@@ -1031,8 +1031,7 @@ export class Unit {
   }
 
   public getLavaDamage(): number {
-    const lavaBonus = this.getTerrainModifier(TERRAIN_LAVA);
-    return Math.round(this.maxHp * SETTINGS.lavaDamage * lavaBonus);
+    return Math.round(this.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
   }
 
   public launchTerrainEffect(terrain?: string): void {

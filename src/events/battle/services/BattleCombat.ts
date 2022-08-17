@@ -240,12 +240,12 @@ export class BattleCombat extends BattleService {
     // Need to approach
     if (!attackCellsNoMoving.includes(target.index)) {
       this.log("Need to approach the enemy");
-      const abilityStat = fighter.getAbilityStat(abilityClass);
       
       // Calc all the move cells
-      const moveCells = this._ctrl.game.movement.getMoveCells(fighter.index, abilityStat.moveRange);
+      const moveCells = this._ctrl.game.movement.getMoveCellsByAbility(fighter, abilityClass);
       
       // Iterate move cells to check if fighter can reach enemy from there
+      const abilityStat = fighter.getAbilityStat(abilityClass);
       let canAttackFrom = [];
       moveCells.forEach(moveCell => {
         const attackPath = this._ctrl.game.movement.getPath(moveCell, target.index, false);
@@ -264,7 +264,7 @@ export class BattleCombat extends BattleService {
         }
         // Move to attack spot
         const targetIndex = _.sample(canAttackFrom).index;
-        this._ctrl.game.movement.moveFighter(fighter, targetIndex);
+        this._ctrl.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex);
         this.log(`Approaching enemy onto index ${targetIndex}`);
       }
     }

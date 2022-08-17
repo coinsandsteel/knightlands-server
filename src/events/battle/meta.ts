@@ -12,7 +12,6 @@ export const TERRAIN_WOODS = "woods";
 export const TERRAIN_HILL = "hill";
 
 export const SETTINGS = {
-  lavaDamage: 0.05, // by maxHp
   maxExp: 99000,
   moveScheme: PATH_SCHEME_ROOK,
   maxUnitTierLevel: {
@@ -867,7 +866,7 @@ export const ABILITIES = {
       damage: [null, [6, 7, 8, 9],
         [10, 11, 12, 14]
       ],
-      damageScheme: null,
+      damageScheme: -1,
       movePattern: PATH_SCHEME_ROOK,
       canMove: true,
       moveRange: "speed+1",
