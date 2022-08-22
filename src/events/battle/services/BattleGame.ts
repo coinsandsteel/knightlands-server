@@ -123,18 +123,13 @@ export class BattleGame extends BattleService {
   public init(): void {
     this.log("Init", this._state);
     
-    if (this._userSquad) {
-      this._userSquad.init();
-    }
-    
-    if (this._enemySquad) {
-      this._enemySquad.init();
-    }
+    // Combat started
+    if (this.combatStarted) {
+      this.log("Resuming combat");
+      this._userSquad.updateStat();
+      this._enemySquad.updateStat();
+      this.sync();
 
-    this.sync();
-
-    if (this._state.combat.started) {
-      this.log("Resuming combat", this._state);
       this.launchFighter();
     }
   }

@@ -190,7 +190,7 @@ export class BattleSquad extends BattleService {
     return this.units.findIndex(unit => unit.unitId === unitId) !== -1;
   }
 
-  protected updateStat(): void {
+  public updateStat(): void {
     this.setBonuses();
     this.setPower();
   }
