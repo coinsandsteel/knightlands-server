@@ -106,7 +106,7 @@ export class BattleCombat extends BattleService {
     const dmgBase = abilityData.value;
     if (!_.isNumber(dmgBase)) {
       this.log("[Error data]", { abilityData });
-      throw Error("");
+      throw Error("dmgBase value is not a number. Abort.");
     }
     const defBase = target.defence;
     const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
@@ -196,7 +196,8 @@ export class BattleCombat extends BattleService {
     let attackCells = this._ctrl.game.movement.getMoveAttackCells(
       fighter.index, 
       canMove ? abilityStat.moveRange : 0,
-      abilityStat.attackRange
+      abilityStat.attackRange,
+      abilityStat.ignoreObstacles
     );
 
     if (fighter.hasAgro) {
@@ -204,7 +205,15 @@ export class BattleCombat extends BattleService {
       const cellsNotAllowedToAttack = this._ctrl.game.getEnemySquadByFighter(fighter)
         .filter(fighter => !agroTargets.includes(fighter.fighterId))
         .map(fighter => fighter.index);
-      attackCells = _.difference(cellsNotAllowedToAttack, attackCells);
+
+      attackCells = attackCells.filter(i => !cellsNotAllowedToAttack.includes(i));
+      this.log(`Fighter ${fighter.fighterId} has agro`, { 
+        agroTargets,
+        cellsNotAllowedToAttack,
+        attackCells
+      });
+    } else {
+      this.log(`Fighter ${fighter.fighterId} hasn't agro`);
     }
 
     if (onlyTargets) {
@@ -248,7 +257,7 @@ export class BattleCombat extends BattleService {
       const abilityStat = fighter.getAbilityStat(abilityClass);
       let canAttackFrom = [];
       moveCells.forEach(moveCell => {
-        const attackPath = this._ctrl.game.movement.getPath(moveCell, target.index, false);
+        const attackPath = this._ctrl.game.movement.getPath(moveCell, target.index, true);
         if (attackPath.length < abilityStat.attackRange) {
           this.log("Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})", { attackPath });
           canAttackFrom.push({ index: moveCell, range: attackPath.length });

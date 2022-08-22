@@ -2070,10 +2070,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       // When a unit is debuffed, their speed is increased by +1      
-      { type: "speed", mode: "constant", trigger: "debuff", delta: 1 },
-      { type: "speed", mode: "constant", trigger: "debuff", delta: 2 },
-      { type: "speed", mode: "constant", trigger: "debuff", delta: 3 },
-      { type: "speed", mode: "constant", trigger: "debuff", delta: 4 },
+      { type: "speed", mode: "constant", trigger: "debuff", sum: true, delta: 1 },
+      { type: "speed", mode: "constant", trigger: "debuff", sum: true, delta: 2 },
+      { type: "speed", mode: "constant", trigger: "debuff", sum: true, delta: 3 },
+      { type: "speed", mode: "constant", trigger: "debuff", sum: true, delta: 4 },
     ],
   ],
   [battle.UNIT_TRIBE_INSECT]: [

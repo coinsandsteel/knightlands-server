@@ -142,6 +142,7 @@ export interface BattleUnitAbility {
   levelInt?: number;
   level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
   value?: number;
+  combatValue?: number;
   enabled?: boolean;
   range?: number;
   cooldown?: {
@@ -165,6 +166,7 @@ export interface BattleUnitAbilityBlueprint {
 
 export interface BattleUnitAbilityStat {
   value: number;
+  combatValue: number;
   moveRange: number;
   attackRange: number;
   ignoreObstacles: boolean;
@@ -195,4 +197,5 @@ export interface BattleBuff {
   fullSquad?: boolean;
   max?: number;
   estimate?: number;
+  activated?: boolean;
 }

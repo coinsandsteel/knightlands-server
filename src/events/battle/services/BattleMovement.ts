@@ -74,21 +74,21 @@ export class BattleMovement extends BattleService {
     this.graphs = graphs;
   }
 
-  public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number): number[] {
+  public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number, ignoreObstacles: boolean): number[] {
     this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
-    const moveCells = this.getMoveCellsByRange(unitIndex, moveRange);
+    const moveCells = this.getMoveCellsByRange(unitIndex, moveRange, ignoreObstacles);
     moveCells.push(unitIndex);
     moveCells.forEach(moveCell => {
       for (let index = 0; index < 35; index++) {
-        let path = this.getPath(moveCell, index, false);
-        this.log("Attack path", { from: moveCell, to: index, path });
+        let path = this.getPath(moveCell, index, true);
+        //this.log("Attack path", { from: moveCell, to: index, path });
         if (
           path
           &&
           path.length < attackRange
         ) {
-          this.log("Attack path accepted (path.length=${path.length} < attackRange=${path.length})", { pathLength: moveCell, to: index, path });
+          //this.log("Attack path accepted (path.length=${path.length} < attackRange=${path.length})", { pathLength: moveCell, to: index, path });
           result.push(index);
         }
       }
@@ -100,17 +100,19 @@ export class BattleMovement extends BattleService {
 
   public getMoveCellsByAbility(fighter: Unit, abilityClass: string): number[] {
     let range = 0;
+    let ignoreObstacles = false;
     if (abilityClass === ABILITY_MOVE) {
       range = fighter.speed;
     } else {
       const abilityStat = fighter.getAbilityStat(abilityClass);
       range = abilityStat.moveRange;
+      ignoreObstacles = abilityStat.ignoreObstacles;
     }
 
-    return this.getMoveCellsByRange(fighter.index, range);
+    return this.getMoveCellsByRange(fighter.index, range, ignoreObstacles);
   };
 
-  public getMoveCellsByRange(unitIndex: number, range: number): number[] {
+  public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean): number[] {
     const result = [];
     const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
@@ -124,7 +126,7 @@ export class BattleMovement extends BattleService {
         continue;
       }
 
-      let path = this.getPath(unitIndex, index, true);
+      let path = this.getPath(unitIndex, index, ignoreObstacles);
       //this.log("Move path", { from: unitIndex, to: index, path });
       if (
         path
@@ -139,10 +141,10 @@ export class BattleMovement extends BattleService {
     return result;
   };
 
-  public getPath(from: number, to: number, avoidObstacles: boolean): any {
+  public getPath(from: number, to: number, ignoreObstacles: boolean): any {
     const avoidNodes  = [];
 
-    if (avoidObstacles) {
+    if (!ignoreObstacles) {
       const unitNodes = this._ctrl.game.allUnits
         .filter(unit => ![from, to].includes(unit.index))
         .map(unit => `${unit.index}`);
@@ -255,7 +257,7 @@ export class BattleMovement extends BattleService {
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
-    let path = this.getPath(fighter.index, index, true);
+    let path = this.getPath(fighter.index, index, false);
     for (let pathIndex of path) {
       const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
       //this.log(`[Tile]`, { index: +pathIndex, terrain });
