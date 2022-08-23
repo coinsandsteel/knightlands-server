@@ -637,7 +637,7 @@ export class Unit {
     const outdatedBuffs = _.remove(this._buffs, filterFunc);
     
     if (outdatedBuffs.length) {
-      console.log(`Buffs outdated (need commit)`, { outdatedBuffs });
+      //console.log(`Buffs outdated (need commit)`, { outdatedBuffs });
       this.commit();
     } 
   };
