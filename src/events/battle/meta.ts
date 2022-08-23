@@ -4,13 +4,6 @@ import { BattleUnitAbilityBlueprint } from "./types";
 export const PATH_SCHEME_ROOK = "rook";
 export const PATH_SCHEME_QUEEN = "queen";
 
-export const TERRAIN_ICE = "ice";
-export const TERRAIN_SWAMP = "swamp";
-export const TERRAIN_LAVA = "lava";
-export const TERRAIN_THORNS = "thorns";
-export const TERRAIN_WOODS = "woods";
-export const TERRAIN_HILL = "hill";
-
 export const SETTINGS = {
   maxExp: 99000,
   moveScheme: PATH_SCHEME_ROOK,
@@ -20,7 +13,7 @@ export const SETTINGS = {
     3: 45
   },
   terrain: {
-    [TERRAIN_ICE]: { 
+    [battle.TERRAIN_ICE]: { 
       type: "damage",  
       modifiers: {
         "ice-0": 1.25,
@@ -30,7 +23,7 @@ export const SETTINGS = {
         "ice-4": 1
       }
     },
-    [TERRAIN_HILL]:  { 
+    [battle.TERRAIN_HILL]:  { 
       type: "power",   
       modifiers: {
         "hill-0": 1.25,
@@ -40,7 +33,7 @@ export const SETTINGS = {
         "hill-4": 1.5
       }
     },
-    [TERRAIN_WOODS]: { 
+    [battle.TERRAIN_WOODS]: { 
       type: "defence", 
       modifiers: {
         "woods-0": 1.25,
@@ -50,7 +43,7 @@ export const SETTINGS = {
         "woods-4": 1.5
       }
     },
-    [TERRAIN_SWAMP]: { 
+    [battle.TERRAIN_SWAMP]: { 
       type: "speed",   
       modifiers: {
         "swamp-0": 0.5,
@@ -60,7 +53,7 @@ export const SETTINGS = {
         "swamp-4": 0
       }
     },
-    [TERRAIN_LAVA]:  { 
+    [battle.TERRAIN_LAVA]:  { 
       type: "damage",  
       modifiers: {
         "lava-0": 0.05,

@@ -69,9 +69,11 @@ export class BattleCombat extends BattleService {
 
     const abilityData = source.getAbilityByClass(abilityClass);
     effects.forEach(effect => {
+      const caseId = abilityData.levelInt;
       const buff = {
         source: abilityData.abilityType,
-        ...effect
+        ...effect,
+        caseId
       };
       if (effect.type === "agro") {
         buff.targetFighterId = source.fighterId;

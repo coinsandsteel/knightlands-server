@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_DE_BUFF } from "../../../knightlands-shared/battle";
+import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_DE_BUFF, TERRAIN_ICE, TERRAIN_HILL, TERRAIN_WOODS, TERRAIN_SWAMP, TERRAIN_LAVA } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../BattleEvents";
 import {
   ABILITIES,
@@ -10,11 +10,6 @@ import {
   AVG_HP, 
   CHARACTERISTICS,
   SETTINGS,
-  TERRAIN_HILL,
-  TERRAIN_ICE,
-  TERRAIN_LAVA,
-  TERRAIN_SWAMP,
-  TERRAIN_WOODS,
   UNITS,
   UNIT_LEVEL_UP_PRICES
 } from "../meta";
@@ -57,52 +52,39 @@ export class Unit {
   protected _hp: number;
   protected _index: number;
   protected _buffs: BattleBuff[] = [
-    // Attack
     //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
-    //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 },
     //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" },
-    // { source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    
+    //{ source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
     //{ source: "squad", mode: "stack", type: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
     //{ source: "squad", mode: "constant", type: "attack", modifier: 1.5 },
-   
     //{ source: "squad", mode: "constant", type: "abilities", modifier: 1.05 },
-
-    // Defence
     //{ source: "squad", mode: "stack", type: "defence", trigger: "damage", delta: 1, max: 4 },
-    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.75, estimate: 1 },
-    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.15 },
     //{ source: "squad", mode: "constant", type: "defence", terrain: "woods", scheme: "woods-1" },
     //{ source: "squad", mode: "constant", type: "defence", terrain: "ice", scheme: "ice-1" },
     //{ source: "squad", mode: "constant", type: "defence", modifier: 1.05 },
-    //{ source: "terrain", mode: "constant", type: "defence", terrain: "woods", scheme: "woods-1" },
-   
-    // Speed
     //{ source: "squad", mode: "stack", type: "speed", trigger: "debuff", delta: 1 },
     //{ source: "squad", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1" },
     //{ source: "squad", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1" },
-    //{ source: "de-buff", mode: "constant", type: "speed", modifier: 0.8 },
-    //{ source: "self-buff", mode: "constant", type: "speed", modifier: 1.2 },
+    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
+    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
+    //{ source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
+    //{ source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
+
+    //{ source: "terrain", mode: "constant", type: "defence", terrain: "woods", scheme: "woods-1" },
     //{ source: "terrain", mode: "constant", type: "speed", terrain: "swamp", scheme: "swamp-1", estimate: 1 },
-    
-    // Initiative
-    //{ source: "buff", mode: "constant", type: "initiative", modifier: 0.8 },
-    
-    // Squad bonus
-    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
-    //{ source: "squad", mode: "constant", type: "hp", modifier: 1.05 },
-    
-    // Damage
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "ice", scheme: "ice-1" },
     //{ source: "terrain", mode: "constant", type: "damage", terrain: "hill", scheme: "hill-1" },
-    //{ source: "squad", mode: "constant", type: "lava_damage", terrain: "lava", scheme: "lava-1" },
     
-    // State
+    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.75, estimate: 1 },
+    //{ source: "buff", mode: "constant", type: "defence", modifier: 1.15 },
+    //{ source: "buff", mode: "constant", type: "initiative", modifier: 0.8 },
+    //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 },
+    //{ source: "self-buff", mode: "constant", type: "speed", modifier: 1.2 },
+    //{ source: "de-buff", mode: "constant", type: "speed", modifier: 0.8 },
     //{ source: "de-buff", mode: "constant", type: "stun", probability: 1, estimate: 1 }, 
     //{ source: "de-buff", mode: "constant", type: "stun", probability: 0.25, estimate: 2 },
     //{ source: "de-buff", mode: "constant", type: "agro", probability: 1, estimate: 1 }, 
     //{ source: "de-buff", mode: "constant", type: "agro", probability: 0.10, estimate: 2 },
-    //{ source: "squad", mode: "burst", type: "counter_attack", probability: 0.07 },
   ];
 
   protected _terrainModifiers = {
@@ -629,6 +611,10 @@ export class Unit {
 
   public decreaseBuffsEstimate(): void {
     this._buffs.forEach(buff => {
+      if (buff.source === "terrain") {
+        return;
+      }
+
       if (!buff.activated) {
         buff.activated = true;
         return;
@@ -1101,7 +1087,8 @@ export class Unit {
           source: "terrain",
           mode: "constant",
           type: SETTINGS.terrain[terrain].type,
-          modifier: this.getTerrainModifier(terrain)
+          modifier: this.getTerrainModifier(terrain),
+          caseId: parseInt(this._terrainModifiers[terrain].split('-')[1])
         });
         break;
       }

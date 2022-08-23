@@ -1,7 +1,8 @@
 import _ from "lodash";
 import game from "../../../game";
+import { TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { TERRAIN, TERRAIN_HILL, TERRAIN_ICE, TERRAIN_LAVA, TERRAIN_SWAMP, TERRAIN_THORNS, TERRAIN_WOODS } from "../meta";
+import { TERRAIN } from "../meta";
 import { BattleTerrainMap } from "../types";
 import { BattleService } from "./BattleService";
 

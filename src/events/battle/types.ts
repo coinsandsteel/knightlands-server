@@ -198,4 +198,5 @@ export interface BattleBuff {
   max?: number;
   estimate?: number;
   activated?: boolean;
+  caseId?: number;
 }

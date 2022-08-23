@@ -1,7 +1,7 @@
 import _ from "lodash";
-import { ABILITY_MOVE } from "../../../knightlands-shared/battle";
+import { ABILITY_MOVE, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../../../knightlands-shared/battle";
 import { BattleController } from "../BattleController";
-import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../meta";
+import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
 const Graph = require('node-dijkstra');
