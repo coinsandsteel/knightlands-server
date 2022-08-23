@@ -171,7 +171,7 @@ export class BattleSquad extends BattleService {
     // Apply bonuses
     this.units.forEach(unit => {
       unit.resetBuffs();
-      bonuses.forEach(bonus => unit.buff(bonus));
+      bonuses.forEach(bonus => unit.addBuff({ source: "squad", ...bonus }));
     });
 
     // this.log("Squad bonuses", { bonuses });

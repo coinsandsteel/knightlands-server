@@ -17,7 +17,7 @@ export class BattleEvents extends BattleService {
   }
 
   flush() {
-    this.log("Event flush", this._events);
+    //this.log("Event flush", this._events);
     game.emitPlayerEvent(this._userId, events.BattleUpdate, this._events);
     this._events = {};
   }

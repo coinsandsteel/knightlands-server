@@ -223,10 +223,10 @@ export class BattleMovement extends BattleService {
       }
       case TERRAIN_ICE:
       case TERRAIN_SWAMP: {
-        this.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         // Found an obstacle, stop
         result.stop = true;
         fighter.launchTerrainEffect(terrain);
+        this.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         break;
       }
       case TERRAIN_HILL:
@@ -234,8 +234,8 @@ export class BattleMovement extends BattleService {
         if (moving) {
           break;
         }
-        this.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
         fighter.launchTerrainEffect(terrain);
+        this.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
         break;
       }
       default: {

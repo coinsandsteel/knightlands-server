@@ -530,24 +530,6 @@ export class Unit {
     }
   }
 
-  public buff(buff: BattleBuff): void {
-    buff.activated = false;
-    
-    if (buff.mode === "stack") {
-      buff.stackValue = 0;
-    }
-
-    this.log(`Buff added (need commit)`, buff);
-    this._buffs.push(buff);
-
-    this.commit();
-    this._events.buffs(this.fighterId, this.buffs);
-    
-    if (["power", "attack", "abilities"].includes(buff.type)) {
-      this._events.abilities(this._fighterId, this.serializeAbilities());
-    }
-  };
-
   public getBuffs(params: { source?: string, type?: string, trigger?: string }): BattleBuff[] {
     return _.filter(this._buffs, params);
   }
@@ -604,9 +586,31 @@ export class Unit {
     return modifier;
   }
 
+  public addBuff(buff: BattleBuff): void {
+    if (buff.source !== "terrain") {
+      buff.activated = false;
+    }
+    
+    if (buff.mode === "stack") {
+      buff.stackValue = 0;
+    }
+
+    this.log(`Buff added (need commit)`, buff);
+    this._buffs.push(buff);
+
+    this.commit();
+    this._events.buffs(this.fighterId, this.buffs);
+    
+    if (["power", "attack", "abilities"].includes(buff.type)) {
+      this._events.abilities(this._fighterId, this.serializeAbilities());
+    }
+  };
+  
   public removeBuffs(params: { source?: string, type?: string }): void {
     this.log(`Remove buffs`, params);
-    this._buffs = _.remove(this._buffs, params);
+    this._buffs = this._buffs.filter(buff => {
+      return !(buff.source === params.source && buff.type === params.type);
+    });
   };
 
   public decreaseBuffsEstimate(): void {
@@ -630,15 +634,12 @@ export class Unit {
     });
 
     const filterFunc = buff => _.isNumber(buff.estimate) && buff.estimate < 0;
-    const outdatedBuffs = _.filter(this._buffs, filterFunc);
-    this._buffs = _.remove(this._buffs, filterFunc);
-
-    this.log("Buffs updated", this._buffs);
-
+    const outdatedBuffs = _.remove(this._buffs, filterFunc);
+    
     if (outdatedBuffs.length) {
-      this.log(`Buffs outdated (need commit)`, { outdatedBuffs });
+      console.log(`Buffs outdated (need commit)`, { outdatedBuffs });
       this.commit();
-    }
+    } 
   };
 
   public getAbilityRange(abilityClass: string, type: string): number {
@@ -1083,8 +1084,9 @@ export class Unit {
         
         // Hills, highlands - Increase damage to enemies by 25%
         // Forest - Increases unit's defense by 25%
-        this.buff({
+        this.addBuff({
           source: "terrain",
+          sourceId: terrain,
           mode: "constant",
           type: SETTINGS.terrain[terrain].type,
           modifier: this.getTerrainModifier(terrain),
@@ -1205,6 +1207,6 @@ export class Unit {
   }
 
   protected log(message: string, payload?: any) {
-    console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
+    //console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
   }
 }

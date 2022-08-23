@@ -182,6 +182,7 @@ export interface BattleUnitAttribute {
 
 export interface BattleBuff {
   source?: string;
+  sourceId?: string;
   type: string;
   mode: string;
   targetFighterId?: string;

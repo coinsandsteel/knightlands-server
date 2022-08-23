@@ -72,13 +72,14 @@ export class BattleCombat extends BattleService {
       const caseId = abilityData.levelInt;
       const buff = {
         source: abilityData.abilityType,
+        sourceId: abilityClass,
         ...effect,
         caseId
       };
       if (effect.type === "agro") {
         buff.targetFighterId = source.fighterId;
       }
-      target.buff(buff);
+      target.addBuff(buff);
     });
 
     this._ctrl.events.effect({
