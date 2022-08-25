@@ -1,14 +1,14 @@
-import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY } from "../../knightlands-shared/battle";
-import { BattleController } from "./BattleController";
-import { BattleUserState } from "./types";
+import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY } from "../../../knightlands-shared/battle";
+import { BattleCore } from "./BattleCore";
+import { BattleUserState } from "../types";
 
 export class BattleUser {
   protected _state: BattleUserState;
-  protected _ctrl: BattleController;
+  protected _core: BattleCore;
   protected day = 1;
 
-  constructor(state: BattleUserState | null, ctrl: BattleController) {
-    this._ctrl = ctrl;
+  constructor(state: BattleUserState | null, core: BattleCore) {
+    this._core = core;
 
     if (state) {
       this._state = state;
@@ -67,7 +67,7 @@ export class BattleUser {
     if (this._state.balance[currency] < 0) {
       this._state.balance[currency] = 0;
     }
-    this._ctrl.events.balance(this._state.balance);
+    this._core.events.balance(this._state.balance);
   }
 
   public claimDailyReward(): void {

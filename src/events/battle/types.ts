@@ -97,7 +97,6 @@ export interface BattleInitiativeRatingEntry {
 export interface BattleCombatState {
   started: boolean;
   result: string|null; // "win" | "loose"
-  isMyTurn: boolean|null;
   activeFighterId: string|null;
   runtime: {
     selectedIndex: number|null;

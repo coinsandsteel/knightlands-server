@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BattleInitiativeRatingEntry, BattleSquadState, BattleUnit } from "../types";
-import { BattleController } from "../BattleController";
+import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
 import { SQUAD_BONUSES } from "../meta";
 import game from "../../../game";
@@ -8,7 +8,7 @@ import { BattleService } from "./BattleService";
 
 export class BattleSquad extends BattleService {
   protected _state: BattleSquadState;
-  protected _ctrl: BattleController;
+  protected _core: BattleCore;
 
   protected _isEnemy: boolean;
   protected _units: (Unit|null)[];
@@ -21,10 +21,10 @@ export class BattleSquad extends BattleService {
     return this._units.filter(u => u).filter(unit => !unit.isDead);
   }
   
-  constructor(units: BattleUnit[], isEnemy: boolean, ctrl: BattleController) {
+  constructor(units: BattleUnit[], isEnemy: boolean, core: BattleCore) {
     super();
     
-    this._ctrl = ctrl;
+    this._core = core;
     this._isEnemy = isEnemy;
 
     this._state = this.getInitialState();
@@ -68,7 +68,7 @@ export class BattleSquad extends BattleService {
   
   protected makeUnit(unit: BattleUnit): Unit {
     unit.isEnemy = this._isEnemy;
-    return new Unit(unit, this._ctrl.events);
+    return new Unit(unit, this._core.events);
   }
   
   public fillSlot(unitId: string, index: number): void {
@@ -76,7 +76,7 @@ export class BattleSquad extends BattleService {
       throw Error("Cannot fill this slot - no such a slot");
     }
     
-    const unit = _.cloneDeep(this._ctrl.inventory.getUnitById(unitId) as Unit);
+    const unit = _.cloneDeep(this._core.inventory.getUnitById(unitId) as Unit);
     if (!unit) {
       throw Error(`Unit ${unitId} not found`);
     }
@@ -125,7 +125,7 @@ export class BattleSquad extends BattleService {
   
   public sync(): void {
     this.pushUnits();
-    this._ctrl.events.userSquad(this._state);
+    this._core.events.userSquad(this._state);
   }
 
   public setInitiativeRating(rating: BattleInitiativeRatingEntry[]) {
@@ -196,12 +196,11 @@ export class BattleSquad extends BattleService {
   }
 
   public resetState(): void {
-    const test = game.battleManager.autoCombat;
     this.units.forEach((unit, index) => {
       // Reset
       unit.reset();
       // Reset indexes
-      unit.setIndex(index + (this._isEnemy ? 0 : (test ? 5 : 30)));
+      unit.setIndex(index + (this._isEnemy ? 0 : 30));
     });
   }
 

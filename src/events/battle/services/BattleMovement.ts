@@ -1,19 +1,19 @@
 import _ from "lodash";
 import { ABILITY_MOVE, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../../../knightlands-shared/battle";
-import { BattleController } from "../BattleController";
+import { BattleCore } from "./BattleCore";
 import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
 const Graph = require('node-dijkstra');
 
 export class BattleMovement extends BattleService {
-  protected _ctrl: BattleController;
+  protected _core: BattleCore;
   protected routes;
   protected graphs;
 
-  constructor (ctrl: BattleController){
+  constructor (core: BattleCore){
     super();
-    this._ctrl = ctrl;
+    this._core = core;
 
     this.setGraphs();
 
@@ -75,7 +75,7 @@ export class BattleMovement extends BattleService {
   }
 
   public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number, ignoreObstacles: boolean): number[] {
-    this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
+    //this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
     const moveCells = this.getMoveCellsByRange(unitIndex, moveRange, ignoreObstacles);
     moveCells.push(unitIndex);
@@ -94,7 +94,7 @@ export class BattleMovement extends BattleService {
       }
     });
     result = _.uniq(result);
-    this.log("Attack cells", { unitIndex, moveRange, attackRange, result });
+    //this.log("Attack cells", { unitIndex, moveRange, attackRange, result });
     return result;
   };
 
@@ -114,9 +114,9 @@ export class BattleMovement extends BattleService {
 
   public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean): number[] {
     const result = [];
-    const unitIndexes = this._ctrl.game.allUnits.map(unit => unit.index);
+    const unitIndexes = this._core.game.allUnits.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
-      const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
+      const terrain = this._core.game.terrain.getTerrainTypeByIndex(index);
       // Cannot get onto units and thorns
       if (
         terrain === TERRAIN_THORNS
@@ -145,11 +145,11 @@ export class BattleMovement extends BattleService {
     const avoidNodes  = [];
 
     if (!ignoreObstacles) {
-      const unitNodes = this._ctrl.game.allUnits
+      const unitNodes = this._core.game.allUnits
         .filter(unit => ![from, to].includes(unit.index))
         .map(unit => `${unit.index}`);
   
-      const thornsNodes = this._ctrl.game.terrain
+      const thornsNodes = this._core.game.terrain
           .getThornsIndexes()
           .map(index => `${index}`);
   
@@ -259,7 +259,7 @@ export class BattleMovement extends BattleService {
     // Interim cells only.
     let path = this.getPath(fighter.index, index, false);
     for (let pathIndex of path) {
-      const terrain = this._ctrl.game.terrain.getTerrainTypeByIndex(+pathIndex);
+      const terrain = this._core.game.terrain.getTerrainTypeByIndex(+pathIndex);
       //this.log(`[Tile]`, { index: +pathIndex, terrain });
       if (!terrain) {
         continue;
@@ -281,21 +281,21 @@ export class BattleMovement extends BattleService {
     fighter.setIndex(index);
     
     // Handle destination terrain
-    const currentIndexTerrain = this._ctrl.game.terrain.getTerrainTypeByIndex(index);
+    const currentIndexTerrain = this._core.game.terrain.getTerrainTypeByIndex(index);
     let result = this.handleTerrain(fighter, fighter.index, currentIndexTerrain, false);
     if (result.effects.length) {
       effects.push(...result.effects);
     }
 
     // Send effects
-    this._ctrl.events.effect({
+    this._core.events.effect({
       action: "move",
       fighterId: fighter.fighterId,
       newIndex: index
     });
-    effects.forEach(effect => this._ctrl.events.effect(effect));
+    effects.forEach(effect => this._core.events.effect(effect));
 
     // Void move cells
-    this._ctrl.events.combatMoveCells([]);
+    this._core.events.combatMoveCells([]);
   }
 }

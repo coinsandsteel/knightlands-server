@@ -4,43 +4,23 @@ import * as battle from "../../../src/knightlands-shared/battle";
 import User from "../../user";
 
 import random from "../../random";
-import { BattleEvents } from './BattleEvents';
-import { BattleUser } from './BattleUser';
-import { BattleGame } from './services/BattleGame';
-import { BattleInventory } from './services/BattleInventory';
+import { BattleCore } from './services/BattleCore';
 import { BattleSaveData } from './types';
 
 const isProd = process.env.ENV == "prod";
 
 export class BattleController {
+  protected _battleCore: BattleCore;
   protected _saveData: BattleSaveData;
-
   protected _user: User;
-  protected _events: BattleEvents;
-
-  protected _battleUser: BattleUser;
-  protected _battleGame: BattleGame;
-  protected _battleInventory: BattleInventory;
   
   constructor(user: User) {
-    this._events = new BattleEvents(user.id);
+    this._battleCore = new BattleCore(user.id);
     this._user = user;
   }
   
-  get events(): BattleEvents {
-    return this._events;
-  }
-  
-  get game(): BattleGame {
-    return this._battleGame;
-  }
-  
-  get inventory(): BattleInventory {
-    return this._battleInventory;
-  }
-  
-  get user(): BattleUser {
-    return this._battleUser;
+  get core(): BattleCore {
+    return this._battleCore;
   }
   
   get rootUser(): User {
@@ -52,58 +32,21 @@ export class BattleController {
     if (saveData) {
       this._saveData = saveData.state as BattleSaveData;
     }
-    
-    this.initPlayer();
-    this.initGame();
-    this.initInventory();
-    
-    if (!this._saveData) {
-      this.generate();
-    }
-  }
 
-  async generate() {
-    this._saveData = this.getState();
+    this.core.init();
+
+    if (!this._saveData) {
+      this._saveData = this.getState();
+    }
   }
 
   async dispose() {
-    this._battleGame.dispose();
+    this.core.dispose();
     await this._save();
   }
 
-  protected initPlayer() {
-    if (!this._battleUser) {
-      this._battleUser = new BattleUser(
-        this._saveData ? this._saveData.user : null, 
-        this
-      );
-    }
-  }
-  
-  protected initGame() {
-    if (!this._battleGame) {
-      this._battleGame = new BattleGame(
-        this._saveData ? this._saveData.game : null, 
-        this
-      );
-    }
-  }
-
-  protected initInventory() {
-    if (!this._battleInventory) {
-      this._battleInventory = new BattleInventory(
-        this._saveData ? this._saveData.inventory : [], 
-        this
-      );
-    }
-  }
-
   getState(): BattleSaveData {
-    return {
-      user: this._battleUser.getState(),
-      game: this._battleGame.getState(),
-      inventory: this._battleInventory.getState()
-    };
+    return this.core.getState();
   }
 
   protected async _save() {
@@ -111,20 +54,15 @@ export class BattleController {
   }
 
   async load() {
-    await this._battleUser.init();
-    await this._battleGame.init();
-    await this._battleInventory.init();
-    
-    const state = _.cloneDeep(this.getState());
-    delete state.game.initiativeRating;
-    return state;
+    await this.core.load();
+    return this.getState();
   }
 
   async claimReward(type: string) {
     let items;
     switch (type) {
       case battle.REWARD_TYPE_DAILY: {
-        await this._battleUser.claimDailyReward();
+        await this.core.user.claimDailyReward();
         break;
       }
       case battle.REWARD_TYPE_RANKING: {
@@ -132,74 +70,74 @@ export class BattleController {
         break;
       }
       case battle.REWARD_TYPE_SQUAD: {
-        items = await this._battleUser.claimSquadReward();
+        items = await this.core.user.claimSquadReward();
         break;
       }
     }
-    this._events.flush();
+    this.core.events.flush();
     return items;
   }
 
   async purchase(commodity: string, currency: string, shopIndex: number) {
-    this._battleUser.purchase(commodity, currency, shopIndex);
-    this._events.flush();
+    this.core.user.purchase(commodity, currency, shopIndex);
+    this.core.events.flush();
   }
 
   async fillSquadSlot(unitId: string, index: number) {
-    this._battleGame.fillSquadSlot(unitId, index);
-    this._events.flush();
+    this.core.game.fillSquadSlot(unitId, index);
+    this.core.events.flush();
   }
   
   async clearSquadSlot(index: number) {
-    this._battleGame.clearSquadSlot(index);
-    this._events.flush();
+    this.core.game.clearSquadSlot(index);
+    this.core.events.flush();
   }
 
   async upgradeUnitLevel(unitId: string) {
-    this._battleInventory.upgradeUnitLevel(unitId);
-    this._events.flush();
+    this.core.inventory.upgradeUnitLevel(unitId);
+    this.core.events.flush();
   }
   
   async upgradeUnitAbility(unitId: string, ability: string) {
-    this._battleInventory.upgradeUnitAbility(unitId, ability);
-    this._events.flush();
+    this.core.inventory.upgradeUnitAbility(unitId, ability);
+    this.core.events.flush();
   }
   
   async chooseAbility(abilityclass: string) {
-    this._battleGame.chooseAbility(abilityclass);
-    this._events.flush();
+    this.core.game.chooseAbility(abilityclass);
+    this.core.events.flush();
   }
 
   async apply(index: number|null, ability: string|null) {
-    this._battleGame.apply(index, ability);
+    this.core.game.apply(index, ability);
   }
 
   async skip() {
-    this._battleGame.skip();
-    this._events.flush();
+    this.core.game.skip();
+    this.core.events.flush();
   }
 
   async enterLevel(room: number, level: number) {
-    this._battleGame.enterLevel(room, level);
-    this._events.flush();
+    this.core.game.enterLevel(room, level);
+    this.core.events.flush();
   }
   
   async enterDuel(difficulty: string) {
-    this._battleGame.enterDuel(difficulty);
-    this._events.flush();
+    this.core.game.enterDuel(difficulty);
+    this.core.events.flush();
   }
   
   async getDuelOptions() {
-    return this._battleGame.getDuelOptions();
+    return this.core.game.getDuelOptions();
   }
   
   async restart() {
-    this._events.flush();
+    this.core.events.flush();
   }
 
   async exit() {
-    this._battleGame.exit();
-    this._events.flush();
+    this.core.game.exit();
+    this.core.events.flush();
   }
 
   async testAction(data) {
@@ -207,33 +145,33 @@ export class BattleController {
     switch (data.action) {
       case 'addUnit':{
         const tier = random.intRange(1, 3);
-        const unit = this._battleInventory.getRandomUnit(tier);
-        this._battleInventory.addUnit(unit);
+        const unit = this.core.inventory.getRandomUnit(tier);
+        this.core.inventory.addUnit(unit);
         break;
       }
       case 'clearUnits':{
-        this._battleGame.clearSquad();
-        this._battleInventory.setUnits([]);
+        this.core.game.clearSquad();
+        this.core.inventory.setUnits([]);
         break;
       }
       case 'increaseUnitExp':{
-        this._battleInventory.addExp(data.unitId, data.exp);
+        this.core.inventory.addExp(data.unitId, data.exp);
         break;
       }
       case 'buildSquad':{
-        this._battleGame.buildSquad();
+        this.core.game.buildSquad();
         break;
       }
       case 'maxSquad':{
-        this._battleGame.maximizeUserSquad();
+        this.core.game.maximizeUserSquad();
         break;
       }
       case 'testAbilities':{
-        this._battleGame.testAbilities();
+        this.core.game.testAbilities();
         break;
       }
     }
-    this._events.flush();
+    this.core.events.flush();
   }
 
 }

@@ -1,20 +1,20 @@
 import _ from "lodash";
 import game from "../../../game";
 import { TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../../../knightlands-shared/battle";
-import { BattleController } from "../BattleController";
+import { BattleCore } from "./BattleCore";
 import { TERRAIN } from "../meta";
 import { BattleTerrainMap } from "../types";
 import { BattleService } from "./BattleService";
 
 export class BattleTerrain extends BattleService {
-  protected _ctrl: BattleController;
+  protected _core: BattleCore;
   protected _state: BattleTerrainMap|null;
   protected _coreMap: (string|null)[];
 
-  constructor (state: BattleTerrainMap|null, ctrl: BattleController){
+  constructor (state: BattleTerrainMap|null, core: BattleCore){
     super();
 
-    this._ctrl = ctrl;
+    this._core = core;
 
     if (state) {
       this._state = state;
@@ -31,18 +31,18 @@ export class BattleTerrain extends BattleService {
   
   public setMap(map: BattleTerrainMap): void {
     this._state = map;
-    this._ctrl.events.terrain(this._state);
+    this._core.events.terrain(this._state);
     this.setCoreMap();
   }
 
   public setRandomMap(): void {
-    if (game.battleManager.autoCombat) {
-      this.setMap({ base: "grass", tiles: new Array(25).fill(null) });
-      this.log("Empty map was set");
-    } else {
-      this.setMap(_.cloneDeep(_.sample(TERRAIN)));
-      this.log("Random map was set", this._coreMap);
-    }
+    this.setMap(_.cloneDeep(_.sample(TERRAIN)));
+    this.log("Random map was set", this._coreMap);
+  }
+
+  public setEmptyMap(): void {
+    this.setMap({ base: "grass", tiles: new Array(25).fill(null) });
+    this.log("Empty map was set");
   }
 
   public setCoreMap(): void {

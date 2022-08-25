@@ -2311,7 +2311,10 @@ class PlayerController extends IPaymentListener {
     }
     
     async _battleApply(_, { index, ability }) {
-      return this.battle.apply(index || null, ability || null);
+      return this.battle.apply(
+        typeof index === 'undefined' ? null : index, 
+        ability
+      );
     }
     
     async _battleSkip() {

@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPES, ABILITY_TYPE_ATTACK, ABILITY_TYPE_DE_BUFF, TERRAIN_ICE, TERRAIN_HILL, TERRAIN_WOODS, TERRAIN_SWAMP, TERRAIN_LAVA } from "../../../knightlands-shared/battle";
-import { BattleEvents } from "../BattleEvents";
+import { BattleEvents } from "../services/BattleEvents";
 import {
   ABILITIES,
   ABILITY_LEVEL_UP_PRICES, 
@@ -437,8 +437,7 @@ export class Unit {
         return 0;
       }
       let damageValues = _.flattenDeep(
-        ABILITIES[this._unitClass][ability].damage
-          .filter(n => n)
+        ABILITIES[this._unitClass][ability].damage.filter(n => n)
       );
       base = damageValues[abilityLevel-1];
     }
@@ -587,9 +586,7 @@ export class Unit {
   }
 
   public addBuff(buff: BattleBuff): void {
-    if (buff.source !== "terrain") {
-      buff.activated = false;
-    }
+    buff.activated = false;
     
     if (buff.mode === "stack") {
       buff.stackValue = 0;
@@ -615,11 +612,7 @@ export class Unit {
 
   public decreaseBuffsEstimate(): void {
     this._buffs.forEach(buff => {
-      if (buff.source === "terrain") {
-        return;
-      }
-
-      if (!buff.activated) {
+      if (!_.isUndefined(buff.estimate) && !buff.activated) {
         buff.activated = true;
         return;
       }
@@ -633,11 +626,11 @@ export class Unit {
       }
     });
 
-    const filterFunc = buff => _.isNumber(buff.estimate) && buff.estimate < 0;
+    const filterFunc = buff => _.isNumber(buff.estimate) && buff.estimate <= 0;
     const outdatedBuffs = _.remove(this._buffs, filterFunc);
     
     if (outdatedBuffs.length) {
-      //console.log(`Buffs outdated (need commit)`, { outdatedBuffs });
+      this.log(`Buffs outdated (need commit)`, { outdatedBuffs });
       this.commit();
     } 
   };
@@ -678,6 +671,9 @@ export class Unit {
   protected _getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = ABILITIES[this.class][abilityClass];
+    if (!abilityMeta) {
+      console.log(this, abilityClass);
+    }
     const effects = abilityMeta.effects.length ?
       abilityMeta.effects[abilityData.levelInt === 0 ? 0 : abilityData.levelInt - 1]
       :
@@ -697,7 +693,7 @@ export class Unit {
     return this._abilitiesStat[abilityClass];
   }
   
-  protected updateAbilities(): void {
+  public updateAbilities(): void {
     this._abilities.forEach(ability => {
       // Set ability stat
       this._abilitiesStat[ability.abilityClass] = this._getAbilityStat(ability.abilityClass);
@@ -848,6 +844,13 @@ export class Unit {
     return true;
   }
 
+  public setLevel(value: number): void {
+    this._levelInt = value;
+    this._level.current = value;
+    this._level.next = null;
+    this._level.price = null;
+  }
+
   public static getCharacteristics(unitClass: string, level: number): BattleUnitCharacteristics {
     const characteristicsMeta = _.cloneDeep(CHARACTERISTICS);
     const meta = characteristicsMeta[unitClass];
@@ -910,7 +913,7 @@ export class Unit {
     this._characteristics = Unit.getCharacteristics(this._unitClass, this._levelInt);
   }
 
-  protected unlockAbilities(): void {
+  public unlockAbilities(): void {
     this._abilities.forEach(ability => {
       const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
       if (abilityScheme) {
@@ -941,25 +944,41 @@ export class Unit {
     this._expirience.currentLevelExp = 0;
     this._expirience.nextLevelExp = 0;
 
-    if (false) {
-      this._abilities.forEach(ability => {
-        const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
-        if (abilityScheme) {
-          ability.enabled = true;
-          ability.level = {
-            current: abilityScheme.lvl,
-            next: null,
-            price: null
-          };
-          ability.levelInt = abilityScheme.lvl;
-          ability.level.next = null;
-          ability.level.price = null;
-        }
-      });
-    }
+    this._abilities.forEach(ability => {
+      const abilityScheme = ABILITY_SCHEME[this._levelInt-1][ability.tier-1];
+      if (abilityScheme) {
+        ability.enabled = true;
+        ability.level = {
+          current: abilityScheme.lvl,
+          next: null,
+          price: null
+        };
+        ability.levelInt = abilityScheme.lvl;
+        ability.level.next = null;
+        ability.level.price = null;
+      }
+    });
 
     this.updateAbilities();
     this.setPower();
+  }
+
+  public setAbilityLevel(abilityClass: string, level: number) {
+    this._abilities.forEach(ability => {
+      if (ability.abilityClass !== abilityClass) {
+        return;
+      }
+      
+      ability.enabled = true;
+      ability.level = {
+        current: level,
+        next: null,
+        price: null
+      };
+      ability.levelInt = level;
+      ability.level.next = null;
+      ability.level.price = null;
+    });
   }
 
   public canUpgradeLevel(): boolean {
