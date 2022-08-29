@@ -50,7 +50,7 @@ export class Unit {
   protected _ratingIndex: number;
   protected _isStunned: boolean;
   protected _hp: number;
-  protected _index: number;
+  protected _index: number|null;
   protected _buffs: BattleBuff[] = [
     //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
     //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" },
@@ -248,6 +248,8 @@ export class Unit {
   }
 
   constructor(blueprint: BattleUnit, events: BattleEvents) {
+    //console.log('Make unit', blueprint);
+
     this._info = {};
     this._events = events;
 
@@ -287,6 +289,8 @@ export class Unit {
     
     if ("isDead" in blueprint) {
       this._isDead = blueprint.isDead;
+    } else {
+      this._isDead = false;
     }
     
     if ("tier" in blueprint) {
@@ -385,12 +389,12 @@ export class Unit {
       this._buffs = [];
     }
     
-    this.log(`Init (need commit)`);
+    //this.log(`Init (need commit)`);
     this.commit();
   }
 
   public reset(): void {
-    this.log(`Reset started (need commit)`);
+    //this.log(`Reset started (need commit)`);
     
     this.modifiers = {
       speed: -1,
@@ -415,7 +419,7 @@ export class Unit {
 
     this.commit(true);
 
-    this.log(`Reset finished`, this.variables);
+    //this.log(`Reset finished`, this.variables);
   }
   
   public regenerateFighterId(): void {
@@ -671,9 +675,6 @@ export class Unit {
   protected _getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = ABILITIES[this.class][abilityClass];
-    if (!abilityMeta) {
-      console.log(this, abilityClass);
-    }
     const effects = abilityMeta.effects.length ?
       abilityMeta.effects[abilityData.levelInt === 0 ? 0 : abilityData.levelInt - 1]
       :
@@ -978,7 +979,19 @@ export class Unit {
       ability.levelInt = level;
       ability.level.next = null;
       ability.level.price = null;
+
+      // Set ability stat
+      this._abilitiesStat[ability.abilityClass] = this._getAbilityStat(ability.abilityClass);
+      
+      // Update ability value
+      const abilityValue = this.getAbilityValue(ability.abilityClass);
+      const abilityCombatValue = this.getAbilityCombatValue(ability.abilityClass);
+      
+      ability.value = abilityValue;
+      ability.combatValue = abilityCombatValue === null ? abilityValue : abilityCombatValue;
     });
+
+    this.updateAbilities();
   }
 
   public canUpgradeLevel(): boolean {
@@ -1065,14 +1078,16 @@ export class Unit {
     if ([ABILITY_MOVE, ABILITY_ATTACK].includes(ability)) {
       return true;
     }
-
+    
     const unitMeta = UNITS.find(unitData => unitData.template === this._template);
     if (!unitMeta.abilityList.includes(ability)) {
+      //console.log('[canUseAbility] Not included');
       return false;
     }
     
     const abilityEntry = this._abilities.find(entry => entry.abilityClass === ability);
     if (abilityEntry && abilityEntry.cooldown && abilityEntry.cooldown.enabled) {
+      //console.log('[canUseAbility] Cooldown enabled');
       return false;
     }
 
@@ -1154,7 +1169,7 @@ export class Unit {
   }
 
   public commit(initial?: boolean): void {
-    this.log(`Commit start`, this.variables);
+    //this.log(`Commit start`, this.variables);
 
     this._buffs.forEach(buff => {
       // Terrain
@@ -1188,7 +1203,7 @@ export class Unit {
     this.updateAbilities();
     this.setPower();
 
-    this.log(`Commit finish`, this.variables);
+    //this.log(`Commit finish`, this.variables);
   }
 
   public resetBuffs(): void {

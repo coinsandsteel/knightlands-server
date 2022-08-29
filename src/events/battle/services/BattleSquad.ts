@@ -31,7 +31,6 @@ export class BattleSquad extends BattleService {
     this._state.units = units;
 
     this.pullUnits();
-    this.updateStat();
   }
   
   public init() {
@@ -199,6 +198,11 @@ export class BattleSquad extends BattleService {
     this.units.forEach((unit, index) => {
       // Reset
       unit.reset();
+    });
+  }
+
+  public arrange(): void {
+    this.units.forEach((unit, index) => {
       // Reset indexes
       unit.setIndex(index + (this._isEnemy ? 0 : 30));
     });

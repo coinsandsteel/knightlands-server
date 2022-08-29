@@ -29,7 +29,7 @@ export class BattleUser {
     return this._state.balance.crystals;
   }
   
-  public async init() {
+  public init() {
     this.setEventDay();
     this.setActiveReward();
   }
@@ -56,7 +56,7 @@ export class BattleUser {
 
   protected setEventDay() {}
 
-  async setActiveReward() {}
+  public setActiveReward() {}
 
   public getState(): BattleUserState {
     return this._state;

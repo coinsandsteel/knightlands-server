@@ -310,7 +310,6 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: null,
       effects: [ // Ability lvl
-        // TODO stun
         [{ type: "stun", mode: "burst", probability: 0.5, estimate: 1 }], // Turns
         [{ type: "stun", mode: "burst", probability: 0.6, estimate: 1 }],
         [{ type: "stun", mode: "burst", probability: 0.7, estimate: 1 }],
@@ -947,9 +946,9 @@ export const ABILITIES = {
       ignoreObstacles: false,
       duration: 1,
       effects: [
-        [{ type: "defence", mode: "constant", modifier: 1.75, estimate: 1 }],
-        [{ type: "defence", mode: "constant", modifier: 2, estimate: 1 }],
-        [{ type: "defence", mode: "constant", modifier: 2.25, estimate: 1 }],
+        [{ type: "defence", mode: "constant", modifier: 1.75 }],
+        [{ type: "defence", mode: "constant", modifier: 2 }],
+        [{ type: "defence", mode: "constant", modifier: 2.25 }],
       ]
     },
     [battle.ABILITY_ATTACK]: {
@@ -1398,7 +1397,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_HEAL,
+      battle.ABILITY_GROUP_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ORC
@@ -1653,7 +1652,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_CURSE,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_HEAL,
+      battle.ABILITY_GROUP_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ICE
@@ -1755,7 +1754,7 @@ export const UNITS = [
     abilityList: [
       battle.ABILITY_SHIELD,
       battle.ABILITY_MIGHT,
-      battle.ABILITY_HEAL,
+      battle.ABILITY_GROUP_HEAL,
     ]
   },
   // battle.UNIT_TRIBE_ELDRITCH

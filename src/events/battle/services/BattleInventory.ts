@@ -23,7 +23,7 @@ export class BattleInventory extends BattleService {
     return this._units.map(unit => unit.unitId);
   }
   
-  public async init() {
+  public init() {
     this.createUnits();
   }
 
@@ -87,7 +87,7 @@ export class BattleInventory extends BattleService {
     this._core.events.inventory(units);
   }
 
-  public async addExp(unitId: string, value: number) {
+  public addExp(unitId: string, value: number) {
     const unit = this.getUnitById(unitId);
     unit.addExpirience(value);
     this.updateUnitState(unit);

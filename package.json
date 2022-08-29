@@ -76,7 +76,7 @@
         "start:local": "env NODE_ENV=local node -r esm server.js",
         "debug": "node -r esm server.js --inspect-workers 5999",
         "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}",
-        "test": "mocha --bail 'test/**/*.test.ts'"
+        "test": "mocha --timeout 30000 'test/**/*.test.ts'"
     },
     "devDependencies": {
         "@testdeck/mocha": "^0.2.0",

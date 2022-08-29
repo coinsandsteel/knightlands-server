@@ -166,10 +166,6 @@ export class BattleController {
         this.core.game.maximizeUserSquad();
         break;
       }
-      case 'testAbilities':{
-        this.core.game.testAbilities();
-        break;
-      }
     }
     this.core.events.flush();
   }

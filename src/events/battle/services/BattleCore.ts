@@ -34,13 +34,13 @@ export class BattleCore {
     return this._battleUser;
   }
   
-  async init(saveData?: BattleSaveData) {
+  public init(saveData?: BattleSaveData) {
     this.initUser(saveData ? saveData.user : null);
     this.initGame(saveData ? saveData.game : null);
     this.initInventory(saveData ? saveData.inventory : null);
   }
 
-  async dispose() {
+  public dispose() {
     this.game.dispose();
   }
 

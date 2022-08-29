@@ -4,7 +4,7 @@ import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_T
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
 import { SQUAD_BONUSES } from "../meta";
-import { BattleGameState, BattleInitiativeRatingEntry } from "../types";
+import { BattleGameState, BattleInitiativeRatingEntry, BattleTerrainMap, BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleCombat } from "./BattleCombat";
 import { BattleMovement } from "./BattleMovement";
@@ -68,6 +68,10 @@ export class BattleGame extends BattleService {
     return this._terrain;
   }
 
+  get combat(): BattleCombat {
+    return this._combat;
+  }
+
   get combatStarted(): boolean {
     return this._state.combat.started;
   }
@@ -79,7 +83,23 @@ export class BattleGame extends BattleService {
     ];
   }
 
-  async dispose() {
+  get userSquad(): BattleSquad {
+    return this._userSquad;
+  }
+
+  get enemySquad(): BattleSquad {
+    return this._enemySquad;
+  }
+
+  get userUnits(): Unit[] {
+    return this._userSquad.units;
+  }
+
+  get enemyUnits(): Unit[] {
+    return this._enemySquad.units;
+  }
+
+  public dispose() {
     this.log("Shutting down", this._state);
   }
   
@@ -125,10 +145,6 @@ export class BattleGame extends BattleService {
     // Combat started
     if (this.combatStarted) {
       this.log("Resuming combat");
-      this._userSquad.updateStat();
-      this._enemySquad.updateStat();
-      this.sync();
-
       this.launchFighter();
     }
   }
@@ -200,6 +216,17 @@ export class BattleGame extends BattleService {
     // Load terrain
   }
   
+  public enterVirtualDuel(userSquad: BattleUnit[], enemySquad: BattleUnit[]): void {
+    // Start combat
+    this.setInitiativeRating();
+
+    // Sync & flush
+    this.sync();
+    this._core.events.flush();
+
+    this.nextFighter();
+  }
+  
   public enterDuel(difficulty: string): void {
     if (!this._userSquad.units.length) {
       return;
@@ -220,19 +247,18 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    const squad = this._enemyOptions[difficulties[difficulty]];
-    this._enemySquad = new BattleSquad(squad, true, this._core);
-    this._enemyOptions = null;
-
-    // Prepare user Squad
-    this._userSquad.init();
-    
-    // Prepare enemy squad
+    this.spawnEnemySquad(this._enemyOptions[difficulties[difficulty]]);
     this._enemySquad.init();
     this._enemySquad.regenerateFighterIds();
+    this._enemySquad.arrange();
+
+    this.spawnUserSquad(this._state.userSquad.units);
+    this._userSquad.init();
+    this._userSquad.regenerateFighterIds();
+    this._userSquad.arrange();
     
     // Terrain
-    this._terrain.setRandomMap();
+    this.terrain.setRandomMap();
 
     // Start combat
     this.setCombatStarted(true);
@@ -245,6 +271,19 @@ export class BattleGame extends BattleService {
     this.nextFighter();
   }
   
+  public spawnUserSquad(userSquad: BattleUnit[]) {
+    this._userSquad = new BattleSquad(userSquad, false, this._core);
+  }
+  
+  public spawnEnemySquad(enemySquad: BattleUnit[]) {
+    this._enemySquad = new BattleSquad(enemySquad, true, this._core);
+    this._enemyOptions = null;
+  }
+
+  public setTerrain(map: BattleTerrainMap) {
+    this._terrain.setMap(map);
+  }
+
   public sync() {
     this._core.events.userSquad(this._userSquad.getState());
     this._core.events.enemySquad(this._enemySquad.getState());
@@ -355,7 +394,7 @@ export class BattleGame extends BattleService {
     this._core.events.flush();
   }
   
-  protected callbackDrawFinished(): void {
+  public callbackDrawFinished(): void {
     this.setInitiativeRating();
     this._enemySquad.callbackDrawFinished();
     this._userSquad.callbackDrawFinished();
@@ -415,7 +454,8 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    this.handleAction(fighter, index, ability, false);
+    this.handleAction(fighter, index, ability);
+    this.handleActionCallback(false);
     //this.log(this._userSquad.units);
   }
   
@@ -433,12 +473,24 @@ export class BattleGame extends BattleService {
       this.log("AI moves", { moveCells, choosedIndex: index });
     }
 
-    this.handleAction(fighter, index, ability, true);
+    this.handleAction(fighter, index, ability);
+    this.handleActionCallback(true);
   }
   
-  protected handleAction(fighter: Unit, index: number|null, ability: string|null, timeout: boolean): void {
-    this.log("Action", { fighter: fighter.fighterId, index, ability, timeout });
+  public handleAction(fighter: Unit, index: number|null, ability: string|null): void {
+    this.log("Action", { fighter: fighter.fighterId, index, ability });
     
+    // Check if unit can use ability
+    // Check ability cooldown
+    if (
+      fighter.isStunned
+      ||
+      fighter.isDead
+    ) {
+      this.log("Fighter cannot attack. Abort.");
+      return;
+    }
+
     // Check if unit can use ability
     // Check ability cooldown
     if (
@@ -468,7 +520,7 @@ export class BattleGame extends BattleService {
       this._movement.moveFighter(fighter, ability, index);
       
     // Self-buff
-    } else if (index === null && abilityType === ABILITY_TYPE_SELF_BUFF) {
+    } else if (abilityType === ABILITY_TYPE_SELF_BUFF) {
       this.log("Self-buff", { fighter: fighter.fighterId, ability });
       this._combat.buff(fighter, fighter, ability);
       
@@ -481,11 +533,14 @@ export class BattleGame extends BattleService {
       // Can't reach
       const attackAreaData = this._combat.getAttackAreaData(fighter, ability, true);
       if (!attackAreaData.targetCells.includes(target.index)) {
+        this.log("Can't reach. Abort.", { attackAreaData });
         return;
       }
 
       // Approach enemy if necessery
       this._combat.tryApproachEnemy(fighter, target, ability);
+
+      // TODO check range
 
       // Buff / De-buff
       if ([ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
@@ -514,7 +569,9 @@ export class BattleGame extends BattleService {
     } else {
       return;
     }
+  }
 
+  public handleActionCallback(timeout: boolean) {
     this.log("Emenies left", this._enemySquad.liveUnits.length);
     this.log("Aliies left", this._userSquad.liveUnits.length);
 
@@ -547,8 +604,8 @@ export class BattleGame extends BattleService {
 
   public getFighterByIndex(index: number): Unit|null {
     return _.union(
-      this._userSquad.units,
-      this._enemySquad.units
+      this._userSquad.liveUnits,
+      this._enemySquad.liveUnits
     ).find(unit => unit.index === index) || null;
   }
 
@@ -568,22 +625,22 @@ export class BattleGame extends BattleService {
     }
   }
 
-  protected setMoveCells(cells: number[]): void {
+  public setMoveCells(cells: number[]): void {
     this._state.combat.runtime.moveCells = cells;
     this._core.events.combatMoveCells(cells); 
   }
 
-  protected setAttackCells(cells: number[]): void {
+  public setAttackCells(cells: number[]): void {
     this._state.combat.runtime.attackCells = cells;
     this._core.events.combatAttackCells(cells);
   }
 
-  protected setTargetCells(cells: number[]): void {
+  public setTargetCells(cells: number[]): void {
     this._state.combat.runtime.targetCells = cells;
     this._core.events.combatTargetCells(cells);
   }
 
-  protected setActiveFighter(fighterId: string|null): void {
+  public setActiveFighter(fighterId: string|null): void {
     this._state.initiativeRating.forEach(entry => {
       entry.active = false;
     });
@@ -602,7 +659,7 @@ export class BattleGame extends BattleService {
     this.setActiveFighterId(fighterId);
   }
 
-  protected setActiveFighterId(fighterId: string|null): void {
+  public setActiveFighterId(fighterId: string|null): void {
     this._state.combat.activeFighterId = fighterId;
     this._core.events.activeFighterId(fighterId);
   }
@@ -616,29 +673,6 @@ export class BattleGame extends BattleService {
       fighterId = null;
     }
     return fighterId;
-  }
-
-  public testAbilities() {
-    game.battleManager.enableAutoCombat();
-
-    const allClasses = [
-      UNIT_CLASS_MELEE,
-      UNIT_CLASS_RANGE, 
-      UNIT_CLASS_SUPPORT, 
-      UNIT_CLASS_TANK
-    ];
-
-    // Build a squad of 4
-    this.clearSquadSlot(4);
-    allClasses.forEach((unitClass, index) => this.addUnitToSquad({ unitClass }, 3, index));
-
-    // Make duel options
-    this.getDuelOptions();
-    
-    // Enter duel
-    this.enterDuel(GAME_DIFFICULTY_MEDIUM);
-
-    game.battleManager.resetMode();
   }
 
   public skip(): void {
