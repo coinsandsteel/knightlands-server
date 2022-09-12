@@ -3,7 +3,6 @@ import { BattleInitiativeRatingEntry, BattleSquadState, BattleUnit } from "../ty
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
 import { SQUAD_BONUSES } from "../meta";
-import game from "../../../game";
 import { BattleService } from "./BattleService";
 
 export class BattleSquad extends BattleService {

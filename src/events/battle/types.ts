@@ -134,6 +134,7 @@ export interface BattleTerrainMap {
   tiles: (string|null)[];
 }
 
+// TODO update
 export interface BattleUnitAbility {
   abilityClass: string; // 
   abilityType: string; //
@@ -150,6 +151,7 @@ export interface BattleUnitAbility {
   }
 }
 
+// TODO update
 export interface BattleUnitAbilityBlueprint {
   abilityType: string; //
   damage: number[][];
