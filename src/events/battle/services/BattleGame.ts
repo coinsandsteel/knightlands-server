@@ -1,5 +1,6 @@
 import _ from "lodash";
-import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_DASH, ABILITY_RUSH } from "../../../knightlands-shared/battle";
+import game from "../../../game";
+import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF, ABILITY_TYPES, GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_GROUP_HEAL, ABILITY_ATTACK, UNIT_CLASS_MELEE, UNIT_CLASS_RANGE, UNIT_CLASS_MAGE, UNIT_CLASS_TANK, UNIT_CLASS_SUPPORT, UNIT_TRIBE_KOBOLD, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_TYPE_FLIGHT, ABILITY_DASH, ABILITY_RUSH } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
 import { SQUAD_BONUSES } from "../meta";
@@ -10,7 +11,6 @@ import { BattleMovement } from "./BattleMovement";
 import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
-import game from "../../../game";
 
 export class BattleGame extends BattleService {
   protected _state: BattleGameState;
@@ -432,7 +432,7 @@ export class BattleGame extends BattleService {
       this.setAttackCells([]);
       this.setTargetCells([]);
     } else {
-      if (!fighter.abilities.canUseAbility(abilityClass)) {
+      if (!fighter.canUseAbility(abilityClass)) {
         return;
       }
       const attackAreaData = this._combat.getAttackAreaData(fighter, abilityClass, true);
@@ -461,7 +461,7 @@ export class BattleGame extends BattleService {
   
   public autoMove(fighter: Unit): void {
     let index = null;
-    let ability = fighter.abilities.strongestEnabledAbility();
+    let ability = fighter.strongestEnabledAbility();
     let attackAreaData = this._combat.getAttackAreaData(fighter, ability, true);
     if (attackAreaData.targetCells.length && ability) {
       index = _.sample(attackAreaData.targetCells);
@@ -496,19 +496,14 @@ export class BattleGame extends BattleService {
     if (
       ability
       &&
-      !fighter.abilities.canUseAbility(ability)
+      !fighter.canUseAbility(ability)
     ) {
       this.log("Fighter cannot use this ability. Abort.");
       return;
     }
 
+    const abilityType = ability ? ABILITY_TYPES[ability] : null;
     const target = index === null ? null : this.getFighterByIndex(index);
-
-    let abilityType = null;
-    if (ability) {
-      const abilityMeta = game.battleManager.getAbilityMeta(ability);
-      abilityType = abilityMeta.type;
-    }
 
     if (ability !== ABILITY_MOVE && target && target.isDead) {
       this.log("Target is dead. Abort.");

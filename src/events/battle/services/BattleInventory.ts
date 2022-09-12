@@ -4,8 +4,8 @@ import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import { BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
+import { UNITS } from "./../meta"
 import { BattleService } from "./BattleService";
-import game from "../../../game";
 
 export class BattleInventory extends BattleService {
   protected _core: BattleCore;
@@ -44,7 +44,7 @@ export class BattleInventory extends BattleService {
   
   public getRandomUnit(tier: number): Unit {
     // Get random unit blueprint
-    const unitBlueprint = _.cloneDeep(_.sample(game.battleManager.meta.units));
+    const unitBlueprint = _.cloneDeep(_.sample(UNITS));
     unitBlueprint.tier = tier;
     // Construct unit
     const unit = this.makeUnit(unitBlueprint);
@@ -52,7 +52,7 @@ export class BattleInventory extends BattleService {
   }
 
   public getRandomUnitByProps(params: { unitTribe?: string, unitClass?: string }, tier: number): Unit {
-    const filteredUnits = _.filter(_.cloneDeep(game.battleManager.meta.units), params);
+    const filteredUnits = _.filter(_.cloneDeep(UNITS), params);
     const unitBlueprint = _.sample(filteredUnits);
     unitBlueprint.tier = tier;
 
@@ -141,7 +141,7 @@ export class BattleInventory extends BattleService {
     if (
       !unit
       ||
-      !unit.abilities.canUpgradeAbility(ability)
+      !unit.canUpgradeAbility(ability)
     ) {
       throw Error("Cannot upgrade a unit's ability");
     }
@@ -151,8 +151,7 @@ export class BattleInventory extends BattleService {
     }
 
     this._core.user.debitCurrency(COMMODITY_COINS, unit.level.price);
-    unit.abilities.upgradeAbility(ability);
-    unit.setPower();
+    unit.upgradeAbility(ability);
     this.updateUnitState(unit);
 
     if (

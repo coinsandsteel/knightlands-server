@@ -104,7 +104,7 @@ export class BattleMovement extends BattleService {
     if (abilityClass === ABILITY_MOVE) {
       range = fighter.speed;
     } else {
-      const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
+      const abilityStat = fighter.getAbilityStat(abilityClass);
       range = abilityStat.moveRange;
       ignoreObstacles = abilityStat.ignoreObstacles;
     }
