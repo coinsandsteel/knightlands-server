@@ -1,6 +1,6 @@
 [submodule "knightlands-shared"]
 	path = src/knightlands-shared
-url=git@github.com:coinsandsteel/knightlands-shared.git
+  url = git@github.com:coinsandsteel/knightlands-shared.git
 [submodule "src/knightlands-shared"]
 	path = src/knightlands-shared
 	url = git@github.com:coinsandsteel/knightlands-shared.git

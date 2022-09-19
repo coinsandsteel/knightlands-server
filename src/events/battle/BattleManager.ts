@@ -4,15 +4,22 @@ import _ from "lodash";
 
 import Game from "../../game";
 import User from "../../user";
+import game from "../../game";
 
 export class BattleManager {
-  protected _meta: any;
-  protected _saveCollection: Collection;
+  protected _meta: {
+    settings: any;
+    classes: any;
+    abilities: any;
+    effects: any;
+    units: any;
+  };
+  protected _userCollection: Collection;
   protected _rankCollection: Collection;
   protected _mode: string = null;
 
   constructor() {
-    this._saveCollection = Game.db.collection(Collections.BattleUsers);
+    this._userCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
   }
   
@@ -21,11 +28,11 @@ export class BattleManager {
   }
   
   get eventStartDate() {
-    return new Date(this._meta.eventStartDate * 1000 || '2021-04-01 00:00:00');
+    return new Date(this.meta.settings.eventStartDate * 1000 || '2021-04-01 00:00:00');
   }
   
   get eventEndDate() {
-    return new Date(this._meta.eventEndDate * 1000 || '2022-04-14 00:00:00');
+    return new Date(this.meta.settings.eventEndDate * 1000 || '2022-04-14 00:00:00');
   }
 
   get timeLeft() {
@@ -37,11 +44,11 @@ export class BattleManager {
   }
 
   get rankingRewards() {
-    return this._meta.rankingRewards || [];
+    return this.meta.settings.rankingRewards || [];
   }
 
   get squadRewards() {
-    return this._meta.squadRewards || [];
+    return this.meta.settings.squadRewards || [];
   }
 
   get midnight() {
@@ -55,11 +62,23 @@ export class BattleManager {
   }
 
   async init() {
-    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "battle_meta" }) || {};
+    const settings = await Game.db.collection(Collections.BattleSettings).find() || {};
+    const classes = await Game.db.collection(Collections.BattleClasses).find() || {};
+    const abilities = await Game.db.collection(Collections.BattleAbilities).find() || {};
+    const effects = await Game.db.collection(Collections.BattleEffects).find() || {};
+    const units = await Game.db.collection(Collections.BattleUnits).find() || {};
 
-    // TODO create indexes
-    //this._rankCollection.createIndex({ maxSessionGold: 1 });
-    //this._rankCollection.createIndex({ order: 1 });
+    this._meta = {
+      settings,
+      classes,
+      abilities,
+      effects,
+      units
+    };
+  }
+
+  public getAbilityMeta(abilityClass: string) {
+    return this.meta.abilities.find(entry => entry.name === abilityClass);
   }
 
   public eventIsInProgress() {
@@ -76,11 +95,11 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
-    return this._saveCollection.findOne({ _id: userId })
+    return this._userCollection.findOne({ _id: userId })
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
-    return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
+    return this._userCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
   }
 
   async getRankings() {
