@@ -220,7 +220,7 @@ export class BattleSquad extends BattleService {
   public callbackDrawFinished(): void {
     this.units.forEach(unit => {
       // Decrease the cooldown
-      unit.decreaseAbilitiesCooldownEstimate();
+      unit.abilities.decreaseAbilitiesCooldownEstimate();
       // Decrease the buff estimate
       unit.decreaseBuffsEstimate();
     });
