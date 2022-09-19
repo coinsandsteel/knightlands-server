@@ -4,7 +4,12 @@ import _ from "lodash";
 
 import Game from "../../game";
 import User from "../../user";
-import { AbilityMeta, BattleMeta, EffectMeta } from "./units/db_meta";
+import {
+  BattleAbilityMeta,
+  BattleMeta,
+  BattleEffectMeta,
+  BattleUnitMeta,
+} from "./units/db_meta";
 
 export class BattleManager {
   protected _meta: BattleMeta;
@@ -16,21 +21,25 @@ export class BattleManager {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
   }
-  
+
   get autoCombat() {
     return this._mode === "auto";
   }
-  
+
   get eventStartDate() {
-    return new Date(this._meta.settings.eventStartDate * 1000 || '2021-04-01 00:00:00');
+    return new Date(
+      this._meta.settings.eventStartDate * 1000 || "2021-04-01 00:00:00"
+    );
   }
-  
+
   get eventEndDate() {
-    return new Date(this._meta.settings.eventEndDate * 1000 || '2022-04-14 00:00:00');
+    return new Date(
+      this._meta.settings.eventEndDate * 1000 || "2022-04-14 00:00:00"
+    );
   }
 
   get timeLeft() {
-    let secondsLeft = this.eventEndDate.getTime()/1000 - Game.nowSec;
+    let secondsLeft = this.eventEndDate.getTime() / 1000 - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -47,7 +56,7 @@ export class BattleManager {
 
   get midnight() {
     const midnight = new Date();
-    midnight.setHours(0,0,0,0);
+    midnight.setHours(0, 0, 0, 0);
     return midnight.getTime();
   }
 
@@ -56,27 +65,67 @@ export class BattleManager {
   }
 
   async init() {
-    this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "battle_meta" }) || {};
+    const values = await Promise.all([
+      Game.db.collection(Collections.BattleClasses).find(),
+      Game.db.collection(Collections.BattleUnits).find(),
+      Game.db.collection(Collections.BattleAbilities).find(),
+      Game.db.collection(Collections.BattleEffects).find()
+    ]);
 
-    // TODO create indexes
-    //this._rankCollection.createIndex({ maxSessionGold: 1 });
-    //this._rankCollection.createIndex({ order: 1 });
+    this._meta = {
+      settings: {},
+      classes: values[0] || {},
+      units: values[1] || {},
+      abilities: values[2] || {},
+      effects: values[3] || {},
+    }
+
+    this.testMeta();
   }
 
-  public getAbilityMeta(abilityClass: string): AbilityMeta {
-    const abilityMeta = _.cloneDeep(this._meta.abilities[abilityClass]) as AbilityMeta;
-    
-    // Map effects
-    const effects = abilityMeta.effects.map(
-      levelData => levelData.map(
-        drawData => drawData.map(
-          (effectId: number) => _.cloneDeep(this._meta.effects[effectId]) as EffectMeta
-        )
+  public getEffectMeta(effectId: number): BattleEffectMeta|null {
+    return _.cloneDeep(this._meta.effects[effectId]) || null;
+  }
+
+  public getAbilityMeta(abilityId: number|string, unitId?: number): BattleAbilityMeta | null {
+    const abilityMeta = _.cloneDeep(this._meta.abilities[abilityId]);
+    if (!abilityMeta) {
+      return null;
+    }
+    const effects = abilityMeta.effects.map((levelData) =>
+      levelData.map((drawData) =>
+        drawData.map((effectId: number) => {
+          const effectMeta = this.getEffectMeta(effectId);
+          if (!effectMeta) {
+            throw new Error(`[Battle meta] Missing effect meta #${effectId} (unit #${unitId}, ability #${abilityId})`);
+          }
+          return this.getEffectMeta(effectId);
+        })
       )
     );
     abilityMeta.effects = effects;
-    
     return abilityMeta;
+  }
+
+  public getUnitMeta(unitId: number): BattleUnitMeta {
+    const unitMeta = _.cloneDeep(this._meta.units[unitId]);
+    if (!unitMeta) {
+      throw Error(`[Battle meta] Unit meta #${unitId} is not found`);
+    }
+    unitMeta.abilities = unitMeta.abilities.map((abilityId: number) => {
+      const abilityMeta = this.getAbilityMeta(abilityId, unitId);
+      if (!abilityMeta) {
+        throw new Error(`[Battle meta] Missing ability meta #${abilityId} (unit #${unitId})`);
+      }
+    });
+    return unitMeta;
+  }
+
+  public testMeta() {
+    for (const unitId in this._meta.units) {
+      this.getUnitMeta(this._meta.units[unitId]._id);
+    }
+    console.log('[Battle meta] Meta is valid');
   }
 
   public eventIsInProgress() {
@@ -93,11 +142,15 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
-    return this._saveCollection.findOne({ _id: userId })
+    return this._saveCollection.findOne({ _id: userId });
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
-    return this._saveCollection.updateOne({ _id: userId }, { $set: saveData }, { upsert: true });
+    return this._saveCollection.updateOne(
+      { _id: userId },
+      { $set: saveData },
+      { upsert: true }
+    );
   }
 
   async getRankings() {
@@ -105,14 +158,11 @@ export class BattleManager {
     return result;
   }
 
-  public async userHasRewards(user: User) {
-  }
+  public async userHasRewards(user: User) {}
 
-  public async claimRankingRewards(user: User) {
-  }
+  public async claimRankingRewards(user: User) {}
 
-  public async addTestRatings(){
-  };
+  public async addTestRatings() {}
 
   public resetMode() {
     this._mode = null;
