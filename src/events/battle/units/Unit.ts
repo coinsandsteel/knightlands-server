@@ -589,7 +589,7 @@ export class Unit {
 
   public static getCharacteristics(template: number, level: number): BattleUnitCharacteristics {
     const unitsMeta = game.battleManager.meta.units;
-    const unitMeta = _.cloneDeep(unitsMeta.find(entry => entry.template === template)) || {};
+    const unitMeta = _.cloneDeep(unitsMeta[template]) || {};
     const classMeta = _.cloneDeep(game.battleManager.meta.classes[unitMeta.class]) || {};
 
     const v = {

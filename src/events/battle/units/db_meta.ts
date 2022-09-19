@@ -4,13 +4,13 @@ export interface BattleMeta {
     [unitClass: string]: BattleClassMeta
   };
   abilities: {
-    [abilityId: number]: BattleAbilityMeta
+    [abilityClass: string]: BattleAbilityMeta
   };
   effects: {
     [effectId: number]: BattleEffectMeta
   };
   units: {
-    [unitTemplate: number]: BattleUnitMeta
+    [unitId: number]: BattleUnitMeta
   };
 }
 
@@ -46,7 +46,7 @@ export interface BattleRangeMeta {
 }
 
 export interface BattleAbilityMeta {
-  _id: number;
+  _id: string;
   abilityClass: string;
   tier: number;
   affectHp: boolean;
@@ -72,7 +72,6 @@ export interface BattleAbilityMeta {
 
 export interface BattleUnitMeta {
   _id: number;
-  template: number;
   unitClass: string;
   unitTribe: string;
   name: string;
@@ -87,5 +86,5 @@ export interface BattleUnitMeta {
   levelStepDamage: number;
   levelStepHp: number;
 
-  abilities: BattleAbilityMeta[];
+  abilities: (number|BattleAbilityMeta)[];
 }

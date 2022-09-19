@@ -503,11 +503,8 @@ export class BattleGame extends BattleService {
     }
 
     const target = index === null ? null : this.getFighterByIndex(index);
-
-    let abilityType = null;
     if (ability) {
       const abilityMeta = game.battleManager.getAbilityMeta(ability);
-      abilityType = abilityMeta.type;
     }
 
     if (ability !== ABILITY_MOVE && target && target.isDead) {
@@ -520,7 +517,8 @@ export class BattleGame extends BattleService {
     // Rush >+
 
     // Move / Dash / Flight
-    if (index !== null && [ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(ability)) {
+    // TODO update
+    /*if (index !== null && [ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(ability)) {
       this.log("Move", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, ability, index);
       
@@ -573,7 +571,7 @@ export class BattleGame extends BattleService {
       }
     } else {
       return;
-    }
+    }*/
   }
 
   public handleActionCallback(timeout: boolean) {

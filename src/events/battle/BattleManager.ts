@@ -87,8 +87,8 @@ export class BattleManager {
     return _.cloneDeep(this._meta.effects[effectId]) || null;
   }
 
-  public getAbilityMeta(abilityId: number|string, unitId?: number): BattleAbilityMeta | null {
-    const abilityMeta = _.cloneDeep(this._meta.abilities[abilityId]);
+  public getAbilityMeta(abilityClass: string, unitId?: number): BattleAbilityMeta | null {
+    const abilityMeta = _.cloneDeep(this._meta.abilities[abilityClass]);
     if (!abilityMeta) {
       return null;
     }
@@ -112,10 +112,10 @@ export class BattleManager {
     if (!unitMeta) {
       throw Error(`[Battle meta] Unit meta #${unitId} is not found`);
     }
-    unitMeta.abilities = unitMeta.abilities.map((abilityId: number) => {
-      const abilityMeta = this.getAbilityMeta(abilityId, unitId);
+    unitMeta.abilities = unitMeta.abilities.map((abilityClass: string) => {
+      const abilityMeta = this.getAbilityMeta(abilityClass, unitId);
       if (!abilityMeta) {
-        throw new Error(`[Battle meta] Missing ability meta #${abilityId} (unit #${unitId})`);
+        throw new Error(`[Battle meta] Missing ability meta #${abilityClass} (unit #${unitId})`);
       }
     });
     return unitMeta;

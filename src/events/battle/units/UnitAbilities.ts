@@ -352,11 +352,11 @@ export default class UnitAbilities {
     }
     
     // TODO update
-    const unitMeta = game.battleManager.meta.units.find(unitData => unitData.template === this._unit.template);
+    /*const unitMeta = game.battleManager.meta.units.find(unitData => unitData.template === this._unit.template);
     if (!unitMeta.abilityList.includes(ability)) {
       //console.log('[canUseAbility] Not included');
       return false;
-    }
+    }*/
     
     const abilityEntry = this._abilities.find(entry => entry.abilityClass === ability);
     if (abilityEntry && abilityEntry.cooldown && abilityEntry.cooldown.enabled) {

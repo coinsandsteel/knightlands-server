@@ -75,7 +75,7 @@ export class BattleCombat extends BattleService {
     effects.forEach(effect => {
       const caseId = abilityData.levelInt;
       const buff = {
-        source: abilityMeta.type,
+        source: 'buff',
         sourceId: abilityClass,
         ...effect,
         caseId
@@ -179,7 +179,7 @@ export class BattleCombat extends BattleService {
 
   public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    if (abilityMeta.type === ABILITY_TYPE_SELF_BUFF && source.fighterId === target.fighterId) {
+    if (abilityMeta.targetSelf && source.fighterId === target.fighterId) {
       return true;
     }
     const attackAreaData = this.getAttackAreaData(source, abilityClass, false);
@@ -189,7 +189,8 @@ export class BattleCombat extends BattleService {
   public getTargetCells(fighter: Unit, abilityClass: string, attackCells: number[]): number[] {
     let cells = [];
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    switch (abilityMeta.type) {
+    // TODO update
+    /*switch (abilityMeta.type) {
       case ABILITY_TYPE_JUMP:
       case ABILITY_TYPE_DE_BUFF:
       case ABILITY_TYPE_ATTACK: {
@@ -208,7 +209,7 @@ export class BattleCombat extends BattleService {
         cells = [fighter.index];
         break;
       }
-    }
+    }*/
     return _.intersection(attackCells, cells);
   }
 

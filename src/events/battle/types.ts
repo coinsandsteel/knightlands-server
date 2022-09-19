@@ -136,8 +136,7 @@ export interface BattleTerrainMap {
 
 // TODO update
 export interface BattleUnitAbility {
-  abilityClass: string; // 
-  abilityType: string; //
+  abilityClass: string;
   tier: number;
   levelInt?: number;
   level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
@@ -153,7 +152,6 @@ export interface BattleUnitAbility {
 
 // TODO update
 export interface BattleUnitAbilityBlueprint {
-  abilityType: string; //
   damage: number[][];
   damageScheme: number|null;
   movePattern: string;
