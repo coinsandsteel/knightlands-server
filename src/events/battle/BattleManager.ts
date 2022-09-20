@@ -9,7 +9,8 @@ import {
   BattleMeta,
   BattleEffectMeta,
   BattleUnitMeta,
-} from "./units/db_meta";
+  BattleClassMeta,
+} from "./units/MetaDB";
 
 export class BattleManager {
   protected _meta: BattleMeta;
@@ -83,11 +84,27 @@ export class BattleManager {
     this.testMeta();
   }
 
+  // Getters
+
   public getEffectMeta(effectId: number): BattleEffectMeta|null {
     return _.cloneDeep(this._meta.effects[effectId]) || null;
   }
 
-  public getAbilityMeta(abilityClass: string, unitId?: number): BattleAbilityMeta | null {
+  public getAbilityMeta(abilityClass: string): BattleAbilityMeta|null {
+    return _.cloneDeep(this._meta.abilities[abilityClass]) || null;
+  }
+
+  public getUnitMeta(template: number): BattleEffectMeta|null {
+    return _.cloneDeep(this._meta.units[template]) || null;
+  }
+
+  public getClassMeta(unitClass: string): BattleClassMeta|null {
+    return _.cloneDeep(this._meta.classes[unitClass]) || null;
+  }
+
+  // Loaders
+  
+  public loadAbilityMeta(abilityClass: string, template?: number): BattleAbilityMeta | null {
     const abilityMeta = _.cloneDeep(this._meta.abilities[abilityClass]);
     if (!abilityMeta) {
       return null;
@@ -97,7 +114,7 @@ export class BattleManager {
         drawData.map((effectId: number) => {
           const effectMeta = this.getEffectMeta(effectId);
           if (!effectMeta) {
-            throw new Error(`[Battle meta] Missing effect meta #${effectId} (unit #${unitId}, ability #${abilityClass})`);
+            throw new Error(`[Battle meta] Missing effect meta #${effectId} (unit template #${template}, ability #${abilityClass})`);
           }
           return this.getEffectMeta(effectId);
         })
@@ -107,25 +124,27 @@ export class BattleManager {
     return abilityMeta;
   }
 
-  public getUnitMeta(unitId: number): BattleUnitMeta {
-    const unitMeta = _.cloneDeep(this._meta.units[unitId]);
+  public loadUnitMeta(template: number): BattleUnitMeta {
+    const unitMeta = _.cloneDeep(this._meta.units[template]);
     if (!unitMeta) {
-      throw Error(`[Battle meta] Unit meta #${unitId} is not found`);
+      throw Error(`[Battle meta] Unit meta #${template} is not found`);
     }
     unitMeta.abilities = unitMeta.abilities.map((abilityClass: string) => {
-      const abilityMeta = this.getAbilityMeta(abilityClass, unitId);
+      const abilityMeta = this.loadAbilityMeta(abilityClass, template);
       if (!abilityMeta) {
-        throw new Error(`[Battle meta] Missing ability meta #${abilityClass} (unit #${unitId})`);
+        throw new Error(`[Battle meta] Missing ability meta #${abilityClass} (unit template #${template})`);
       }
     });
     return unitMeta;
   }
 
+  // Test
+  
   public testMeta() {
     for (const unitId in this._meta.units) {
-      this.getUnitMeta(parseInt(unitId));
+      this.loadUnitMeta(parseInt(unitId));
     }
-    console.log('[Battle meta] Meta is valid');
+    //console.log('[Battle meta] Meta is valid');
   }
 
   public eventIsInProgress() {

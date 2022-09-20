@@ -65,8 +65,9 @@ export interface BattleAbilityMeta {
   ignoreTerrainPenalty: boolean;
   ignoreObstacles: boolean;
   
-  // Ability level > Draw number > Effect ids
-  effects: (number|BattleEffectMeta)[][][];
+  effectList: number[][][];
+  effects?: BattleEffectMeta[][][]; // Ability level > Draw number > Effect ids
+
   range: BattleRangeMeta[];
 }
 
@@ -77,14 +78,19 @@ export interface BattleUnitMeta {
   name: string;
   tier: number;
 
-  multiplierDamage: number;
-  multiplierHp: number;
-  multiplierDefence: number;
-  multiplierSpeed: number;
-  multiplierInitiative: number;
+  multipliers: {
+    damage: number;
+    hp: number;
+    defence: number;
+    speed: number;
+    initiative: number;
+  };
   
-  levelStepDamage: number;
-  levelStepHp: number;
+  levelSteps: {
+    damage: number;
+    hp: number;
+  }
 
-  abilities: (number|BattleAbilityMeta)[];
+  abilityList: string[];
+  abilities?: BattleAbilityMeta[];
 }

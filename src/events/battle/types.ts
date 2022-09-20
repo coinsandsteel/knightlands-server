@@ -37,33 +37,35 @@ export interface BattleRewardDayData {
 }
 
 export interface BattleUnit {
+  unitId: string;
   template: number;
-  unitTribe: string; // 15
-  unitClass: string; // 5
-  unitId?: string;
-  fighterId?: string;
-  isEnemy?: boolean;
-  isDead?: boolean;
-  tier?: number; // 3, modify via merger (3 => 1)
-  levelInt?: number;
-  level?: BattleLevelScheme;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  ratingIndex?: number;  // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
-  isStunned?: boolean;
-  power?: number;
-  expirience?: {
+  unitTribe: string;
+  unitClass: string;
+  name: string;
+  tier: number;
+  level: BattleLevelScheme;
+  levelInt: number;
+  power: number;
+  expirience: {
     value: number;
     currentLevelExp: number;
     nextLevelExp: number;
   };
-  characteristics?: BattleUnitCharacteristics;
-  abilities?: BattleUnitAbility[];
-  abilityList?: string[];
-  quantity?: number;
-  // Combat
-  index?: number; // 0-34
-  hp?: number;
-  buffs?: BattleBuff[];
-  info?: any
+  characteristics: BattleUnitCharacteristics;
+  abilities: BattleUnitAbility[];
+  quantity: number;
+}
+
+export interface BattleFighter {
+  unitId: string;
+  fighterId: string;
+  isEnemy: boolean;
+  isDead: boolean;
+  ratingIndex: number;
+  isStunned: boolean;
+  index: number|null;
+  hp: number;
+  buffs: BattleBuff[];
 }
 
 export interface BattleLevelScheme {
@@ -134,16 +136,15 @@ export interface BattleTerrainMap {
   tiles: (string|null)[];
 }
 
-// TODO update
 export interface BattleUnitAbility {
   abilityClass: string;
   tier: number;
-  levelInt?: number;
-  level?: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
-  value?: number;
-  combatValue?: number;
-  enabled?: boolean;
-  range?: number;
+  levelInt: number;
+  level: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up
+  value: number;
+  combatValue: number;
+  enabled: boolean;
+  range: number;
   cooldown?: {
     enabled: boolean;
     estimate: number;

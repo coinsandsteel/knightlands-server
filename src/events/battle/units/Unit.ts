@@ -3,30 +3,28 @@ import { v4 as uuidv4 } from "uuid";
 import { BattleEvents } from "../services/BattleEvents";
 import { SETTINGS, UNIT_LEVEL_UP_PRICES } from "../meta";
 import {
-  BattleBuff,
   BattleLevelScheme,
   BattleUnit,
   BattleUnitCharacteristics,
 } from "../types";
 import game from "../../../game";
 import UnitAbilities from "./UnitAbilities";
-import UnitBuffs from "./UnitBuffs";
+import { BattleUnitMeta } from "./MetaDB";
+import { Fighter } from "./Fighter";
 
 export class Unit {
-  public abilities: UnitAbilities;
-  public buffs: UnitBuffs;
   protected _events: BattleEvents;
 
-  protected _template: number;
-  protected _isEnemy: boolean;
-  protected _isDead: boolean;
-  protected _fighterId: string;
   protected _unitId: string;
-  protected _unitTribe: string; // 15
-  protected _unitClass: string; // 5
-  protected _tier: number; // 3, modify via merger (3 => 1)
-  protected _level: BattleLevelScheme; // exp > max limit > pay coins > lvl up > characteristics auto-upgrade
+  protected _template: number;
+  protected _unitTribe: string;
+  protected _unitClass: string;
+  protected _name: string;
+  protected _tier: number;
+
+  protected _level: BattleLevelScheme;
   protected _levelInt: number;
+
   protected _power: number;
   protected _expirience: {
     value: number;
@@ -36,26 +34,7 @@ export class Unit {
   protected _characteristics: BattleUnitCharacteristics;
   protected _quantity: number;
 
-  // Combat
-  protected _info: any;
-  protected _ratingIndex: number;
-  protected _isStunned: boolean;
-  protected _hp: number;
-  protected _index: number | null;
-  protected _buffs: BattleBuff[] = [];
-
-  public modifiers: {
-    speed: number;
-    initiative: number;
-    defence: number;
-    power: number;
-    attack: number;
-    abilities: number;
-  };
-
-  get index(): number {
-    return this._index;
-  }
+  public abilities: UnitAbilities;
 
   get tier(): number {
     return this._tier;
@@ -67,22 +46,6 @@ export class Unit {
 
   get class(): string {
     return this._unitClass;
-  }
-
-  get ratingIndex(): number {
-    return this._ratingIndex;
-  }
-
-  get fighterId(): string {
-    return this._fighterId;
-  }
-
-  get isEnemy(): boolean {
-    return this._isEnemy;
-  }
-
-  get isDead(): boolean {
-    return this._isDead;
   }
 
   get unitId(): string {
@@ -109,237 +72,63 @@ export class Unit {
     return this._power;
   }
 
-  get hp(): number {
-    return this._hp;
-  }
-
   get maxHp(): number {
     return this._characteristics.hp;
   }
 
-  get speed(): number {
-    const bonusDelta = this.buffs.getBonusDelta("speed");
-    this._info["speed"] = {
-      base: this._characteristics.speed,
-      modifier: this.modifiers.speed,
-      delta: bonusDelta,
-    };
-    return (
-      Math.round(this._characteristics.speed * this.modifiers.speed) +
-      bonusDelta
-    );
-  }
-
-  get initiative(): number {
-    const bonusDelta = this.buffs.getBonusDelta("initiative");
-    this._info["initiative"] = {
-      base: this._characteristics.initiative,
-      modifier: this.modifiers.initiative,
-      delta: bonusDelta,
-    };
-    return (
-      Math.round(this._characteristics.initiative * this.modifiers.initiative) +
-      bonusDelta
-    );
-  }
-
-  get defence(): number {
-    const bonusDelta = this.buffs.getBonusDelta("defence");
-    this._info["defence"] = {
-      base: this._characteristics.defence,
-      modifier: this.modifiers.defence,
-      delta: bonusDelta,
-    };
-    return (
-      Math.round(this._characteristics.defence * this.modifiers.defence) +
-      bonusDelta
-    );
-  }
-
-  get damage(): number {
-    const bonusDelta = this.buffs.getBonusDelta("damage");
-    this._info["damage"] = {
-      base: this._characteristics.damage,
-      power: this.modifiers.power,
-      attack: this.modifiers.attack,
-      delta: bonusDelta,
-    };
-    return (
-      Math.round(
-        this._characteristics.damage *
-          this.modifiers.power *
-          this.modifiers.attack
-      ) + bonusDelta
-    );
-  }
-
-  get isStunned(): boolean {
-    return this._isStunned;
-  }
-
-  get hasAgro(): boolean {
-    return !!this.buffs.getBuffs({ type: "agro" }).length;
-  }
-
-  get agroTargets(): string[] {
-    return this.buffs
-      .getBuffs({ type: "agro" })
-      .map((buff) => buff.targetFighterId);
-  }
-
-  get wantToCounterAttack(): boolean {
-    return (
-      !this.isStunned &&
-      this.buffs
-        .getBuffs({ type: "counter_attack" })
-        .some((buff) => Math.random() <= buff.probability)
-    );
-  }
-
   constructor(blueprint: BattleUnit, events: BattleEvents) {
-    //console.log('Make unit', blueprint);
-
-    this._info = {};
-    this._events = events;
-
-    this.modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
-
+    this._unitId = blueprint.unitId;
     this._template = blueprint.template;
-    this._unitId = blueprint.unitId || uuidv4().split("-").pop();
     this._unitTribe = blueprint.unitTribe;
     this._unitClass = blueprint.unitClass;
-
-    if ("ratingIndex" in blueprint) {
-      this._ratingIndex = blueprint.ratingIndex;
-    }
-
-    if ("isStunned" in blueprint) {
-      this._isStunned = blueprint.isStunned;
-    } else {
-      this._isStunned = false;
-    }
-
-    if ("fighterId" in blueprint) {
-      this._fighterId = blueprint.fighterId;
-    }
-
-    if ("isEnemy" in blueprint) {
-      this._isEnemy = blueprint.isEnemy;
-    }
-
-    if ("isDead" in blueprint) {
-      this._isDead = blueprint.isDead;
-    } else {
-      this._isDead = false;
-    }
-
-    if ("tier" in blueprint) {
-      this._tier = blueprint.tier;
-    } else {
-      throw Error("Unit's tier was not set");
-    }
-
-    if ("level" in blueprint) {
-      this._level = blueprint.level;
-    } else {
-      this._level = {
-        current: 1,
-        next: null,
-        price: null,
-      } as BattleLevelScheme;
-    }
-
-    if ("levelInt" in blueprint) {
-      this._levelInt = blueprint.levelInt;
-    } else if ("level" in blueprint) {
-      this._levelInt = blueprint.level.current;
-    } else {
-      this._levelInt = this._level.current;
-    }
-
-    if ("expirience" in blueprint) {
-      this._expirience = blueprint.expirience;
-    } else {
-      this._expirience = {
-        value: 0,
-        currentLevelExp: 0,
-        nextLevelExp: this.getExpForLevel(2),
-      };
-    }
-
-    if ("characteristics" in blueprint) {
-      this._characteristics = blueprint.characteristics;
-    } else {
-      this._characteristics = Unit.getCharacteristics(
-        this._template,
-        this._levelInt
-      );
-    }
-
-    if ("quantity" in blueprint) {
-      this._quantity = blueprint.quantity;
-    } else {
-      this._quantity = 1;
-    }
-
-    if ("index" in blueprint) {
-      this._index = blueprint.index;
-    } else {
-      this._index = null;
-    }
-
-    if ("hp" in blueprint) {
-      this._hp = blueprint.hp;
-    } else {
-      this._hp = this.maxHp;
-    }
+    this._name = blueprint.name;
+    this._tier = blueprint.tier;
+    this._level = blueprint.level;
+    this._levelInt = blueprint.levelInt;
+    this._power = blueprint.power;
+    this._expirience = blueprint.expirience;
+    this._characteristics = blueprint.characteristics;
+    this._quantity = blueprint.quantity;
 
     this.abilities = new UnitAbilities(this, blueprint.abilities);
-    this.buffs = new UnitBuffs(this._events, this, blueprint.buffs as any[]);
+    this._events = events;
 
-    //this.log(`Init (need commit)`);
     this.commit();
   }
 
+  public static createUnit(meta: BattleUnitMeta, events: BattleEvents): Unit {
+    const blueprint = {
+      unitId: uuidv4().split("-").pop(),
+      template: meta._id,
+      unitTribe: meta.unitTribe,
+      unitClass: meta.unitClass,
+      name: meta.name,
+      tier: meta.tier,
+      level: {
+        current: 1,
+        next: null,
+        price: null,
+      } as BattleLevelScheme,
+      levelInt: 1,
+      power: 0,
+      expirience: {
+        value: 0,
+        currentLevelExp: 0,
+        nextLevelExp: Unit.getExpForLevel(2),
+      },
+      characteristics: Unit.getCharacteristics(meta._id, 1),
+      abilities: meta.abilityList.map((abilityClass) =>
+        UnitAbilities.createBlueprint(abilityClass)
+      ),
+      quantity: 1,
+    } as BattleUnit;
+
+    return new Unit(blueprint, events);
+  }
+
   public reset(): void {
-    //this.log(`Reset started (need commit)`);
-
-    this.modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
-
-    this._ratingIndex = null;
-    this._isStunned = false;
-    this._isDead = false;
-    this._index = null;
-    this._hp = this.maxHp;
-
     this.abilities.reset();
-    this.buffs.reset();
-
-    this.commit(true);
-
-    //this.log(`Reset finished`, this.variables);
-  }
-
-  public regenerateFighterId(): void {
-    this._fighterId = uuidv4().split("-").pop();
-  }
-
-  public attackCallback() {
-    this.buffs.handleDamageCallback();
+    this.commit();
   }
 
   public setPower() {
@@ -356,12 +145,16 @@ export class Unit {
 
   public serialize(): BattleUnit {
     const unit = {
-      template: this._template,
       unitId: this._unitId,
+
+      template: this._template,
       unitTribe: this._unitTribe,
       unitClass: this._unitClass,
       tier: this._tier,
+
       level: this._level,
+      levelInt: this._level.current,
+
       power: this._power,
       expirience: this._expirience,
       characteristics: this._characteristics,
@@ -370,31 +163,6 @@ export class Unit {
     } as BattleUnit;
 
     return _.cloneDeep(unit);
-  }
-
-  public serializeForSquad(): BattleUnit {
-    const squadUnit = {
-      template: this._template,
-      fighterId: this._fighterId,
-      isEnemy: this._isEnemy,
-      isDead: this._isDead || false,
-      unitId: this._unitId,
-      unitTribe: this._unitTribe,
-      unitClass: this._unitClass,
-      tier: this._tier,
-      levelInt: this._level.current,
-      ratingIndex: this._ratingIndex,
-      isStunned: this._isStunned,
-      characteristics: this._characteristics,
-      power: this._power,
-      index: this._index,
-      hp: this._hp,
-      abilities: this.abilities.serialize(),
-      buffs: this.buffs.serialize(),
-      info: this._info,
-    } as BattleUnit;
-
-    return _.cloneDeep(squadUnit);
   }
 
   public updateQuantity(value: number): void {
@@ -412,7 +180,7 @@ export class Unit {
 
     this._expirience.value += value;
 
-    const lastLevelExpEnd = this.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
+    const lastLevelExpEnd = Unit.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
     if (
       this._levelInt >= SETTINGS.maxUnitTierLevel[3] - 1 &&
       this._expirience.value > lastLevelExpEnd
@@ -427,8 +195,8 @@ export class Unit {
     let currentLevel = this._level.current;
     let newLevel = currentLevel + 1;
 
-    let currentLevelExpStart = this.getExpForLevel(currentLevel);
-    let currentLevelExpEnd = this.getExpForLevel(newLevel);
+    let currentLevelExpStart = Unit.getExpForLevel(currentLevel);
+    let currentLevelExpEnd = Unit.getExpForLevel(newLevel);
 
     if (currentExp >= currentLevelExpEnd) {
       this._level.next = currentLevel + 1;
@@ -538,7 +306,7 @@ export class Unit {
     this._levelInt = SETTINGS.maxUnitTierLevel[this._tier];
     this._level.current = SETTINGS.maxUnitTierLevel[this._tier];
     this._level.next = null;
-    this._expirience.value = this.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
+    this._expirience.value = Unit.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
     this._expirience.currentLevelExp = 0;
     this._expirience.nextLevelExp = 0;
 
@@ -551,76 +319,12 @@ export class Unit {
     return !!this._level.next;
   }
 
-  public setIndex(index: number): void {
-    if (index < 0 || index > 34) {
-      throw Error("[Unit] Unit index overflow");
-    }
-    this._index = index;
-  }
-
-  public modifyHp(value: number, force?: boolean): void {
-    if (this._isDead) {
-      return;
-    }
-
-    if (!force) {
-      this._hp += value;
-    } else {
-      this._hp = value;
-    }
-
-    if (this._hp <= 0) {
-      this._isDead = true;
-      if (this._isEnemy) {
-        this._events.enemyFighter(this);
-      } else {
-        this._events.userFighter(this);
-      }
-    } else if (this._hp > this.maxHp) {
-      this._hp = this.maxHp;
-    }
-  }
-
-  public setRatingIndex(value: number) {
-    this._ratingIndex = value;
-  }
-
-  public commit(initial?: boolean): void {
-    //this.log(`Commit start`, this.variables);
-
-    this.buffs.calc(initial);
-
-    // Characteristics
-    this.modifiers.defence = this.buffs.getBuffModifier({ type: "defence" });
-    this.modifiers.speed = this.buffs.getBuffModifier({ type: "speed" });
-    this.modifiers.initiative = this.buffs.getBuffModifier({
-      type: "initiative",
-    });
-
-    // Attack bonuses
-    this.modifiers.power = this.buffs.getBuffModifier({ type: "power" });
-    this.modifiers.attack = this.buffs.getBuffModifier({ type: "attack" });
-    this.modifiers.abilities = this.buffs.getBuffModifier({
-      type: "abilities",
-    });
-
-    // Stun
-    const stunBuffs = this.buffs.getBuffs({ type: "stun" });
-    if (stunBuffs.length) {
-      this._isStunned = stunBuffs.some(
-        (buff) => Math.random() <= buff.probability
-      );
-    } else {
-      this._isStunned = false;
-    }
-
+  public commit(): void {
     this.abilities.update();
     this.setPower();
-
-    //this.log(`Commit finish`, this.variables);
   }
 
-  public getExpForLevel(level: number): number {
+  public static getExpForLevel(level: number): number {
     let i = 0;
     let exp = 0;
     while (i < level) {
@@ -638,9 +342,5 @@ export class Unit {
       "speed+2": this._characteristics.speed + 2,
       "speed+3": this._characteristics.speed + 3,
     }[formula];
-  }
-
-  protected log(message: string, payload?: any) {
-    //console.log(`[Unit id=${this._unitId} fighterId=${this._fighterId}] ${message}`, payload);
   }
 }

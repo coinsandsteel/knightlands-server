@@ -11,11 +11,21 @@ import {
 } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../services/BattleEvents";
 import { SETTINGS } from "../meta";
+import { Fighter } from "./Fighter";
 
 export default class UnitBuffs {
   protected _events: BattleEvents;
-  protected _unit: Unit;
+  protected _fighter: Fighter;
   protected _buffs: BattleBuff[];
+
+  protected _modifiers: {
+    speed: number;
+    initiative: number;
+    defence: number;
+    power: number;
+    attack: number;
+    abilities: number;
+  };
 
   protected _terrainModifiers = {
     [TERRAIN_ICE]: "ice-0",
@@ -25,17 +35,17 @@ export default class UnitBuffs {
     [TERRAIN_LAVA]: "lava-0",
   };
 
-  get unit(): Unit {
-    return this._unit;
+  get fighter(): Fighter {
+    return this._fighter;
   }
 
   get buffs(): BattleBuff[] {
     return this._buffs;
   }
 
-  constructor(events: BattleEvents, unit: Unit, buffs?: BattleBuff[]) {
+  constructor(events: BattleEvents, fighter: Fighter, buffs?: BattleBuff[]) {
     this._events = events;
-    this._unit = unit;
+    this._fighter = fighter;
     this._buffs = buffs || [];
   }
 
@@ -43,7 +53,7 @@ export default class UnitBuffs {
     return this._buffs;
   }
 
-  public calc(initial?: boolean) {
+  public update(initial?: boolean) {
     this._buffs.forEach((buff) => {
       // Terrain
       if (buff.terrain && buff.scheme) {
@@ -52,15 +62,47 @@ export default class UnitBuffs {
       // HP
       if (initial && buff.type === "hp") {
         const hp = Math.round(
-          this.unit.maxHp * this.getBuffModifier({ type: "hp" })
+          this.fighter.maxHp * this.getBuffModifier({ type: "hp" })
         );
-        this.unit.modifyHp(hp, true);
+        this.fighter.modifyHp(hp, true);
       }
     });
+
+    // Characteristics
+    this._modifiers.defence = this.getBuffModifier({ type: "defence" });
+    this._modifiers.speed = this.getBuffModifier({ type: "speed" });
+    this._modifiers.initiative = this.getBuffModifier({
+      type: "initiative",
+    });
+
+    // Attack bonuses
+    this._modifiers.power = this.getBuffModifier({ type: "power" });
+    this._modifiers.attack = this.getBuffModifier({ type: "attack" });
+    this._modifiers.abilities = this.getBuffModifier({
+      type: "abilities",
+    });
+
+    // Stun
+    const stunBuffs = this.getBuffs({ type: "stun" });
+    if (stunBuffs.length) {
+      this.fighter.setStunned(
+        stunBuffs.some((buff) => Math.random() <= buff.probability)
+      );
+    } else {
+      this.fighter.setStunned(false);
+    }
   }
 
   public reset() {
     this._buffs = [];
+    this._modifiers = {
+      speed: -1,
+      initiative: -1,
+      defence: -1,
+      power: -1,
+      attack: -1,
+      abilities: -1,
+    };
   }
 
   public addBuff(buff: BattleBuff): void {
@@ -73,13 +115,13 @@ export default class UnitBuffs {
     //this.log(`Buff added (need commit)`, buff);
     this._buffs.push(buff);
 
-    this.unit.commit();
-    this._events.buffs(this.unit.fighterId, this.buffs);
+    this.fighter.commit();
+    this._events.buffs(this.fighter.fighterId, this.buffs);
 
     if (["power", "attack", "abilities"].includes(buff.type)) {
       this._events.abilities(
-        this.unit.fighterId,
-        this.unit.abilities.serialize()
+        this.fighter.fighterId,
+        this.fighter.abilities.serialize()
       );
     }
   }
@@ -195,7 +237,7 @@ export default class UnitBuffs {
 
     if (outdatedBuffs.length) {
       this.log(`Buffs outdated (need commit)`, { outdatedBuffs });
-      this.unit.commit();
+      this.fighter.commit();
     }
   }
 
@@ -203,7 +245,7 @@ export default class UnitBuffs {
     switch (terrain) {
       case TERRAIN_LAVA: {
         const damage = this.getLavaDamage();
-        this.unit.modifyHp(-damage);
+        this.fighter.modifyHp(-damage);
         this.log(`Lava damage is ${damage}`);
         break;
       }
@@ -239,7 +281,7 @@ export default class UnitBuffs {
   }
 
   public getLavaDamage(): number {
-    return Math.round(this.unit.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
+    return Math.round(this.fighter.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
   }
 
   public getTerrainModifier(terrain: string): number {
