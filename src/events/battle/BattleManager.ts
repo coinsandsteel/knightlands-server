@@ -66,18 +66,18 @@ export class BattleManager {
 
   async init() {
     const values = await Promise.all([
-      Game.db.collection(Collections.BattleClasses).find(),
-      Game.db.collection(Collections.BattleUnits).find(),
-      Game.db.collection(Collections.BattleAbilities).find(),
-      Game.db.collection(Collections.BattleEffects).find()
+      Game.db.collection(Collections.BattleClasses).find().toArray(),
+      Game.db.collection(Collections.BattleUnits).find().toArray(),
+      Game.db.collection(Collections.BattleAbilities).find().toArray(),
+      Game.db.collection(Collections.BattleEffects).find().toArray()
     ]);
 
     this._meta = {
       settings: {},
-      classes: values[0] || {},
-      units: values[1] || {},
-      abilities: values[2] || {},
-      effects: values[3] || {},
+      classes: _.keyBy(values[0] || [], '_id'),
+      units: _.keyBy(values[1] || [], entry => parseInt(entry._id)),
+      abilities: _.keyBy(values[2] || [], '_id'),
+      effects: _.keyBy(values[3] || [], entry => parseInt(entry._id))
     }
 
     this.testMeta();
@@ -97,7 +97,7 @@ export class BattleManager {
         drawData.map((effectId: number) => {
           const effectMeta = this.getEffectMeta(effectId);
           if (!effectMeta) {
-            throw new Error(`[Battle meta] Missing effect meta #${effectId} (unit #${unitId}, ability #${abilityId})`);
+            throw new Error(`[Battle meta] Missing effect meta #${effectId} (unit #${unitId}, ability #${abilityClass})`);
           }
           return this.getEffectMeta(effectId);
         })
@@ -123,7 +123,7 @@ export class BattleManager {
 
   public testMeta() {
     for (const unitId in this._meta.units) {
-      this.getUnitMeta(this._meta.units[unitId]._id);
+      this.getUnitMeta(parseInt(unitId));
     }
     console.log('[Battle meta] Meta is valid');
   }

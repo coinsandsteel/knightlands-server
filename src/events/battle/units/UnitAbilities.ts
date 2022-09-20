@@ -85,7 +85,8 @@ export default class UnitAbilities {
     } else {
       const abilityMeta = game.battleManager.getAbilityMeta(ability);
       const abilityStat = this.getAbilityStat(ability);
-      if (abilityMeta.damageScheme === null) {
+      // TODO update
+      /*if (abilityMeta.damageScheme === null) {
         const effects = abilityStat.effects;
         if (effects && effects.length && effects[0]) {
           const effect = effects[0];
@@ -99,7 +100,7 @@ export default class UnitAbilities {
         }
       } else {
         base = null;
-      }
+      }*/
     }
     return base;
   }
@@ -179,14 +180,23 @@ export default class UnitAbilities {
       [];
 
     // TODO update
-    const abilityStat = {
+    /*const abilityStat = {
       moveRange: this.getAbilityRange(abilityClass, "move"),
       attackRange: this.getAbilityRange(abilityClass, "attack"),
       ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
       effects
     } as BattleUnitAbilityStat;
 
-    return abilityStat;
+    return abilityStat;*/
+
+    return {
+      value: 0,
+      combatValue: 0,
+      moveRange: 0,
+      attackRange: 0,
+      ignoreObstacles: false,
+      effects: []
+    }
   }
   
   public getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
@@ -211,7 +221,7 @@ export default class UnitAbilities {
     return this._abilities.map(ability => {
       return {
         abilityClass: ability.abilityClass,
-        abilityType: ability.abilityType,
+        abilityType: 'unknown', //ability.abilityType,
         tier: ability.tier,
         levelInt: ability.levelInt,
         value: ability.value,
@@ -318,7 +328,7 @@ export default class UnitAbilities {
   public getAbilityByClass(abilityClass: string): BattleUnitAbility {
     // TODO update
     if (abilityClass === ABILITY_ATTACK) {
-      return {
+      /*return {
         abilityClass,
         abilityType: ABILITY_TYPE_ATTACK,
         tier: 1,
@@ -331,7 +341,7 @@ export default class UnitAbilities {
         value: this._unit.damage,
         combatValue: this._unit.damage,
         enabled: true
-      }
+      }*/
     }
 
     const ability = this._abilities ?

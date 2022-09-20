@@ -83,19 +83,23 @@ export class BattleCombat extends BattleService {
       if (effect.type === "agro") {
         buff.targetFighterId = source.fighterId;
       }
-      if (!effect.estimate && abilityMeta.duration) {
+      // TODO update
+      /*if (!effect.estimate && abilityMeta.duration) {
         buff.estimate = _.clone(abilityMeta.duration);
-      }
+      }*/
       target.addBuff(buff);
     });
+
+    // TODO update
 
     // Buff + damage
     // ABILITY_STUN	-1
     // ABILITY_STUN_SHOT -1
     // ABILITY_SHIELD_STUN -1
-    if (!preventAttack && abilityMeta.damageScheme === -1) {
+    /*if (!preventAttack && abilityMeta.damageScheme === -1) {
       this.attack(source, target, abilityClass, true);
     } else {
+      
       this._core.events.effect({
         action: abilityMeta.abilityType,
         source: {
@@ -110,7 +114,7 @@ export class BattleCombat extends BattleService {
           abilityClass
         }
       });
-    }
+    }*/
 
     this.enableCooldown(source, abilityClass);
   }
@@ -235,7 +239,8 @@ export class BattleCombat extends BattleService {
     );
 
     let targetCells = [];
-    switch (abilityData.abilityType) {
+    // TODO update
+    /*switch (abilityData.abilityType) {
       case ABILITY_TYPE_JUMP:
       case ABILITY_TYPE_DE_BUFF:
       case ABILITY_TYPE_ATTACK: {
@@ -254,7 +259,7 @@ export class BattleCombat extends BattleService {
         targetCells = [fighter.index];
         break;
       }
-    }
+    }*/
     targetCells = _.intersection(attackCells, targetCells);
 
     if (fighter.hasAgro) {
