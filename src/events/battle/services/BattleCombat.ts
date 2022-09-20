@@ -87,7 +87,7 @@ export class BattleCombat extends BattleService {
       /*if (!effect.estimate && abilityMeta.duration) {
         buff.estimate = _.clone(abilityMeta.duration);
       }*/
-      target.addBuff(buff);
+      target.buffs.addBuff(buff);
     });
 
     // TODO update

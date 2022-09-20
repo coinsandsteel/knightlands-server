@@ -168,8 +168,8 @@ export class BattleSquad extends BattleService {
 
     // Apply bonuses
     this.units.forEach(unit => {
-      unit.resetBuffs();
-      bonuses.forEach(bonus => unit.addBuff({ source: "squad", ...bonus }));
+      unit.buffs.reset();
+      bonuses.forEach(bonus => unit.buffs.addBuff({ source: "squad", ...bonus }));
     });
 
     // this.log("Squad bonuses", { bonuses });
@@ -222,7 +222,7 @@ export class BattleSquad extends BattleService {
       // Decrease the cooldown
       unit.abilities.decreaseAbilitiesCooldownEstimate();
       // Decrease the buff estimate
-      unit.decreaseBuffsEstimate();
+      unit.buffs.decreaseBuffsEstimate();
     });
   }
 

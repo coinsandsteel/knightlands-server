@@ -1,21 +1,20 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
-import { ABILITY_TYPE_DE_BUFF, TERRAIN_ICE, TERRAIN_HILL, TERRAIN_WOODS, TERRAIN_SWAMP, TERRAIN_LAVA } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../services/BattleEvents";
+import { SETTINGS, UNIT_LEVEL_UP_PRICES } from "../meta";
 import {
-  SETTINGS,
-  UNIT_LEVEL_UP_PRICES
-} from "../meta";
-import {
-  BattleBuff, BattleLevelScheme,
-  BattleUnit, BattleUnitAbility,
-  BattleUnitCharacteristics
+  BattleBuff,
+  BattleLevelScheme,
+  BattleUnit,
+  BattleUnitCharacteristics,
 } from "../types";
 import game from "../../../game";
 import UnitAbilities from "./UnitAbilities";
+import UnitBuffs from "./UnitBuffs";
 
 export class Unit {
   public abilities: UnitAbilities;
+  public buffs: UnitBuffs;
   protected _events: BattleEvents;
 
   protected _template: number;
@@ -36,22 +35,14 @@ export class Unit {
   };
   protected _characteristics: BattleUnitCharacteristics;
   protected _quantity: number;
-  
+
   // Combat
   protected _info: any;
   protected _ratingIndex: number;
   protected _isStunned: boolean;
   protected _hp: number;
-  protected _index: number|null;
+  protected _index: number | null;
   protected _buffs: BattleBuff[] = [];
-
-  protected _terrainModifiers = {
-    [TERRAIN_ICE]: "ice-0",
-    [TERRAIN_HILL]: "hill-0",
-    [TERRAIN_WOODS]: "woods-0",
-    [TERRAIN_SWAMP]: "swamp-0",
-    [TERRAIN_LAVA]: "lava-0"
-  }; 
 
   public modifiers: {
     speed: number;
@@ -127,48 +118,59 @@ export class Unit {
   }
 
   get speed(): number {
-    const bonusDelta = this.getBonusDelta("speed");
+    const bonusDelta = this.buffs.getBonusDelta("speed");
     this._info["speed"] = {
       base: this._characteristics.speed,
       modifier: this.modifiers.speed,
-      delta: bonusDelta
-    }
-    return Math.round(this._characteristics.speed * this.modifiers.speed) + bonusDelta;
+      delta: bonusDelta,
+    };
+    return (
+      Math.round(this._characteristics.speed * this.modifiers.speed) +
+      bonusDelta
+    );
   }
-  
+
   get initiative(): number {
-    const bonusDelta = this.getBonusDelta("initiative");
+    const bonusDelta = this.buffs.getBonusDelta("initiative");
     this._info["initiative"] = {
       base: this._characteristics.initiative,
       modifier: this.modifiers.initiative,
-      delta: bonusDelta
-    }
-    return Math.round(this._characteristics.initiative * this.modifiers.initiative) + bonusDelta;
+      delta: bonusDelta,
+    };
+    return (
+      Math.round(this._characteristics.initiative * this.modifiers.initiative) +
+      bonusDelta
+    );
   }
-  
+
   get defence(): number {
-    const bonusDelta = this.getBonusDelta("defence");
+    const bonusDelta = this.buffs.getBonusDelta("defence");
     this._info["defence"] = {
       base: this._characteristics.defence,
       modifier: this.modifiers.defence,
-      delta: bonusDelta
-    }
-    return Math.round(this._characteristics.defence * this.modifiers.defence) + bonusDelta;
+      delta: bonusDelta,
+    };
+    return (
+      Math.round(this._characteristics.defence * this.modifiers.defence) +
+      bonusDelta
+    );
   }
-  
+
   get damage(): number {
-    const bonusDelta = this.getBonusDelta("damage");
+    const bonusDelta = this.buffs.getBonusDelta("damage");
     this._info["damage"] = {
       base: this._characteristics.damage,
       power: this.modifiers.power,
       attack: this.modifiers.attack,
-      delta: bonusDelta
-    }
-    return Math.round(this._characteristics.damage * this.modifiers.power * this.modifiers.attack) + bonusDelta;
-  }
-  
-  get buffs(): BattleBuff[] {
-    return this._buffs;
+      delta: bonusDelta,
+    };
+    return (
+      Math.round(
+        this._characteristics.damage *
+          this.modifiers.power *
+          this.modifiers.attack
+      ) + bonusDelta
+    );
   }
 
   get isStunned(): boolean {
@@ -176,15 +178,22 @@ export class Unit {
   }
 
   get hasAgro(): boolean {
-    return !!this.getBuffs({ type: "agro" }).length;
+    return !!this.buffs.getBuffs({ type: "agro" }).length;
   }
 
   get agroTargets(): string[] {
-    return this.getBuffs({ type: "agro" }).map(buff => buff.targetFighterId);
+    return this.buffs
+      .getBuffs({ type: "agro" })
+      .map((buff) => buff.targetFighterId);
   }
 
   get wantToCounterAttack(): boolean {
-    return !this.isStunned && this.getBuffs({ type: "counter_attack" }).some(buff => Math.random() <= buff.probability);
+    return (
+      !this.isStunned &&
+      this.buffs
+        .getBuffs({ type: "counter_attack" })
+        .some((buff) => Math.random() <= buff.probability)
+    );
   }
 
   constructor(blueprint: BattleUnit, events: BattleEvents) {
@@ -199,51 +208,51 @@ export class Unit {
       defence: -1,
       power: -1,
       attack: -1,
-      abilities: -1
+      abilities: -1,
     };
-      
+
     this._template = blueprint.template;
-    this._unitId = blueprint.unitId || uuidv4().split('-').pop();
+    this._unitId = blueprint.unitId || uuidv4().split("-").pop();
     this._unitTribe = blueprint.unitTribe;
     this._unitClass = blueprint.unitClass;
-    
+
     if ("ratingIndex" in blueprint) {
       this._ratingIndex = blueprint.ratingIndex;
     }
-    
+
     if ("isStunned" in blueprint) {
       this._isStunned = blueprint.isStunned;
     } else {
       this._isStunned = false;
     }
-    
+
     if ("fighterId" in blueprint) {
       this._fighterId = blueprint.fighterId;
     }
-    
+
     if ("isEnemy" in blueprint) {
       this._isEnemy = blueprint.isEnemy;
     }
-    
+
     if ("isDead" in blueprint) {
       this._isDead = blueprint.isDead;
     } else {
       this._isDead = false;
     }
-    
+
     if ("tier" in blueprint) {
       this._tier = blueprint.tier;
     } else {
       throw Error("Unit's tier was not set");
     }
-    
+
     if ("level" in blueprint) {
       this._level = blueprint.level;
     } else {
       this._level = {
         current: 1,
         next: null,
-        price: null
+        price: null,
       } as BattleLevelScheme;
     }
 
@@ -254,21 +263,24 @@ export class Unit {
     } else {
       this._levelInt = this._level.current;
     }
-    
+
     if ("expirience" in blueprint) {
       this._expirience = blueprint.expirience;
     } else {
       this._expirience = {
         value: 0,
         currentLevelExp: 0,
-        nextLevelExp: this.getExpForLevel(2)
+        nextLevelExp: this.getExpForLevel(2),
       };
     }
 
     if ("characteristics" in blueprint) {
       this._characteristics = blueprint.characteristics;
     } else {
-      this._characteristics = Unit.getCharacteristics(this._template, this._levelInt);
+      this._characteristics = Unit.getCharacteristics(
+        this._template,
+        this._levelInt
+      );
     }
 
     if ("quantity" in blueprint) {
@@ -289,28 +301,23 @@ export class Unit {
       this._hp = this.maxHp;
     }
 
-    if ("buffs" in blueprint) {
-      this._buffs = blueprint.buffs;
-    } else {
-      this._buffs = [];
-    }
-    
     this.abilities = new UnitAbilities(this, blueprint.abilities);
-    
+    this.buffs = new UnitBuffs(this._events, this, blueprint.buffs as any[]);
+
     //this.log(`Init (need commit)`);
     this.commit();
   }
 
   public reset(): void {
     //this.log(`Reset started (need commit)`);
-    
+
     this.modifiers = {
       speed: -1,
       initiative: -1,
       defence: -1,
       power: -1,
       attack: -1,
-      abilities: -1
+      abilities: -1,
     };
 
     this._ratingIndex = null;
@@ -318,158 +325,35 @@ export class Unit {
     this._isDead = false;
     this._index = null;
     this._hp = this.maxHp;
-    this._buffs = [];
 
     this.abilities.reset();
+    this.buffs.reset();
+
     this.commit(true);
 
     //this.log(`Reset finished`, this.variables);
   }
-  
+
   public regenerateFighterId(): void {
-    this._fighterId = uuidv4().split('-').pop();
+    this._fighterId = uuidv4().split("-").pop();
   }
 
   public attackCallback() {
-    // { source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", type: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", type: "defence", trigger: "damage", delta: 1, max: 4 },
-    const buffs = this.getBuffs({ trigger: "damage" });
-    if (buffs.length) {
-      buffs.forEach(buff => {
-        // Stack
-        if (
-          buff.mode === "stack"
-          && 
-          typeof buff.stackValue !== 'undefined'
-          &&
-          buff.stackValue < buff.max
-        ) {
-          buff.stackValue += buff.delta;
-          this.log(`${buff.type} stacked`, buff);
-        }
-      });
-    }
+    this.buffs.handleDamageCallback();
   }
-
-  public getBuffs(params: { source?: string, type?: string, trigger?: string }): BattleBuff[] {
-    return _.filter(this._buffs, params);
-  }
-
-  public getBuffModifier(params: { source?: string, type?: string }): number {
-    const buffs = this.getBuffs(params);
-    if (!buffs.length) {
-      return 1;
-    }
-
-    let modifier = 1;
-    buffs.forEach(buff => {
-      // Constant
-      if (buff.mode === "constant" && !buff.trigger) {
-        //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 }
-        //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" }
-        modifier = modifier * (
-          buff.terrain ? 
-            this.getTerrainModifier(buff.terrain)
-            :
-            buff.modifier
-        );
-      
-      // Burst
-      } else if (buff.mode === "burst") {
-        //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
-        modifier = modifier * (Math.random() <= buff.probability ? buff.modifier : 1);
-      
-      // Stacked
-      } else if (buff.mode === "stack" && buff.multiply) {
-        modifier = modifier * (1 + buff.stackValue);
-      }
-    });
-
-    return modifier;
-  }
-
-  public getBonusDelta(type: string): number {
-    const buffs = this.getBuffs({ type });
-    if (!buffs.length) {
-      return 0;
-    }
-
-    let modifier = 0;
-    buffs.forEach(buff => {
-      // Stacked
-      if (buff.mode === "stack" && buff.sum) {
-        modifier += buff.stackValue;
-      } else if (buff.mode === "constant" && buff.trigger === "debuff" && buff.sum) {
-        modifier += this.getBuffs({ source: ABILITY_TYPE_DE_BUFF }).length ? buff.delta : 0;
-      }
-    });
-
-    return modifier;
-  }
-
-  public addBuff(buff: BattleBuff): void {
-    buff.activated = false;
-    
-    if (buff.mode === "stack") {
-      buff.stackValue = 0;
-    }
-
-    this.log(`Buff added (need commit)`, buff);
-    this._buffs.push(buff);
-
-    this.commit();
-    this._events.buffs(this.fighterId, this.buffs);
-    
-    if (["power", "attack", "abilities"].includes(buff.type)) {
-      this._events.abilities(this._fighterId, this.abilities.serialize());
-    }
-  };
-  
-  public removeBuffs(params: { source?: string, type?: string }): void {
-    this.log(`Remove buffs`, params);
-    this._buffs = this._buffs.filter(buff => {
-      return !(buff.source === params.source && buff.type === params.type);
-    });
-  };
-
-  public decreaseBuffsEstimate(): void {
-    this._buffs.forEach(buff => {
-      if (!_.isUndefined(buff.estimate) && !buff.activated) {
-        buff.activated = true;
-        return;
-      }
-
-      if (
-        _.isNumber(buff.estimate)
-        &&
-        buff.estimate >= 0
-      ) {
-        buff.estimate--;
-      }
-    });
-
-    const filterFunc = buff => _.isNumber(buff.estimate) && buff.estimate <= 0;
-    const outdatedBuffs = _.remove(this._buffs, filterFunc);
-    
-    if (outdatedBuffs.length) {
-      this.log(`Buffs outdated (need commit)`, { outdatedBuffs });
-      this.commit();
-    } 
-  };
 
   public setPower() {
-    const statsSum = 
-      this._characteristics.hp + 
-      this._characteristics.damage + 
-      this._characteristics.defence + 
-      this._characteristics.initiative + 
+    const statsSum =
+      this._characteristics.hp +
+      this._characteristics.damage +
+      this._characteristics.defence +
+      this._characteristics.initiative +
       this._characteristics.speed;
 
     const abilitySum = this.abilities.getPower();
     this._power = (statsSum + abilitySum) * 2;
   }
-    
+
   public serialize(): BattleUnit {
     const unit = {
       template: this._template,
@@ -482,7 +366,7 @@ export class Unit {
       expirience: this._expirience,
       characteristics: this._characteristics,
       abilities: this.abilities.serialize(),
-      quantity: this._quantity
+      quantity: this._quantity,
     } as BattleUnit;
 
     return _.cloneDeep(unit);
@@ -506,8 +390,8 @@ export class Unit {
       index: this._index,
       hp: this._hp,
       abilities: this.abilities.serialize(),
-      buffs: this._buffs,
-      info: this._info
+      buffs: this.buffs.serialize(),
+      info: this._info,
     } as BattleUnit;
 
     return _.cloneDeep(squadUnit);
@@ -527,15 +411,18 @@ export class Unit {
     }
 
     this._expirience.value += value;
- 
+
     const lastLevelExpEnd = this.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
-    if (this._levelInt >= SETTINGS.maxUnitTierLevel[3]-1 && this._expirience.value > lastLevelExpEnd) {
+    if (
+      this._levelInt >= SETTINGS.maxUnitTierLevel[3] - 1 &&
+      this._expirience.value > lastLevelExpEnd
+    ) {
       this._expirience.value = lastLevelExpEnd;
       return;
     }
 
     let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES);
-    
+
     let currentExp = this._expirience.value;
     let currentLevel = this._level.current;
     let newLevel = currentLevel + 1;
@@ -587,10 +474,14 @@ export class Unit {
     this._level.price = null;
   }
 
-  public static getCharacteristics(template: number, level: number): BattleUnitCharacteristics {
+  public static getCharacteristics(
+    template: number,
+    level: number
+  ): BattleUnitCharacteristics {
     const unitsMeta = game.battleManager.meta.units;
     const unitMeta = _.cloneDeep(unitsMeta[template]) || {};
-    const classMeta = _.cloneDeep(game.battleManager.meta.classes[unitMeta.class]) || {};
+    const classMeta =
+      _.cloneDeep(game.battleManager.meta.classes[unitMeta.class]) || {};
 
     const v = {
       Level: level,
@@ -607,22 +498,23 @@ export class Unit {
       MultiplierInitiative: unitMeta.multiplierInitiative || 0,
 
       LevelStepHp: unitMeta.levelStepHp || 0,
-      LevelStepDamage: unitMeta.levelStepDamage || 0
-    }
+      LevelStepDamage: unitMeta.levelStepDamage || 0,
+    };
 
-    // HP: ClassHp*((MultiplierHp+LevelStepHp*(Level-1))						
-    const hp = v.ClassHp * (v.MultiplierHp + v.LevelStepHp * (v.Level-1));
+    // HP: ClassHp*((MultiplierHp+LevelStepHp*(Level-1))
+    const hp = v.ClassHp * (v.MultiplierHp + v.LevelStepHp * (v.Level - 1));
 
-    // Damage: ClassDamage*((MultiplierDamage+LevelStepDamage*(Level-1))						
-    const damage = v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level-1))	;
+    // Damage: ClassDamage*((MultiplierDamage+LevelStepDamage*(Level-1))
+    const damage =
+      v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level - 1));
 
-    // Defense: ClassDefense*MultiplierDefence^(Level-1)							
-    const defence = Math.pow(v.ClassDefense * v.MultiplierDefence, v.Level-1);
+    // Defense: ClassDefense*MultiplierDefence^(Level-1)
+    const defence = Math.pow(v.ClassDefense * v.MultiplierDefence, v.Level - 1);
 
-    // Speed: ClassSpeed+MultiplierSpeed*(Level-1)									
-    const speed = v.ClassSpeed + v.MultiplierSpeed * (v.Level-1);
+    // Speed: ClassSpeed+MultiplierSpeed*(Level-1)
+    const speed = v.ClassSpeed + v.MultiplierSpeed * (v.Level - 1);
 
-    // Initiative: Speed * MultiplierInitiative			
+    // Initiative: Speed * MultiplierInitiative
     const initiative = speed * v.MultiplierInitiative;
 
     return {
@@ -630,12 +522,15 @@ export class Unit {
       damage: Math.round(damage),
       defence: Math.round(defence),
       speed: Math.round(speed),
-      initiative: Math.round(initiative)
+      initiative: Math.round(initiative),
     };
   }
 
   protected setCharacteristics(): void {
-    this._characteristics = Unit.getCharacteristics(this._template, this._levelInt);
+    this._characteristics = Unit.getCharacteristics(
+      this._template,
+      this._levelInt
+    );
   }
 
   public maximize() {
@@ -663,55 +558,16 @@ export class Unit {
     this._index = index;
   }
 
-  public getLavaDamage(): number {
-    return Math.round(this.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
-  }
-
-  public launchTerrainEffect(terrain?: string): void {
-    switch (terrain) {
-      case TERRAIN_LAVA: {
-        const damage = this.getLavaDamage();
-        this.modifyHp(-damage);
-        this.log(`Lava damage is ${damage}`);
-        break;
-      }
-      case TERRAIN_ICE:
-      case TERRAIN_SWAMP:
-      case TERRAIN_HILL:
-      case TERRAIN_WOODS: {
-        // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-        this.removeBuffs({
-          source: "terrain",
-          type: SETTINGS.terrain[terrain].type
-        });
-        
-        // Hills, highlands - Increase damage to enemies by 25%
-        // Forest - Increases unit's defense by 25%
-        this.addBuff({
-          source: "terrain",
-          sourceId: terrain,
-          mode: "constant",
-          type: SETTINGS.terrain[terrain].type,
-          modifier: this.getTerrainModifier(terrain),
-          caseId: parseInt(this._terrainModifiers[terrain].split('-')[1])
-        });
-        break;
-      }
-      default: {
-        this.removeBuffs({
-          source: "terrain"
-        });
-        break;
-      }
-    }
-  }
-
-  public modifyHp(value: number): void {
+  public modifyHp(value: number, force?: boolean): void {
     if (this._isDead) {
       return;
     }
 
-    this._hp += value;
+    if (!force) {
+      this._hp += value;
+    } else {
+      this._hp = value;
+    }
 
     if (this._hp <= 0) {
       this._isDead = true;
@@ -723,7 +579,7 @@ export class Unit {
     } else if (this._hp > this.maxHp) {
       this._hp = this.maxHp;
     }
-  };
+  }
 
   public setRatingIndex(value: number) {
     this._ratingIndex = value;
@@ -732,31 +588,28 @@ export class Unit {
   public commit(initial?: boolean): void {
     //this.log(`Commit start`, this.variables);
 
-    this._buffs.forEach(buff => {
-      // Terrain
-      if (buff.terrain && buff.scheme) {
-        this._terrainModifiers[buff.terrain] = buff.scheme;
-      }
-      // HP
-      if (initial && buff.type === "hp") {
-        this._hp = Math.round(this.maxHp * this.getBuffModifier({ type: "hp" }));
-      }
-    });
-    
+    this.buffs.calc(initial);
+
     // Characteristics
-    this.modifiers.defence = this.getBuffModifier({ type: "defence" });
-    this.modifiers.speed = this.getBuffModifier({ type: "speed" });
-    this.modifiers.initiative = this.getBuffModifier({ type: "initiative" });
+    this.modifiers.defence = this.buffs.getBuffModifier({ type: "defence" });
+    this.modifiers.speed = this.buffs.getBuffModifier({ type: "speed" });
+    this.modifiers.initiative = this.buffs.getBuffModifier({
+      type: "initiative",
+    });
 
     // Attack bonuses
-    this.modifiers.power = this.getBuffModifier({ type: "power" });
-    this.modifiers.attack = this.getBuffModifier({ type: "attack" });
-    this.modifiers.abilities = this.getBuffModifier({ type: "abilities" });
-    
+    this.modifiers.power = this.buffs.getBuffModifier({ type: "power" });
+    this.modifiers.attack = this.buffs.getBuffModifier({ type: "attack" });
+    this.modifiers.abilities = this.buffs.getBuffModifier({
+      type: "abilities",
+    });
+
     // Stun
-    const stunBuffs = this.getBuffs({ type: "stun" });
+    const stunBuffs = this.buffs.getBuffs({ type: "stun" });
     if (stunBuffs.length) {
-      this._isStunned = stunBuffs.some(buff => Math.random() <= buff.probability);
+      this._isStunned = stunBuffs.some(
+        (buff) => Math.random() <= buff.probability
+      );
     } else {
       this._isStunned = false;
     }
@@ -765,10 +618,6 @@ export class Unit {
     this.setPower();
 
     //this.log(`Commit finish`, this.variables);
-  }
-
-  public resetBuffs(): void {
-    this._buffs = [];
   }
 
   public getExpForLevel(level: number): number {
@@ -781,23 +630,13 @@ export class Unit {
     return exp;
   }
 
-  public getTerrainModifier(terrain: string): number {
-    return SETTINGS.terrain[terrain].modifiers[
-      this._terrainModifiers[terrain]
-    ]  
-  }
-
-  public setTerrainModifier(terrain: string, value: number): void {
-    this._terrainModifiers[terrain] = value;
-  }
-
   public getValueByFormula(formula: string) {
     return {
       "speed-1": this._characteristics.speed - 1,
-      "speed":   this._characteristics.speed,
+      speed: this._characteristics.speed,
       "speed+1": this._characteristics.speed + 1,
       "speed+2": this._characteristics.speed + 2,
-      "speed+3": this._characteristics.speed + 3
+      "speed+3": this._characteristics.speed + 3,
     }[formula];
   }
 

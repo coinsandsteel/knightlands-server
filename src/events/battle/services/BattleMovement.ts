@@ -207,7 +207,7 @@ export class BattleMovement extends BattleService {
         this.log(`Passing through the ${terrain}`);
 
         const oldHp = _.clone(fighter.hp);
-        fighter.launchTerrainEffect(terrain);
+        fighter.buffs.launchTerrainEffect(terrain);
 
         result.effects.push({
           action: "terrain",
@@ -225,7 +225,7 @@ export class BattleMovement extends BattleService {
       case TERRAIN_SWAMP: {
         // Found an obstacle, stop
         result.stop = true;
-        fighter.launchTerrainEffect(terrain);
+        fighter.buffs.launchTerrainEffect(terrain);
         this.log((moving ? "Stand on" : "Passing through") + ` the ${terrain}`, { buffs: fighter.buffs });
         break;
       }
@@ -234,12 +234,12 @@ export class BattleMovement extends BattleService {
         if (moving) {
           break;
         }
-        fighter.launchTerrainEffect(terrain);
+        fighter.buffs.launchTerrainEffect(terrain);
         this.log(`Stand on the ${terrain}`, { buffs: fighter.buffs });
         break;
       }
       default: {
-        fighter.launchTerrainEffect(terrain);
+        fighter.buffs.launchTerrainEffect(terrain);
         break;
       }
     }
