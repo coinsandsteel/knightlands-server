@@ -10,7 +10,6 @@ import {
 import game from "../../../game";
 import UnitAbilities from "./UnitAbilities";
 import { BattleUnitMeta } from "./MetaDB";
-import { Fighter } from "./Fighter";
 
 export class Unit {
   protected _events: BattleEvents;
@@ -34,7 +33,11 @@ export class Unit {
   protected _characteristics: BattleUnitCharacteristics;
   protected _quantity: number;
 
-  public abilities: UnitAbilities;
+  protected _abilities: UnitAbilities;
+
+  get abilities(): UnitAbilities {
+    return this._abilities;
+  }
 
   get tier(): number {
     return this._tier;
@@ -90,7 +93,7 @@ export class Unit {
     this._characteristics = blueprint.characteristics;
     this._quantity = blueprint.quantity;
 
-    this.abilities = new UnitAbilities(this, blueprint.abilities);
+    this._abilities = new UnitAbilities(this, blueprint.abilities);
     this._events = events;
 
     this.commit();

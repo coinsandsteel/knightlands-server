@@ -5,6 +5,7 @@ import events from "../../../knightlands-shared/events";
 import { BattleService } from "./BattleService";
 import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility } from "../types";
 import { Unit } from "../units/Unit";
+import { Fighter } from "../units/Fighter";
 
 export class BattleEvents extends BattleService {
   protected _events: any;
@@ -97,18 +98,18 @@ export class BattleEvents extends BattleService {
     this._events.abilities[fighterId] = abilities;
   }
 
-  userFighter(data: Unit) {
+  userFighter(fighter: Fighter) {
     if (this._events.userFighter === undefined) {
       this._events.userFighter = [];
     }
-    this._events.userFighter.push(data.serializeForSquad());
+    this._events.userFighter.push(fighter.serializeFighter());
   }
 
-  enemyFighter(data: Unit) {
+  enemyFighter(fighter: Fighter) {
     if (this._events.enemyFighter === undefined) {
       this._events.enemyFighter = [];
     }
-    this._events.enemyFighter.push(data.serializeForSquad());
+    this._events.enemyFighter.push(fighter.serializeFighter());
   }
 
   terrain(terrain: BattleTerrainMap) {

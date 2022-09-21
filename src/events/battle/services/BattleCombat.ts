@@ -63,7 +63,7 @@ export class BattleCombat extends BattleService {
     if (!this.canAffect(source, target, abilityClass)) {
       return;
     }
-    
+
     const abilityStat = source.abilities.getAbilityStat(abilityClass);
     const effects = abilityStat.effects;
     if (!effects) {
@@ -99,7 +99,7 @@ export class BattleCombat extends BattleService {
     /*if (!preventAttack && abilityMeta.damageScheme === -1) {
       this.attack(source, target, abilityClass, true);
     } else {
-      
+
       this._core.events.effect({
         action: abilityMeta.abilityType,
         source: {
@@ -217,9 +217,9 @@ export class BattleCombat extends BattleService {
     return _.intersection(attackCells, cells);
   }
 
-  public getAttackAreaData(fighter: Unit, abilityClass: string, canMove: boolean): { 
-    attackCells: number[], 
-    targetCells: number[] 
+  public getAttackAreaData(fighter: Unit, abilityClass: string, canMove: boolean): {
+    attackCells: number[],
+    targetCells: number[]
   } {
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
     const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
@@ -232,7 +232,7 @@ export class BattleCombat extends BattleService {
     }
 
     let attackCells = this._core.game.movement.getMoveAttackCells(
-      fighter.index, 
+      fighter.index,
       canMove ? abilityStat.moveRange : 0,
       abilityStat.attackRange,
       abilityStat.ignoreObstacles
@@ -280,10 +280,10 @@ export class BattleCombat extends BattleService {
     // Need to approach
     if (!attackAreaNoMoving.targetCells.includes(target.index)) {
       this.log("Need to approach the enemy");
-      
+
       // Calc all the move cells
       const moveCells = this._core.game.movement.getMoveCellsByAbility(fighter, abilityClass);
-      
+
       // Iterate move cells to check if fighter can reach enemy from there
       const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
       let canAttackFrom = [];
@@ -294,7 +294,7 @@ export class BattleCombat extends BattleService {
           canAttackFrom.push({ index: moveCell, range: attackPath.length });
         }
       });
-      
+
       // Have spots to approach
       if (canAttackFrom.length) {
         // Move to a closest move cell

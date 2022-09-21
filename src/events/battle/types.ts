@@ -56,7 +56,7 @@ export interface BattleUnit {
   quantity: number;
 }
 
-export interface BattleFighter {
+export interface BattleFighter extends BattleUnit {
   unitId: string;
   fighterId: string;
   isEnemy: boolean;
@@ -112,7 +112,7 @@ export interface BattleCombatState {
 export interface BattleSquadState {
   power: number;
   bonuses: BattleBuff[];
-  units: BattleUnit[];
+  fighters: BattleFighter[];
 }
 
 export interface BattleFighterUpdate {

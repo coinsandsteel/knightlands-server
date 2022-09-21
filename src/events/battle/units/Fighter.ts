@@ -16,7 +16,7 @@ export class Fighter extends Unit {
   protected _isStunned: boolean;
   protected _index: number | null;
   protected _hp: number;
-  public buffs: FighterBuffs;
+  protected _buffs: FighterBuffs;
 
   public _modifiers: {
     speed: number;
@@ -26,6 +26,10 @@ export class Fighter extends Unit {
     attack: number;
     abilities: number;
   };
+
+  get buffs(): FighterBuffs {
+    return this._buffs;
+  }
 
   get index(): number {
     return this._index;
@@ -55,6 +59,10 @@ export class Fighter extends Unit {
     return this._hp;
   }
 
+  get isStunned(): boolean {
+    return this._isStunned;
+  }
+  
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
@@ -89,10 +97,6 @@ export class Fighter extends Unit {
           this._modifiers.attack
       ) + bonusDelta
     );
-  }
-
-  get isStunned(): boolean {
-    return this._isStunned;
   }
 
   get hasAgro(): boolean {
@@ -135,7 +139,7 @@ export class Fighter extends Unit {
     this._index = blueprint.index;
     this._hp = blueprint.hp;
 
-    this.buffs = new FighterBuffs(events, this, blueprint.buffs);
+    this._buffs = new FighterBuffs(events, this, blueprint.buffs);
     this._events = events;
 
     this.commit();

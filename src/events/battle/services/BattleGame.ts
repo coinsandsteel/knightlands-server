@@ -3,39 +3,39 @@ import { ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_T
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
 import { SQUAD_BONUSES } from "../meta";
-import { BattleGameState, BattleInitiativeRatingEntry, BattleTerrainMap, BattleUnit } from "../types";
-import { Unit } from "../units/Unit";
+import { BattleFighter, BattleGameState, BattleInitiativeRatingEntry, BattleTerrainMap } from "../types";
 import { BattleCombat } from "./BattleCombat";
 import { BattleMovement } from "./BattleMovement";
 import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
 import game from "../../../game";
+import { Fighter } from "../units/Fighter";
 
 export class BattleGame extends BattleService {
   protected _state: BattleGameState;
   protected _core: BattleCore;
-  
+
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
-  protected _enemyOptions: (any[][]|null) = null;
+  protected _enemyOptions: (BattleFighter[][]|null) = null;
 
   protected _combat: BattleCombat;
   protected _movement: BattleMovement;
   protected _terrain: BattleTerrain;
   protected _aiMoveTimeout: ReturnType<typeof setTimeout>;
- 
+
   constructor(state: BattleGameState|null, core: BattleCore) {
     super();
     this._core = core;
 
     this._userSquad = new BattleSquad(
-      state ? state.userSquad.units : [],
+      state ? state.userSquad.fighters : [],
       false,
       this._core
     );
     this._enemySquad = new BattleSquad(
-      state ? state.enemySquad.units : [], 
+      state ? state.enemySquad.fighters : [],
       true,
       this._core
     );
@@ -55,9 +55,9 @@ export class BattleGame extends BattleService {
     this.log("Loaded");
   }
 
-  get relativeEnemySquad(): Unit[] {
+  get relativeEnemySquad(): Fighter[] {
     const activeFighter = this.getActiveFighter();
-    return activeFighter.isEnemy ? this._userSquad.liveUnits : this._enemySquad.liveUnits;
+    return activeFighter.isEnemy ? this._userSquad.liveFighters : this._enemySquad.liveFighters;
   }
 
   get movement(): BattleMovement {
@@ -76,10 +76,10 @@ export class BattleGame extends BattleService {
     return this._state.combat.started;
   }
 
-  get allUnits(): Unit[] {
+  get allFighters(): Fighter[] {
     return [
-      ...this._userSquad.liveUnits, 
-      ...this._enemySquad.liveUnits
+      ...this._userSquad.liveFighters,
+      ...this._enemySquad.liveFighters
     ];
   }
 
@@ -91,18 +91,18 @@ export class BattleGame extends BattleService {
     return this._enemySquad;
   }
 
-  get userUnits(): Unit[] {
-    return this._userSquad.units;
+  get userFighters(): Fighter[] {
+    return this._userSquad.fighters;
   }
 
-  get enemyUnits(): Unit[] {
-    return this._enemySquad.units;
+  get enemyFighters(): Fighter[] {
+    return this._enemySquad.fighters;
   }
 
   public dispose() {
     this.log("Shutting down", this._state);
   }
-  
+
   protected setInitialState() {
     this._state = {
       mode: null,
@@ -141,31 +141,27 @@ export class BattleGame extends BattleService {
 
   public init(): void {
     this.log("Init", this._state);
-    
+
     // Combat started
     if (this.combatStarted) {
       this.log("Resuming combat");
       this.launchFighter();
     }
   }
-  
-  protected getActiveFighter(): Unit|null {
+
+  protected getActiveFighter(): Fighter|null {
     const fighterId = this._state.combat.activeFighterId;
     return this._userSquad.getFighter(fighterId) || this._enemySquad.getFighter(fighterId) || null;
   }
 
-  public squadIncludesUnit(unitId: string): boolean {
-    return this._userSquad.includesUnit(unitId);
-  }
-  
   public proxyUnit(unitId: string): void {
     this._userSquad.proxyUnit(unitId);
   }
-  
+
   public fillSquadSlot(unitId: string, index: number): void {
     this._userSquad.fillSlot(unitId, index);
   }
-  
+
   public clearSquadSlot(index: number): void {
     this._userSquad.clearSlot(index);
   }
@@ -182,13 +178,13 @@ export class BattleGame extends BattleService {
 
   public addUnitToSquad(params: { unitTribe?: string, unitClass?: string }, tier: number, squadIndex: number) {
     const blueprint = this._core.inventory.getRandomUnitByProps(params, tier);
-    /*this.log("New squad member blueprint", { 
-      unitId: blueprint.unitId, 
-      tribe: blueprint.tribe, 
-      unitClass: blueprint.class, 
-      tier: blueprint.tier 
+    /*this.log("New squad member blueprint", {
+      unitId: blueprint.unitId,
+      tribe: blueprint.tribe,
+      unitClass: blueprint.class,
+      tier: blueprint.tier
     });*/
-    
+
     let unit = this._core.inventory.getUnitByFilter({ template: blueprint.template, tier });
     if (!unit) {
       unit = this._core.inventory.addUnit(blueprint);
@@ -215,27 +211,16 @@ export class BattleGame extends BattleService {
     // Find an enemy
     // Load terrain
   }
-  
-  public enterVirtualDuel(userSquad: BattleUnit[], enemySquad: BattleUnit[]): void {
-    // Start combat
-    this.setInitiativeRating();
 
-    // Sync & flush
-    this.sync();
-    this._core.events.flush();
-
-    this.nextFighter();
-  }
-  
   public enterDuel(difficulty: string): void {
-    if (!this._userSquad.units.length) {
+    if (!this._userSquad.fighters.length) {
       return;
     }
 
     // Set game mode and difficulty
     this.setMode(GAME_MODE_DUEL);
     this.setDifficulty(difficulty);
-    
+
     // Set enemy squad
     const difficulties = {
       [GAME_DIFFICULTY_HIGH]: 0,
@@ -252,11 +237,11 @@ export class BattleGame extends BattleService {
     this._enemySquad.regenerateFighterIds();
     this._enemySquad.arrange();
 
-    this.spawnUserSquad(this._state.userSquad.units);
+    this.spawnUserSquad(this._state.userSquad.fighters);
     this._userSquad.init();
     this._userSquad.regenerateFighterIds();
     this._userSquad.arrange();
-    
+
     // Terrain
     this.terrain.setRandomMap();
 
@@ -270,12 +255,12 @@ export class BattleGame extends BattleService {
 
     this.nextFighter();
   }
-  
-  public spawnUserSquad(userSquad: BattleUnit[]) {
+
+  public spawnUserSquad(userSquad: BattleFighter[]) {
     this._userSquad = new BattleSquad(userSquad, false, this._core);
   }
-  
-  public spawnEnemySquad(enemySquad: BattleUnit[]) {
+
+  public spawnEnemySquad(enemySquad: BattleFighter[]) {
     this._enemySquad = new BattleSquad(enemySquad, true, this._core);
     this._enemyOptions = null;
   }
@@ -292,51 +277,52 @@ export class BattleGame extends BattleService {
   public getDuelOptions() {
     const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
     const squads = [[], [], []];
-    
+
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
         const unit = this._core.inventory.getRandomUnitByProps({ unitTribe }, tier);
-        squads[tier-1].push(unit.serializeForSquad());
+        const fighter = Fighter.createFighter(unit, true, this._core.events);
+        squads[tier-1].push(fighter.serializeFighter());
       }
     }
-    
+
     this._enemyOptions = squads;
 
     return squads;
   }
-  
+
   public setMode(mode: string): void {
     this._state.mode = mode;
     this._core.events.mode(mode);
   }
-  
+
   public setDifficulty(difficulty: string): void {
     this._state.difficulty = difficulty;
     this._core.events.difficulty(difficulty);
   }
-  
+
   public setCombatStarted(value: boolean): void {
     this._state.combat.started = value;
     this._core.events.combatStarted(value);
   }
-  
+
   public setCombatResult(value: string|null): void {
     this._state.combat.result = value;
     this._core.events.combatResult(value);
-    
+
     if (value) {
       this.log("Combat finished", { result: value});
       this.exit(value);
     }
   }
-  
+
   public nextFighter(skipLaunch?: boolean): void {
     if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
       throw Error("No initiative rating. Cannot choose next fighter.");
     }
 
     this.log("Choosing the next fighter...", { skipLaunch });
-    
+
     // No active fighter
     if (!this.getActiveFighter()) {
       this.log("No active fighter. Choosing the first one.");
@@ -358,7 +344,7 @@ export class BattleGame extends BattleService {
       this.launchFighter();
     }
   }
-  
+
   public launchFighter(): void {
     const activeFighter = this.getActiveFighter();
     if (!activeFighter) {
@@ -375,16 +361,16 @@ export class BattleGame extends BattleService {
       this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (enemy). Making a move...`);
       this.setMoveCells([]);
       this.autoMove(activeFighter);
-      
+
     } else {
       this.log(`[Game] Active fighter is ${this._state.combat.activeFighterId} (user's). Showing move cells.`);
       const moveCells = this._movement.getMoveCellsByAbility(activeFighter, ABILITY_MOVE);
       this.setMoveCells(moveCells);
     }
-    
+
     this.setTargetCells([]);
     this.setAttackCells([]);
-    
+
     // No next fighter id = draw finished
     if (!this.getNextFighterId()) {
       this.log("Draw finished");
@@ -393,7 +379,7 @@ export class BattleGame extends BattleService {
 
     this._core.events.flush();
   }
-  
+
   public callbackDrawFinished(): void {
     this.setInitiativeRating();
     this._enemySquad.callbackDrawFinished();
@@ -402,7 +388,7 @@ export class BattleGame extends BattleService {
   }
 
   public setInitiativeRating(): void {
-    const entries = _.cloneDeep(this.allUnits)
+    const entries = _.cloneDeep(this.allFighters)
       .map(unit => {
         return {
           fighterId: unit.fighterId,
@@ -412,7 +398,7 @@ export class BattleGame extends BattleService {
       });
 
     const rating = _.orderBy(entries, "initiative", "desc");
-    
+
     this._userSquad.setInitiativeRating(rating);
     this._enemySquad.setInitiativeRating(rating);
     this._state.initiativeRating = rating;
@@ -458,8 +444,8 @@ export class BattleGame extends BattleService {
     this.handleActionCallback(false);
     //this.log(this._userSquad.units);
   }
-  
-  public autoMove(fighter: Unit): void {
+
+  public autoMove(fighter: Fighter): void {
     let index = null;
     let ability = fighter.abilities.strongestEnabledAbility();
     let attackAreaData = this._combat.getAttackAreaData(fighter, ability, true);
@@ -476,10 +462,10 @@ export class BattleGame extends BattleService {
     this.handleAction(fighter, index, ability);
     this.handleActionCallback(true);
   }
-  
-  public handleAction(fighter: Unit, index: number|null, ability: string|null): void {
+
+  public handleAction(fighter: Fighter, index: number|null, ability: string|null): void {
     this.log("Action", { fighter: fighter.fighterId, index, ability });
-    
+
     // Check if unit can use ability
     // Check ability cooldown
     if (
@@ -521,12 +507,12 @@ export class BattleGame extends BattleService {
     /*if (index !== null && [ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(ability)) {
       this.log("Move", { fighter: fighter.fighterId, index });
       this._movement.moveFighter(fighter, ability, index);
-      
+
     // Self-buff
     } else if (abilityType === ABILITY_TYPE_SELF_BUFF) {
       this.log("Self-buff", { fighter: fighter.fighterId, ability });
       this._combat.buff(fighter, fighter, ability);
-      
+
     // Group heal
     } else if (index === null && ability === ABILITY_GROUP_HEAL) {
       this.log("Group heal", { fighter: fighter.fighterId, ability });
@@ -575,15 +561,15 @@ export class BattleGame extends BattleService {
   }
 
   public handleActionCallback(timeout: boolean) {
-    this.log("Emenies left", this._enemySquad.liveUnits.length);
-    this.log("Aliies left", this._userSquad.liveUnits.length);
+    this.log("Emenies left", this._enemySquad.liveFighters.length);
+    this.log("Aliies left", this._userSquad.liveFighters.length);
 
     // Enemy loose
-    if (!this._enemySquad.liveUnits.length) {
+    if (!this._enemySquad.liveFighters.length) {
       this.setCombatResult("win");
-      
+
     // User loose
-    } else if (!this._userSquad.liveUnits.length) {
+    } else if (!this._userSquad.liveFighters.length) {
       this.setCombatResult("loose");
     }
 
@@ -597,40 +583,40 @@ export class BattleGame extends BattleService {
     // Launch next unit turn
     if (timeout) {
       const self = this;
-      this._aiMoveTimeout = setTimeout(function(){ 
-        self.nextFighter(); 
+      this._aiMoveTimeout = setTimeout(function(){
+        self.nextFighter();
       }, 500);
     } else {
       this.nextFighter();
     }
   }
 
-  public getFighterByIndex(index: number): Unit|null {
+  public getFighterByIndex(index: number): Fighter|null {
     return _.union(
-      this._userSquad.liveUnits,
-      this._enemySquad.liveUnits
+      this._userSquad.liveFighters,
+      this._enemySquad.liveFighters
     ).find(unit => unit.index === index) || null;
   }
 
-  public getSquadByFighter(fighter: Unit): Unit[] {
+  public getSquadByFighter(fighter: Fighter): Fighter[] {
     if (fighter.isEnemy) {
-      return this._enemySquad.liveUnits;
+      return this._enemySquad.liveFighters;
     } else {
-      return this._userSquad.liveUnits;
+      return this._userSquad.liveFighters;
     }
   }
 
-  public getEnemySquadByFighter(fighter: Unit): Unit[] {
+  public getEnemySquadByFighter(fighter: Fighter): Fighter[] {
     if (fighter.isEnemy) {
-      return this._userSquad.liveUnits;
+      return this._userSquad.liveFighters;
     } else {
-      return this._enemySquad.liveUnits;
+      return this._enemySquad.liveFighters;
     }
   }
 
   public setMoveCells(cells: number[]): void {
     this._state.combat.runtime.moveCells = cells;
-    this._core.events.combatMoveCells(cells); 
+    this._core.events.combatMoveCells(cells);
   }
 
   public setAttackCells(cells: number[]): void {
@@ -658,7 +644,7 @@ export class BattleGame extends BattleService {
     this._core.events.initiativeRating(this._state.initiativeRating);
 
     //this.log("Initiative rating", this._state.initiativeRating);
-    
+
     this.setActiveFighterId(fighterId);
   }
 
@@ -693,10 +679,10 @@ export class BattleGame extends BattleService {
     this.setAttackCells([]);
     this.setTargetCells([]);
     this.setCombatResult(result || null);
-    
+
     this._state.enemySquad = this._enemySquad.getInitialState();
     this._core.events.enemySquad(this._state.enemySquad);
-    
+
     this._state.initiativeRating = [];
     this._core.events.initiativeRating([]);
 

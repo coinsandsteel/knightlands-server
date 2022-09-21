@@ -1,90 +1,90 @@
 import _ from "lodash";
-import { BattleInitiativeRatingEntry, BattleSquadState, BattleUnit } from "../types";
+import { BattleFighter, BattleInitiativeRatingEntry, BattleSquadState } from "../types";
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
 import { SQUAD_BONUSES } from "../meta";
 import { BattleService } from "./BattleService";
+import { Fighter } from "../units/Fighter";
 
 export class BattleSquad extends BattleService {
   protected _state: BattleSquadState;
   protected _core: BattleCore;
 
   protected _isEnemy: boolean;
-  protected _units: (Unit|null)[];
+  protected _fighters: (Fighter|null)[];
 
-  get units(): Unit[] {
-    return this._units.filter(u => u);
+  get fighters(): Fighter[] {
+    return this._fighters.filter(u => u);
   }
-  
-  get liveUnits(): Unit[] {
-    return this._units.filter(u => u).filter(unit => !unit.isDead);
+
+  get liveFighters(): Fighter[] {
+    return this._fighters.filter(u => u).filter(unit => !unit.isDead);
   }
-  
-  constructor(units: BattleUnit[], isEnemy: boolean, core: BattleCore) {
+
+  constructor(fighters: BattleFighter[], isEnemy: boolean, core: BattleCore) {
     super();
-    
+
     this._core = core;
     this._isEnemy = isEnemy;
 
     this._state = this.getInitialState();
-    this._state.units = units;
+    this._state.fighters = fighters;
 
-    this.pullUnits();
+    this.pullFighters();
   }
-  
+
   public init() {
     this.resetState();
     this.updateStat();
   }
-  
+
   public getInitialState(): BattleSquadState {
     return {
       power: 0,
       bonuses: [],
-      units: []
+      fighters: []
     } as BattleSquadState;
   }
-  
+
   public getState(): BattleSquadState {
-    this.pushUnits();
+    this.pushFighters();
     return this._state;
   }
-  
-  protected pullUnits(): void {
-    this._units = [];
-    this._state.units.forEach((unit: BattleUnit|null) => {
-      this._units.push(unit ? this.makeUnit(unit) : null);
+
+  protected pullFighters(): void {
+    this._fighters = [];
+    this._state.fighters.forEach((blueprint: BattleFighter|null) => {
+      this._fighters.push(blueprint ? this.makeFighter(blueprint) : null);
     });
   }
-  
-  public pushUnits(): void {
-    this._state.units = [];
-    this._units.forEach((unit: Unit|null, index: number) => {
-      this._state.units[index] = unit ? unit.serializeForSquad() : null;
+
+  public pushFighters(): void {
+    this._state.fighters = [];
+    this._fighters.forEach((fighter: Fighter|null, index: number) => {
+      this._state.fighters[index] = fighter ? fighter.serializeFighter() : null;
     });
   }
-  
-  protected makeUnit(unit: BattleUnit): Unit {
-    unit.isEnemy = this._isEnemy;
-    return new Unit(unit, this._core.events);
+
+  protected makeFighter(blueprint: BattleFighter): Fighter {
+    const unit = this._core.inventory.getUnitById(blueprint.unitId)
+    blueprint.isEnemy = this._isEnemy;
+    return new Fighter(unit, blueprint, this._core.events);
   }
-  
+
   public fillSlot(unitId: string, index: number): void {
     if (!(index >= 0 && index <= 4)) {
       throw Error("Cannot fill this slot - no such a slot");
     }
-    
+
     const unit = _.cloneDeep(this._core.inventory.getUnitById(unitId) as Unit);
     if (!unit) {
       throw Error(`Unit ${unitId} not found`);
     }
 
-    unit.regenerateFighterId();
-    unit.reset();
+    const figher = Fighter.createFighter(unit, this._isEnemy, this._core.events);
 
     // Fill slot
-    this._units[index] = unit;
-
+    this._fighters[index] = figher;
     this.updateStat();
 
     // Event
@@ -92,27 +92,27 @@ export class BattleSquad extends BattleService {
 
     this.log(`Unit ${unitId} was set into slot #${index}`);
   }
-  
+
   public clearSlot(index: number): void {
     if (!(index >= 0 && index <= 4)) {
       throw Error("Cannot clear this slot - no such a slot");
     }
-    
+
     // Fill slot
-    this._units[index] = null;
+    this._fighters[index] = null;
 
     this.updateStat();
 
     // Event
     this.sync();
   }
-  
+
   public proxyUnit(unitId: string): void {
     for (let index = 0; index < 5; index++) {
       if (
-        this._units[index]
+        this._fighters[index]
         &&
-        this._units[index].unitId === unitId
+        this._fighters[index].unitId === unitId
       ) {
         this.fillSlot(unitId, index);
       }
@@ -120,45 +120,44 @@ export class BattleSquad extends BattleService {
 
     this.sync();
   }
-  
+
   public sync(): void {
-    this.pushUnits();
+    this.pushFighters();
     this._core.events.userSquad(this._state);
   }
 
   public setInitiativeRating(rating: BattleInitiativeRatingEntry[]) {
-    this.units.forEach(unit => {
-      const ratingIndex = _.findIndex(rating, { fighterId: unit.fighterId });
+    this.fighters.forEach(fighter => {
+      const ratingIndex = _.findIndex(rating, { fighterId: fighter.fighterId });
       if (ratingIndex !== -1) {
-        unit.setRatingIndex(ratingIndex+1);
+        fighter.setRatingIndex(ratingIndex+1);
       }
     });
   }
 
   protected setBonuses(): void {
-    if (!this.units.length) {
+    if (!this.fighters.length) {
       return;
     }
 
     let stat = {};
 
-    this.units.forEach(unit => {
-      //this.log("Bonuses", { unit });
+    this.fighters.forEach(fighter => {
       stat = {
-        ...stat, 
-        [unit.tribe]: { 
-          ...stat[unit.tribe], 
-          ...{ [unit.tier]: _.get(stat, `${unit.tribe}.${unit.tier}`, 0) + 1 }
+        ...stat,
+        [fighter.tribe]: {
+          ...stat[fighter.tribe],
+          ...{ [fighter.tier]: _.get(stat, `${fighter.tribe}.${fighter.tier}`, 0) + 1 }
         }
       };
     });
 
     let bonuses = [];
-    _.forOwn(stat, (tribeStat, unitTribe) => {
-      _.forOwn(tribeStat, (tierCount, unitTier) => {
+    _.forOwn(stat, (tribeStat, fighterTribe) => {
+      _.forOwn(tribeStat, (tierCount, fighterTier) => {
         if (tierCount >= 2) {
           bonuses.push(
-            SQUAD_BONUSES[unitTribe][unitTier - 1][tierCount - 2]
+            SQUAD_BONUSES[fighterTribe][fighterTier - 1][tierCount - 2]
           );
         }
       });
@@ -167,25 +166,25 @@ export class BattleSquad extends BattleService {
     this._state.bonuses = bonuses;
 
     // Apply bonuses
-    this.units.forEach(unit => {
-      unit.buffs.reset();
-      bonuses.forEach(bonus => unit.buffs.addBuff({ source: "squad", ...bonus }));
+    this.fighters.forEach(fighter => {
+      fighter.buffs.reset();
+      bonuses.forEach(bonus => fighter.buffs.addBuff({ source: "squad", ...bonus }));
     });
 
     // this.log("Squad bonuses", { bonuses });
   }
-  
+
   public setPower(): void {
-    if (!this.units.length) {
+    if (!this.fighters.length) {
       this._state.power = 0;
       return;
     }
 
-    this._state.power = _.sumBy(this.units, "power");
+    this._state.power = _.sumBy(this.fighters, "power");
   }
-  
+
   public includesUnit(unitId: string): boolean {
-    return this.units.findIndex(unit => unit.unitId === unitId) !== -1;
+    return this.fighters.findIndex(fighters => fighters.unitId === unitId) !== -1;
   }
 
   public updateStat(): void {
@@ -194,40 +193,40 @@ export class BattleSquad extends BattleService {
   }
 
   public resetState(): void {
-    this.units.forEach((unit, index) => {
+    this.fighters.forEach((fighter, index) => {
       // Reset
-      unit.reset();
+      fighter.reset();
     });
   }
 
   public arrange(): void {
-    this.units.forEach((unit, index) => {
+    this.fighters.forEach((fighter, index) => {
       // Reset indexes
-      unit.setIndex(index + (this._isEnemy ? 0 : 30));
+      fighter.setIndex(index + (this._isEnemy ? 0 : 30));
     });
   }
 
   public regenerateFighterIds(): void {
-    this.units.forEach((unit, index) => {
-      unit.regenerateFighterId();
+    this.fighters.forEach((fighter, index) => {
+      fighter.regenerateFighterId();
     });
   }
 
-  public getFighter(fighterId: string): Unit|null {
-    return this.units.find(unit => unit.fighterId === fighterId) || null;
+  public getFighter(fighterId: string): Fighter|null {
+    return this.fighters.find(fighter => fighter.fighterId === fighterId) || null;
   }
 
   public callbackDrawFinished(): void {
-    this.units.forEach(unit => {
+    this.fighters.forEach(fighter => {
       // Decrease the cooldown
-      unit.abilities.decreaseAbilitiesCooldownEstimate();
+      fighter.abilities.decreaseAbilitiesCooldownEstimate();
       // Decrease the buff estimate
-      unit.buffs.decreaseBuffsEstimate();
+      fighter.buffs.decreaseBuffsEstimate();
     });
   }
 
   public maximize(): void {
-    this.units.forEach(unit => unit.maximize());
+    this.fighters.forEach(fighter => fighter.maximize());
     this.setPower();
     this.sync();
   }

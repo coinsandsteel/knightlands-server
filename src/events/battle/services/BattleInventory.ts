@@ -18,11 +18,11 @@ export class BattleInventory extends BattleService {
     this._state = state || [];
     this._core = core;
   }
-  
+
   get unitIds(): string[] {
     return this._units.map(unit => unit.unitId);
   }
-  
+
   public init() {
     this.createUnits();
   }
@@ -33,15 +33,15 @@ export class BattleInventory extends BattleService {
       this._units.push(this.makeUnit(unit));
     });
   }
-  
+
   protected makeUnit(unit: BattleUnit): Unit {
     return new Unit(unit, this._core.events);
   }
-  
+
   getState(): BattleUnit[] {
     return this._state;
   }
-  
+
   public getRandomUnit(tier: number): Unit {
     // Get random unit blueprint
     const unitBlueprint = _.cloneDeep(_.sample(game.battleManager.meta.units));
@@ -63,7 +63,7 @@ export class BattleInventory extends BattleService {
 
   public addUnit(unit: Unit): Unit {
     this.log("Add unit", { unitId: unit.unitId, template: unit.template, tier: unit.tier });
-    
+
     // Search by template
     const index = this._units.findIndex(entry => entry.template === unit.template && entry.tier === unit.tier);
     // Add or increase quantity
@@ -100,8 +100,8 @@ export class BattleInventory extends BattleService {
   }
 
   public getUnitById(unitId: string): Unit|null {
-    return this._units.find((inventoryUnit: Unit) => { 
-      return inventoryUnit.unitId === unitId; 
+    return this._units.find((inventoryUnit: Unit) => {
+      return inventoryUnit.unitId === unitId;
     }) || null;
   }
 
@@ -130,7 +130,7 @@ export class BattleInventory extends BattleService {
     if (
       !this._core.game.combatStarted
       &&
-      this._core.game.squadIncludesUnit(unit.unitId)
+      this._core.game.userSquad.includesUnit(unit.unitId)
     ) {
       this._core.game.proxyUnit(unit.unitId);
     }
@@ -145,7 +145,7 @@ export class BattleInventory extends BattleService {
     ) {
       throw Error("Cannot upgrade a unit's ability");
     }
-    
+
     if (this._core.user.crystals < unit.level.price) {
       throw errors.NotEnoughCurrency;
     }
@@ -158,7 +158,7 @@ export class BattleInventory extends BattleService {
     if (
       !this._core.game.combatStarted
       &&
-      this._core.game.squadIncludesUnit(unit.unitId)
+      this._core.game.userSquad.includesUnit(unit.unitId)
     ) {
       this._core.game.proxyUnit(unit.unitId);
     }
