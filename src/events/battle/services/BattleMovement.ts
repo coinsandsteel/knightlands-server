@@ -4,6 +4,7 @@ import { BattleCore } from "./BattleCore";
 import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
+import { Fighter } from "../units/Fighter";
 const Graph = require('node-dijkstra');
 
 export class BattleMovement extends BattleService {
@@ -36,7 +37,7 @@ export class BattleMovement extends BattleService {
         for (let neighbor = 0; neighbor < 35; neighbor++) {
           if (index === neighbor) continue;
           let neighborCoords = this.getIndex(neighbor);
-          
+
           // Queen scheme
           if (
             scheme === PATH_SCHEME_QUEEN
@@ -47,7 +48,7 @@ export class BattleMovement extends BattleService {
             ) {
               graphs[scheme][index][neighbor] = 1;
             }
-            
+
           // Rook scheme
           if (
             scheme === PATH_SCHEME_ROOK
@@ -98,7 +99,7 @@ export class BattleMovement extends BattleService {
     return result;
   };
 
-  public getMoveCellsByAbility(fighter: Unit, abilityClass: string): number[] {
+  public getMoveCellsByAbility(fighter: Fighter, abilityClass: string): number[] {
     let range = 0;
     let ignoreObstacles = false;
     if (abilityClass === ABILITY_MOVE) {
@@ -114,7 +115,7 @@ export class BattleMovement extends BattleService {
 
   public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean): number[] {
     const result = [];
-    const unitIndexes = this._core.game.allUnits.map(unit => unit.index);
+    const unitIndexes = this._core.game.allFighters.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
       const terrain = this._core.game.terrain.getTerrainTypeByIndex(index);
       // Cannot get onto units and thorns
@@ -130,7 +131,7 @@ export class BattleMovement extends BattleService {
       //this.log("Move path", { from: unitIndex, to: index, path });
       if (
         path
-        && 
+        &&
         path.length < range
       ) {
         //this.log("Move path accepted (path.length=${path.length} < range=${range})", { pathLength: path.length, to: index, path });
@@ -145,14 +146,14 @@ export class BattleMovement extends BattleService {
     const avoidNodes  = [];
 
     if (!ignoreObstacles) {
-      const unitNodes = this._core.game.allUnits
+      const unitNodes = this._core.game.allFighters
         .filter(unit => ![from, to].includes(unit.index))
         .map(unit => `${unit.index}`);
-  
+
       const thornsNodes = this._core.game.terrain
           .getThornsIndexes()
           .map(index => `${index}`);
-  
+
       avoidNodes.push(...unitNodes, ...thornsNodes);
     }
 
@@ -180,12 +181,12 @@ export class BattleMovement extends BattleService {
       const relativeIndexV = indexes.vertical + row[1];
       const absoluteIndex = this.getAbsoluteIndex(relativeIndexH, relativeIndexV);
       return {
-        h: relativeIndexH, 
-        v: relativeIndexV, 
+        h: relativeIndexH,
+        v: relativeIndexV,
         a: absoluteIndex
       };
     })
-    
+
     const visibleIndexes = absoluteIndexes
       .filter(entry => entry.h >= 0 && entry.h <= 4 && entry.v >= 0 && entry.v <= 4)
       .map(entry => entry.a);
@@ -197,7 +198,7 @@ export class BattleMovement extends BattleService {
     return (vIndex * 5) + hIndex;
   }
 
-  protected handleTerrain(fighter: Unit, index: number, terrain: string|null, moving: boolean): { effects: any[], stop: boolean } {
+  protected handleTerrain(fighter: Fighter, index: number, terrain: string|null, moving: boolean): { effects: any[], stop: boolean } {
     const result = {
       effects: [],
       stop: false
@@ -247,7 +248,7 @@ export class BattleMovement extends BattleService {
     return result;
   }
 
-  public moveFighter(fighter: Unit, abilityClass: string, index: number): void {
+  public moveFighter(fighter: Fighter, abilityClass: string, index: number): void {
     const moveCells = this.getMoveCellsByAbility(fighter, abilityClass);
     if (!moveCells.includes(index)) {
       return;
@@ -276,10 +277,10 @@ export class BattleMovement extends BattleService {
         effects.push(...result.effects);
       }
     }
-    
+
     // Change unit's index
     fighter.setIndex(index);
-    
+
     // Handle destination terrain
     const currentIndexTerrain = this._core.game.terrain.getTerrainTypeByIndex(index);
     let result = this.handleTerrain(fighter, fighter.index, currentIndexTerrain, false);
