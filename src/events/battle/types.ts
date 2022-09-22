@@ -115,14 +115,6 @@ export interface BattleSquadState {
   fighters: BattleFighter[];
 }
 
-export interface BattleFighterUpdate {
-  fighterId: string;
-  index?: number; // 0-34
-  hp?: number;
-  abilities?: BattleUnitAbility[];
-  buffs?: BattleBuff[];
-}
-
 export interface BattleUnitCharacteristics {
   hp: number;
   damage: number;
@@ -149,19 +141,6 @@ export interface BattleUnitAbility {
     enabled: boolean;
     estimate: number;
   }
-}
-
-// TODO update
-export interface BattleUnitAbilityBlueprint {
-  damage: number[][];
-  damageScheme: number|null;
-  movePattern: string;
-  canMove: boolean;
-  moveRange: number|string|string[]|null;
-  attackRange: number|string|null;
-  ignoreObstacles: boolean|boolean[];
-  duration: number|null;
-  effects: BattleBuff[][];
 }
 
 export interface BattleUnitAbilityStat {

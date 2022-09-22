@@ -203,7 +203,6 @@ export class BattleGame extends BattleService {
     }
   }
 
-  // TODO
   public enterLevel(room: number, level: number): void {
     // Set room/level
     // Set difficulty
@@ -414,9 +413,9 @@ export class BattleGame extends BattleService {
 
     if ([ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(abilityClass)) {
       const moveCells = this._movement.getMoveCellsByAbility(fighter, abilityClass);
-      this.setMoveCells(moveCells);
       this.setAttackCells([]);
       this.setTargetCells([]);
+      this.setMoveCells(moveCells);
     } else {
       if (!fighter.abilities.canUseAbility(abilityClass)) {
         return;
@@ -424,7 +423,6 @@ export class BattleGame extends BattleService {
       const attackAreaData = this._combat.getAttackAreaData(fighter, abilityClass, true);
       this.setAttackCells(attackAreaData.attackCells);
       this.setTargetCells(attackAreaData.targetCells);
-
       this.setMoveCells([]);
     }
   }
@@ -442,7 +440,6 @@ export class BattleGame extends BattleService {
 
     this.handleAction(fighter, index, ability);
     this.handleActionCallback(false);
-    //this.log(this._userSquad.units);
   }
 
   public autoMove(fighter: Fighter): void {
@@ -463,101 +460,53 @@ export class BattleGame extends BattleService {
     this.handleActionCallback(true);
   }
 
-  public handleAction(fighter: Fighter, index: number|null, ability: string|null): void {
-    this.log("Action", { fighter: fighter.fighterId, index, ability });
+  public handleAction(fighter: Fighter, index: number|null, abilityClass: string|null): void {
+    this.log("Action", { fighter: fighter.fighterId, index, abilityClass });
 
-    // Check if unit can use ability
-    // Check ability cooldown
-    if (
-      fighter.isStunned
-      ||
-      fighter.isDead
-    ) {
+    // Check if unit is dead
+    if (fighter.isStunned || fighter.isDead) {
       this.log("Fighter cannot attack. Abort.");
       return;
     }
 
-    // Check if unit can use ability
-    // Check ability cooldown
-    if (
-      ability
-      &&
-      !fighter.abilities.canUseAbility(ability)
-    ) {
-      this.log("Fighter cannot use this ability. Abort.");
-      return;
-    }
-
     const target = index === null ? null : this.getFighterByIndex(index);
-    if (ability) {
-      const abilityMeta = game.battleManager.getAbilityMeta(ability);
-    }
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
 
-    if (ability !== ABILITY_MOVE && target && target.isDead) {
-      this.log("Target is dead. Abort.");
+    // Сheck all restrictions
+    if (!this.combat.canApply(fighter, target, abilityClass)) {
+      this.log("Cannot apply the target. Abort.");
       return;
     }
 
-    // Dash >
-    // Flight >
-    // Rush >+
-
-    // Move / Dash / Flight
-    // TODO update
-    /*if (index !== null && [ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(ability)) {
-      this.log("Move", { fighter: fighter.fighterId, index });
-      this._movement.moveFighter(fighter, ability, index);
-
-    // Self-buff
-    } else if (abilityType === ABILITY_TYPE_SELF_BUFF) {
-      this.log("Self-buff", { fighter: fighter.fighterId, ability });
-      this._combat.buff(fighter, fighter, ability);
-
-    // Group heal
-    } else if (index === null && ability === ABILITY_GROUP_HEAL) {
-      this.log("Group heal", { fighter: fighter.fighterId, ability });
-      this._combat.groupHeal(fighter, ability);
-
-    } else if (index !== null && target !== null) {
-      // Can't reach
-      const attackAreaData = this._combat.getAttackAreaData(fighter, ability, true);
-      if (!attackAreaData.targetCells.includes(target.index)) {
-        this.log("Can't reach. Abort.", { attackAreaData });
-        return;
+    // Check if need to approach
+    if (this.combat.shouldMove(fighter, target, abilityClass)) {
+      if (abilityClass === ABILITY_MOVE) {
+        this.log("Moving the fighter...");
+        this._movement.moveFighter(fighter, abilityClass, index);
+      } else {
+        this.log("Approaching enemy...");
+        this._combat.tryApproachEnemy(fighter, target, abilityClass);
       }
+    }
 
-      // Approach enemy if necessery
-      this._combat.tryApproachEnemy(fighter, target, ability);
+    // Attack
+    if (abilityMeta.affectHp) {
+      this.log("Trying to modify enemy's HP...");
+      this.combat.modifyHp(fighter, target, abilityMeta);
 
-      // TODO check range
-
-      // Buff / De-buff
-      if ([ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF].includes(abilityType)) {
-        this.log("Buff/De-buff", { fighter: fighter.fighterId, target: target.fighterId, ability });
-        this._combat.buff(fighter, target, ability);
-
-      // Heal
-      } else if (abilityType === ABILITY_TYPE_HEALING) {
-        this.log("Heal", { fighter: fighter.fighterId, target: target.fighterId, ability });
-        this._combat.heal(fighter, target, ability);
-
-      // Attack
-      } else if (abilityType === ABILITY_TYPE_ATTACK || ability === ABILITY_RUSH) {
-        this.log("Attack", { fighter: fighter.fighterId, target: target.fighterId, ability });
-        this._combat.attack(fighter, target, ability);
-
-        // Counter-attack
-        if (target.wantToCounterAttack) {
-          this.log("Counter-attack!", { fighter: fighter.fighterId, target: target.fighterId });
-          const attackAreaData = this._combat.getAttackAreaData(fighter, ABILITY_ATTACK, false);
-          if (attackAreaData.targetCells.includes(fighter.index)) {
-            this._combat.attack(target, fighter, ABILITY_ATTACK);
-          }
+      // Counter-attack
+      if (target.wantToCounterAttack) {
+        this.log("Target ia trying to counter-attack...", { fighter: fighter.fighterId, target: target.fighterId });
+        if (this.combat.acceptableRange(target, fighter, ABILITY_ATTACK)) {
+          this.combat.attack(target, fighter);
         }
       }
-    } else {
-      return;
-    }*/
+    }
+
+    // Apply effects
+    if (abilityMeta.effects.length) {
+      this.combat.buff(fighter, fighter, abilityClass);
+    }
   }
 
   public handleActionCallback(timeout: boolean) {

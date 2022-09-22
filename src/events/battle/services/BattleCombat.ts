@@ -1,9 +1,14 @@
 import _ from "lodash";
-import { ABILITY_ATTACK, ABILITY_MOVE, ABILITY_TYPE_ATTACK, ABILITY_TYPE_BUFF, ABILITY_TYPE_DE_BUFF, ABILITY_TYPE_HEALING, ABILITY_TYPE_JUMP, ABILITY_TYPE_SELF_BUFF } from "../../../knightlands-shared/battle";
+import game from "../../../game";
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
-import game from "../../../game";
+import { Fighter } from "../units/Fighter";
+import { BattleAbilityMeta } from "../units/MetaDB";
+import {
+  ABILITY_ATTACK,
+  ABILITY_MOVE,
+} from "../../../knightlands-shared/battle";
 
 export class BattleCombat extends BattleService {
   protected _core: BattleCore;
@@ -13,11 +18,73 @@ export class BattleCombat extends BattleService {
     this._core = core;
   }
 
-  public groupHeal(source: Unit, abilityClass: string): void {
+  public canApply(
+    fighter: Fighter,
+    target: Fighter | null,
+    abilityClass: string
+  ): boolean {
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+
+    // Check if unit is dead
+    if (fighter.isStunned || fighter.isDead) {
+      this.log("Fighter cannot attack. Abort.");
+      return false;
+    }
+
+    // Check if unit can use ability
+    if (!fighter.abilities.canUseAbility(abilityClass)) {
+      this.log("Fighter cannot use this ability. Abort.");
+      return false;
+    }
+
+    // Check if target is dead
+    if (abilityMeta.affectHp && target && target.isDead) {
+      this.log("Target is dead. Abort.");
+      return false;
+    }
+
+    // Check target restrictions
+    if (
+      !(
+        (abilityMeta.targetAllies && target && !target.isEnemy) ||
+        (abilityMeta.targetEnemies && target && target.isEnemy) ||
+        (abilityMeta.targetSelf &&
+          target &&
+          target.fighterId === fighter.fighterId) ||
+        (abilityMeta.targetEmptyCell && !target)
+      )
+    ) {
+      this.log("Wrong target type. Abort.");
+      return false;
+    }
+
+    return true;
+  }
+
+  public acceptableRange(
+    fighter: Fighter,
+    target: Fighter | null,
+    abilityClass: string
+  ): boolean {
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    return true;
+  }
+
+  public shouldMove(
+    fighter: Fighter,
+    target: Fighter | null,
+    abilityClass: string
+  ): boolean {
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    // TODO check if target within attack range
+    return abilityMeta.canMove;
+  }
+
+  protected groupHeal(source: Unit, abilityClass: string): void {
     this.log("Group heal", { abilityClass });
     const attackAreaData = this.getAttackAreaData(source, abilityClass, false);
     const targets = this._core.game.getSquadByFighter(source);
-    targets.forEach(target => {
+    targets.forEach((target) => {
       if (attackAreaData.targetCells.includes(target.index)) {
         this.heal(source, target, abilityClass);
       }
@@ -26,7 +93,11 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  public heal(source: Unit, target: Unit, abilityClass: string): void {
+  protected heal(
+    source: Unit,
+    target: Unit,
+    abilityMeta: BattleAbilityMeta
+  ): void {
     this.log("Heal", { abilityClass });
     if (!this.canAffect(source, target, abilityClass)) {
       return;
@@ -40,25 +111,30 @@ export class BattleCombat extends BattleService {
       action: ABILITY_TYPE_HEALING,
       source: {
         fighterId: source.fighterId,
-        index: source.index
+        index: source.index,
       },
       target: {
         fighterId: target.fighterId,
         index: target.index,
         oldHp,
-        newHp: target.hp
+        newHp: target.hp,
       },
       ability: {
         abilityClass,
         value: abilityData.value,
-        criticalHit: false
-      }
+        criticalHit: false,
+      },
     });
 
     this.enableCooldown(source, abilityClass);
   }
 
-  public buff(source: Unit, target: Unit, abilityClass: string, preventAttack?: boolean): void {
+  public buff(
+    source: Unit,
+    target: Unit,
+    abilityClass: string,
+    preventAttack?: boolean
+  ): void {
     this.log("Buff", { abilityClass });
     if (!this.canAffect(source, target, abilityClass)) {
       return;
@@ -72,13 +148,13 @@ export class BattleCombat extends BattleService {
 
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
-    effects.forEach(effect => {
+    effects.forEach((effect) => {
       const caseId = abilityData.levelInt;
       const buff = {
-        source: 'buff',
+        source: "buff",
         sourceId: abilityClass,
         ...effect,
-        caseId
+        caseId,
       };
       if (effect.type === "agro") {
         buff.targetFighterId = source.fighterId;
@@ -119,7 +195,26 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  public attack(source: Unit, target: Unit, abilityClass: string, preventBuff?: boolean): void {
+  public modifyHp(
+    fighter: Fighter,
+    target: Fighter | null,
+    abilityMeta: BattleAbilityMeta
+  ): void {
+    if (abilityMeta.targetEnemies) {
+      this.attack(fighter, target, abilityMeta);
+    } else if (abilityMeta.targetAllies && !abilityMeta.affectFullSquad) {
+      this.heal(fighter, target, abilityMeta);
+    } else if (abilityMeta.targetAllies && abilityMeta.affectFullSquad) {
+      this.groupHeal(fighter, abilityMeta);
+    }
+  }
+
+  public attack(
+    source: Unit,
+    target: Unit,
+    abilityMeta?: BattleAbilityMeta,
+    preventBuff?: boolean
+  ): void {
     this.log("Attack", { abilityClass });
     if (!this.canAffect(source, target, abilityClass)) {
       return;
@@ -132,7 +227,8 @@ export class BattleCombat extends BattleService {
       throw Error("dmgBase value is not a number. Abort.");
     }
     const defBase = target.defence;
-    const percentBlocked = (100*(defBase*0.05))/(1+(defBase*0.05))/100;
+    const percentBlocked =
+      (100 * (defBase * 0.05)) / (1 + defBase * 0.05) / 100;
     const damage = Math.round(dmgBase * (1 - percentBlocked));
 
     this.log("Attack details", {
@@ -142,7 +238,7 @@ export class BattleCombat extends BattleService {
       dmgBase,
       defBase,
       percentBlocked,
-      damage
+      damage,
     });
 
     const oldHp = target.hp;
@@ -159,19 +255,19 @@ export class BattleCombat extends BattleService {
       action: ABILITY_TYPE_ATTACK,
       source: {
         fighterId: source.fighterId,
-        index: source.index
+        index: source.index,
       },
       target: {
         fighterId: target.fighterId,
         index: target.index,
         oldHp,
-        newHp: target.hp
+        newHp: target.hp,
       },
       ability: {
         abilityClass,
         damage,
-        criticalHit: false
-      }
+        criticalHit: false,
+      },
     });
 
     this.enableCooldown(source, abilityClass);
@@ -190,7 +286,11 @@ export class BattleCombat extends BattleService {
     return attackAreaData.targetCells.includes(target.index);
   }
 
-  public getTargetCells(fighter: Unit, abilityClass: string, attackCells: number[]): number[] {
+  public getTargetCells(
+    fighter: Unit,
+    abilityClass: string,
+    attackCells: number[]
+  ): number[] {
     let cells = [];
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     // TODO update
@@ -217,9 +317,13 @@ export class BattleCombat extends BattleService {
     return _.intersection(attackCells, cells);
   }
 
-  public getAttackAreaData(fighter: Unit, abilityClass: string, canMove: boolean): {
-    attackCells: number[],
-    targetCells: number[]
+  public getAttackAreaData(
+    fighter: Unit,
+    abilityClass: string,
+    canMove: boolean
+  ): {
+    attackCells: number[];
+    targetCells: number[];
   } {
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
     const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
@@ -227,7 +331,7 @@ export class BattleCombat extends BattleService {
     if (!abilityStat.attackRange) {
       return {
         attackCells: [],
-        targetCells: []
+        targetCells: [],
       };
     }
 
@@ -264,11 +368,14 @@ export class BattleCombat extends BattleService {
 
     if (fighter.hasAgro) {
       const agroTargets = fighter.agroTargets;
-      const cellsNotAllowedToAttack = this._core.game.getEnemySquadByFighter(fighter)
-        .filter(fighter => !agroTargets.includes(fighter.fighterId))
-        .map(fighter => fighter.index);
+      const cellsNotAllowedToAttack = this._core.game
+        .getEnemySquadByFighter(fighter)
+        .filter((fighter) => !agroTargets.includes(fighter.fighterId))
+        .map((fighter) => fighter.index);
 
-      targetCells = targetCells.filter(i => !cellsNotAllowedToAttack.includes(i));
+      targetCells = targetCells.filter(
+        (i) => !cellsNotAllowedToAttack.includes(i)
+      );
       this.log(`Fighter #${fighter.fighterId} has agro`, { targetCells });
     }
 
@@ -276,21 +383,35 @@ export class BattleCombat extends BattleService {
   }
 
   public tryApproachEnemy(fighter: Unit, target: Unit, abilityClass: string) {
-    const attackAreaNoMoving =  this.getAttackAreaData(fighter, abilityClass, false);
+    const attackAreaNoMoving = this.getAttackAreaData(
+      fighter,
+      abilityClass,
+      false
+    );
     // Need to approach
     if (!attackAreaNoMoving.targetCells.includes(target.index)) {
       this.log("Need to approach the enemy");
 
       // Calc all the move cells
-      const moveCells = this._core.game.movement.getMoveCellsByAbility(fighter, abilityClass);
+      const moveCells = this._core.game.movement.getMoveCellsByAbility(
+        fighter,
+        abilityClass
+      );
 
       // Iterate move cells to check if fighter can reach enemy from there
       const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
       let canAttackFrom = [];
-      moveCells.forEach(moveCell => {
-        const attackPath = this._core.game.movement.getPath(moveCell, target.index, true);
+      moveCells.forEach((moveCell) => {
+        const attackPath = this._core.game.movement.getPath(
+          moveCell,
+          target.index,
+          true
+        );
         if (attackPath.length < abilityStat.attackRange) {
-          this.log("Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})", { attackPath });
+          this.log(
+            "Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})",
+            { attackPath }
+          );
           canAttackFrom.push({ index: moveCell, range: attackPath.length });
         }
       });
@@ -304,7 +425,11 @@ export class BattleCombat extends BattleService {
         }
         // Move to attack spot
         const targetIndex = _.sample(canAttackFrom).index;
-        this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex);
+        this._core.game.movement.moveFighter(
+          fighter,
+          ABILITY_MOVE,
+          targetIndex
+        );
         this.log(`Approaching enemy onto index ${targetIndex}`);
       }
     }
@@ -313,7 +438,10 @@ export class BattleCombat extends BattleService {
   protected enableCooldown(fighter: Unit, abilityClass: string): void {
     if (![ABILITY_ATTACK, ABILITY_MOVE].includes(abilityClass)) {
       fighter.abilities.enableAbilityCooldown(abilityClass);
-      this._core.events.abilities(fighter.fighterId, fighter.abilities.serialize());
+      this._core.events.abilities(
+        fighter.fighterId,
+        fighter.abilities.serialize()
+      );
     }
   }
 }

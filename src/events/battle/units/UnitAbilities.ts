@@ -43,7 +43,7 @@ export default class UnitAbilities {
           value: 0,
           combatValue: 0,
           enabled: !index ? true : false
-        };  
+        };
       });*/
       this._abilities = [this.getAbilityByClass(ABILITY_ATTACK), ...abilities];
     }
@@ -373,7 +373,7 @@ export default class UnitAbilities {
           current: 1,
           next: null,
           price: null
-        },  
+        },
         value: this._unit.damage,
         combatValue: this._unit.damage,
         enabled: true

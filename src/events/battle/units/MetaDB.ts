@@ -50,21 +50,22 @@ export interface BattleAbilityMeta {
   abilityClass: string;
   tier: number;
   affectHp: boolean;
+  affectFullSquad: boolean;
   canMove: boolean;
 
   baseMultiplier: number;
   finalMultiplier: number;
   levelStep: number;
-  
+
   targetEnemies: boolean;
   targetAllies: boolean;
   targetSelf: boolean;
   targetEmptyCell: boolean;
-  
+
   ignoreTerrain: boolean;
   ignoreTerrainPenalty: boolean;
   ignoreObstacles: boolean;
-  
+
   effectList: number[][][];
   effects?: BattleEffectMeta[][][]; // Ability level > Draw number > Effect ids
 
@@ -85,7 +86,7 @@ export interface BattleUnitMeta {
     speed: number;
     initiative: number;
   };
-  
+
   levelSteps: {
     damage: number;
     hp: number;

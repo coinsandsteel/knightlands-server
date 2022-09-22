@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import game from "../../../game";
 import events from "../../../knightlands-shared/events";
 import { BattleService } from "./BattleService";
-import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleFighterUpdate, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility } from "../types";
+import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility } from "../types";
 import { Unit } from "../units/Unit";
 import { Fighter } from "../units/Fighter";
 
