@@ -1,7 +1,6 @@
 import _ from "lodash";
 import game from "../../../game";
 import { BattleCore } from "./BattleCore";
-import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";
 import { BattleAbilityMeta } from "../units/MetaDB";
@@ -61,15 +60,25 @@ export class BattleCombat extends BattleService {
     return true;
   }
 
+  // TODO update
   public acceptableRange(
     fighter: Fighter,
     target: Fighter | null,
     abilityClass: string
   ): boolean {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
+    let attackCells = this._core.game.movement.getMoveAttackCells(
+      fighter.index,
+      abilityMeta.canMove ? abilityStat.moveRange : 0,
+      abilityStat.attackRange,
+      abilityStat.ignoreObstacles
+    );
+
     return true;
   }
 
+  // TODO update
   public shouldMove(
     fighter: Fighter,
     target: Fighter | null,
@@ -80,7 +89,7 @@ export class BattleCombat extends BattleService {
     return abilityMeta.canMove;
   }
 
-  protected groupHeal(source: Unit, abilityClass: string): void {
+  protected groupHeal(source: Fighter, abilityClass: string): void {
     this.log("Group heal", { abilityClass });
     const attackAreaData = this.getAttackAreaData(source, abilityClass, false);
     const targets = this._core.game.getSquadByFighter(source);
@@ -89,26 +98,17 @@ export class BattleCombat extends BattleService {
         this.heal(source, target, abilityClass);
       }
     });
-
     this.enableCooldown(source, abilityClass);
   }
 
-  protected heal(
-    source: Unit,
-    target: Unit,
-    abilityMeta: BattleAbilityMeta
-  ): void {
+  protected heal(source: Fighter, target: Fighter, abilityClass: string): void {
     this.log("Heal", { abilityClass });
-    if (!this.canAffect(source, target, abilityClass)) {
-      return;
-    }
-
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
     const oldHp = target.hp;
     target.modifyHp(+abilityData.value);
 
     this._core.events.effect({
-      action: ABILITY_TYPE_HEALING,
+      action: "healing",
       source: {
         fighterId: source.fighterId,
         index: source.index,
@@ -129,17 +129,8 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  public buff(
-    source: Unit,
-    target: Unit,
-    abilityClass: string,
-    preventAttack?: boolean
-  ): void {
+  public buff(source: Fighter, target: Fighter, abilityClass: string): void {
     this.log("Buff", { abilityClass });
-    if (!this.canAffect(source, target, abilityClass)) {
-      return;
-    }
-
     const abilityStat = source.abilities.getAbilityStat(abilityClass);
     const effects = abilityStat.effects;
     if (!effects) {
@@ -166,55 +157,40 @@ export class BattleCombat extends BattleService {
       target.buffs.addBuff(buff);
     });
 
-    // TODO update
-
-    // Buff + damage
-    // ABILITY_STUN	-1
-    // ABILITY_STUN_SHOT -1
-    // ABILITY_SHIELD_STUN -1
-    /*if (!preventAttack && abilityMeta.damageScheme === -1) {
-      this.attack(source, target, abilityClass, true);
-    } else {
-
-      this._core.events.effect({
-        action: abilityMeta.abilityType,
-        source: {
-          fighterId: source.fighterId,
-          index: source.index
-        },
-        target: {
-          fighterId: target.fighterId,
-          index: target.index
-        },
-        ability: {
-          abilityClass
-        }
-      });
-    }*/
+    this._core.events.effect({
+      action: abilityMeta.targetEnemies ? 'de_buff' : (abilityMeta.targetSelf ? 'self_buff' : 'buff'),
+      source: {
+        fighterId: source.fighterId,
+        index: source.index,
+      },
+      target: {
+        fighterId: target.fighterId,
+        index: target.index,
+      },
+      ability: {
+        abilityClass,
+      },
+    });
 
     this.enableCooldown(source, abilityClass);
   }
 
-  public modifyHp(
+  public handleHpChange(
     fighter: Fighter,
     target: Fighter | null,
-    abilityMeta: BattleAbilityMeta
+    abilityClass: string
   ): void {
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     if (abilityMeta.targetEnemies) {
-      this.attack(fighter, target, abilityMeta);
+      this.attack(fighter, target, abilityClass);
     } else if (abilityMeta.targetAllies && !abilityMeta.affectFullSquad) {
-      this.heal(fighter, target, abilityMeta);
+      this.heal(fighter, target, abilityClass);
     } else if (abilityMeta.targetAllies && abilityMeta.affectFullSquad) {
-      this.groupHeal(fighter, abilityMeta);
+      this.groupHeal(fighter, abilityClass);
     }
   }
 
-  public attack(
-    source: Unit,
-    target: Unit,
-    abilityMeta?: BattleAbilityMeta,
-    preventBuff?: boolean
-  ): void {
+  protected attack(source: Fighter, target: Fighter, abilityClass: string): void {
     this.log("Attack", { abilityClass });
     if (!this.canAffect(source, target, abilityClass)) {
       return;
@@ -245,14 +221,10 @@ export class BattleCombat extends BattleService {
     target.modifyHp(-damage);
     if (!target.isDead) {
       this.attackCallback(target);
-      const abilityStat = source.abilities.getAbilityStat(abilityClass);
-      if (!preventBuff && abilityStat.effects.length) {
-        this.buff(source, target, abilityClass, true);
-      }
     }
 
     this._core.events.effect({
-      action: ABILITY_TYPE_ATTACK,
+      action: "attack",
       source: {
         fighterId: source.fighterId,
         index: source.index,
@@ -273,21 +245,12 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  protected attackCallback(target: Unit) {
+  protected attackCallback(target: Fighter) {
     target.attackCallback();
   }
 
-  public canAffect(source: Unit, target: Unit, abilityClass: string): boolean {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    if (abilityMeta.targetSelf && source.fighterId === target.fighterId) {
-      return true;
-    }
-    const attackAreaData = this.getAttackAreaData(source, abilityClass, false);
-    return attackAreaData.targetCells.includes(target.index);
-  }
-
   public getTargetCells(
-    fighter: Unit,
+    fighter: Fighter,
     abilityClass: string,
     attackCells: number[]
   ): number[] {
@@ -318,7 +281,7 @@ export class BattleCombat extends BattleService {
   }
 
   public getAttackAreaData(
-    fighter: Unit,
+    fighter: Fighter,
     abilityClass: string,
     canMove: boolean
   ): {
@@ -382,7 +345,11 @@ export class BattleCombat extends BattleService {
     return { attackCells, targetCells };
   }
 
-  public tryApproachEnemy(fighter: Unit, target: Unit, abilityClass: string) {
+  public tryApproachEnemy(
+    fighter: Fighter,
+    target: Fighter,
+    abilityClass: string
+  ) {
     const attackAreaNoMoving = this.getAttackAreaData(
       fighter,
       abilityClass,
@@ -435,7 +402,7 @@ export class BattleCombat extends BattleService {
     }
   }
 
-  protected enableCooldown(fighter: Unit, abilityClass: string): void {
+  protected enableCooldown(fighter: Fighter, abilityClass: string): void {
     if (![ABILITY_ATTACK, ABILITY_MOVE].includes(abilityClass)) {
       fighter.abilities.enableAbilityCooldown(abilityClass);
       this._core.events.abilities(

@@ -2,58 +2,34 @@ import _ from "lodash";
 import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
-  ABILITY_TYPE_ATTACK,
 } from "../../../knightlands-shared/battle";
 import { ABILITY_LEVEL_UP_PRICES, ABILITY_SCHEME } from "../meta";
-import { BattleLevelScheme, BattleUnitAbility, BattleUnitAbilityStat } from "../types";
+import { BattleLevelScheme, BattleUnitAbility } from "../types";
 import { Unit } from "./Unit";
 import game from "../../../game";
 
 export default class UnitAbilities {
   protected _unit: Unit;
   protected _abilities: BattleUnitAbility[];
-  protected _abilitiesStat: BattleUnitAbilityStat[];
 
   get abilities(): BattleUnitAbility[] {
     return this._abilities;
   }
 
-  constructor(unit: Unit, abilities?: BattleUnitAbility[]) {
+  constructor(unit: Unit, abilities: BattleUnitAbility[]) {
     this._unit = unit;
-    this._abilitiesStat = [];
+    this._abilities = abilities;
 
-    if (abilities) {
-      this._abilities = abilities;
-    } else {
-      // TODO update
-      // TODO create abilityType
-      // TODO add attack ability
-      /*const abilities = this._abilityList.map((abilityClass, index) => {
-        let tier = index + 1;
-        return {
-          abilityClass,
-          abilityType: _.cloneDeep(ABILITY_TYPES[abilityClass]),
-          tier,
-          levelInt: !index ? 1 : 0,
-          level: {
-            current: !index ? 1 : 0, // Unlock only the first ability
-            next: null,
-            price: null
-          },
-          value: 0,
-          combatValue: 0,
-          enabled: !index ? true : false
-        };
-      });*/
-      this._abilities = [this.getAbilityByClass(ABILITY_ATTACK), ...abilities];
+    if (
+      !this._abilities.find((entry) => entry.abilityClass === ABILITY_ATTACK)
+    ) {
+      this._abilities.unshift(
+        UnitAbilities.createEmptyBlueprint(ABILITY_ATTACK)
+      );
     }
-
-    this._abilities.forEach((ability) => {
-      delete ability.cooldown;
-    });
   }
 
-  public static createBlueprint(abilityClass: string): BattleUnitAbility {
+  public static createEmptyBlueprint(abilityClass: string): BattleUnitAbility {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     const blueprint = {
       abilityClass,
@@ -67,57 +43,63 @@ export default class UnitAbilities {
       value: 0,
       combatValue: 0,
       enabled: false,
-      range: 0,
+      range: {
+        move: {
+          addSpeed: false,
+          value: 0,
+        },
+        attack: {
+          addSpeed: false,
+          value: 0,
+        },
+      },
+      effects: [],
     } as BattleUnitAbility;
     return blueprint;
   }
 
-  protected getAbilityValue(ability: string): number | null {
-    let base = 0;
+  public update(): void {
+    this._abilities = this._abilities.map((entry) =>
+      this.calcAbility(entry.abilityClass)
+    );
+  }
 
+  protected getAbilityValue(ability: string): number | null {
     if (ability === ABILITY_ATTACK) {
       return this._unit.damage;
-    } else {
-      const abilityData = this.getAbilityByClass(ability);
-      const abilityLevel =
-        abilityData.levelInt !== 0 ? abilityData.levelInt : 1;
-      const abilityMeta = game.battleManager.getAbilityMeta(ability);
-      // TODO update
-      base = 0;
     }
 
+    const abilityData = this.getAbilityByClass(ability);
+    const abilityMeta = game.battleManager.getAbilityMeta(ability);
+    const classMeta = game.battleManager.getClassMeta(this._unit.class);
+
+    // ClassDamage * (BaseMultiplier + LevelStep * (AbilityLevel-1))) * FinalMultiplier
     const abilityValue =
-      base * this._unit.modifiers.power * this._unit.modifiers.abilities;
-    //this.log(`Ability "${ability}" value: base=${base} * powerBonus=${this.modifiers.power} * attackBonus=${this.modifiers.attack} * abilitiesBonus=${this.modifiers.abilities} = ${abilityValue}`);
+      classMeta.damage *
+      (abilityMeta.baseMultiplier +
+        abilityMeta.levelStep * (abilityData.levelInt - 1)) *
+      abilityMeta.finalMultiplier;
 
     return Math.round(abilityValue);
   }
 
   protected getAbilityCombatValue(ability: string): number | null {
-    let base = 0 as number;
     if (ability === ABILITY_ATTACK) {
-      base = this._unit.damage;
-    } else {
-      const abilityMeta = game.battleManager.getAbilityMeta(ability);
-      const abilityStat = this.getAbilityStat(ability);
-      // TODO update
-      /*if (abilityMeta.damageScheme === null) {
-        const effects = abilityStat.effects;
-        if (effects && effects.length && effects[0]) {
-          const effect = effects[0];
-          if (effect.probability) {
-            base = effect.probability;
-          } else if (effect.modifier) {
-            base = effect.modifier;
-          }
-        } else {
-          base = 0;
-        }
-      } else {
-        base = null;
-      }*/
+      return this._unit.damage;
     }
-    return base;
+
+    const abilityMeta = game.battleManager.getAbilityMeta(ability);
+    const abilityStat = this.getAbilityStat(ability);
+    if (!abilityMeta.affectHp) {
+      const effects = abilityStat.effects;
+      if (effects && effects.length && effects[0]) {
+        return effects[0].value;
+      } else {
+        return 0;
+      }
+    } else {
+      return null;
+    }
   }
 
   public enableAbilityCooldown(abilityClass: string): void {
@@ -158,27 +140,6 @@ export default class UnitAbilities {
     });
   }
 
-  public getAbilityRange(abilityClass: string, type: string): number {
-    const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = ABILITIES[this._unit.class][abilityClass];
-
-    let result;
-    if (
-      (type === "move" && abilityMeta.moveRange) ||
-      (type === "attack" && abilityMeta.attackRange)
-    ) {
-      result = abilityMeta[type + "Range"];
-      if (_.isArray(result)) {
-        result = result[abilityData.levelInt - 1];
-      }
-      if (_.isString(result)) {
-        result = this._unit.getValueByFormula(result);
-      }
-    }
-
-    return result || 0;
-  }
-
   public getAbilityIgnoreObstacles(abilityClass: string): boolean {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
@@ -189,55 +150,28 @@ export default class UnitAbilities {
       : ignoreObstacles;
   }
 
-  protected _getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
+  protected calcAbility(abilityClass: string): BattleUnitAbility {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+
+    const value = this.getAbilityValue(abilityClass);
+    const combatValue = this.getAbilityCombatValue(abilityClass);
+    const range = abilityMeta.range[abilityData.levelInt - 1];
     const effects = abilityMeta.effects.length
       ? abilityMeta.effects[
           abilityData.levelInt === 0 ? 0 : abilityData.levelInt - 1
         ]
       : [];
 
-    // TODO update
-    /*const abilityStat = {
-      moveRange: this.getAbilityRange(abilityClass, "move"),
-      attackRange: this.getAbilityRange(abilityClass, "attack"),
-      ignoreObstacles: this.getAbilityIgnoreObstacles(abilityClass),
+    const ability = {
+      ...abilityData,
+      value,
+      combatValue: combatValue === null ? value : combatValue,
+      range,
       effects
-    } as BattleUnitAbilityStat;
-
-    return abilityStat;*/
-
-    return {
-      value: 0,
-      combatValue: 0,
-      moveRange: 0,
-      attackRange: 0,
-      ignoreObstacles: false,
-      effects: [],
     };
-  }
 
-  public getAbilityStat(abilityClass: string): BattleUnitAbilityStat {
-    return this._abilitiesStat[abilityClass];
-  }
-
-  public update(): void {
-    this._abilities.forEach((ability) => {
-      // Set ability stat
-      this._abilitiesStat[ability.abilityClass] = this._getAbilityStat(
-        ability.abilityClass
-      );
-      // TODO update
-      // Update ability value
-      const abilityValue = this.getAbilityValue(ability.abilityClass);
-      const abilityCombatValue = this.getAbilityCombatValue(
-        ability.abilityClass
-      );
-      ability.value = abilityValue;
-      ability.combatValue =
-        abilityCombatValue === null ? abilityValue : abilityCombatValue;
-    });
+    return ability;
   }
 
   public serialize(): BattleUnitAbility[] {
@@ -253,6 +187,7 @@ export default class UnitAbilities {
           enabled: ability.cooldown ? ability.cooldown.enabled : false,
           estimate: ability.cooldown ? ability.cooldown.estimate : 0,
         },
+        effects: ability.effects
       } as BattleUnitAbility;
     });
   }
@@ -261,6 +196,7 @@ export default class UnitAbilities {
     this._abilities.forEach((ability) => {
       const abilityScheme =
         ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
+
       if (abilityScheme) {
         // Unlock ability
         if (ability.level.current === 0) {
@@ -275,6 +211,7 @@ export default class UnitAbilities {
         ability.level.price = canUpgradeMore
           ? this.getAbilityUpgradePrice(ability.tier, ability.level.next)
           : null;
+
         if (canUpgradeMore) {
           console.log(
             `Ability allowed to upgrade to ${abilityScheme.lvl} lvl`,
@@ -300,21 +237,6 @@ export default class UnitAbilities {
       ability.levelInt = level;
       ability.level.next = null;
       ability.level.price = null;
-
-      // Set ability stat
-      this._abilitiesStat[ability.abilityClass] = this._getAbilityStat(
-        ability.abilityClass
-      );
-
-      // Update ability value
-      const abilityValue = this.getAbilityValue(ability.abilityClass);
-      const abilityCombatValue = this.getAbilityCombatValue(
-        ability.abilityClass
-      );
-
-      ability.value = abilityValue;
-      ability.combatValue =
-        abilityCombatValue === null ? abilityValue : abilityCombatValue;
     });
 
     this.update();
@@ -362,58 +284,38 @@ export default class UnitAbilities {
   }
 
   public getAbilityByClass(abilityClass: string): BattleUnitAbility {
-    // TODO update
-    if (abilityClass === ABILITY_ATTACK) {
-      /*return {
-        abilityClass,
-        abilityType: ABILITY_TYPE_ATTACK,
-        tier: 1,
-        levelInt: 1,
-        level: {
-          current: 1,
-          next: null,
-          price: null
-        },
-        value: this._unit.damage,
-        combatValue: this._unit.damage,
-        enabled: true
-      }*/
-    }
-
     const ability = this._abilities
       ? this._abilities.find((entry) => entry.abilityClass === abilityClass)
       : null;
 
     if (!ability) {
       throw new Error(
-        `[Unit] Unit of class "${this._unit.class}" haven't ability "${abilityClass}"`
+        `[Unit] Unit of class "${this._unit.class}" hasn't ability "${abilityClass}"`
       );
     }
 
     return ability;
   }
 
-  public canUseAbility(ability: string): boolean {
-    if ([ABILITY_MOVE, ABILITY_ATTACK].includes(ability)) {
+  public canUseAbility(abilityClass: string): boolean {
+    if ([ABILITY_MOVE, ABILITY_ATTACK].includes(abilityClass)) {
       return true;
     }
 
-    // TODO update
-    /*const unitMeta = game.battleManager.meta.units.find(unitData => unitData.template === this._unit.template);
-    if (!unitMeta.abilityList.includes(ability)) {
-      //console.log('[canUseAbility] Not included');
+    const unitMeta = game.battleManager.getUnitMeta(this._unit.template); // .find(unitData => unitData.template === this._unit.template);
+    if (!unitMeta.abilityList.includes(abilityClass)) {
       return false;
-    }*/
+    }
 
     const abilityEntry = this._abilities.find(
-      (entry) => entry.abilityClass === ability
+      (entry) => entry.abilityClass === abilityClass
     );
+
     if (
       abilityEntry &&
       abilityEntry.cooldown &&
       abilityEntry.cooldown.enabled
     ) {
-      //console.log('[canUseAbility] Cooldown enabled');
       return false;
     }
 
@@ -435,10 +337,10 @@ export default class UnitAbilities {
   }
 
   public reset() {
-    this._abilitiesStat = [];
     this._abilities.forEach((ability) => {
       delete ability.cooldown;
     });
+    this.update();
   }
 
   public maximize() {

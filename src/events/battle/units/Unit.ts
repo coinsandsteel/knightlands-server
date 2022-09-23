@@ -75,6 +75,10 @@ export class Unit {
     return this._power;
   }
 
+  get damage(): number {
+    return this._characteristics.damage;
+  }
+
   get maxHp(): number {
     return this._characteristics.hp;
   }
@@ -121,7 +125,7 @@ export class Unit {
       },
       characteristics: Unit.getCharacteristics(meta._id, 1),
       abilities: meta.abilityList.map((abilityClass) =>
-        UnitAbilities.createBlueprint(abilityClass)
+        UnitAbilities.createEmptyBlueprint(abilityClass)
       ),
       quantity: 1,
     } as BattleUnit;

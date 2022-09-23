@@ -1,3 +1,5 @@
+import { BattleEffectMeta, BattleRangeMeta } from "./units/MetaDB";
+
 export interface BattleSaveData {
   user: BattleUserState;
   game: BattleGameState;
@@ -136,20 +138,12 @@ export interface BattleUnitAbility {
   value: number;
   combatValue: number;
   enabled: boolean;
-  range: number;
+  range: BattleRangeMeta;
   cooldown?: {
     enabled: boolean;
     estimate: number;
-  }
-}
-
-export interface BattleUnitAbilityStat {
-  value: number;
-  combatValue: number;
-  moveRange: number;
-  attackRange: number;
-  ignoreObstacles: boolean;
-  effects: BattleBuff[];
+  };
+  effects: BattleEffectMeta[][];
 }
 
 export interface BattleUnitAttribute {

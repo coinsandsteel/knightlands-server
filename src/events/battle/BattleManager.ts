@@ -94,7 +94,7 @@ export class BattleManager {
     return _.cloneDeep(this._meta.abilities[abilityClass]) || null;
   }
 
-  public getUnitMeta(template: number): BattleEffectMeta|null {
+  public getUnitMeta(template: number): BattleUnitMeta|null {
     return _.cloneDeep(this._meta.units[template]) || null;
   }
 
@@ -103,7 +103,7 @@ export class BattleManager {
   }
 
   // Loaders
-  
+
   public loadAbilityMeta(abilityClass: string, template?: number): BattleAbilityMeta | null {
     const abilityMeta = _.cloneDeep(this._meta.abilities[abilityClass]);
     if (!abilityMeta) {
@@ -139,7 +139,7 @@ export class BattleManager {
   }
 
   // Test
-  
+
   public testMeta() {
     for (const unitId in this._meta.units) {
       this.loadUnitMeta(parseInt(unitId));

@@ -485,20 +485,20 @@ export class BattleGame extends BattleService {
         this._movement.moveFighter(fighter, abilityClass, index);
       } else {
         this.log("Approaching enemy...");
-        this._combat.tryApproachEnemy(fighter, target, abilityClass);
+        this.combat.tryApproachEnemy(fighter, target, abilityClass);
       }
     }
 
     // Attack
     if (abilityMeta.affectHp) {
       this.log("Trying to modify enemy's HP...");
-      this.combat.modifyHp(fighter, target, abilityMeta);
+      this.combat.handleHpChange(fighter, target, abilityClass);
 
       // Counter-attack
       if (target.wantToCounterAttack) {
         this.log("Target ia trying to counter-attack...", { fighter: fighter.fighterId, target: target.fighterId });
         if (this.combat.acceptableRange(target, fighter, ABILITY_ATTACK)) {
-          this.combat.attack(target, fighter);
+          this.combat.handleHpChange(target, fighter, ABILITY_ATTACK);
         }
       }
     }

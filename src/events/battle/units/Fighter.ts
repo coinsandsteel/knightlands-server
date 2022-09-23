@@ -62,7 +62,7 @@ export class Fighter extends Unit {
   get isStunned(): boolean {
     return this._isStunned;
   }
-  
+
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
@@ -159,7 +159,7 @@ export class Fighter extends Unit {
     } as BattleFighter;
     return new Fighter(unit, blueprint, events);
   }
-  
+
   public reset(): void {
     this._modifiers = {
       speed: -1,
@@ -176,8 +176,8 @@ export class Fighter extends Unit {
     this._index = null;
     this._hp = this.maxHp;
 
-    this.abilities.reset();
     this.buffs.reset();
+    this.abilities.reset();
 
     this.commit(true);
   }
