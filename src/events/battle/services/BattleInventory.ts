@@ -6,6 +6,7 @@ import { BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
 import game from "../../../game";
+import { BattleUnitMeta } from "../units/MetaDB";
 
 export class BattleInventory extends BattleService {
   protected _core: BattleCore;
@@ -42,23 +43,18 @@ export class BattleInventory extends BattleService {
     return this._state;
   }
 
-  public getRandomUnit(tier: number): Unit {
+  public getRandomUnit(): Unit {
     // Get random unit blueprint
-    const unitBlueprint = _.cloneDeep(_.sample(game.battleManager.meta.units));
-    unitBlueprint.tier = tier;
+    const unitBlueprint = _.cloneDeep(_.sample(game.battleManager.meta.units)) as BattleUnitMeta;
     // Construct unit
-    const unit = this.makeUnit(unitBlueprint);
-    return unit;
+    return Unit.createUnit(unitBlueprint, this._core.events);
   }
 
-  public getRandomUnitByProps(params: { unitTribe?: string, unitClass?: string }, tier: number): Unit {
-    const filteredUnits = _.filter(_.cloneDeep(game.battleManager.meta.units), params);
-    const unitBlueprint = _.sample(filteredUnits);
-    unitBlueprint.tier = tier;
-
-    // Construct unit
-    const unit = this.makeUnit(unitBlueprint);
-    return unit;
+  public getRandomUnitByProps(params: { tribe?: string, class?: string }): Unit {
+    const units = game.battleManager.meta.units;
+    const filteredUnits = _.cloneDeep(_.filter(units, params));
+    const unitBlueprint = _.sample(filteredUnits) as BattleUnitMeta;
+    return Unit.createUnit(unitBlueprint, this._core.events);
   }
 
   public addUnit(unit: Unit): Unit {
@@ -105,7 +101,7 @@ export class BattleInventory extends BattleService {
     }) || null;
   }
 
-  public getUnitByFilter(params: { unitTribe?: string, unitClass?: string, tier?: number, template?: number }): Unit|null {
+  public getUnitByFilter(params: { tribe?: string, class?: string, tier?: number, template?: number }): Unit|null {
     return _.head(_.find(this._units, params)) || null;
   }
 

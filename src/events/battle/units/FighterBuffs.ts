@@ -60,7 +60,7 @@ export default class UnitBuffs {
         this._terrainModifiers[buff.terrain] = buff.scheme;
       }
       // HP
-      if (initial && buff.type === "hp") {
+      if (initial && buff.target === "hp") {
         const hp = Math.round(
           this.fighter.maxHp * this.getBuffModifier({ type: "hp" })
         );
@@ -106,19 +106,15 @@ export default class UnitBuffs {
   }
 
   public addBuff(buff: BattleBuff): void {
-    buff.activated = false;
-
     if (buff.mode === "stack") {
       buff.stackValue = 0;
     }
 
-    //this.log(`Buff added (need commit)`, buff);
     this._buffs.push(buff);
-
     this.fighter.commit();
     this._events.buffs(this.fighter.fighterId, this.buffs);
 
-    if (["power", "attack", "abilities"].includes(buff.type)) {
+    if (buff.target !== "no") {
       this._events.abilities(
         this.fighter.fighterId,
         this.fighter.abilities.serialize()
@@ -126,10 +122,10 @@ export default class UnitBuffs {
     }
   }
 
-  public removeBuffs(params: { source?: string; type?: string }): void {
+  public removeBuffs(params: { source?: string; target?: string }): void {
     //this.log(`Remove buffs`, params);
     this._buffs = this._buffs.filter((buff) => {
-      return !(buff.source === params.source && buff.type === params.type);
+      return !(buff.source === params.source && buff.target === params.target);
     });
   }
 
@@ -150,23 +146,23 @@ export default class UnitBuffs {
     let modifier = 1;
     buffs.forEach((buff) => {
       // Constant
-      if (buff.mode === "constant" && !buff.trigger) {
+      if (buff.mode === "constant" && buff.operation === "multiply" && !buff.trigger) {
         //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 }
         //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" }
         modifier =
           modifier *
           (buff.terrain
             ? this.getTerrainModifier(buff.terrain)
-            : buff.modifier);
+            : buff.value);
 
         // Burst
       } else if (buff.mode === "burst") {
         //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
         modifier =
-          modifier * (Math.random() <= buff.probability ? buff.modifier : 1);
+          modifier * (Math.random() <= buff.probability ? buff.value : 1);
 
         // Stacked
-      } else if (buff.mode === "stack" && buff.multiply) {
+      } else if (buff.mode === "stack" && buff.operation === "multiply") {
         modifier = modifier * (1 + buff.stackValue);
       }
     });
@@ -183,15 +179,15 @@ export default class UnitBuffs {
     let modifier = 0;
     buffs.forEach((buff) => {
       // Stacked
-      if (buff.mode === "stack" && buff.sum) {
+      if (buff.mode === "stack" && buff.operation === "add") {
         modifier += buff.stackValue;
       } else if (
         buff.mode === "constant" &&
         buff.trigger === "debuff" &&
-        buff.sum
+        buff.operation === "add"
       ) {
         modifier += this.getBuffs({ source: ABILITY_TYPE_DE_BUFF }).length
-          ? buff.delta
+          ? buff.value
           : 0;
       }
     });
@@ -209,11 +205,11 @@ export default class UnitBuffs {
         // Stack
         if (
           buff.mode === "stack" &&
-          typeof buff.stackValue !== "undefined" &&
+          buff.stackValue !== undefined &&
           buff.stackValue < buff.max
         ) {
-          buff.stackValue += buff.delta;
-          this.log(`${buff.type} stacked`, buff);
+          buff.stackValue += buff.value;
+          //this.log(`${buff.type} stacked`, buff);
         }
       });
     }
@@ -221,18 +217,18 @@ export default class UnitBuffs {
 
   public decreaseBuffsEstimate(): void {
     this._buffs.forEach((buff) => {
-      if (!_.isUndefined(buff.estimate) && !buff.activated) {
+      if (!_.isUndefined(buff.duration) && !buff.activated) {
         buff.activated = true;
         return;
       }
 
-      if (_.isNumber(buff.estimate) && buff.estimate >= 0) {
-        buff.estimate--;
+      if (_.isNumber(buff.duration) && buff.duration >= 0) {
+        buff.duration--;
       }
     });
 
     const filterFunc = (buff) =>
-      _.isNumber(buff.estimate) && buff.estimate <= 0;
+      _.isNumber(buff.duration) && buff.duration <= 0;
     const outdatedBuffs = _.remove(this._buffs, filterFunc);
 
     if (outdatedBuffs.length) {
@@ -256,18 +252,24 @@ export default class UnitBuffs {
         // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
         this.removeBuffs({
           source: "terrain",
-          type: SETTINGS.terrain[terrain].type,
+          target: SETTINGS.terrain[terrain].target,
         });
 
         // Hills, highlands - Increase damage to enemies by 25%
         // Forest - Increases unit's defense by 25%
         this.addBuff({
+          name: TERRAIN_WOODS,
+          target: SETTINGS.terrain[terrain].target,
+          subEffect: "no",
+          operation: "multiply",
+          probability: 1,
+          value: this.getTerrainModifier(terrain),
+          duration: Infinity,
+
           source: "terrain",
           sourceId: terrain,
           mode: "constant",
-          type: SETTINGS.terrain[terrain].type,
-          modifier: this.getTerrainModifier(terrain),
-          caseId: parseInt(this._terrainModifiers[terrain].split("-")[1]),
+          activated: true
         });
         break;
       }

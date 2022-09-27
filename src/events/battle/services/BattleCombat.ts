@@ -8,6 +8,7 @@ import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
 } from "../../../knightlands-shared/battle";
+import { BattleBuff } from "../types";
 
 export class BattleCombat extends BattleService {
   protected _core: BattleCore;
@@ -60,22 +61,23 @@ export class BattleCombat extends BattleService {
     return true;
   }
 
-  // TODO update
   public acceptableRange(
     fighter: Fighter,
     target: Fighter | null,
     abilityClass: string
   ): boolean {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
+    const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
+
     let attackCells = this._core.game.movement.getMoveAttackCells(
       fighter.index,
-      abilityMeta.canMove ? abilityStat.moveRange : 0,
-      abilityStat.attackRange,
-      abilityStat.ignoreObstacles
+      abilityData.range.move,
+      abilityData.range.attack,
+      abilityMeta.ignoreObstacles,
+      abilityMeta.ignoreTerrain
     );
 
-    return true;
+    return attackCells.includes(target.index);
   }
 
   // TODO update
@@ -91,7 +93,7 @@ export class BattleCombat extends BattleService {
 
   protected groupHeal(source: Fighter, abilityClass: string): void {
     this.log("Group heal", { abilityClass });
-    const attackAreaData = this.getAttackAreaData(source, abilityClass, false);
+    const attackAreaData = this.getAttackAreaData(source, abilityClass);
     const targets = this._core.game.getSquadByFighter(source);
     targets.forEach((target) => {
       if (attackAreaData.targetCells.includes(target.index)) {
@@ -129,36 +131,45 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  public buff(source: Fighter, target: Fighter, abilityClass: string): void {
+  public applyEffect(source: Fighter, target: Fighter, abilityClass: string): void {
     this.log("Buff", { abilityClass });
-    const abilityStat = source.abilities.getAbilityStat(abilityClass);
-    const effects = abilityStat.effects;
-    if (!effects) {
+    const abilityData = source.abilities.getAbilityByClass(abilityClass);
+    const draws = abilityData.effects;
+    if (!draws || !draws.length) {
       throw Error(`Buff ${abilityClass} has no effects`);
     }
 
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    const abilityData = source.abilities.getAbilityByClass(abilityClass);
-    effects.forEach((effect) => {
-      const caseId = abilityData.levelInt;
-      const buff = {
-        source: "buff",
-        sourceId: abilityClass,
-        ...effect,
-        caseId,
-      };
-      if (effect.type === "agro") {
-        buff.targetFighterId = source.fighterId;
-      }
-      // TODO update
-      /*if (!effect.estimate && abilityMeta.duration) {
-        buff.estimate = _.clone(abilityMeta.duration);
-      }*/
-      target.buffs.addBuff(buff);
+    draws.forEach((draws) => {
+      draws.forEach((effect) => {
+        const buff = {
+          name: effect.name,
+          target: effect.target,
+          subEffect: effect.subEffect,
+          operation: effect.operation,
+          probability: effect.probability,
+          value: effect.value,
+          duration: effect.duration,
+          source: "pvp",
+          sourceId: abilityClass,
+          mode: "constant",
+          activated: false
+        } as BattleBuff;
+
+        if (buff.subEffect === "agro") {
+          buff.targetFighterId = source.fighterId;
+        }
+
+        target.buffs.addBuff(buff);
+      });
     });
 
     this._core.events.effect({
-      action: abilityMeta.targetEnemies ? 'de_buff' : (abilityMeta.targetSelf ? 'self_buff' : 'buff'),
+      action: abilityMeta.targetEnemies
+        ? "de_buff"
+        : abilityMeta.targetSelf
+        ? "self_buff"
+        : "buff",
       source: {
         fighterId: source.fighterId,
         index: source.index,
@@ -190,11 +201,12 @@ export class BattleCombat extends BattleService {
     }
   }
 
-  protected attack(source: Fighter, target: Fighter, abilityClass: string): void {
+  protected attack(
+    source: Fighter,
+    target: Fighter,
+    abilityClass: string
+  ): void {
     this.log("Attack", { abilityClass });
-    if (!this.canAffect(source, target, abilityClass)) {
-      return;
-    }
 
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
     const dmgBase = abilityData.value;
@@ -249,49 +261,18 @@ export class BattleCombat extends BattleService {
     target.attackCallback();
   }
 
-  public getTargetCells(
-    fighter: Fighter,
-    abilityClass: string,
-    attackCells: number[]
-  ): number[] {
-    let cells = [];
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
-    // TODO update
-    /*switch (abilityMeta.type) {
-      case ABILITY_TYPE_JUMP:
-      case ABILITY_TYPE_DE_BUFF:
-      case ABILITY_TYPE_ATTACK: {
-        // Enemies
-        cells = this._core.game.getEnemySquadByFighter(fighter).map(fighter => fighter.index);
-        break;
-      }
-      case ABILITY_TYPE_HEALING:
-      case ABILITY_TYPE_BUFF: {
-        // Allies
-        cells = this._core.game.getSquadByFighter(fighter).map(fighter => fighter.index);
-        break;
-      }
-      case ABILITY_TYPE_SELF_BUFF: {
-        // Self
-        cells = [fighter.index];
-        break;
-      }
-    }*/
-    return _.intersection(attackCells, cells);
-  }
-
   public getAttackAreaData(
     fighter: Fighter,
-    abilityClass: string,
-    canMove: boolean
+    abilityClass: string
   ): {
     attackCells: number[];
     targetCells: number[];
   } {
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
-    const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
+    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+
     //console.log('Ability stat', abilityStat);
-    if (!abilityStat.attackRange) {
+    if (!abilityData.range.attack) {
       return {
         attackCells: [],
         targetCells: [],
@@ -300,33 +281,29 @@ export class BattleCombat extends BattleService {
 
     let attackCells = this._core.game.movement.getMoveAttackCells(
       fighter.index,
-      canMove ? abilityStat.moveRange : 0,
-      abilityStat.attackRange,
-      abilityStat.ignoreObstacles
+      abilityData.range.move,
+      abilityData.range.attack,
+      abilityMeta.ignoreObstacles,
+      abilityMeta.ignoreTerrain
     );
 
     let targetCells = [];
-    // TODO update
-    /*switch (abilityData.abilityType) {
-      case ABILITY_TYPE_JUMP:
-      case ABILITY_TYPE_DE_BUFF:
-      case ABILITY_TYPE_ATTACK: {
-        // Enemies
-        targetCells = this._core.game.getEnemySquadByFighter(fighter).map(fighter => fighter.index);
-        break;
-      }
-      case ABILITY_TYPE_HEALING:
-      case ABILITY_TYPE_BUFF: {
-        // Allies
-        targetCells = this._core.game.getSquadByFighter(fighter).map(fighter => fighter.index);
-        break;
-      }
-      case ABILITY_TYPE_SELF_BUFF: {
-        // Self
-        targetCells = [fighter.index];
-        break;
-      }
-    }*/
+    if (abilityMeta.targetEnemies) {
+      targetCells.push(
+        ...this._core.game
+          .getEnemySquadByFighter(fighter)
+          .map((fighter) => fighter.index)
+      );
+    } else if (abilityMeta.targetAllies) {
+      targetCells.push(
+        ...this._core.game
+          .getSquadByFighter(fighter)
+          .map((fighter) => fighter.index)
+      );
+    } else if (abilityMeta.targetSelf) {
+      targetCells.push(fighter.index);
+    }
+
     targetCells = _.intersection(attackCells, targetCells);
 
     if (fighter.hasAgro) {
@@ -342,6 +319,9 @@ export class BattleCombat extends BattleService {
       this.log(`Fighter #${fighter.fighterId} has agro`, { targetCells });
     }
 
+    attackCells = _.uniq(attackCells);
+    targetCells = _.uniq(targetCells);
+
     return { attackCells, targetCells };
   }
 
@@ -352,8 +332,7 @@ export class BattleCombat extends BattleService {
   ) {
     const attackAreaNoMoving = this.getAttackAreaData(
       fighter,
-      abilityClass,
-      false
+      abilityClass
     );
     // Need to approach
     if (!attackAreaNoMoving.targetCells.includes(target.index)) {
@@ -366,7 +345,7 @@ export class BattleCombat extends BattleService {
       );
 
       // Iterate move cells to check if fighter can reach enemy from there
-      const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
+      const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
       let canAttackFrom = [];
       moveCells.forEach((moveCell) => {
         const attackPath = this._core.game.movement.getPath(
@@ -374,7 +353,7 @@ export class BattleCombat extends BattleService {
           target.index,
           true
         );
-        if (attackPath.length < abilityStat.attackRange) {
+        if (attackPath.length < abilityData.range.attack) {
           this.log(
             "Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})",
             { attackPath }

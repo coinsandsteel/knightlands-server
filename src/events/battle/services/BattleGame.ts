@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_ATTACK, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_DASH } from "../../../knightlands-shared/battle";
+import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_ATTACK, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_DASH, UNIT_TRIBE_KOBOLD } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
 import { SQUAD_BONUSES } from "../meta";
@@ -167,17 +167,16 @@ export class BattleGame extends BattleService {
   }
 
   public buildSquad(): void {
-    const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
-    const tier = _.random(1, 3);
-
-    //this.log("Build squad", { unitTribe, tier });
+    //const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const tribe = UNIT_TRIBE_KOBOLD;
+    //this.log("Build squad", { tribe, tier });
     for (let squadIndex = 0; squadIndex < 5; squadIndex++) {
-      this.addUnitToSquad({ unitTribe }, tier, squadIndex);
+      this.addUnitToSquad({ tribe }, squadIndex);
     }
   }
 
-  public addUnitToSquad(params: { unitTribe?: string, unitClass?: string }, tier: number, squadIndex: number) {
-    const blueprint = this._core.inventory.getRandomUnitByProps(params, tier);
+  public addUnitToSquad(params: { tribe?: string, class?: string }, squadIndex: number) {
+    const newUnit = this._core.inventory.getRandomUnitByProps(params);
     /*this.log("New squad member blueprint", {
       unitId: blueprint.unitId,
       tribe: blueprint.tribe,
@@ -185,9 +184,9 @@ export class BattleGame extends BattleService {
       tier: blueprint.tier
     });*/
 
-    let unit = this._core.inventory.getUnitByFilter({ template: blueprint.template, tier });
+    let unit = this._core.inventory.getUnitByFilter({ template: newUnit.template });
     if (!unit) {
-      unit = this._core.inventory.addUnit(blueprint);
+      unit = this._core.inventory.addUnit(newUnit);
     }
 
     this._userSquad.fillSlot(unit.unitId, squadIndex);
@@ -274,12 +273,13 @@ export class BattleGame extends BattleService {
   }
 
   public getDuelOptions() {
-    const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    //const unitTribe = _.sample(_.cloneDeep(Object.keys(SQUAD_BONUSES)));
+    const tribe = UNIT_TRIBE_KOBOLD;
     const squads = [[], [], []];
 
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
-        const unit = this._core.inventory.getRandomUnitByProps({ unitTribe }, tier);
+        const unit = this._core.inventory.getRandomUnitByProps({ tribe });
         const fighter = Fighter.createFighter(unit, true, this._core.events);
         squads[tier-1].push(fighter.serializeFighter());
       }
@@ -411,16 +411,21 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    if ([ABILITY_MOVE, ABILITY_DASH, ABILITY_FLIGHT].includes(abilityClass)) {
+    if (!fighter.abilities.canUseAbility(abilityClass)) {
+      return;
+    }
+
+    if (
+      abilityClass === ABILITY_MOVE
+      ||
+      fighter.abilities.movingOnly(abilityClass)
+    ) {
       const moveCells = this._movement.getMoveCellsByAbility(fighter, abilityClass);
       this.setAttackCells([]);
       this.setTargetCells([]);
       this.setMoveCells(moveCells);
     } else {
-      if (!fighter.abilities.canUseAbility(abilityClass)) {
-        return;
-      }
-      const attackAreaData = this._combat.getAttackAreaData(fighter, abilityClass, true);
+      const attackAreaData = this._combat.getAttackAreaData(fighter, abilityClass);
       this.setAttackCells(attackAreaData.attackCells);
       this.setTargetCells(attackAreaData.targetCells);
       this.setMoveCells([]);
@@ -445,7 +450,7 @@ export class BattleGame extends BattleService {
   public autoMove(fighter: Fighter): void {
     let index = null;
     let ability = fighter.abilities.strongestEnabledAbility();
-    let attackAreaData = this._combat.getAttackAreaData(fighter, ability, true);
+    let attackAreaData = this._combat.getAttackAreaData(fighter, ability);
     if (attackAreaData.targetCells.length && ability) {
       index = _.sample(attackAreaData.targetCells);
       this.log("AI attacks", { attackAreaData, index, ability });
@@ -495,7 +500,7 @@ export class BattleGame extends BattleService {
       this.combat.handleHpChange(fighter, target, abilityClass);
 
       // Counter-attack
-      if (target.wantToCounterAttack) {
+      if (target.launchToCounterAttack) {
         this.log("Target ia trying to counter-attack...", { fighter: fighter.fighterId, target: target.fighterId });
         if (this.combat.acceptableRange(target, fighter, ABILITY_ATTACK)) {
           this.combat.handleHpChange(target, fighter, ABILITY_ATTACK);
@@ -505,7 +510,7 @@ export class BattleGame extends BattleService {
 
     // Apply effects
     if (abilityMeta.effects.length) {
-      this.combat.buff(fighter, fighter, abilityClass);
+      this.combat.applyEffect(fighter, fighter, abilityClass);
     }
   }
 

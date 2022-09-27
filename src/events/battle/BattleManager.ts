@@ -11,6 +11,7 @@ import {
   BattleUnitMeta,
   BattleClassMeta,
 } from "./units/MetaDB";
+import { ABILITY_ATTACK } from "../../knightlands-shared/battle";
 
 export class BattleManager {
   protected _meta: BattleMeta;
@@ -129,7 +130,7 @@ export class BattleManager {
     if (!unitMeta) {
       throw Error(`[Battle meta] Unit meta #${template} is not found`);
     }
-    unitMeta.abilities = unitMeta.abilities.map((abilityClass: string) => {
+    unitMeta.abilities = unitMeta.abilityList.map((abilityClass: string) => {
       const abilityMeta = this.loadAbilityMeta(abilityClass, template);
       if (!abilityMeta) {
         throw new Error(`[Battle meta] Missing ability meta #${abilityClass} (unit template #${template})`);

@@ -16,8 +16,8 @@ export class Unit {
 
   protected _unitId: string;
   protected _template: number;
-  protected _unitTribe: string;
-  protected _unitClass: string;
+  protected _tribe: string;
+  protected _class: string;
   protected _name: string;
   protected _tier: number;
 
@@ -44,11 +44,11 @@ export class Unit {
   }
 
   get tribe(): string {
-    return this._unitTribe;
+    return this._tribe;
   }
 
   get class(): string {
-    return this._unitClass;
+    return this._class;
   }
 
   get unitId(): string {
@@ -75,6 +75,10 @@ export class Unit {
     return this._power;
   }
 
+  get speed(): number {
+    return this._characteristics.speed;
+  }
+
   get damage(): number {
     return this._characteristics.damage;
   }
@@ -86,8 +90,8 @@ export class Unit {
   constructor(blueprint: BattleUnit, events: BattleEvents) {
     this._unitId = blueprint.unitId;
     this._template = blueprint.template;
-    this._unitTribe = blueprint.unitTribe;
-    this._unitClass = blueprint.unitClass;
+    this._tribe = blueprint.tribe;
+    this._class = blueprint.class;
     this._name = blueprint.name;
     this._tier = blueprint.tier;
     this._level = blueprint.level;
@@ -107,8 +111,8 @@ export class Unit {
     const blueprint = {
       unitId: uuidv4().split("-").pop(),
       template: meta._id,
-      unitTribe: meta.unitTribe,
-      unitClass: meta.unitClass,
+      tribe: meta.tribe,
+      class: meta.class,
       name: meta.name,
       tier: meta.tier,
       level: {
@@ -155,8 +159,8 @@ export class Unit {
       unitId: this._unitId,
 
       template: this._template,
-      unitTribe: this._unitTribe,
-      unitClass: this._unitClass,
+      tribe: this._tribe,
+      class: this._class,
       tier: this._tier,
 
       level: this._level,

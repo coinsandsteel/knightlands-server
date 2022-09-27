@@ -13,20 +13,20 @@ export class BattleController {
   protected _battleCore: BattleCore;
   protected _saveData: BattleSaveData;
   protected _user: User;
-  
+
   constructor(user: User) {
     this._battleCore = new BattleCore(user.id);
     this._user = user;
   }
-  
+
   get core(): BattleCore {
     return this._battleCore;
   }
-  
+
   get rootUser(): User {
     return this._user;
   }
-  
+
   async init() {
     const saveData = await Game.battleManager.loadProgress(this._user.id);
     if (saveData) {
@@ -87,7 +87,7 @@ export class BattleController {
     this.core.game.fillSquadSlot(unitId, index);
     this.core.events.flush();
   }
-  
+
   async clearSquadSlot(index: number) {
     this.core.game.clearSquadSlot(index);
     this.core.events.flush();
@@ -97,12 +97,12 @@ export class BattleController {
     this.core.inventory.upgradeUnitLevel(unitId);
     this.core.events.flush();
   }
-  
+
   async upgradeUnitAbility(unitId: string, ability: string) {
     this.core.inventory.upgradeUnitAbility(unitId, ability);
     this.core.events.flush();
   }
-  
+
   async chooseAbility(abilityclass: string) {
     this.core.game.chooseAbility(abilityclass);
     this.core.events.flush();
@@ -121,16 +121,16 @@ export class BattleController {
     this.core.game.enterLevel(room, level);
     this.core.events.flush();
   }
-  
+
   async enterDuel(difficulty: string) {
     this.core.game.enterDuel(difficulty);
     this.core.events.flush();
   }
-  
+
   async getDuelOptions() {
     return this.core.game.getDuelOptions();
   }
-  
+
   async restart() {
     this.core.events.flush();
   }
@@ -144,8 +144,7 @@ export class BattleController {
     if (isProd) return;
     switch (data.action) {
       case 'addUnit':{
-        const tier = random.intRange(1, 3);
-        const unit = this.core.inventory.getRandomUnit(tier);
+        const unit = this.core.inventory.getRandomUnit();
         this.core.inventory.addUnit(unit);
         break;
       }

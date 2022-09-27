@@ -1,4 +1,4 @@
-import { BattleEffectMeta, BattleRangeMeta } from "./units/MetaDB";
+import { BattleEffectMeta } from "./units/MetaDB";
 
 export interface BattleSaveData {
   user: BattleUserState;
@@ -19,7 +19,7 @@ export interface BattleUserState {
   rewards: {
     dailyRewards: BattleRewardDayData[];
     rankingRewards: BattleRewardRankingData;
-  },
+  };
   adventures: object;
   /*
   adventures: {
@@ -38,11 +38,52 @@ export interface BattleRewardDayData {
   date?: string;
 }
 
+export interface BattleRewardRankingData {}
+
+export interface BattleGameState {
+  mode: string | null; // "duel" | "adventure"
+  room: number | null; // 8
+  difficulty: string | null; // 0, 1
+  level: number | null; // 5 + 1
+
+  userSquad: BattleSquadState;
+  enemySquad: BattleSquadState;
+  initiativeRating: BattleInitiativeRatingEntry[];
+
+  terrain: BattleTerrainMap | null;
+  combat: BattleCombatState;
+}
+
+export interface BattleInitiativeRatingEntry {
+  fighterId: string;
+  initiative: number;
+  active: boolean;
+}
+
+export interface BattleCombatState {
+  started: boolean;
+  result: string | null; // "win" | "loose"
+  activeFighterId: string | null;
+  runtime: {
+    selectedIndex: number | null;
+    selectedAbilityClass: string | null;
+    moveCells: number[];
+    attackCells: number[];
+    targetCells: number[];
+  };
+}
+
+export interface BattleSquadState {
+  power: number;
+  bonuses: BattleBuff[];
+  fighters: BattleFighter[];
+}
+
 export interface BattleUnit {
   unitId: string;
   template: number;
-  unitTribe: string;
-  unitClass: string;
+  tribe: string;
+  class: string;
   name: string;
   tier: number;
   level: BattleLevelScheme;
@@ -65,56 +106,15 @@ export interface BattleFighter extends BattleUnit {
   isDead: boolean;
   ratingIndex: number;
   isStunned: boolean;
-  index: number|null;
+  index: number | null;
   hp: number;
   buffs: BattleBuff[];
 }
 
 export interface BattleLevelScheme {
   current: number;
-  next: number|null;
-  price: number|null;
-}
-
-export interface BattleRewardRankingData {}
-
-export interface BattleGameState {
-  mode: string|null; // "duel" | "adventure"
-  room: number|null; // 8
-  difficulty: string|null; // 0, 1
-  level: number|null; // 5 + 1
-
-  userSquad: BattleSquadState;
-  enemySquad: BattleSquadState;
-  initiativeRating: BattleInitiativeRatingEntry[];
-
-  terrain: BattleTerrainMap|null;
-  combat: BattleCombatState;
-}
-
-export interface BattleInitiativeRatingEntry {
-  fighterId: string;
-  initiative: number;
-  active: boolean;
-}
-
-export interface BattleCombatState {
-  started: boolean;
-  result: string|null; // "win" | "loose"
-  activeFighterId: string|null;
-  runtime: {
-    selectedIndex: number|null;
-    selectedAbilityClass: string|null;
-    moveCells: number[];
-    attackCells: number[];
-    targetCells: number[];
-  };
-}
-
-export interface BattleSquadState {
-  power: number;
-  bonuses: BattleBuff[];
-  fighters: BattleFighter[];
+  next: number | null;
+  price: number | null;
 }
 
 export interface BattleUnitCharacteristics {
@@ -127,7 +127,7 @@ export interface BattleUnitCharacteristics {
 
 export interface BattleTerrainMap {
   base: string;
-  tiles: (string|null)[];
+  tiles: (string | null)[];
 }
 
 export interface BattleUnitAbility {
@@ -138,7 +138,10 @@ export interface BattleUnitAbility {
   value: number;
   combatValue: number;
   enabled: boolean;
-  range: BattleRangeMeta;
+  range: {
+    move: number;
+    attack: number;
+  };
   cooldown?: {
     enabled: boolean;
     estimate: number;
@@ -153,24 +156,17 @@ export interface BattleUnitAttribute {
   current: number;
 }
 
-export interface BattleBuff {
-  source?: string;
-  sourceId?: string;
-  type: string;
-  mode: string;
+export interface BattleBuff extends BattleEffectMeta {
+  source: "terrain" | "pvp" | "squad";
+  sourceId: string;
+  mode: "stack" | "constant" | "burst";
+  activated: boolean;
+
   targetFighterId?: string;
-  stackValue?: number;
-  modifier?: number;
   scheme?: string;
-  delta?: number;
-  probability?: number;
   terrain?: string;
   trigger?: string;
-  multiply?: boolean;
-  sum?: boolean;
-  fullSquad?: boolean;
+
+  stackValue?: number;
   max?: number;
-  estimate?: number;
-  activated?: boolean;
-  caseId?: number;
 }

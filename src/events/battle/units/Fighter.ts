@@ -109,7 +109,7 @@ export class Fighter extends Unit {
       .map((buff) => buff.targetFighterId);
   }
 
-  get wantToCounterAttack(): boolean {
+  get launchToCounterAttack(): boolean {
     return (
       !this.isStunned &&
       this.buffs

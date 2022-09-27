@@ -5,6 +5,7 @@ import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";
+import game from "../../../game";
 const Graph = require('node-dijkstra');
 
 export class BattleMovement extends BattleService {
@@ -75,10 +76,10 @@ export class BattleMovement extends BattleService {
     this.graphs = graphs;
   }
 
-  public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number, ignoreObstacles: boolean): number[] {
+  public getMoveAttackCells(unitIndex: number, moveRange: number, attackRange: number, ignoreObstacles: boolean, ignoreTerrain: boolean): number[] {
     //this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
-    const moveCells = this.getMoveCellsByRange(unitIndex, moveRange, ignoreObstacles);
+    const moveCells = this.getMoveCellsByRange(unitIndex, moveRange, ignoreObstacles, ignoreTerrain);
     moveCells.push(unitIndex);
     moveCells.forEach(moveCell => {
       for (let index = 0; index < 35; index++) {
@@ -100,20 +101,24 @@ export class BattleMovement extends BattleService {
   };
 
   public getMoveCellsByAbility(fighter: Fighter, abilityClass: string): number[] {
-    let range = 0;
+    let moveRange = 0;
     let ignoreObstacles = false;
+    let ignoreTerrain = false;
+
     if (abilityClass === ABILITY_MOVE) {
-      range = fighter.speed;
+      moveRange = fighter.speed;
     } else {
-      const abilityStat = fighter.abilities.getAbilityStat(abilityClass);
-      range = abilityStat.moveRange;
-      ignoreObstacles = abilityStat.ignoreObstacles;
+      const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
+      const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+      moveRange = abilityData.range.move;
+      ignoreObstacles = abilityMeta.ignoreObstacles;
+      ignoreTerrain = abilityMeta.ignoreTerrain;
     }
 
-    return this.getMoveCellsByRange(fighter.index, range, ignoreObstacles);
+    return this.getMoveCellsByRange(fighter.index, moveRange, ignoreObstacles, ignoreTerrain);
   };
 
-  public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean): number[] {
+  public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean, ignoreTerrain: boolean): number[] {
     const result = [];
     const unitIndexes = this._core.game.allFighters.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {

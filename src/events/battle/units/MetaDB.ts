@@ -1,16 +1,16 @@
 export interface BattleMeta {
   settings: any;
   classes: {
-    [unitClass: string]: BattleClassMeta
+    [unitClass: string]: BattleClassMeta;
   };
   abilities: {
-    [abilityClass: string]: BattleAbilityMeta
+    [abilityClass: string]: BattleAbilityMeta;
   };
   effects: {
-    [effectId: number]: BattleEffectMeta
+    [effectId: number]: BattleEffectMeta;
   };
   units: {
-    [unitId: number]: BattleUnitMeta
+    [unitId: number]: BattleUnitMeta;
   };
 }
 
@@ -24,12 +24,12 @@ export interface BattleClassMeta {
 }
 
 export interface BattleEffectMeta {
-  _id: number;
+  _id?: number;
   name: string;
-  target: string;
-  subEffect: string;
+  target: "no" | "damage" | "defence" | "speed" | "initiative" | "hp" | "attack" | "power" | "abilities";
+  subEffect: "no" | "stun" | "agro" | "lava_damage" | "counter_attack";
+  operation: "multiply" | "add";
   probability: number;
-  operation: number;
   value: number;
   duration: number;
 }
@@ -74,8 +74,8 @@ export interface BattleAbilityMeta {
 
 export interface BattleUnitMeta {
   _id: number;
-  unitClass: string;
-  unitTribe: string;
+  class: string;
+  tribe: string;
   name: string;
   tier: number;
 
@@ -90,7 +90,7 @@ export interface BattleUnitMeta {
   levelSteps: {
     damage: number;
     hp: number;
-  }
+  };
 
   abilityList: string[];
   abilities?: BattleAbilityMeta[];
