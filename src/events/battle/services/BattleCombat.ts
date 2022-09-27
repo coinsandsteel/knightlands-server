@@ -3,7 +3,6 @@ import game from "../../../game";
 import { BattleCore } from "./BattleCore";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";
-import { BattleAbilityMeta } from "../units/MetaDB";
 import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
@@ -23,7 +22,7 @@ export class BattleCombat extends BattleService {
     target: Fighter | null,
     abilityClass: string
   ): boolean {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
 
     // Check if unit is dead
     if (fighter.isStunned || fighter.isDead) {
@@ -66,7 +65,7 @@ export class BattleCombat extends BattleService {
     target: Fighter | null,
     abilityClass: string
   ): boolean {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
 
     let attackCells = this._core.game.movement.getMoveAttackCells(
@@ -86,7 +85,7 @@ export class BattleCombat extends BattleService {
     target: Fighter | null,
     abilityClass: string
   ): boolean {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
     // TODO check if target within attack range
     return abilityMeta.canMove;
   }
@@ -139,7 +138,7 @@ export class BattleCombat extends BattleService {
       throw Error(`Buff ${abilityClass} has no effects`);
     }
 
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = source.abilities.getMeta(abilityClass);
     draws.forEach((draws) => {
       draws.forEach((effect) => {
         const buff = {
@@ -191,7 +190,7 @@ export class BattleCombat extends BattleService {
     target: Fighter | null,
     abilityClass: string
   ): void {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
     if (abilityMeta.targetEnemies) {
       this.attack(fighter, target, abilityClass);
     } else if (abilityMeta.targetAllies && !abilityMeta.affectFullSquad) {
@@ -269,7 +268,7 @@ export class BattleCombat extends BattleService {
     targetCells: number[];
   } {
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
 
     //console.log('Ability stat', abilityStat);
     if (!abilityData.range.attack) {

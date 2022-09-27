@@ -46,7 +46,7 @@ export interface BattleRangeMeta {
 }
 
 export interface BattleAbilityMeta {
-  _id: string;
+  _id: string|number;
   abilityClass: string;
   tier: number;
   affectHp: boolean;

@@ -87,6 +87,10 @@ export class Unit {
     return this._characteristics.hp;
   }
 
+  get characteristics(): BattleUnitCharacteristics {
+    return this._characteristics;
+  }
+
   constructor(blueprint: BattleUnit, events: BattleEvents) {
     this._unitId = blueprint.unitId;
     this._template = blueprint.template;

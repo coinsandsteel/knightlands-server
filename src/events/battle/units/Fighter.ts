@@ -4,9 +4,11 @@ import { BattleEvents } from "../services/BattleEvents";
 import { BattleFighter } from "../types";
 import FighterBuffs from "./FighterBuffs";
 import { Unit } from "./Unit";
+import UnitAbilities from "./UnitAbilities";
 
-export class Fighter extends Unit {
-  protected _unit: Unit;
+export class Fighter {
+  protected _events: BattleEvents;
+  protected readonly _unit: Unit;
 
   protected _unitId: string;
   protected _fighterId: string;
@@ -26,6 +28,14 @@ export class Fighter extends Unit {
     attack: number;
     abilities: number;
   };
+
+  get abilities(): UnitAbilities {
+    return this._unit.abilities;
+  }
+
+  get unit(): Unit {
+    return this._unit;
+  }
 
   get buffs(): FighterBuffs {
     return this._buffs;
@@ -66,7 +76,7 @@ export class Fighter extends Unit {
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
-      Math.round(this._characteristics.speed * this._modifiers.speed) +
+      Math.round(this.unit.characteristics.speed * this._modifiers.speed) +
       bonusDelta
     );
   }
@@ -75,7 +85,7 @@ export class Fighter extends Unit {
     const bonusDelta = this.buffs.getBonusDelta("initiative");
     return (
       Math.round(
-        this._characteristics.initiative * this._modifiers.initiative
+        this.unit.characteristics.initiative * this._modifiers.initiative
       ) + bonusDelta
     );
   }
@@ -83,7 +93,7 @@ export class Fighter extends Unit {
   get defence(): number {
     const bonusDelta = this.buffs.getBonusDelta("defence");
     return (
-      Math.round(this._characteristics.defence * this._modifiers.defence) +
+      Math.round(this.unit.characteristics.defence * this._modifiers.defence) +
       bonusDelta
     );
   }
@@ -92,7 +102,7 @@ export class Fighter extends Unit {
     const bonusDelta = this.buffs.getBonusDelta("damage");
     return (
       Math.round(
-        this._characteristics.damage *
+        this.unit.characteristics.damage *
           this._modifiers.power *
           this._modifiers.attack
       ) + bonusDelta
@@ -119,8 +129,6 @@ export class Fighter extends Unit {
   }
 
   constructor(unit: Unit, blueprint: BattleFighter, events: BattleEvents) {
-    super(unit.serialize(), events);
-
     this._modifiers = {
       speed: -1,
       initiative: -1,
@@ -139,10 +147,11 @@ export class Fighter extends Unit {
     this._index = blueprint.index;
     this._hp = blueprint.hp;
 
+    this._unit = unit;
     this._buffs = new FighterBuffs(events, this, blueprint.buffs);
     this._events = events;
 
-    this.commit();
+    this.update();
   }
 
   public static createFighter(unit: Unit, isEnemy: boolean, events: BattleEvents): Fighter {
@@ -174,12 +183,12 @@ export class Fighter extends Unit {
     this._isStunned = false;
     this._isDead = false;
     this._index = null;
-    this._hp = this.maxHp;
+    this._hp = this.unit.maxHp;
 
     this.buffs.reset();
     this.abilities.reset();
 
-    this.commit(true);
+    this.update(true);
   }
 
   public regenerateFighterId(): void {
@@ -230,8 +239,8 @@ export class Fighter extends Unit {
       } else {
         this._events.userFighter(this);
       }
-    } else if (this._hp > this.maxHp) {
-      this._hp = this.maxHp;
+    } else if (this._hp > this.unit.maxHp) {
+      this._hp = this.unit.maxHp;
     }
   }
 
@@ -239,7 +248,7 @@ export class Fighter extends Unit {
     this._ratingIndex = value;
   }
 
-  public commit(initial?: boolean): void {
+  public update(initial?: boolean): void {
     this.buffs.update(initial);
 
     // Characteristics
@@ -267,7 +276,7 @@ export class Fighter extends Unit {
     }
 
     this.abilities.update();
-    this.setPower();
+    this.unit.setPower();
   }
 
   public setStunned(value: boolean) {

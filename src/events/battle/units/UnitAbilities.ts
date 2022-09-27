@@ -36,7 +36,7 @@ export default class UnitAbilities {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     const blueprint = {
       abilityClass,
-      tier: abilityClass === ABILITY_ATTACK ? 1 : abilityMeta.tier,
+      tier: abilityClass === ABILITY_ATTACK ? 1 : (abilityMeta ? abilityMeta.tier : 1),
       levelInt: abilityClass === ABILITY_ATTACK ? 1 : 0,
       level: {
         current: abilityClass === ABILITY_ATTACK ? 1 : 0,
@@ -48,7 +48,7 @@ export default class UnitAbilities {
       enabled: abilityClass === ABILITY_ATTACK,
       range: {
         move: 0,
-        attack: 0
+        attack: 0,
       },
       effects: [],
     } as BattleUnitAbility;
@@ -56,9 +56,52 @@ export default class UnitAbilities {
   }
 
   public update(): void {
+    this.unlock();
     this._abilities = this._abilities.map((entry) =>
       this.calcAbility(entry.abilityClass)
     );
+  }
+
+  public getMeta(abilityClass: string) {
+    if (abilityClass === ABILITY_ATTACK) {
+      const isTankOrMelee = [UNIT_CLASS_TANK, UNIT_CLASS_MELEE].includes(
+        this._unit.class
+      );
+
+      return {
+        _id: 0,
+        abilityClass: ABILITY_ATTACK,
+        tier: 1,
+        affectHp: true,
+        affectFullSquad: false,
+        canMove: isTankOrMelee,
+
+        baseMultiplier: 0,
+        finalMultiplier: 0,
+        levelStep: 0,
+
+        targetEnemies: true,
+        targetAllies: false,
+        targetSelf: false,
+        targetEmptyCell: false,
+
+        ignoreTerrain: false,
+        ignoreTerrainPenalty: false,
+        ignoreObstacles: false,
+
+        effectList: [],
+        effects: [],
+
+        range: [
+          {
+            move: { value: 0, addSpeed: isTankOrMelee },
+            attack: { value: isTankOrMelee ? 1 : 0, addSpeed: !isTankOrMelee },
+          },
+        ],
+      } as BattleAbilityMeta;
+    }
+
+    return game.battleManager.loadAbilityMeta(abilityClass);
   }
 
   protected getAbilityValue(ability: string): number | null {
@@ -67,7 +110,7 @@ export default class UnitAbilities {
     }
 
     const abilityData = this.getAbilityByClass(ability);
-    const abilityMeta = game.battleManager.getAbilityMeta(ability);
+    const abilityMeta = this._unit.abilities.getMeta(ability);
     const classMeta = game.battleManager.getClassMeta(this._unit.class);
 
     // ClassDamage * (BaseMultiplier + LevelStep * (AbilityLevel-1))) * FinalMultiplier
@@ -84,7 +127,7 @@ export default class UnitAbilities {
     if (ability === ABILITY_ATTACK) {
       return this._unit.damage;
     }
-    const abilityMeta = game.battleManager.getAbilityMeta(ability);
+    const abilityMeta = this._unit.abilities.getMeta(ability);
     const abilityData = this.getAbilityByClass(ability);
     if (!abilityMeta.affectHp) {
       const effects = abilityData.effects;
@@ -138,7 +181,7 @@ export default class UnitAbilities {
 
   public getAbilityIgnoreObstacles(abilityClass: string): boolean {
     const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
 
     let ignoreObstacles = abilityMeta.ignoreObstacles;
     return _.isArray(ignoreObstacles)
@@ -146,53 +189,21 @@ export default class UnitAbilities {
       : ignoreObstacles;
   }
 
-  protected getAbilityMeta(abilityClass: string) {
-    if (abilityClass === ABILITY_ATTACK) {
-      const isTankOrMelee = [UNIT_CLASS_TANK, UNIT_CLASS_MELEE].includes(this._unit.class);
-      return {
-        _id: '999999',
-        abilityClass: ABILITY_ATTACK,
-        tier: 1,
-        affectHp: true,
-        affectFullSquad: false,
-        canMove: isTankOrMelee,
-
-        baseMultiplier: 0,
-        finalMultiplier: 0,
-        levelStep: 0,
-
-        targetEnemies: true,
-        targetAllies: false,
-        targetSelf: false,
-        targetEmptyCell: false,
-
-        ignoreTerrain: false,
-        ignoreTerrainPenalty: false,
-        ignoreObstacles: false,
-
-        effectList: [],
-
-        range: [
-          {
-            move: { value: 0, addSpeed: isTankOrMelee },
-            attack: { value: isTankOrMelee ? 1 : 0, addSpeed: !isTankOrMelee }
-          }
-      ],
-      } as BattleAbilityMeta;
-    }
-
-    return game.battleManager.getAbilityMeta(abilityClass);
-  }
-
   protected calcAbility(abilityClass: string): BattleUnitAbility {
+    console.log('calcAbility', abilityClass);
     const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
 
     const value = this.getAbilityValue(abilityClass);
     const combatValue = this.getAbilityCombatValue(abilityClass);
     const range = abilityMeta.range[abilityData.levelInt - 1];
-    const moveRange = range.move.value + (range.move.addSpeed ? this._unit.speed : 0);
-    const attackRange = range.attack.value + (range.attack.addSpeed ? this._unit.speed : 0);
+
+    const moveRange =
+      abilityData.enabled ? (range.move.value + (range.move.addSpeed ? this._unit.speed : 0)) : 0;
+
+    const attackRange =
+      abilityData.enabled ? (range.attack.value + (range.attack.addSpeed ? this._unit.speed : 0)) : 0;
+
     const effects = abilityMeta.effects.length
       ? abilityMeta.effects[
           abilityData.levelInt === 0 ? 0 : abilityData.levelInt - 1
@@ -205,16 +216,16 @@ export default class UnitAbilities {
       combatValue: combatValue === null ? value : combatValue,
       range: {
         move: abilityMeta.canMove ? (moveRange < 0 ? 0 : moveRange) : 0,
-        attack: attackRange < 0 ? 0 : attackRange
+        attack: attackRange < 0 ? 0 : attackRange,
       },
-      effects
+      effects,
     };
 
     return ability;
   }
 
   public movingOnly(abilityClass: string): boolean {
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
     return abilityMeta.canMove && abilityMeta.targetEmptyCell;
   }
 
@@ -231,7 +242,7 @@ export default class UnitAbilities {
           enabled: ability.cooldown ? ability.cooldown.enabled : false,
           estimate: ability.cooldown ? ability.cooldown.estimate : 0,
         },
-        effects: ability.effects
+        effects: ability.effects,
       } as BattleUnitAbility;
     });
   }

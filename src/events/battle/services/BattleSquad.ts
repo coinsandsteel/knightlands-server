@@ -145,9 +145,9 @@ export class BattleSquad extends BattleService {
     this.fighters.forEach(fighter => {
       stat = {
         ...stat,
-        [fighter.tribe]: {
-          ...stat[fighter.tribe],
-          ...{ [fighter.tier]: _.get(stat, `${fighter.tribe}.${fighter.tier}`, 0) + 1 }
+        [fighter.unit.tribe]: {
+          ...stat[fighter.unit.tribe],
+          ...{ [fighter.unit.tier]: _.get(stat, `${fighter.unit.tribe}.${fighter.unit.tier}`, 0) + 1 }
         }
       };
     });
@@ -226,7 +226,7 @@ export class BattleSquad extends BattleService {
   }
 
   public maximize(): void {
-    this.fighters.forEach(fighter => fighter.maximize());
+    this.fighters.forEach(fighter => fighter.unit.maximize());
     this.setPower();
     this.sync();
   }

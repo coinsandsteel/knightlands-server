@@ -109,7 +109,7 @@ export class BattleMovement extends BattleService {
       moveRange = fighter.speed;
     } else {
       const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
-      const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+      const abilityMeta = fighter.abilities.getMeta(abilityClass);
       moveRange = abilityData.range.move;
       ignoreObstacles = abilityMeta.ignoreObstacles;
       ignoreTerrain = abilityMeta.ignoreTerrain;

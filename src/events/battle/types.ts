@@ -94,7 +94,13 @@ export interface BattleUnit {
     currentLevelExp: number;
     nextLevelExp: number;
   };
-  characteristics: BattleUnitCharacteristics;
+  characteristics: {
+    hp: number;
+    damage: number;
+    defence: number;
+    initiative: number;
+    speed: number;
+  };
   abilities: BattleUnitAbility[];
   quantity: number;
 }

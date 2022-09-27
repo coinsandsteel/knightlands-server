@@ -475,7 +475,7 @@ export class BattleGame extends BattleService {
     }
 
     const target = index === null ? null : this.getFighterByIndex(index);
-    const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
 
     // Сheck all restrictions
     if (!this.combat.canApply(fighter, target, abilityClass)) {

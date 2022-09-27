@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { BattleBuff } from "../types";
-import { Unit } from "./Unit";
 import {
   ABILITY_TYPE_DE_BUFF,
   TERRAIN_ICE,
@@ -47,6 +46,14 @@ export default class UnitBuffs {
     this._events = events;
     this._fighter = fighter;
     this._buffs = buffs || [];
+    this._modifiers = {
+      speed: -1,
+      initiative: -1,
+      defence: -1,
+      power: -1,
+      attack: -1,
+      abilities: -1,
+    };
   }
 
   public serialize() {
@@ -62,7 +69,7 @@ export default class UnitBuffs {
       // HP
       if (initial && buff.target === "hp") {
         const hp = Math.round(
-          this.fighter.maxHp * this.getBuffModifier({ type: "hp" })
+          this.fighter.unit.maxHp * this.getBuffModifier({ type: "hp" })
         );
         this.fighter.modifyHp(hp, true);
       }
@@ -111,7 +118,7 @@ export default class UnitBuffs {
     }
 
     this._buffs.push(buff);
-    this.fighter.commit();
+    this.fighter.update();
     this._events.buffs(this.fighter.fighterId, this.buffs);
 
     if (buff.target !== "no") {
@@ -233,7 +240,7 @@ export default class UnitBuffs {
 
     if (outdatedBuffs.length) {
       this.log(`Buffs outdated (need commit)`, { outdatedBuffs });
-      this.fighter.commit();
+      this.fighter.update();
     }
   }
 
@@ -283,7 +290,7 @@ export default class UnitBuffs {
   }
 
   public getLavaDamage(): number {
-    return Math.round(this.fighter.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
+    return Math.round(this.fighter.unit.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
   }
 
   public getTerrainModifier(terrain: string): number {
