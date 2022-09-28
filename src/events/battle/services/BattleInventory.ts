@@ -21,7 +21,7 @@ export class BattleInventory extends BattleService {
   }
 
   get unitIds(): string[] {
-    return this._units.map(unit => unit.unitId);
+    return this._units.map((unit) => unit.unitId);
   }
 
   public init() {
@@ -45,12 +45,25 @@ export class BattleInventory extends BattleService {
 
   public getRandomUnit(): Unit {
     // Get random unit blueprint
-    const unitBlueprint = _.cloneDeep(_.sample(game.battleManager.meta.units)) as BattleUnitMeta;
+    const unitBlueprint = _.cloneDeep(
+      _.sample(game.battleManager.meta.units)
+    ) as BattleUnitMeta;
     // Construct unit
     return Unit.createUnit(unitBlueprint, this._core.events);
   }
 
-  public getNewUnitByPropsRandom(params: { tribe?: string, class?: string }): Unit {
+  public getNewUnitRandom(): Unit {
+    const units = game.battleManager.meta.units;
+    const unitEntry = _.sample(units) as BattleUnitMeta;
+    const unitMeta = game.battleManager.loadUnitMeta(unitEntry._id);
+    return Unit.createUnit(unitMeta, this._core.events);
+  }
+
+  public getNewUnitByPropsRandom(params: {
+    tribe?: string;
+    class?: string;
+    tier?: number;
+  }): Unit {
     const units = game.battleManager.meta.units;
     const filteredUnits = _.cloneDeep(_.filter(units, params));
     const unitEntry = _.sample(filteredUnits) as BattleUnitMeta;
@@ -64,10 +77,16 @@ export class BattleInventory extends BattleService {
   }
 
   public addUnit(unit: Unit): Unit {
-    this.log("Add unit", { unitId: unit.unitId, template: unit.template, tier: unit.tier });
+    this.log("Add unit", {
+      unitId: unit.unitId,
+      template: unit.template,
+      tier: unit.tier,
+    });
 
     // Search by template
-    const index = this._units.findIndex(entry => entry.template === unit.template && entry.tier === unit.tier);
+    const index = this._units.findIndex(
+      (entry) => entry.template === unit.template && entry.tier === unit.tier
+    );
     // Add or increase quantity
     if (index === -1) {
       this._units.push(unit);
@@ -80,12 +99,14 @@ export class BattleInventory extends BattleService {
       this.log("Unit stacked", unit.unitId);
     }
 
-    return this._units.find(entry => entry.template === unit.template && entry.tier === unit.tier);
+    return this._units.find(
+      (entry) => entry.template === unit.template && entry.tier === unit.tier
+    );
   }
 
   public setUnits(units: Unit[]) {
     this._units = units;
-    this._state = this._units.map(unit => unit.serialize());
+    this._state = this._units.map((unit) => unit.serialize());
     this._core.events.inventory(units);
   }
 
@@ -95,29 +116,34 @@ export class BattleInventory extends BattleService {
     this.updateUnitState(unit);
   }
 
-  protected updateUnitState(unit: Unit): void{
-    const stateIndex = this._state.findIndex(inventoryUnit => inventoryUnit.template === unit.template);
+  protected updateUnitState(unit: Unit): void {
+    const stateIndex = this._state.findIndex(
+      (inventoryUnit) => inventoryUnit.template === unit.template
+    );
     this._state[stateIndex] = unit.serialize();
     this._core.events.updateUnit(unit);
   }
 
-  public getUnit(unitId: string): Unit|null {
-    return this._units.find((inventoryUnit: Unit) => {
-      return inventoryUnit.unitId === unitId;
-    }) || null;
+  public getUnit(unitId: string): Unit | null {
+    return (
+      this._units.find((inventoryUnit: Unit) => {
+        return inventoryUnit.unitId === unitId;
+      }) || null
+    );
   }
 
-  public getUnitByFilter(params: { tribe?: string, class?: string, tier?: number, template?: number }): Unit|null {
+  public getUnitByFilter(params: {
+    tribe?: string;
+    class?: string;
+    tier?: number;
+    template?: number;
+  }): Unit | null {
     return _.head(_.find(this._units, params)) || null;
   }
 
   public upgradeUnitLevel(unitId: string): void {
     const unit = this.getUnit(unitId);
-    if (
-      !unit
-      ||
-      !unit.canUpgradeLevel()
-    ) {
+    if (!unit || !unit.canUpgradeLevel()) {
       throw Error("Cannot upgrade a unit");
     }
 
@@ -130,8 +156,7 @@ export class BattleInventory extends BattleService {
     this.updateUnitState(unit);
 
     if (
-      !this._core.game.combatStarted
-      &&
+      !this._core.game.combatStarted &&
       this._core.game.userSquad.includesUnit(unit.unitId)
     ) {
       this._core.game.proxyUnit(unit.unitId);
@@ -140,11 +165,7 @@ export class BattleInventory extends BattleService {
 
   public upgradeUnitAbility(unitId: string, ability: string): void {
     const unit = this.getUnit(unitId);
-    if (
-      !unit
-      ||
-      !unit.abilities.canUpgradeAbility(ability)
-    ) {
+    if (!unit || !unit.abilities.canUpgradeAbility(ability)) {
       throw Error("Cannot upgrade a unit's ability");
     }
 
@@ -158,8 +179,7 @@ export class BattleInventory extends BattleService {
     this.updateUnitState(unit);
 
     if (
-      !this._core.game.combatStarted
-      &&
+      !this._core.game.combatStarted &&
       this._core.game.userSquad.includesUnit(unit.unitId)
     ) {
       this._core.game.proxyUnit(unit.unitId);

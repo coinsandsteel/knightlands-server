@@ -3,7 +3,6 @@ import Game from "../../game";
 import * as battle from "../../../src/knightlands-shared/battle";
 import User from "../../user";
 
-import random from "../../random";
 import { BattleCore } from './services/BattleCore';
 import { BattleSaveData } from './types';
 
@@ -11,7 +10,6 @@ const isProd = process.env.ENV == "prod";
 
 export class BattleController {
   protected _battleCore: BattleCore;
-  protected _saveData: BattleSaveData;
   protected _user: User;
 
   constructor(user: User) {
@@ -29,15 +27,7 @@ export class BattleController {
 
   async init() {
     const saveData = await Game.battleManager.loadProgress(this._user.id);
-    if (saveData) {
-      this._saveData = saveData.state as BattleSaveData;
-    }
-
-    this.core.init();
-
-    if (!this._saveData) {
-      this._saveData = this.getState();
-    }
+    this.core.init(saveData ? saveData.state as BattleSaveData : this.getState());
   }
 
   async dispose() {
@@ -45,7 +35,7 @@ export class BattleController {
     await this._save();
   }
 
-  getState(): BattleSaveData {
+  public getState(): BattleSaveData {
     return this.core.getState();
   }
 

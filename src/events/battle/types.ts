@@ -108,6 +108,8 @@ export interface BattleUnit {
 export interface BattleFighter extends BattleUnit {
   unitId?: string;
   unitTemplate: number;
+  tribe: string;
+  class: string;
   fighterId: string;
   isEnemy: boolean;
   isDead: boolean;

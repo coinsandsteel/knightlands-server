@@ -13,27 +13,27 @@ export class BattleCore {
   protected _battleUser: BattleUser;
   protected _battleGame: BattleGame;
   protected _battleInventory: BattleInventory;
-  
+
   constructor(userId: ObjectId) {
     this._battleEvents = new BattleEvents(userId);
   }
-  
+
   get events(): BattleEvents {
     return this._battleEvents;
   }
-  
+
   get game(): BattleGame {
     return this._battleGame;
   }
-  
+
   get inventory(): BattleInventory {
     return this._battleInventory;
   }
-  
+
   get user(): BattleUser {
     return this._battleUser;
   }
-  
+
   public init(saveData?: BattleSaveData) {
     this.initUser(saveData ? saveData.user : null);
     this.initGame(saveData ? saveData.game : null);
@@ -49,7 +49,7 @@ export class BattleCore {
       this._battleUser = new BattleUser(saveData, this);
     }
   }
-  
+
   protected initGame(saveData?: BattleGameState) {
     if (!this._battleGame) {
       this._battleGame = new BattleGame(saveData, this);
@@ -62,7 +62,7 @@ export class BattleCore {
     }
   }
 
-  getState(): BattleSaveData {
+  public getState(): BattleSaveData {
     return {
       user: this._battleUser.getState(),
       game: this._battleGame.getState(),

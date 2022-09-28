@@ -1,5 +1,4 @@
 import _ from "lodash";
-import game from "../../../game";
 import { BattleCore } from "./BattleCore";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";

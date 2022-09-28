@@ -180,10 +180,7 @@ export class Fighter {
     this._hp = blueprint.hp;
 
     this._buffs = new FighterBuffs(events, this, blueprint.buffs);
-    this._abilities = new UnitAbilities(
-      this,
-      blueprint.abilities || unit.abilities.serialize()
-    );
+    this._abilities = new UnitAbilities(this, blueprint.abilities);
 
     this.update();
   }
@@ -204,6 +201,7 @@ export class Fighter {
       index: null,
       hp: unit.maxHp,
       buffs: [],
+      abilities: unit.abilities.serialize(),
     } as BattleFighter;
     return new Fighter(unit, blueprint, events);
   }
@@ -241,6 +239,8 @@ export class Fighter {
   public serializeFighter(): BattleFighter {
     const fighter = {
       unitId: this._unitId,
+      tribe: this._unit.tribe,
+      class: this._unit.class,
       unitTemplate: this._unitTemplate,
       fighterId: this._fighterId,
       isEnemy: this._isEnemy,
