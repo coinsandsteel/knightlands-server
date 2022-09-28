@@ -242,14 +242,16 @@ export default class UnitAbilities {
         abilityClass: ability.abilityClass,
         tier: ability.tier,
         levelInt: ability.levelInt,
+        level: ability.level,
         value: ability.value,
         combatValue: ability.combatValue,
         enabled: ability.enabled,
+        range: ability.range,
         cooldown: {
           enabled: ability.cooldown ? ability.cooldown.enabled : false,
           estimate: ability.cooldown ? ability.cooldown.estimate : 0,
         },
-        effects: ability.effects,
+        effects: ability.effects
       } as BattleUnitAbility;
     });
   }
@@ -265,7 +267,7 @@ export default class UnitAbilities {
           ability.enabled = true;
           ability.level.current = 1;
           ability.levelInt = 1;
-          console.log(`Ability enabled`, ability);
+          //console.log(`Ability enabled`, ability);
         }
 
         const canUpgradeMore = ability.level.current < abilityScheme.lvl;
@@ -275,10 +277,10 @@ export default class UnitAbilities {
           : null;
 
         if (canUpgradeMore) {
-          console.log(
+          /*console.log(
             `Ability allowed to upgrade to ${abilityScheme.lvl} lvl`,
             ability
-          );
+          );*/
         }
       }
     });

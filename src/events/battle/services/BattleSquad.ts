@@ -29,12 +29,11 @@ export class BattleSquad extends BattleService {
 
     this._state = this.getInitialState();
     this._state.fighters = fighters;
-
-    this.pullFighters();
   }
 
   public init() {
-    this.resetState();
+    this.pullFighters();
+    //this.resetState();
     this.updateStat();
   }
 
@@ -70,8 +69,6 @@ export class BattleSquad extends BattleService {
       this._core.inventory.getNewUnit(blueprint.unitTemplate)
       :
       _.cloneDeep(this._core.inventory.getUnit(blueprint.unitId));
-
-    console.log('Make fighter', this._isEnemy, blueprint);
 
     blueprint.isEnemy = this._isEnemy;
     return new Fighter(unit, blueprint, this._core.events);

@@ -193,6 +193,7 @@ export class Fighter {
     const blueprint = {
       unitId: unit.unitId,
       unitTemplate: unit.template,
+      tier: unit.tier,
       fighterId: uuidv4().split("-").pop(),
       isEnemy,
       isDead: false,
@@ -241,6 +242,7 @@ export class Fighter {
       unitId: this._unitId,
       tribe: this._unit.tribe,
       class: this._unit.class,
+      tier: this._unit.tier,
       unitTemplate: this._unitTemplate,
       fighterId: this._fighterId,
       isEnemy: this._isEnemy,

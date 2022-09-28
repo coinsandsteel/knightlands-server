@@ -26,8 +26,9 @@ export class BattleController {
   }
 
   async init() {
+    console.log('Controller init');
     const saveData = await Game.battleManager.loadProgress(this._user.id);
-    this.core.init(saveData ? saveData.state as BattleSaveData : this.getState());
+    this.core.init(saveData ? saveData.state as BattleSaveData : null);
   }
 
   async dispose() {
@@ -44,6 +45,7 @@ export class BattleController {
   }
 
   async load() {
+    console.log('Controller load');
     await this.core.load();
     return this.getState();
   }

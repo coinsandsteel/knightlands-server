@@ -44,6 +44,7 @@ export class BattleGame extends BattleService {
       false,
       this._core
     );
+
     this._enemySquad = new BattleSquad(
       state ? state.enemySquad.fighters : [],
       true,
@@ -61,7 +62,7 @@ export class BattleGame extends BattleService {
     this._combat = new BattleCombat(this._core);
     this._terrain = new BattleTerrain(this._state.terrain, this._core);
 
-    this.log("Loaded");
+    this.log("Game created");
   }
 
   get relativeEnemySquad(): Fighter[] {
@@ -118,8 +119,8 @@ export class BattleGame extends BattleService {
       difficulty: null, // "low", "mudium", "hard"
       level: 0, // 5 + 1
 
-      userSquad: this._userSquad.getState(),
-      enemySquad: this._enemySquad.getState(),
+      userSquad: this._userSquad.getInitialState(),
+      enemySquad: this._enemySquad.getInitialState(),
       initiativeRating: [],
       terrain: null,
 
@@ -147,8 +148,10 @@ export class BattleGame extends BattleService {
     return this._state;
   }
 
-  public init(): void {
-    this.log("Init", this._state);
+  public load(): void {
+    this.log("Game load");
+    this.userSquad.init();
+    this.enemySquad.init();
 
     // Combat started
     if (this.combatStarted) {

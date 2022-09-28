@@ -16,24 +16,25 @@ export class BattleUser {
       this.setInitialState();
     }
   }
-  
+
   get energy(): number {
     return this._state.balance.energy;
   }
-  
+
   get coins(): number {
     return this._state.balance.coins;
   }
-  
+
   get crystals(): number {
     return this._state.balance.crystals;
   }
-  
-  public init() {
+
+  public async load() {
+    console.log('User load');
     this.setEventDay();
     this.setActiveReward();
   }
-    
+
   public setInitialState() {
     this._state = {
       balance: {

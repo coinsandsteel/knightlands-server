@@ -244,7 +244,6 @@ export class Unit {
     this.setCharacteristics();
     this.setPower();
 
-    this.abilities.unlock();
     this.abilities.update();
 
     return true;

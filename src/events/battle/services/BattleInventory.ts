@@ -24,7 +24,8 @@ export class BattleInventory extends BattleService {
     return this._units.map((unit) => unit.unitId);
   }
 
-  public init() {
+  public async load() {
+    console.log('Inventory load');
     this.createUnits();
   }
 
