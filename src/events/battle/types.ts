@@ -116,6 +116,7 @@ export interface BattleFighter extends BattleUnit {
   index: number | null;
   hp: number;
   buffs: BattleBuff[];
+  abilities: BattleUnitAbility[];
 }
 
 export interface BattleLevelScheme {

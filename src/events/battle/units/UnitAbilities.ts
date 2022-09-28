@@ -10,16 +10,17 @@ import { BattleLevelScheme, BattleUnitAbility } from "../types";
 import { Unit } from "./Unit";
 import game from "../../../game";
 import { BattleAbilityMeta } from "./MetaDB";
+import { Fighter } from "./Fighter";
 
 export default class UnitAbilities {
-  protected _unit: Unit;
+  protected _unit: Unit | Fighter;
   protected _abilities: BattleUnitAbility[];
 
   get abilities(): BattleUnitAbility[] {
     return this._abilities;
   }
 
-  constructor(unit: Unit, abilities: BattleUnitAbility[]) {
+  constructor(unit: Unit | Fighter, abilities: BattleUnitAbility[]) {
     this._unit = unit;
     this._abilities = abilities;
 
@@ -36,7 +37,12 @@ export default class UnitAbilities {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     const blueprint = {
       abilityClass,
-      tier: abilityClass === ABILITY_ATTACK ? 1 : (abilityMeta ? abilityMeta.tier : 1),
+      tier:
+        abilityClass === ABILITY_ATTACK
+          ? 1
+          : abilityMeta
+          ? abilityMeta.tier
+          : 1,
       levelInt: abilityClass === ABILITY_ATTACK ? 1 : 0,
       level: {
         current: abilityClass === ABILITY_ATTACK ? 1 : 0,
@@ -197,11 +203,13 @@ export default class UnitAbilities {
     const combatValue = this.getAbilityCombatValue(abilityClass);
     const range = abilityMeta.range[abilityData.levelInt - 1];
 
-    const moveRange =
-      abilityData.enabled ? (range.move.value + (range.move.addSpeed ? this._unit.speed : 0)) : 0;
+    const moveRange = abilityData.enabled
+      ? range.move.value + (range.move.addSpeed ? this._unit.speed : 0)
+      : 0;
 
-    const attackRange =
-      abilityData.enabled ? (range.attack.value + (range.attack.addSpeed ? this._unit.speed : 0)) : 0;
+    const attackRange = abilityData.enabled
+      ? range.attack.value + (range.attack.addSpeed ? this._unit.speed : 0)
+      : 0;
 
     const effects = abilityMeta.effects.length
       ? abilityMeta.effects[

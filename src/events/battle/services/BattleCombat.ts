@@ -124,15 +124,20 @@ export class BattleCombat extends BattleService {
     this.enableCooldown(source, abilityClass);
   }
 
-  public applyEffect(source: Fighter, target: Fighter, abilityClass: string): void {
+  public applyEffect(
+    source: Fighter,
+    target: Fighter,
+    abilityClass: string
+  ): void {
     this.log("Buff", { abilityClass });
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
     const draws = abilityData.effects;
     if (!draws || !draws.length) {
-      throw Error(`Buff ${abilityClass} has no effects`);
+      return;
     }
 
     const abilityMeta = source.abilities.getMeta(abilityClass);
+    let buffsCount = 0;
     draws.forEach((draws) => {
       draws.forEach((effect) => {
         const buff = {
@@ -146,7 +151,7 @@ export class BattleCombat extends BattleService {
           source: "pvp",
           sourceId: abilityClass,
           mode: "constant",
-          activated: false
+          activated: false,
         } as BattleBuff;
 
         if (buff.subEffect === "agro") {
@@ -154,8 +159,11 @@ export class BattleCombat extends BattleService {
         }
 
         target.buffs.addBuff(buff);
+        buffsCount++;
       });
     });
+
+    if (!buffsCount) return;
 
     this._core.events.effect({
       action: abilityMeta.targetEnemies
@@ -175,8 +183,6 @@ export class BattleCombat extends BattleService {
         abilityClass,
       },
     });
-
-    this.enableCooldown(source, abilityClass);
   }
 
   public handleHpChange(
@@ -323,10 +329,7 @@ export class BattleCombat extends BattleService {
     target: Fighter,
     abilityClass: string
   ) {
-    const attackAreaNoMoving = this.getAttackAreaData(
-      fighter,
-      abilityClass
-    );
+    const attackAreaNoMoving = this.getAttackAreaData(fighter, abilityClass);
     // Need to approach
     if (!attackAreaNoMoving.targetCells.includes(target.index)) {
       this.log("Need to approach the enemy");
@@ -374,7 +377,7 @@ export class BattleCombat extends BattleService {
     }
   }
 
-  protected enableCooldown(fighter: Fighter, abilityClass: string): void {
+  public enableCooldown(fighter: Fighter, abilityClass: string): void {
     if (![ABILITY_ATTACK, ABILITY_MOVE].includes(abilityClass)) {
       fighter.abilities.enableAbilityCooldown(abilityClass);
       this._core.events.abilities(

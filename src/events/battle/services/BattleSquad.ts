@@ -69,7 +69,7 @@ export class BattleSquad extends BattleService {
     const unit = this._isEnemy ?
       this._core.inventory.getNewUnit(blueprint.unitTemplate)
       :
-      this._core.inventory.getUnit(blueprint.unitId);
+      _.cloneDeep(this._core.inventory.getUnit(blueprint.unitId));
 
     console.log('Make fighter', this._isEnemy, blueprint);
 

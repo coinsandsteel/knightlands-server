@@ -1,14 +1,14 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { BattleEvents } from "../services/BattleEvents";
-import { BattleFighter } from "../types";
+import { BattleFighter, BattleUnitCharacteristics } from "../types";
 import FighterBuffs from "./FighterBuffs";
 import { Unit } from "./Unit";
 import UnitAbilities from "./UnitAbilities";
 
 export class Fighter {
   protected _events: BattleEvents;
-  protected readonly _unit: Unit;
+  protected readonly _unit: Unit; // Unit copy
 
   protected _unitId: string;
   protected _unitTemplate: number;
@@ -20,6 +20,8 @@ export class Fighter {
   protected _index: number | null;
   protected _hp: number;
   protected _buffs: FighterBuffs;
+  protected _characteristics: BattleUnitCharacteristics;
+  protected _abilities: UnitAbilities;
 
   public _modifiers: {
     speed: number;
@@ -29,6 +31,18 @@ export class Fighter {
     attack: number;
     abilities: number;
   };
+
+  get class(): string {
+    return this._unit.class;
+  }
+
+  get levelInt(): number {
+    return this._unit.levelInt;
+  }
+
+  get template(): number {
+    return this._unit.template;
+  }
 
   get abilities(): UnitAbilities {
     return this._unit.abilities;
@@ -72,6 +86,16 @@ export class Fighter {
 
   get isStunned(): boolean {
     return this._isStunned;
+  }
+
+  get characteristics(): BattleUnitCharacteristics {
+    return {
+      hp: this._unit.maxHp,
+      speed: this.speed,
+      initiative: this.initiative,
+      defence: this.defence,
+      damage: this.damage,
+    };
   }
 
   get speed(): number {
@@ -133,6 +157,8 @@ export class Fighter {
     if (!unit) {
       throw new Error(`Unit #${blueprint.unitId} not found in the inventory`);
     }
+    this._unit = unit;
+    this._events = events;
 
     this._modifiers = {
       speed: -1,
@@ -153,14 +179,20 @@ export class Fighter {
     this._index = blueprint.index;
     this._hp = blueprint.hp;
 
-    this._unit = unit;
     this._buffs = new FighterBuffs(events, this, blueprint.buffs);
-    this._events = events;
+    this._abilities = new UnitAbilities(
+      this,
+      blueprint.abilities || unit.abilities.serialize()
+    );
 
     this.update();
   }
 
-  public static createFighter(unit: Unit, isEnemy: boolean, events: BattleEvents): Fighter {
+  public static createFighter(
+    unit: Unit,
+    isEnemy: boolean,
+    events: BattleEvents
+  ): Fighter {
     const blueprint = {
       unitId: unit.unitId,
       unitTemplate: unit.template,
@@ -171,7 +203,7 @@ export class Fighter {
       isStunned: false,
       index: null,
       hp: unit.maxHp,
-      buffs: []
+      buffs: [],
     } as BattleFighter;
     return new Fighter(unit, blueprint, events);
   }
@@ -218,6 +250,8 @@ export class Fighter {
       index: this._index,
       hp: this._hp,
       buffs: this.buffs.serialize(),
+      abilities: this.abilities.serialize(),
+      characteristics: this.characteristics,
     } as BattleFighter;
     return _.cloneDeep(fighter);
   }
@@ -284,7 +318,6 @@ export class Fighter {
     }
 
     this.abilities.update();
-    this.unit.setPower();
   }
 
   public setStunned(value: boolean) {

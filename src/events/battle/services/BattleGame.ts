@@ -513,6 +513,8 @@ export class BattleGame extends BattleService {
     if (abilityMeta.effects.length) {
       this.combat.applyEffect(fighter, fighter, abilityClass);
     }
+
+    this.combat.enableCooldown(fighter, abilityClass);
   }
 
   public handleActionCallback(timeout: boolean) {
