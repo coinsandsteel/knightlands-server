@@ -36,6 +36,11 @@ export class BattleCombat extends BattleService {
       return false;
     }
 
+    // Allow movement
+    if (abilityClass === ABILITY_MOVE) {
+      return true;
+    }
+
     // Check if target is dead
     if (abilityMeta.affectHp && target && target.isDead) {
       this.log("Target is dead. Abort.");
@@ -77,17 +82,6 @@ export class BattleCombat extends BattleService {
     );
 
     return attackCells.includes(target.index);
-  }
-
-  // TODO update
-  public shouldMove(
-    fighter: Fighter,
-    target: Fighter | null,
-    abilityClass: string
-  ): boolean {
-    const abilityMeta = fighter.abilities.getMeta(abilityClass);
-    // TODO check if target within attack range
-    return abilityMeta.canMove;
   }
 
   protected groupHeal(source: Fighter, abilityClass: string): void {

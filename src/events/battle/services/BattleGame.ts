@@ -1,15 +1,13 @@
 import _ from "lodash";
-import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_ATTACK, ABILITY_MOVE, ABILITY_FLIGHT, ABILITY_DASH, UNIT_TRIBE_KOBOLD } from "../../../knightlands-shared/battle";
+import { GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_LOW, GAME_DIFFICULTY_MEDIUM, GAME_MODE_DUEL, ABILITY_ATTACK, ABILITY_MOVE, UNIT_TRIBE_KOBOLD } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
-import { SQUAD_BONUSES } from "../meta";
 import { BattleFighter, BattleGameState, BattleInitiativeRatingEntry, BattleTerrainMap } from "../types";
 import { BattleCombat } from "./BattleCombat";
 import { BattleMovement } from "./BattleMovement";
 import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
-import game from "../../../game";
 import { Fighter } from "../units/Fighter";
 
 export class BattleGame extends BattleService {
@@ -176,7 +174,7 @@ export class BattleGame extends BattleService {
   }
 
   public addUnitToSquad(params: { tribe?: string, class?: string }, squadIndex: number) {
-    const newUnit = this._core.inventory.getRandomUnitByProps(params);
+    const newUnit = this._core.inventory.getNewUnitByPropsRandom(params);
     /*this.log("New squad member blueprint", {
       unitId: blueprint.unitId,
       tribe: blueprint.tribe,
@@ -255,10 +253,12 @@ export class BattleGame extends BattleService {
   }
 
   public spawnUserSquad(userSquad: BattleFighter[]) {
+    console.log('Spawn user squad');
     this._userSquad = new BattleSquad(userSquad, false, this._core);
   }
 
   public spawnEnemySquad(enemySquad: BattleFighter[]) {
+    console.log('Spawn enemy squad');
     this._enemySquad = new BattleSquad(enemySquad, true, this._core);
     this._enemyOptions = null;
   }
@@ -279,7 +279,7 @@ export class BattleGame extends BattleService {
 
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
-        const unit = this._core.inventory.getRandomUnitByProps({ tribe });
+        const unit = this._core.inventory.getNewUnitByPropsRandom({ tribe });
         const fighter = Fighter.createFighter(unit, true, this._core.events);
         squads[tier-1].push(fighter.serializeFighter());
       }
@@ -484,14 +484,15 @@ export class BattleGame extends BattleService {
     }
 
     // Check if need to approach
-    if (this.combat.shouldMove(fighter, target, abilityClass)) {
-      if (abilityClass === ABILITY_MOVE) {
-        this.log("Moving the fighter...");
-        this._movement.moveFighter(fighter, abilityClass, index);
-      } else {
-        this.log("Approaching enemy...");
-        this.combat.tryApproachEnemy(fighter, target, abilityClass);
-      }
+    if (abilityClass === ABILITY_MOVE) {
+      this.log("Moving the fighter...");
+      this._movement.moveFighter(fighter, abilityClass, index);
+      return;
+    }
+
+    // Check if need to approach
+    if (abilityMeta.canMove) {
+      this.combat.tryApproachEnemy(fighter, target, abilityClass);
     }
 
     // Attack

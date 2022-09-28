@@ -11,6 +11,7 @@ export class Fighter {
   protected readonly _unit: Unit;
 
   protected _unitId: string;
+  protected _unitTemplate: number;
   protected _fighterId: string;
   protected _isEnemy: boolean;
   protected _isDead: boolean;
@@ -129,6 +130,10 @@ export class Fighter {
   }
 
   constructor(unit: Unit, blueprint: BattleFighter, events: BattleEvents) {
+    if (!unit) {
+      throw new Error(`Unit #${blueprint.unitId} not found in the inventory`);
+    }
+
     this._modifiers = {
       speed: -1,
       initiative: -1,
@@ -139,6 +144,7 @@ export class Fighter {
     };
 
     this._unitId = unit.unitId;
+    this._unitTemplate = unit.template;
     this._fighterId = blueprint.fighterId;
     this._isEnemy = blueprint.isEnemy;
     this._isDead = blueprint.isDead;
@@ -157,6 +163,7 @@ export class Fighter {
   public static createFighter(unit: Unit, isEnemy: boolean, events: BattleEvents): Fighter {
     const blueprint = {
       unitId: unit.unitId,
+      unitTemplate: unit.template,
       fighterId: uuidv4().split("-").pop(),
       isEnemy,
       isDead: false,
@@ -202,6 +209,7 @@ export class Fighter {
   public serializeFighter(): BattleFighter {
     const fighter = {
       unitId: this._unitId,
+      unitTemplate: this._unitTemplate,
       fighterId: this._fighterId,
       isEnemy: this._isEnemy,
       isDead: this._isDead,

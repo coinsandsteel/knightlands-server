@@ -80,7 +80,7 @@ export interface BattleSquadState {
 }
 
 export interface BattleUnit {
-  unitId: string;
+  unitId?: string;
   template: number;
   tribe: string;
   class: string;
@@ -106,7 +106,8 @@ export interface BattleUnit {
 }
 
 export interface BattleFighter extends BattleUnit {
-  unitId: string;
+  unitId?: string;
+  unitTemplate: number;
   fighterId: string;
   isEnemy: boolean;
   isDead: boolean;

@@ -190,7 +190,6 @@ export default class UnitAbilities {
   }
 
   protected calcAbility(abilityClass: string): BattleUnitAbility {
-    console.log('calcAbility', abilityClass);
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = this._unit.abilities.getMeta(abilityClass);
 

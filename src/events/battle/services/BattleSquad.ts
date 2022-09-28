@@ -66,7 +66,13 @@ export class BattleSquad extends BattleService {
   }
 
   protected makeFighter(blueprint: BattleFighter): Fighter {
-    const unit = this._core.inventory.getUnitById(blueprint.unitId)
+    const unit = this._isEnemy ?
+      this._core.inventory.getNewUnit(blueprint.unitTemplate)
+      :
+      this._core.inventory.getUnit(blueprint.unitId);
+
+    console.log('Make fighter', this._isEnemy, blueprint);
+
     blueprint.isEnemy = this._isEnemy;
     return new Fighter(unit, blueprint, this._core.events);
   }
@@ -76,7 +82,7 @@ export class BattleSquad extends BattleService {
       throw Error("Cannot fill this slot - no such a slot");
     }
 
-    const unit = _.cloneDeep(this._core.inventory.getUnitById(unitId) as Unit);
+    const unit = _.cloneDeep(this._core.inventory.getUnit(unitId) as Unit);
     if (!unit) {
       throw Error(`Unit ${unitId} not found`);
     }

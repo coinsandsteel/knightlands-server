@@ -91,13 +91,9 @@ export default class UnitBuffs {
 
     // Stun
     const stunBuffs = this.getBuffs({ type: "stun" });
-    if (stunBuffs.length) {
-      this.fighter.setStunned(
-        stunBuffs.some((buff) => Math.random() <= buff.probability)
-      );
-    } else {
-      this.fighter.setStunned(false);
-    }
+    this.fighter.setStunned(!!stunBuffs.length);
+
+    // stunBuffs.some((buff) => Math.random() <= buff.probability)
   }
 
   public reset() {

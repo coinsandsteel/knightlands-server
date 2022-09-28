@@ -50,10 +50,16 @@ export class BattleInventory extends BattleService {
     return Unit.createUnit(unitBlueprint, this._core.events);
   }
 
-  public getRandomUnitByProps(params: { tribe?: string, class?: string }): Unit {
+  public getNewUnitByPropsRandom(params: { tribe?: string, class?: string }): Unit {
     const units = game.battleManager.meta.units;
     const filteredUnits = _.cloneDeep(_.filter(units, params));
-    const unitBlueprint = _.sample(filteredUnits) as BattleUnitMeta;
+    const unitEntry = _.sample(filteredUnits) as BattleUnitMeta;
+    const unitMeta = game.battleManager.loadUnitMeta(unitEntry._id);
+    return Unit.createUnit(unitMeta, this._core.events);
+  }
+
+  public getNewUnit(template: number): Unit {
+    const unitBlueprint = game.battleManager.loadUnitMeta(template);
     return Unit.createUnit(unitBlueprint, this._core.events);
   }
 
@@ -84,7 +90,7 @@ export class BattleInventory extends BattleService {
   }
 
   public addExp(unitId: string, value: number) {
-    const unit = this.getUnitById(unitId);
+    const unit = this.getUnit(unitId);
     unit.addExpirience(value);
     this.updateUnitState(unit);
   }
@@ -95,7 +101,7 @@ export class BattleInventory extends BattleService {
     this._core.events.updateUnit(unit);
   }
 
-  public getUnitById(unitId: string): Unit|null {
+  public getUnit(unitId: string): Unit|null {
     return this._units.find((inventoryUnit: Unit) => {
       return inventoryUnit.unitId === unitId;
     }) || null;
@@ -106,7 +112,7 @@ export class BattleInventory extends BattleService {
   }
 
   public upgradeUnitLevel(unitId: string): void {
-    const unit = this.getUnitById(unitId);
+    const unit = this.getUnit(unitId);
     if (
       !unit
       ||
@@ -133,7 +139,7 @@ export class BattleInventory extends BattleService {
   }
 
   public upgradeUnitAbility(unitId: string, ability: string): void {
-    const unit = this.getUnitById(unitId);
+    const unit = this.getUnit(unitId);
     if (
       !unit
       ||
