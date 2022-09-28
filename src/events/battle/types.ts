@@ -172,6 +172,7 @@ export interface BattleBuff extends BattleEffectMeta {
   mode: "stack" | "constant" | "burst";
   activated: boolean;
 
+  caseId?: number;
   targetFighterId?: string;
   scheme?: string;
   terrain?: string;

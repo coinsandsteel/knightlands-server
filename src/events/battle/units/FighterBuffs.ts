@@ -272,7 +272,8 @@ export default class UnitBuffs {
           source: "terrain",
           sourceId: terrain,
           mode: "constant",
-          activated: true
+          activated: true,
+          caseId: parseInt(this._terrainModifiers[terrain].split('-')[1])
         });
         break;
       }
