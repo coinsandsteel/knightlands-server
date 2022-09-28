@@ -151,6 +151,7 @@ export class BattleCombat extends BattleService {
           sourceId: abilityClass,
           mode: "constant",
           activated: false,
+          caseId: abilityData.levelInt - 1
         } as BattleBuff;
 
         if (buff.subEffect === "agro") {
