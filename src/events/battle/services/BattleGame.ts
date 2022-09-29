@@ -150,8 +150,8 @@ export class BattleGame extends BattleService {
 
   public load(): void {
     this.log("Game load");
-    this.userSquad.init();
-    this.enemySquad.init();
+    this.userSquad.load();
+    this.enemySquad.load();
 
     // Combat started
     if (this.combatStarted) {
@@ -196,10 +196,7 @@ export class BattleGame extends BattleService {
       tier: blueprint.tier
     });*/
 
-    let unit = this._core.inventory.getUnitByFilter({
-      template: newUnit.template,
-    });
-
+    let unit = this._core.inventory.getUnitByTemplate(newUnit.template);
     if (!unit) {
       unit = this._core.inventory.addUnit(newUnit);
     }
@@ -246,12 +243,12 @@ export class BattleGame extends BattleService {
     }
 
     this.spawnEnemySquad(this._enemyOptions[difficulties[difficulty]]);
-    this._enemySquad.init();
+    this._enemySquad.load();
     this._enemySquad.regenerateFighterIds();
     this._enemySquad.arrange();
 
     this.spawnUserSquad(this._state.userSquad.fighters);
-    this._userSquad.init();
+    this._userSquad.load();
     this._userSquad.regenerateFighterIds();
     this._userSquad.arrange();
 
@@ -294,6 +291,10 @@ export class BattleGame extends BattleService {
     for (let tier = 1; tier <= 3; tier++) {
       for (let index = 0; index < 5; index++) {
         const unit = this._core.inventory.getNewUnitByPropsRandom({ tier });
+        if (!unit) {
+          throw new Error(`[getDuelOptions] Tier ${tier} not found in the inventory`);
+        }
+
         const fighter = Fighter.createFighter(unit, true, this._core.events);
         squads[tier - 1].push(fighter.serializeFighter());
       }

@@ -32,6 +32,7 @@ export class BattleInventory extends BattleService {
   protected createUnits(): void {
     this._units = [];
     this._state.forEach((unit: BattleUnit) => {
+      console.log('Inventory create unit', { unitId: unit.unitId, template: unit.template });
       this._units.push(this.makeUnit(unit));
     });
   }
@@ -86,23 +87,22 @@ export class BattleInventory extends BattleService {
 
     // Search by template
     const index = this._units.findIndex(
-      (entry) => entry.template === unit.template && entry.tier === unit.tier
+      (entry) => entry.template === unit.template
     );
+
     // Add or increase quantity
     if (index === -1) {
       this._units.push(unit);
       this._state.push(unit.serialize());
       this._core.events.addUnit(unit);
       this.log("Unit added", unit.unitId);
+      return unit;
     } else {
       this._units[index].updateQuantity(unit.quantity);
-      this.updateUnitState(unit);
+      this.updateUnitState(this._units[index]);
       this.log("Unit stacked", unit.unitId);
+      return this._units[index];
     }
-
-    return this._units.find(
-      (entry) => entry.template === unit.template && entry.tier === unit.tier
-    );
   }
 
   public setUnits(units: Unit[]) {
@@ -119,9 +119,12 @@ export class BattleInventory extends BattleService {
 
   protected updateUnitState(unit: Unit): void {
     const stateIndex = this._state.findIndex(
-      (inventoryUnit) => inventoryUnit.template === unit.template
+      (entry) => entry.template === unit.template
     );
-    this._state[stateIndex] = unit.serialize();
+    const unitIndex = this._units.findIndex(
+      (entry) => entry.template === unit.template
+    );
+    this._state[stateIndex] = this._units[unitIndex].serialize();
     this._core.events.updateUnit(unit);
   }
 
@@ -133,13 +136,9 @@ export class BattleInventory extends BattleService {
     );
   }
 
-  public getUnitByFilter(params: {
-    tribe?: string;
-    class?: string;
-    tier?: number;
-    template?: number;
-  }): Unit | null {
-    return _.head(_.find(this._units, params)) || null;
+  public getUnitByTemplate(template: number): Unit | null {
+    console.log('[getUnitByFilter]', template, _.find(this._units, { template }));
+    return _.find(this._units, { template }) || null;
   }
 
   public upgradeUnitLevel(unitId: string): void {

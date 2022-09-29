@@ -154,9 +154,6 @@ export class Fighter {
   }
 
   constructor(unit: Unit, blueprint: BattleFighter, events: BattleEvents) {
-    if (!unit) {
-      throw new Error(`Unit #${blueprint.unitId} not found in the inventory`);
-    }
     this._unit = unit;
     this._events = events;
 

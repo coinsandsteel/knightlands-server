@@ -160,10 +160,10 @@ export default class UnitAbilities {
           enabled: true,
           estimate: abilityScheme.cd,
         };
-        console.log(
+        /*console.log(
           `Ability "${abilityClass}" cooldown has been set`,
           abilityEntry.cooldown
-        );
+        );*/
       }
     });
   }
@@ -177,10 +177,10 @@ export default class UnitAbilities {
           ability.cooldown.enabled = false;
         }
 
-        console.log(
+        /*console.log(
           `Ability "${ability.abilityClass}" cooldown`,
           ability.cooldown
-        );
+        );*/
       }
     });
   }

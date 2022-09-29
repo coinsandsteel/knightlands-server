@@ -1,5 +1,9 @@
 import _ from "lodash";
-import { BattleFighter, BattleInitiativeRatingEntry, BattleSquadState } from "../types";
+import {
+  BattleFighter,
+  BattleInitiativeRatingEntry,
+  BattleSquadState,
+} from "../types";
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
 import { SQUAD_BONUSES } from "../meta";
@@ -11,14 +15,14 @@ export class BattleSquad extends BattleService {
   protected _core: BattleCore;
 
   protected _isEnemy: boolean;
-  protected _fighters: (Fighter|null)[];
+  protected _fighters: (Fighter | null)[];
 
   get fighters(): Fighter[] {
-    return this._fighters.filter(u => u);
+    return this._fighters.filter((u) => u);
   }
 
   get liveFighters(): Fighter[] {
-    return this._fighters.filter(u => u).filter(unit => !unit.isDead);
+    return this._fighters.filter((u) => u).filter((unit) => !unit.isDead);
   }
 
   constructor(fighters: BattleFighter[], isEnemy: boolean, core: BattleCore) {
@@ -31,7 +35,8 @@ export class BattleSquad extends BattleService {
     this._state.fighters = fighters;
   }
 
-  public init() {
+  public load() {
+    console.log("Squad load", this._isEnemy);
     this.pullFighters();
     //this.resetState();
     this.updateStat();
@@ -41,7 +46,7 @@ export class BattleSquad extends BattleService {
     return {
       power: 0,
       bonuses: [],
-      fighters: []
+      fighters: [],
     } as BattleSquadState;
   }
 
@@ -52,23 +57,45 @@ export class BattleSquad extends BattleService {
 
   protected pullFighters(): void {
     this._fighters = [];
-    this._state.fighters.forEach((blueprint: BattleFighter|null) => {
-      this._fighters.push(blueprint ? this.makeFighter(blueprint) : null);
-    });
+    if (this._state && this._state.fighters) {
+      this._state.fighters.forEach((blueprint: BattleFighter | null) => {
+        this._fighters.push(blueprint ? this.makeFighter(blueprint) : null);
+      });
+    }
   }
 
   public pushFighters(): void {
     this._state.fighters = [];
-    this._fighters.forEach((fighter: Fighter|null, index: number) => {
-      this._state.fighters[index] = fighter ? fighter.serializeFighter() : null;
-    });
+    if (this._fighters) {
+      this._fighters.forEach((fighter: Fighter | null, index: number) => {
+        this._state.fighters[index] = fighter
+          ? fighter.serializeFighter()
+          : null;
+      });
+    }
   }
 
   protected makeFighter(blueprint: BattleFighter): Fighter {
-    const unit = this._isEnemy ?
-      this._core.inventory.getNewUnit(blueprint.unitTemplate)
-      :
-      _.cloneDeep(this._core.inventory.getUnit(blueprint.unitId));
+    const isEnemy = blueprint.isEnemy || this._isEnemy;
+
+    console.log(`Make fighter`, {
+      isEnemySquad: this._isEnemy,
+      isEnemy: blueprint.isEnemy,
+      fighterUnitId: blueprint.unitId,
+      fighterTemplate: blueprint.unitTemplate,
+    });
+
+    const unit = isEnemy
+      ? this._core.inventory.getNewUnit(blueprint.unitTemplate)
+      : _.cloneDeep(
+          this._core.inventory.getUnitByTemplate(blueprint.unitTemplate)
+        );
+
+    if (!unit) {
+      throw new Error(
+        `[makeFighter] Unit @${blueprint.unitTemplate} not found in the inventory`
+      );
+    }
 
     blueprint.isEnemy = this._isEnemy;
     return new Fighter(unit, blueprint, this._core.events);
@@ -81,10 +108,14 @@ export class BattleSquad extends BattleService {
 
     const unit = _.cloneDeep(this._core.inventory.getUnit(unitId) as Unit);
     if (!unit) {
-      throw Error(`Unit ${unitId} not found`);
+      throw new Error(`[fillSlot] Unit #${unitId} not found in the inventory`);
     }
 
-    const figher = Fighter.createFighter(unit, this._isEnemy, this._core.events);
+    const figher = Fighter.createFighter(
+      unit,
+      this._isEnemy,
+      this._core.events
+    );
 
     // Fill slot
     this._fighters[index] = figher;
@@ -112,11 +143,7 @@ export class BattleSquad extends BattleService {
 
   public proxyUnit(unitId: string): void {
     for (let index = 0; index < 5; index++) {
-      if (
-        this._fighters[index]
-        &&
-        this._fighters[index].unitId === unitId
-      ) {
+      if (this._fighters[index] && this._fighters[index].unitId === unitId) {
         this.fillSlot(unitId, index);
       }
     }
@@ -130,10 +157,10 @@ export class BattleSquad extends BattleService {
   }
 
   public setInitiativeRating(rating: BattleInitiativeRatingEntry[]) {
-    this.fighters.forEach(fighter => {
+    this.fighters.forEach((fighter) => {
       const ratingIndex = _.findIndex(rating, { fighterId: fighter.fighterId });
       if (ratingIndex !== -1) {
-        fighter.setRatingIndex(ratingIndex+1);
+        fighter.setRatingIndex(ratingIndex + 1);
       }
     });
   }
@@ -145,13 +172,16 @@ export class BattleSquad extends BattleService {
 
     let stat = {};
 
-    this.fighters.forEach(fighter => {
+    this.fighters.forEach((fighter) => {
       stat = {
         ...stat,
         [fighter.unit.tribe]: {
           ...stat[fighter.unit.tribe],
-          ...{ [fighter.unit.tier]: _.get(stat, `${fighter.unit.tribe}.${fighter.unit.tier}`, 0) + 1 }
-        }
+          ...{
+            [fighter.unit.tier]:
+              _.get(stat, `${fighter.unit.tribe}.${fighter.unit.tier}`, 0) + 1,
+          },
+        },
       };
     });
 
@@ -169,9 +199,11 @@ export class BattleSquad extends BattleService {
     this._state.bonuses = bonuses;
 
     // Apply bonuses
-    this.fighters.forEach(fighter => {
+    this.fighters.forEach((fighter) => {
       fighter.buffs.reset();
-      bonuses.forEach(bonus => fighter.buffs.addBuff({ source: "squad", ...bonus }));
+      bonuses.forEach((bonus) =>
+        fighter.buffs.addBuff({ source: "squad", ...bonus })
+      );
     });
 
     // this.log("Squad bonuses", { bonuses });
@@ -187,7 +219,9 @@ export class BattleSquad extends BattleService {
   }
 
   public includesUnit(unitId: string): boolean {
-    return this.fighters.findIndex(fighters => fighters.unitId === unitId) !== -1;
+    return (
+      this.fighters.findIndex((fighters) => fighters.unitId === unitId) !== -1
+    );
   }
 
   public updateStat(): void {
@@ -215,12 +249,14 @@ export class BattleSquad extends BattleService {
     });
   }
 
-  public getFighter(fighterId: string): Fighter|null {
-    return this.fighters.find(fighter => fighter.fighterId === fighterId) || null;
+  public getFighter(fighterId: string): Fighter | null {
+    return (
+      this.fighters.find((fighter) => fighter.fighterId === fighterId) || null
+    );
   }
 
   public callbackDrawFinished(): void {
-    this.fighters.forEach(fighter => {
+    this.fighters.forEach((fighter) => {
       // Decrease the cooldown
       fighter.abilities.decreaseAbilitiesCooldownEstimate();
       // Decrease the buff estimate
@@ -229,7 +265,7 @@ export class BattleSquad extends BattleService {
   }
 
   public maximize(): void {
-    this.fighters.forEach(fighter => fighter.unit.maximize());
+    this.fighters.forEach((fighter) => fighter.unit.maximize());
     this.setPower();
     this.sync();
   }
