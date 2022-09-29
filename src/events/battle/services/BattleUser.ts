@@ -30,7 +30,7 @@ export class BattleUser {
   }
 
   public async load() {
-    console.log('User load');
+    //('User load');
     this.setEventDay();
     this.setActiveReward();
   }

@@ -35,7 +35,7 @@ export class BattleCore {
   }
 
   public init(saveData?: BattleSaveData) {
-    console.log('Core init');
+    //console.log('Core init');
     this.initUser(saveData ? saveData.user : null);
     this.initInventory(saveData ? saveData.inventory : null);
     this.initGame(saveData ? saveData.game : null);
@@ -72,10 +72,10 @@ export class BattleCore {
   }
 
   async load() {
-    console.log('Core load');
+    //console.log('Core load');
     await this._battleUser.load();
     await this._battleInventory.load();
     await this._battleGame.load();
-    console.log('Core loaded');
+    //console.log('Core loaded');
   }
 }

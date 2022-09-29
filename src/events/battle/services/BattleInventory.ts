@@ -25,14 +25,14 @@ export class BattleInventory extends BattleService {
   }
 
   public async load() {
-    console.log('Inventory load');
+    //console.log('Inventory load');
     this.createUnits();
   }
 
   protected createUnits(): void {
     this._units = [];
     this._state.forEach((unit: BattleUnit) => {
-      console.log('Inventory create unit', { unitId: unit.unitId, template: unit.template });
+      //console.log('Inventory create unit', { unitId: unit.unitId, template: unit.template });
       this._units.push(this.makeUnit(unit));
     });
   }
@@ -137,7 +137,7 @@ export class BattleInventory extends BattleService {
   }
 
   public getUnitByTemplate(template: number): Unit | null {
-    console.log('[getUnitByFilter]', template, _.find(this._units, { template }));
+    //console.log('[getUnitByFilter]', template, _.find(this._units, { template }));
     return _.find(this._units, { template }) || null;
   }
 

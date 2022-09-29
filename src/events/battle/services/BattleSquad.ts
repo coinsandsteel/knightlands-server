@@ -36,7 +36,7 @@ export class BattleSquad extends BattleService {
   }
 
   public load() {
-    console.log("Squad load", this._isEnemy);
+    //console.log("Squad load", this._isEnemy);
     this.pullFighters();
     //this.resetState();
     this.updateStat();
@@ -78,12 +78,12 @@ export class BattleSquad extends BattleService {
   protected makeFighter(blueprint: BattleFighter): Fighter {
     const isEnemy = blueprint.isEnemy || this._isEnemy;
 
-    console.log(`Make fighter`, {
+    /*console.log(`Make fighter`, {
       isEnemySquad: this._isEnemy,
       isEnemy: blueprint.isEnemy,
       fighterUnitId: blueprint.unitId,
       fighterTemplate: blueprint.unitTemplate,
-    });
+    });*/
 
     const unit = isEnemy
       ? this._core.inventory.getNewUnit(blueprint.unitTemplate)

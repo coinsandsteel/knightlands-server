@@ -267,12 +267,12 @@ export class BattleGame extends BattleService {
   }
 
   public spawnUserSquad(userSquad: BattleFighter[]) {
-    console.log("Spawn user squad");
+    //console.log("Spawn user squad");
     this._userSquad = new BattleSquad(userSquad, false, this._core);
   }
 
   public spawnEnemySquad(enemySquad: BattleFighter[]) {
-    console.log("Spawn enemy squad");
+    //console.log("Spawn enemy squad");
     this._enemySquad = new BattleSquad(enemySquad, true, this._core);
     this._enemyOptions = null;
   }
