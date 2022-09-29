@@ -49,8 +49,10 @@ export class BattleCombat extends BattleService {
     // Check target restrictions
     if (
       !(
-        (abilityMeta.targetAllies && target && !target.isEnemy) ||
-        (abilityMeta.targetEnemies && target && target.isEnemy) ||
+        (!fighter.isEnemy && abilityMeta.targetAllies && target && !target.isEnemy) ||
+        (!fighter.isEnemy && abilityMeta.targetEnemies && target && target.isEnemy) ||
+        (fighter.isEnemy && abilityMeta.targetAllies && target && target.isEnemy) ||
+        (fighter.isEnemy && abilityMeta.targetEnemies && target && !target.isEnemy) ||
         (abilityMeta.targetSelf &&
           target &&
           target.fighterId === fighter.fighterId) ||
