@@ -24,20 +24,19 @@ export class BattleAdventures extends BattleService {
   }
 
   protected setInitialState() {
-    const level = {
-      [GAME_DIFFICULTY_MEDIUM]: false,
-      [GAME_DIFFICULTY_HIGH]: false,
-    };
-
-    const locations = new Array(LOCATIONS.length)
-      .fill(null)
-      .map(() => new Array(LOCATIONS.length).fill(_.cloneDeep(level)));
-
+    const locations = _.cloneDeep(LOCATIONS).map((location) =>
+      location.levels.map(() => {
+        return {
+          [GAME_DIFFICULTY_MEDIUM]: false,
+          [GAME_DIFFICULTY_HIGH]: false,
+        };
+      })
+    );
     locations[0][0][GAME_DIFFICULTY_MEDIUM] = true;
 
     this._state = {
       difficulty: GAME_DIFFICULTY_MEDIUM,
-      locations
+      locations,
     } as BattleAdventuresState;
   }
 
