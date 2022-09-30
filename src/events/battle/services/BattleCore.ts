@@ -5,14 +5,16 @@ import { BattleEvents } from './BattleEvents';
 import { BattleUser } from './BattleUser';
 import { BattleGame } from './BattleGame';
 import { BattleInventory } from './BattleInventory';
-import { BattleSaveData, BattleUnit } from '../types';
+import { BattleAdventuresState, BattleSaveData, BattleUnit } from '../types';
 import { BattleGameState, BattleUserState } from "../types";
+import { BattleAdventures } from "./BattleAdventures";
 
 export class BattleCore {
   protected _battleEvents: BattleEvents;
   protected _battleUser: BattleUser;
   protected _battleGame: BattleGame;
   protected _battleInventory: BattleInventory;
+  protected _battleAdventures: BattleAdventures;
 
   constructor(userId: ObjectId) {
     this._battleEvents = new BattleEvents(userId);
@@ -39,6 +41,7 @@ export class BattleCore {
     this.initUser(saveData ? saveData.user : null);
     this.initInventory(saveData ? saveData.inventory : null);
     this.initGame(saveData ? saveData.game : null);
+    this.initAdventures(saveData ? saveData.adventures : null);
   }
 
   public dispose() {
@@ -63,11 +66,18 @@ export class BattleCore {
     }
   }
 
+  protected initAdventures(saveData?: BattleAdventuresState) {
+    if (!this._battleAdventures) {
+      this._battleAdventures = new BattleAdventures(saveData, this);
+    }
+  }
+
   public getState(): BattleSaveData {
     return {
       user: this._battleUser.getState(),
       game: this._battleGame.getState(),
-      inventory: this._battleInventory.getState()
+      inventory: this._battleInventory.getState(),
+      adventures: this._battleAdventures.getState(),
     };
   }
 

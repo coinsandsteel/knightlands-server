@@ -1,9 +1,22 @@
+import {
+  GAME_DIFFICULTY_HIGH,
+  GAME_DIFFICULTY_MEDIUM,
+} from "../../knightlands-shared/battle";
 import { BattleEffectMeta } from "./units/MetaDB";
 
 export interface BattleSaveData {
   user: BattleUserState;
   game: BattleGameState;
   inventory: BattleUnit[];
+  adventures: BattleAdventuresState;
+}
+
+export interface BattleAdventuresState {
+  difficulty: string;
+  locations: {
+    [GAME_DIFFICULTY_MEDIUM]: boolean;
+    [GAME_DIFFICULTY_HIGH]: false;
+  }[][];
 }
 
 export interface BattleUserState {
@@ -20,15 +33,6 @@ export interface BattleUserState {
     dailyRewards: BattleRewardDayData[];
     rankingRewards: BattleRewardRankingData;
   };
-  adventures: object;
-  /*
-  adventures: {
-    1: {
-      1: { [GAME_DIFFICULTY_MEDIUM]: true, [GAME_DIFFICULTY_HIGH]: false },
-      //2: { [GAME_DIFFICULTY_MEDIUM]: false, [GAME_DIFFICULTY_HIGH]: false },
-    }
-  }
-  */
 }
 
 export interface BattleRewardDayData {
