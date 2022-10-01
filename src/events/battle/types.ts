@@ -1,6 +1,6 @@
 import {
   GAME_DIFFICULTY_HIGH,
-  GAME_DIFFICULTY_MEDIUM,
+  GAME_DIFFICULTY_MEDIUM
 } from "../../knightlands-shared/battle";
 import { BattleEffectMeta } from "./units/MetaDB";
 
@@ -46,8 +46,8 @@ export interface BattleRewardRankingData {}
 
 export interface BattleGameState {
   mode: string | null; // "duel" | "adventure"
-  room: number | null; // 8
   difficulty: string | null; // 0, 1
+  location: number | null; // 8
   level: number | null; // 5 + 1
 
   userSquad: BattleSquadState;
@@ -84,11 +84,11 @@ export interface BattleSquadState {
 }
 
 export interface BattleUnit {
+  name: string;
   unitId?: string;
   template: number;
   tribe: string;
   class: string;
-  name: string;
   tier: number;
   level: BattleLevelScheme;
   levelInt: number;
@@ -110,6 +110,7 @@ export interface BattleUnit {
 }
 
 export interface BattleFighter extends BattleUnit {
+  name: string;
   unitId?: string;
   unitTemplate: number;
   tribe: string;

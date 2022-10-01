@@ -56,8 +56,8 @@ export class BattleEvents extends BattleService {
     this._events.mode = mode;
   }
 
-  room(room: number) {
-    this._events.room = room;
+  location(location: number) {
+    this._events.location = location;
   }
 
   level(level: number) {

@@ -5,7 +5,8 @@ import {
   GAME_DIFFICULTY_MEDIUM,
   GAME_MODE_DUEL,
   ABILITY_ATTACK,
-  ABILITY_MOVE
+  ABILITY_MOVE,
+  GAME_MODE_ADVENTURE,
 } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
@@ -115,8 +116,8 @@ export class BattleGame extends BattleService {
   protected setInitialState() {
     this._state = {
       mode: null,
-      room: null, // 8
       difficulty: null, // "low", "mudium", "hard"
+      location: null, // 8
       level: 0, // 5 + 1
 
       userSquad: this._userSquad.getInitialState(),
@@ -214,20 +215,21 @@ export class BattleGame extends BattleService {
     }
   }
 
-  public enterLevel(room: number, level: number): void {
-    // Set room/level
-    // Set difficulty
-    // Set isMyTurn
-    // Find an enemy
-    // Load terrain
+  public enterLevel(location: number, level: number): void {
+    this.setMode(GAME_MODE_ADVENTURE);
+    this.setDifficulty(GAME_DIFFICULTY_MEDIUM);
+    this.setLocation(location);
+    this.setLevel(level);
+
+    // Terrain
+    this.terrain.setRandomMap();
+
+    this.start(
+      this.getRandomEnemySquad()
+    );
   }
 
   public enterDuel(difficulty: string): void {
-    if (!this._userSquad.fighters.length) {
-      return;
-    }
-
-    // Set game mode and difficulty
     this.setMode(GAME_MODE_DUEL);
     this.setDifficulty(difficulty);
 
@@ -242,7 +244,19 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    this.spawnEnemySquad(this._enemyOptions[difficulties[difficulty]]);
+    // Terrain
+    this.terrain.setRandomMap();
+
+    const enemyFighters = this._enemyOptions[difficulties[difficulty]];
+    this.start(enemyFighters);
+  }
+
+  public start(enemyFighters: BattleFighter[]): void {
+    if (!this._userSquad.fighters.length) {
+      return;
+    }
+
+    this.spawnEnemySquad(enemyFighters);
     this._enemySquad.load();
     this._enemySquad.regenerateFighterIds();
     this._enemySquad.arrange();
@@ -251,9 +265,6 @@ export class BattleGame extends BattleService {
     this._userSquad.load();
     this._userSquad.regenerateFighterIds();
     this._userSquad.arrange();
-
-    // Terrain
-    this.terrain.setRandomMap();
 
     // Start combat
     this.setCombatStarted(true);
@@ -292,7 +303,9 @@ export class BattleGame extends BattleService {
       for (let index = 0; index < 5; index++) {
         const unit = this._core.inventory.getNewUnitByPropsRandom({ tier });
         if (!unit) {
-          throw new Error(`[getDuelOptions] Tier ${tier} not found in the inventory`);
+          throw new Error(
+            `[getDuelOptions] Tier ${tier} not found in the inventory`
+          );
         }
 
         const fighter = Fighter.createFighter(unit, true, this._core.events);
@@ -303,9 +316,29 @@ export class BattleGame extends BattleService {
     return squads;
   }
 
+  public getRandomEnemySquad(): BattleFighter[] {
+    const squad = [];
+    for (let index = 0; index < 5; index++) {
+      const unit = this._core.inventory.getNewUnitRandom();
+      const fighter = Fighter.createFighter(unit, true, this._core.events);
+      squad.push(fighter.serializeFighter());
+    }
+    return squad;
+  }
+
   public setMode(mode: string): void {
     this._state.mode = mode;
     this._core.events.mode(mode);
+  }
+
+  public setLocation(location: number): void {
+    this._state.location = location;
+    this._core.events.location(location);
+  }
+
+  public setLevel(level: number): void {
+    this._state.level = level;
+    this._core.events.level(level);
   }
 
   public setDifficulty(difficulty: string): void {

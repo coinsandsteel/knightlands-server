@@ -68,7 +68,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.FetchCharacter, this._fetchCharacter.bind(this));
         this._socket.on(Operations.GetOnline, this._getOnline.bind(this));
 
-        // payed functions 
+        // payed functions
         this._socket.on(Operations.ChangeNickname, this._gameHandler(this._changeNickname.bind(this)));
         this._socket.on(Operations.ChangeAvatar, this._gameHandler(this._changeAvatar.bind(this)));
         // this._socket.on(Operations.SendPayment, this._acceptPayment.bind(this));
@@ -136,7 +136,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.EvolveBeast, this._gameHandler(this._evolveBeast.bind(this)));
         this._socket.on(Operations.FetchBeastBoostPurchase, this._gameHandler(this._fetchBeastBoostPurchase.bind(this)));
 
-        // Tower 
+        // Tower
         this._socket.on(Operations.FetchTowerFloors, this._gameHandler(this._fetchTowerFloors.bind(this)));
         this._socket.on(Operations.ChallengeTowerFloor, this._gameHandler(this._challengeTowerFloor.bind(this)));
         this._socket.on(Operations.AttackTowerFloor, this._gameHandler(this._attackTowerFloor.bind(this), "tower", Config.game.attackCooldown));
@@ -331,7 +331,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BattleRestart, this._gameHandler(this._battleRestart.bind(this)));
         this._socket.on(Operations.BattleExit, this._gameHandler(this._battleExit.bind(this)));
         this._socket.on(Operations.BattleTestAction, this._gameHandler(this._battleTestAction.bind(this)));
-        
+
         this._handleEventBind = this._handleEvent.bind(this);
     }
 
@@ -745,7 +745,7 @@ class PlayerController extends IPaymentListener {
                 resourcesGained.soft += Math.floor(Random.range(quest.goldMin, quest.goldMax));
             }
 
-            // will reset if current quest is not complete 
+            // will reset if current quest is not complete
             questComplete = questProgress.hits < zone.quests[data.questIndex].stages[data.stage].hits;
         }
 
@@ -934,7 +934,7 @@ class PlayerController extends IPaymentListener {
 
     async _refillTimer(user, data) {
         // data.stat - type of the timer to refill
-        // data.refillType 
+        // data.refillType
         //     0 - Native currency
         //     1 - Shinies
         //     2 - Items
@@ -2289,40 +2289,40 @@ class PlayerController extends IPaymentListener {
     async _battlePurchase(_, { commodity, currency, shopIndex }) {
       return this.battle.purchase(commodity, currency, shopIndex);
     }
-    
+
     async _battleFillSquadSlot(_, { unitId, index }) {
       return this.battle.fillSquadSlot(unitId, index);
     }
-    
+
     async _battleClearSquadSlot(_, { index }) {
       return this.battle.clearSquadSlot(index);
     }
-    
+
     async _battleUpgradeUnitLevel(_, { unitId }) {
       return this.battle.upgradeUnitLevel(unitId);
     }
-    
+
     async _battleUpgradeUnitAbility(_, { unitId, ability }) {
       return this.battle.upgradeUnitAbility(unitId, ability);
     }
-    
+
     async _battleChooseAbility(_, { abilityClass }) {
       return this.battle.chooseAbility(abilityClass);
     }
-    
+
     async _battleApply(_, { index, ability }) {
       return this.battle.apply(
-        typeof index === 'undefined' ? null : index, 
+        typeof index === 'undefined' ? null : index,
         ability
       );
     }
-    
+
     async _battleSkip() {
       return this.battle.skip();
     }
-    
-    async _battleEnterLevel(_, { room, level }) {
-      return this.battle.enterLevel(room, level);
+
+    async _battleEnterLevel(_, { location, level }) {
+      return this.battle.enterLevel(location, level);
     }
 
     async _battleEnterDuel(_, { difficulty }) {
@@ -2340,11 +2340,11 @@ class PlayerController extends IPaymentListener {
     async _battleRestart() {
       return this.battle.restart();
     }
-    
+
     async _battleExit() {
       return this.battle.exit();
     }
-    
+
     async _battleTestAction(_, data) {
       return this.battle.testAction(data);
     }

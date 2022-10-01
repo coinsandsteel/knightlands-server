@@ -109,8 +109,8 @@ export class BattleController {
     this.core.events.flush();
   }
 
-  async enterLevel(room: number, level: number) {
-    this.core.game.enterLevel(room, level);
+  async enterLevel(location: number, level: number) {
+    this.core.game.enterLevel(location, level);
     this.core.events.flush();
   }
 

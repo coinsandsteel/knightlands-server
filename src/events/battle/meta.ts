@@ -81,6 +81,8 @@ export const BUFF_SOURCE_BUFF = 'buff';
 export const BUFF_SOURCE_SELF_BUFF = 'self_buff';
 export const BUFF_SOURCE_DE_BUFF = 'de_buff';
 
+export const ADVENTURES = [];
+
 export const SQUAD_BONUSES = {
   [battle.UNIT_TRIBE_KOBOLD]: [
     // Tier 1

@@ -39,6 +39,10 @@ export class Unit {
     return this._abilities;
   }
 
+  get name(): string {
+    return this._name;
+  }
+
   get tier(): number {
     return this._tier;
   }
@@ -160,6 +164,7 @@ export class Unit {
 
   public serialize(): BattleUnit {
     const unit = {
+      name: this._name,
       unitId: this._unitId,
 
       template: this._template,

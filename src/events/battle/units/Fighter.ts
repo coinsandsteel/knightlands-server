@@ -10,6 +10,7 @@ export class Fighter {
   protected _events: BattleEvents;
   protected readonly _unit: Unit; // Unit copy
 
+  protected _name: string;
   protected _unitId: string;
   protected _unitTemplate: number;
   protected _fighterId: string;
@@ -166,6 +167,7 @@ export class Fighter {
       abilities: -1,
     };
 
+    this._name = unit.name;
     this._unitId = unit.unitId;
     this._unitTemplate = unit.template;
     this._fighterId = blueprint.fighterId;
@@ -188,6 +190,7 @@ export class Fighter {
     events: BattleEvents
   ): Fighter {
     const blueprint = {
+      name: unit.name,
       unitId: unit.unitId,
       unitTemplate: unit.template,
       tier: unit.tier,
@@ -236,6 +239,7 @@ export class Fighter {
 
   public serializeFighter(): BattleFighter {
     const fighter = {
+      name: this._name,
       unitId: this._unitId,
       tribe: this._unit.tribe,
       class: this._unit.class,
