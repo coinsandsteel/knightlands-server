@@ -216,17 +216,19 @@ export class BattleGame extends BattleService {
   }
 
   public enterLevel(location: number, level: number): void {
+    if (!this._core.adventures.canEnterLevel(location, level)) {
+      return;
+    }
+
     this.setMode(GAME_MODE_ADVENTURE);
-    this.setDifficulty(GAME_DIFFICULTY_MEDIUM);
+    this.setDifficulty(this._core.adventures.difficulty);
     this.setLocation(location);
     this.setLevel(level);
 
     // Terrain
     this.terrain.setRandomMap();
 
-    this.start(
-      this.getRandomEnemySquad()
-    );
+    this.start(this.getRandomEnemySquad());
   }
 
   public enterDuel(difficulty: string): void {
@@ -589,31 +591,50 @@ export class BattleGame extends BattleService {
     this.log("Emenies left", this._enemySquad.liveFighters.length);
     this.log("Aliies left", this._userSquad.liveFighters.length);
 
-    // Enemy loose
-    if (!this._enemySquad.liveFighters.length) {
-      this.setCombatResult("win");
+    let combatFinished = false;
 
-      // User loose
+    if (!this._enemySquad.liveFighters.length) {
+      // Enemy loose
+      this.win();
+      combatFinished = true;
+
     } else if (!this._userSquad.liveFighters.length) {
-      this.setCombatResult("loose");
+      // User loose
+      this.loose();
+      combatFinished = true;
     }
 
-    this._core.events.flush();
-
-    // Finish the combat
-    if (this._state.combat.result) {
-      return;
+    if (!combatFinished) {
+      this._core.events.flush();
     }
 
     // Launch next unit turn
-    if (timeout) {
-      const self = this;
-      this._aiMoveTimeout = setTimeout(function () {
-        self.nextFighter();
-      }, 500);
-    } else {
-      this.nextFighter();
+    if (!combatFinished) {
+      if (timeout) {
+        const self = this;
+        this._aiMoveTimeout = setTimeout(function () {
+          self.nextFighter();
+        }, 500);
+      } else {
+        this.nextFighter();
+      }
     }
+  }
+
+  public win(): void {
+    this.setCombatResult("win");
+    if (this._state.mode === GAME_MODE_ADVENTURE) {
+      this._core.adventures.setLevelPassed(
+        this._state.location,
+        this._state.level
+      );
+    }
+    this._core.events.flush();
+  }
+
+  public loose(): void {
+    this.setCombatResult("loose");
+    this._core.events.flush();
   }
 
   public getFighterByIndex(index: number): Fighter | null {
@@ -702,6 +723,8 @@ export class BattleGame extends BattleService {
     clearTimeout(this._aiMoveTimeout);
 
     this.setMode(null);
+    this.setLocation(null);
+    this.setLevel(null);
     this.setDifficulty(null);
     this.setCombatStarted(false);
     this.setActiveFighterId(null);

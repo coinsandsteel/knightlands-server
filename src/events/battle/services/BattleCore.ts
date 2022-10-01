@@ -32,6 +32,10 @@ export class BattleCore {
     return this._battleInventory;
   }
 
+  get adventures(): BattleAdventures {
+    return this._battleAdventures;
+  }
+
   get user(): BattleUser {
     return this._battleUser;
   }

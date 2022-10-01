@@ -134,7 +134,21 @@ export class BattleController {
 
   async testAction(data) {
     if (isProd) return;
+    if (data === 'win') {
+      this.core.game.win();
+    }
+    if (data === 'loose') {
+      this.core.game.loose();
+    }
     switch (data.action) {
+      case 'win':{
+        this.core.game.win();
+        break;
+      }
+      case 'loose':{
+        this.core.game.loose();
+        break;
+      }
       case 'addUnit':{
         const unit = this.core.inventory.getRandomUnit();
         this.core.inventory.addUnit(unit);
