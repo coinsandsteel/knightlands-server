@@ -3,3 +3,5 @@ node_modules/
 dist/
 dist.tar.gz
 emails.csv
+dump/
+dump.tar
