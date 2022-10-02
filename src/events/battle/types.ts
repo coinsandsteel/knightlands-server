@@ -1,4 +1,6 @@
 import {
+  COMMODITY_COINS,
+  COMMODITY_CRYSTALS,
   GAME_DIFFICULTY_HIGH,
   GAME_DIFFICULTY_MEDIUM
 } from "../../knightlands-shared/battle";
@@ -185,4 +187,21 @@ export interface BattleBuff extends BattleEffectMeta {
 
   stackValue?: number;
   max?: number;
+}
+
+export interface BattleAdventureLevel {
+  reward: {
+    xp: number;
+    coins: number;
+  },
+  bossReward?: {
+    [COMMODITY_COINS]: number;
+    [COMMODITY_CRYSTALS]: number;
+  },
+  enemies: {
+    templates: number[];
+    boss?: number;
+    level: number;
+    abilities: number[];
+  }
 }

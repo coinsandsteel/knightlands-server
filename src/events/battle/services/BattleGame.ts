@@ -215,8 +215,8 @@ export class BattleGame extends BattleService {
     }
   }
 
-  public enterLevel(location: number, level: number): void {
-    if (!this._core.adventures.canEnterLevel(location, level)) {
+  public enterLevel(location: number, level: number, difficulty: string): void {
+    if (!this._core.adventures.canEnterLevel(location, level, difficulty)) {
       return;
     }
 
@@ -226,16 +226,19 @@ export class BattleGame extends BattleService {
     this.setLevel(level);
 
     // Terrain
-    this.terrain.setRandomMap();
+    const map = this._core.adventures.getMap(location, level);
+    this.terrain.setMap(map);
 
-    this.start(this.getRandomEnemySquad());
+    // Enemy squad
+    const enemySquad = this._core.adventures.getEnemySquad(location, level);
+    this.start(enemySquad);
   }
 
   public enterDuel(difficulty: string): void {
     this.setMode(GAME_MODE_DUEL);
     this.setDifficulty(difficulty);
 
-    // Set enemy squad
+    // Enemy squad
     const difficulties = {
       [GAME_DIFFICULTY_HIGH]: 0,
       [GAME_DIFFICULTY_MEDIUM]: 1,

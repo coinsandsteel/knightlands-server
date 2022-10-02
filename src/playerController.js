@@ -2321,8 +2321,8 @@ class PlayerController extends IPaymentListener {
       return this.battle.skip();
     }
 
-    async _battleEnterLevel(_, { location, level }) {
-      return this.battle.enterLevel(location, level);
+    async _battleEnterLevel(_, { location, level, difficulty }) {
+      return this.battle.enterLevel(location, level, difficulty);
     }
 
     async _battleEnterDuel(_, { difficulty }) {
