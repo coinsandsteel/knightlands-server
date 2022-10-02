@@ -14,7 +14,7 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     Blockchains.Ethereum,
                     "ethereum",
-                    { firstBlock: 13320800, scanInterval: 3000, confirmations: 7 },
+                    { firstBlock: 13320800, scanInterval: isProd ? 3000 : 86400, confirmations: 7 },
                     { PaymentGateway },
                     url
                 );
@@ -28,7 +28,7 @@ export function createBlockchain(blockchainType) {
                 return new EthereumClient(
                     Blockchains.Ethereum,
                     "ethereum",
-                    { firstBlock: 5197870, scanInterval: 15000, confirmations: 1 },
+                    { firstBlock: 5197870, scanInterval: isProd ? 15000 : 86400, confirmations: 1 },
                     {
                         PaymentGateway,
                         Flesh,
