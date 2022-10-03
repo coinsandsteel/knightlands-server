@@ -1,8 +1,6 @@
 import {
   COMMODITY_COINS,
-  COMMODITY_CRYSTALS,
-  GAME_DIFFICULTY_HIGH,
-  GAME_DIFFICULTY_MEDIUM
+  COMMODITY_CRYSTALS
 } from "../../knightlands-shared/battle";
 import { BattleEffectMeta } from "./units/MetaDB";
 
@@ -166,6 +164,7 @@ export interface BattleTerrainMap {
 
 export interface BattleUnitAbility {
   abilityClass: string;
+  abilityType: string;
   tier: number;
   levelInt: number;
   level: BattleLevelScheme; // { current, next, price } unit lvl opens ability lvl > pay crystal > lvl up

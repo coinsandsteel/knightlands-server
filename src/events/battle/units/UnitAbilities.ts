@@ -2,6 +2,7 @@ import _ from "lodash";
 import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
+  ABILITY_TYPE_ATTACK,
   UNIT_CLASS_MELEE,
   UNIT_CLASS_TANK,
 } from "../../../knightlands-shared/battle";
@@ -37,6 +38,7 @@ export default class UnitAbilities {
     const abilityMeta = game.battleManager.getAbilityMeta(abilityClass);
     const blueprint = {
       abilityClass,
+      abilityType: null,
       tier:
         abilityClass === ABILITY_ATTACK
           ? 1
@@ -77,6 +79,7 @@ export default class UnitAbilities {
       return {
         _id: 0,
         abilityClass: ABILITY_ATTACK,
+        abilityType: ABILITY_TYPE_ATTACK,
         tier: 1,
         affectHp: true,
         affectFullSquad: false,
@@ -240,6 +243,7 @@ export default class UnitAbilities {
     return this._abilities.map((ability) => {
       return {
         abilityClass: ability.abilityClass,
+        abilityType: ability.abilityType,
         tier: ability.tier,
         levelInt: ability.levelInt,
         level: ability.level,
