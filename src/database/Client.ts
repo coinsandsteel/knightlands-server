@@ -7,6 +7,11 @@ export class DatabaseClient {
     constructor({
         overrideUri = null
     } = {}) {
+        console.log('Mongo', {
+            ConnectionString,
+            MONGO_URI: process.env.MONGO_URI,
+            overrideUri
+        });
         const uri = overrideUri ? overrideUri : process.env.MONGO_URI ? process.env.MONGO_URI : ConnectionString;
         const client = new MongoClient(uri);
         this._client = client;
