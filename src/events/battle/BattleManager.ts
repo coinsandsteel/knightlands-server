@@ -18,10 +18,12 @@ export class BattleManager {
   protected _saveCollection: Collection;
   protected _rankCollection: Collection;
   protected _mode: string = null;
+  protected _abilityTypes: { [abilityClass: string]: string };
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
+    this._abilityTypes = {};
   }
 
   get autoCombat() {
@@ -104,6 +106,10 @@ export class BattleManager {
   }
 
   public getAbilityType(abilityMeta: BattleAbilityMeta): string {
+    if (this._abilityTypes[abilityMeta.abilityClass]) {
+      return this._abilityTypes[abilityMeta.abilityClass];
+    }
+
     const rulesList = {
       [battle.ABILITY_TYPE_BUFF]: {
         canMove: false,
@@ -169,6 +175,7 @@ export class BattleManager {
         !!abilityMeta.effects[0].length === shouldHaveEffects;
 
       if (rulesMatched && effectsMatched) {
+        this._abilityTypes[abilityMeta.abilityClass] = abilityType;
         return abilityType;
       }
     }

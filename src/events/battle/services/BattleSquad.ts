@@ -189,7 +189,6 @@ export class BattleSquad extends BattleService {
     _.forOwn(stat, (tribeStat, fighterTribe) => {
       _.forOwn(tribeStat, (tierCount, fighterTier) => {
         if (tierCount >= 2) {
-          console.log('Bonus', { fighterTribe, fighterTier, tierCount });
           bonuses.push(
             SQUAD_BONUSES[fighterTribe][parseInt(fighterTier) - 1][tierCount - 2]
           );

@@ -222,6 +222,7 @@ export default class UnitAbilities {
 
     const ability = {
       ...abilityData,
+      abilityType: abilityMeta.abilityType,
       value,
       combatValue: combatValue === null ? value : combatValue,
       range: {
