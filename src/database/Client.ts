@@ -30,7 +30,7 @@ export class DatabaseClient {
           username,
           password
         },
-      } : null;
+      } : {};
     const client = new MongoClient(uri, options);
     this._client = client;
   }

@@ -1,5 +1,4 @@
 import * as battle from "./../../knightlands-shared/battle";
-import { BattleAdventureLevel } from "./types";
 
 export const PATH_SCHEME_ROOK = "rook";
 export const PATH_SCHEME_QUEEN = "queen";

@@ -32,8 +32,7 @@ export class BattleController {
   }
 
   async dispose() {
-    this.core.dispose();
-    await this._save();
+    //await this._save();
   }
 
   public getState(): BattleSaveData {
@@ -95,6 +94,11 @@ export class BattleController {
     this.core.events.flush();
   }
 
+  async setAdventuresDifficulty(difficulty: string) {
+    this.core.adventures.setDifficulty(difficulty);
+    this.core.events.flush();
+  }
+
   async chooseAbility(abilityclass: string) {
     this.core.game.chooseAbility(abilityclass);
     this.core.events.flush();
@@ -109,8 +113,8 @@ export class BattleController {
     this.core.events.flush();
   }
 
-  async enterLevel(location: number, level: number, difficulty: string) {
-    this.core.game.enterLevel(location, level, difficulty);
+  async enterLevel(location: number, level: number) {
+    this.core.game.enterLevel(location, level);
     this.core.events.flush();
   }
 

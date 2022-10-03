@@ -1,9 +1,8 @@
 import _ from "lodash";
 import {
-  ADVENTURES,
   GAME_DIFFICULTY_HIGH,
   GAME_DIFFICULTY_MEDIUM,
-  LOCATIONS,
+  ADVENTURES,
 } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import {
@@ -19,8 +18,22 @@ import { Unit } from "../units/Unit";
 import { Fighter } from "../units/Fighter";
 
 export class BattleAdventures extends BattleService {
+  protected _locationsCount: number = 0;
+  protected _levelsCount: number = 0;
   protected _core: BattleCore;
   protected _state: BattleAdventuresState;
+
+  get difficulty(): string {
+    return this._state.difficulty;
+  }
+
+  get location(): number | null {
+    return this._state.location;
+  }
+
+  get level(): number | null {
+    return this._state.level;
+  }
 
   constructor(state: BattleAdventuresState, core: BattleCore) {
     super();
@@ -31,26 +44,65 @@ export class BattleAdventures extends BattleService {
     } else {
       this.setInitialState();
     }
-  }
 
-  get difficulty(): string {
-    return this._state.difficulty;
+    this._locationsCount = ADVENTURES.length;
+    this._levelsCount = ADVENTURES[0].levels.length;
   }
 
   protected setInitialState() {
-    const locations = _.cloneDeep(LOCATIONS).map((location) =>
-      location.levels.map(() => {
-        return {
-          [GAME_DIFFICULTY_MEDIUM]: false,
-          [GAME_DIFFICULTY_HIGH]: false,
-        };
-      })
-    );
-    locations[0][0][GAME_DIFFICULTY_MEDIUM] = true;
+    const locations = _.cloneDeep(ADVENTURES).map((location) => {
+      return {
+        levels: location.levels.map(() => {
+          return {
+            [GAME_DIFFICULTY_MEDIUM]: false,
+            [GAME_DIFFICULTY_HIGH]: false,
+          };
+        }),
+      };
+    });
+
+    // Open the very first level
+    locations[0].levels[0][GAME_DIFFICULTY_MEDIUM] = true;
+
     this._state = {
       difficulty: GAME_DIFFICULTY_MEDIUM,
+      location: null,
+      level: null,
       locations,
     } as BattleAdventuresState;
+  }
+
+  public handleLevelPassed(): void {
+    let location = this.location;
+    let level = this.level;
+
+    if (this.difficulty === GAME_DIFFICULTY_MEDIUM) {
+      // Find the next level
+      level++;
+      if (level > this._levelsCount - 1) {
+        level = 0;
+        location++;
+      }
+
+      // Open the next level
+      this._state.locations[location].levels[level][GAME_DIFFICULTY_MEDIUM] = true;
+
+      // Open prev location high level if current medium location is done
+      if (this.locationPassed(location, GAME_DIFFICULTY_MEDIUM)) {
+        this._state.locations[location].levels[0][GAME_DIFFICULTY_HIGH] = true;
+      }
+    } else if (this.difficulty === GAME_DIFFICULTY_HIGH) {
+      // Find the next level
+      level++;
+      if (level > this._levelsCount - 1) {
+        return;
+      }
+
+      // Open the next level
+      this._state.locations[location].levels[level][GAME_DIFFICULTY_HIGH] = true;
+    }
+
+    this._core.events.adventures(this._state);
   }
 
   public setDifficulty(difficulty: string): void {
@@ -58,13 +110,14 @@ export class BattleAdventures extends BattleService {
     this._core.events.adventures(this._state);
   }
 
-  public setLevelPassed(location: number, level: number): void {
-    this._state.locations[location][level][this._state.difficulty] = true;
+  public setLevel(location: number | null, level: number | null): void {
+    this._state.location = location;
+    this._state.level = level;
     this._core.events.adventures(this._state);
   }
 
   public getLevelMeta(location: number, level: number): BattleAdventureLevel {
-    return ADVENTURES[this._state.difficulty][location][level];
+    return ADVENTURES[location].levels[level][this.difficulty];
   }
 
   public getMap(location: number, level: number): BattleTerrainMap {
@@ -86,60 +139,13 @@ export class BattleAdventures extends BattleService {
   }
 
   protected locationPassed(location: number, difficulty: string): boolean {
-    if (!location) {
-      return true;
-    }
     const currentLocation = this._state.locations[location];
-    const allLocationsPassed = currentLocation.every(
-      (level) => level[difficulty]
-    );
-    return allLocationsPassed;
+    const locationPassed = currentLocation.levels.every((level) => level[difficulty]);
+    return locationPassed;
   }
 
-  protected prevLocationsPassed(location: number, difficulty: string): boolean {
-    if (!location) {
-      return true;
-    }
-    const previousLocations = this._state.locations.slice(0, location - 1);
-    const allPrevLocationsPassed = previousLocations.every((location) =>
-      location.every((level) => level[difficulty])
-    );
-    return allPrevLocationsPassed;
-  }
-
-  protected prevLevelsPassed(
-    location: number,
-    level: number,
-    difficulty: string
-  ): boolean {
-    if (!level) {
-      return true;
-    }
-    const previousLevels = this._state.locations[location].slice(0, level - 1);
-    const allPrevLevelsPassed = previousLevels.every(
-      (level) => level[difficulty]
-    );
-    return allPrevLevelsPassed;
-  }
-
-  public canEnterLevel(
-    location: number,
-    level: number,
-    difficulty: string
-  ): boolean {
-    if (difficulty === GAME_DIFFICULTY_MEDIUM) {
-      return (
-        this.prevLocationsPassed(location, difficulty) &&
-        this.prevLevelsPassed(location, level, difficulty)
-      );
-    } else if (difficulty === GAME_DIFFICULTY_HIGH) {
-      return (
-        this.locationPassed(location, GAME_DIFFICULTY_MEDIUM) &&
-        this.prevLevelsPassed(location, level, difficulty)
-      );
-    } else {
-      return false;
-    }
+  public canEnterLevel(location: number, level: number): boolean {
+    return this._state.locations[location].levels[level][this.difficulty];
   }
 
   public getState(): BattleAdventuresState {

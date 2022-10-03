@@ -48,10 +48,6 @@ export class BattleCore {
     this.initAdventures(saveData ? saveData.adventures : null);
   }
 
-  public dispose() {
-    this.game.dispose();
-  }
-
   protected initUser(saveData?: BattleUserState) {
     if (!this._battleUser) {
       this._battleUser = new BattleUser(saveData, this);

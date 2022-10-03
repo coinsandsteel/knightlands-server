@@ -29,7 +29,9 @@ export class BattleGame extends BattleService {
 
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
-  protected _enemyOptions: BattleFighter[][] | null = null;
+  protected _enemyOptions: {
+    [difficulty: string]: BattleFighter[]
+  } | null = null;
 
   protected _combat: BattleCombat;
   protected _movement: BattleMovement;
@@ -109,16 +111,9 @@ export class BattleGame extends BattleService {
     return this._enemySquad.fighters;
   }
 
-  public dispose() {
-    this.log("Shutting down", this._state);
-  }
-
   protected setInitialState() {
     this._state = {
       mode: null,
-      difficulty: null, // "low", "mudium", "hard"
-      location: null, // 8
-      level: 0, // 5 + 1
 
       userSquad: this._userSquad.getInitialState(),
       enemySquad: this._enemySquad.getInitialState(),
@@ -215,15 +210,13 @@ export class BattleGame extends BattleService {
     }
   }
 
-  public enterLevel(location: number, level: number, difficulty: string): void {
-    if (!this._core.adventures.canEnterLevel(location, level, difficulty)) {
+  public enterLevel(location: number, level: number): void {
+    if (!this._core.adventures.canEnterLevel(location, level)) {
       return;
     }
 
+    this._core.adventures.setLevel(location, level);
     this.setMode(GAME_MODE_ADVENTURE);
-    this.setDifficulty(this._core.adventures.difficulty);
-    this.setLocation(location);
-    this.setLevel(level);
 
     // Terrain
     const map = this._core.adventures.getMap(location, level);
@@ -235,24 +228,16 @@ export class BattleGame extends BattleService {
   }
 
   public enterDuel(difficulty: string): void {
-    this.setMode(GAME_MODE_DUEL);
-    this.setDifficulty(difficulty);
-
-    // Enemy squad
-    const difficulties = {
-      [GAME_DIFFICULTY_HIGH]: 0,
-      [GAME_DIFFICULTY_MEDIUM]: 1,
-      [GAME_DIFFICULTY_LOW]: 2,
-    };
-
     if (!this._enemyOptions) {
       throw errors.IncorrectArguments;
     }
 
+    this.setMode(GAME_MODE_DUEL);
+
     // Terrain
     this.terrain.setRandomMap();
 
-    const enemyFighters = this._enemyOptions[difficulties[difficulty]];
+    const enemyFighters = this._enemyOptions[difficulty];
     this.start(enemyFighters);
   }
 
@@ -303,22 +288,20 @@ export class BattleGame extends BattleService {
   }
 
   public getDuelOptions() {
-    const squads = [[], [], []];
-    for (let tier = 1; tier <= 3; tier++) {
+    const enemyOptions = {
+      [GAME_DIFFICULTY_LOW]: [],
+      [GAME_DIFFICULTY_MEDIUM]: [],
+      [GAME_DIFFICULTY_HIGH]: [],
+    };
+    for (let difficulty in enemyOptions) {
       for (let index = 0; index < 5; index++) {
-        const unit = this._core.inventory.getNewUnitByPropsRandom({ tier });
-        if (!unit) {
-          throw new Error(
-            `[getDuelOptions] Tier ${tier} not found in the inventory`
-          );
-        }
-
+        const unit = this._core.inventory.getNewUnitRandom();
         const fighter = Fighter.createFighter(unit, true, this._core.events);
-        squads[tier - 1].push(fighter.serializeFighter());
+        enemyOptions[difficulty].push(fighter.serializeFighter());
       }
     }
-    this._enemyOptions = squads;
-    return squads;
+    this._enemyOptions = enemyOptions;
+    return enemyOptions;
   }
 
   public getRandomEnemySquad(): BattleFighter[] {
@@ -334,21 +317,6 @@ export class BattleGame extends BattleService {
   public setMode(mode: string): void {
     this._state.mode = mode;
     this._core.events.mode(mode);
-  }
-
-  public setLocation(location: number): void {
-    this._state.location = location;
-    this._core.events.location(location);
-  }
-
-  public setLevel(level: number): void {
-    this._state.level = level;
-    this._core.events.level(level);
-  }
-
-  public setDifficulty(difficulty: string): void {
-    this._state.difficulty = difficulty;
-    this._core.events.difficulty(difficulty);
   }
 
   public setCombatStarted(value: boolean): void {
@@ -627,10 +595,7 @@ export class BattleGame extends BattleService {
   public win(): void {
     this.setCombatResult("win");
     if (this._state.mode === GAME_MODE_ADVENTURE) {
-      this._core.adventures.setLevelPassed(
-        this._state.location,
-        this._state.level
-      );
+      this._core.adventures.handleLevelPassed();
     }
     this._core.events.flush();
   }
@@ -726,9 +691,6 @@ export class BattleGame extends BattleService {
     clearTimeout(this._aiMoveTimeout);
 
     this.setMode(null);
-    this.setLocation(null);
-    this.setLevel(null);
-    this.setDifficulty(null);
     this.setCombatStarted(false);
     this.setActiveFighterId(null);
     this.setMoveCells([]);
@@ -737,10 +699,11 @@ export class BattleGame extends BattleService {
     this.setCombatResult(result || null);
 
     this._state.enemySquad = this._enemySquad.getInitialState();
-    this._core.events.enemySquad(this._state.enemySquad);
-
     this._state.initiativeRating = [];
+
+    this._core.events.enemySquad(this._state.enemySquad);
     this._core.events.initiativeRating([]);
+    this._core.adventures.setLevel(null, null);
 
     this.log("Exit");
   }

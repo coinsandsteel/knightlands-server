@@ -15,10 +15,30 @@ export interface BattleSaveData {
 
 export interface BattleAdventuresState {
   difficulty: string;
-  locations: {
-    [GAME_DIFFICULTY_MEDIUM]: boolean;
-    [GAME_DIFFICULTY_HIGH]: false;
-  }[][];
+  location: number|null;
+  level: number|null;
+  locations: BattleAdventureLocation[];
+}
+
+export interface BattleAdventureLocation {
+  levels: BattleAdventureLevel[]
+}
+
+export interface BattleAdventureLevel {
+  reward: {
+    xp: number;
+    coins: number;
+  },
+  bossReward: {
+    [COMMODITY_COINS]: number;
+    [COMMODITY_CRYSTALS]: number;
+  },
+  enemies: {
+    level: number;
+    abilities: number[];
+    templates: number[];
+    boss: number;
+  }
 }
 
 export interface BattleUserState {
@@ -48,9 +68,6 @@ export interface BattleRewardRankingData {}
 
 export interface BattleGameState {
   mode: string | null; // "duel" | "adventure"
-  difficulty: string | null; // 0, 1
-  location: number | null; // 8
-  level: number | null; // 5 + 1
 
   userSquad: BattleSquadState;
   enemySquad: BattleSquadState;
@@ -187,21 +204,4 @@ export interface BattleBuff extends BattleEffectMeta {
 
   stackValue?: number;
   max?: number;
-}
-
-export interface BattleAdventureLevel {
-  reward: {
-    xp: number;
-    coins: number;
-  },
-  bossReward?: {
-    [COMMODITY_COINS]: number;
-    [COMMODITY_CRYSTALS]: number;
-  },
-  enemies: {
-    templates: number[];
-    boss?: number;
-    level: number;
-    abilities: number[];
-  }
 }

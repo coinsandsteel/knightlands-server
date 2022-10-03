@@ -324,6 +324,7 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BattleChooseAbility, this._gameHandler(this._battleChooseAbility.bind(this)));
         this._socket.on(Operations.BattleApply, this._gameHandler(this._battleApply.bind(this)));
         this._socket.on(Operations.BattleSkip, this._gameHandler(this._battleSkip.bind(this)));
+        this._socket.on(Operations.BattleSetAdventuresDifficulty, this._gameHandler(this._battleSetAdventuresDifficulty.bind(this)));
         this._socket.on(Operations.BattleEnterLevel, this._gameHandler(this._battleEnterLevel.bind(this)));
         this._socket.on(Operations.BattleEnterDuel, this._gameHandler(this._battleEnterDuel.bind(this)));
         this._socket.on(Operations.BattleFetchDuelOptions, this._gameHandler(this._battleFetchDuelOptions.bind(this)));
@@ -2304,6 +2305,10 @@ class PlayerController extends IPaymentListener {
 
     async _battleUpgradeUnitAbility(_, { unitId, ability }) {
       return this.battle.upgradeUnitAbility(unitId, ability);
+    }
+
+    async _battleSetAdventuresDifficulty(_, { difficulty }) {
+      return this.battle.setAdventuresDifficulty(difficulty);
     }
 
     async _battleChooseAbility(_, { abilityClass }) {
