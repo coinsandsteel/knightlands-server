@@ -596,12 +596,14 @@ export class BattleGame extends BattleService {
     if (this._state.mode === GAME_MODE_ADVENTURE) {
       this._core.adventures.handleLevelPassed();
     }
-    this.exit("win");
+    this.setCombatResult("win");
+    this.stop();
     this._core.events.flush();
   }
 
   public loose(): void {
-    this.exit("loose");
+    this.setCombatResult("loose");
+    this.stop();
     this._core.events.flush();
   }
 
@@ -706,5 +708,14 @@ export class BattleGame extends BattleService {
     this._core.adventures.setLevel(null, null);
 
     this.log("Exit");
+  }
+
+  public stop() {
+    clearTimeout(this._aiMoveTimeout);
+
+    this.setActiveFighterId(null);
+    this.setMoveCells([]);
+    this.setAttackCells([]);
+    this.setTargetCells([]);
   }
 }
