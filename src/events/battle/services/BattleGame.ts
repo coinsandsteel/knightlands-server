@@ -593,15 +593,15 @@ export class BattleGame extends BattleService {
   }
 
   public win(): void {
-    this.setCombatResult("win");
     if (this._state.mode === GAME_MODE_ADVENTURE) {
       this._core.adventures.handleLevelPassed();
     }
+    this.exit("win");
     this._core.events.flush();
   }
 
   public loose(): void {
-    this.setCombatResult("loose");
+    this.exit("loose");
     this._core.events.flush();
   }
 

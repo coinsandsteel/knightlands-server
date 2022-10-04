@@ -87,8 +87,8 @@ export class BattleAdventures extends BattleService {
       // Open the next level
       this._state.locations[location].levels[level][GAME_DIFFICULTY_MEDIUM] = true;
 
-      // Open prev location high level if current medium location is done
-      if (this.locationPassed(location, GAME_DIFFICULTY_MEDIUM)) {
+      // Open first high level if the last medium was done
+      if (this.level === this._levelsCount - 1) {
         this._state.locations[location].levels[0][GAME_DIFFICULTY_HIGH] = true;
       }
     } else if (this.difficulty === GAME_DIFFICULTY_HIGH) {
