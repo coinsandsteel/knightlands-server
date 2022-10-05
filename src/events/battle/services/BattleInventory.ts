@@ -111,8 +111,8 @@ export class BattleInventory extends BattleService {
     this._core.events.inventory(units);
   }
 
-  public addExp(unitId: string, value: number) {
-    const unit = this.getUnit(unitId);
+  public addExp(template: number, value: number) {
+    const unit = this.getUnitByTemplate(template);
     unit.addExpirience(value);
     this.updateUnitState(unit);
   }
@@ -151,7 +151,7 @@ export class BattleInventory extends BattleService {
       throw errors.NotEnoughCurrency;
     }
 
-    this._core.user.debitCurrency(COMMODITY_COINS, unit.level.price);
+    this._core.user.modifyBalance(COMMODITY_COINS, -unit.level.price);
     unit.upgradeLevel();
     this.updateUnitState(unit);
 
@@ -173,7 +173,7 @@ export class BattleInventory extends BattleService {
       throw errors.NotEnoughCurrency;
     }
 
-    this._core.user.debitCurrency(COMMODITY_COINS, unit.level.price);
+    this._core.user.modifyBalance(COMMODITY_COINS, -unit.level.price);
     unit.abilities.upgradeAbility(ability);
     unit.setPower();
     this.updateUnitState(unit);

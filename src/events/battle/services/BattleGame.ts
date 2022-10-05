@@ -7,10 +7,15 @@ import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
   GAME_MODE_ADVENTURE,
+  COMMODITY_ENERGY,
+  COMMODITY_CRYSTALS,
+  DUEL_REWARDS,
+  COMMODITY_COINS,
 } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
 import { BattleCore } from "./BattleCore";
 import {
+  BattleCombatRewards,
   BattleFighter,
   BattleGameState,
   BattleInitiativeRatingEntry,
@@ -124,6 +129,11 @@ export class BattleGame extends BattleService {
         started: false,
         result: null, // "win" | "loose"
         activeFighterId: null,
+        rewards: {
+          coins: 0,
+          crystals: 0,
+          xp: 0
+        },
         runtime: {
           selectedIndex: null,
           selectedAbilityClass: null,
@@ -215,6 +225,8 @@ export class BattleGame extends BattleService {
       return;
     }
 
+    this._core.user.modifyBalance(COMMODITY_ENERGY, -this._core.adventures.energyPrice);
+
     this._core.adventures.setLevel(location, level);
     this.setMode(GAME_MODE_ADVENTURE);
 
@@ -242,7 +254,7 @@ export class BattleGame extends BattleService {
   }
 
   public start(enemyFighters: BattleFighter[]): void {
-    if (!this._userSquad.fighters.length) {
+    if (!this._state.userSquad.fighters.length) {
       return;
     }
 
@@ -594,14 +606,39 @@ export class BattleGame extends BattleService {
 
   public win(): void {
     if (this._state.mode === GAME_MODE_ADVENTURE) {
+      const reward = this._core.adventures.getCurrentLevelReward();
+
+      this._userSquad.addExp(reward.xp);
+      this._core.user.modifyBalance(COMMODITY_COINS, reward.coins);
+      this._core.user.modifyBalance(COMMODITY_CRYSTALS, reward.crystals);
+      this.setCombatRewards(reward);
+
       this._core.adventures.handleLevelPassed();
+
+    } else if (this._state.mode === GAME_MODE_DUEL) {
+      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.win);
+      this.setCombatRewards({
+        coins: 0,
+        crystals: DUEL_REWARDS.win,
+        xp: 0
+      });
     }
+
     this.setCombatResult("win");
     this.stop();
     this._core.events.flush();
   }
 
   public loose(): void {
+    if (this._state.mode === GAME_MODE_DUEL) {
+      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.loose);
+      this.setCombatRewards({
+        coins: 0,
+        crystals: DUEL_REWARDS.loose,
+        xp: 0
+      });
+    }
+
     this.setCombatResult("loose");
     this.stop();
     this._core.events.flush();
@@ -672,6 +709,11 @@ export class BattleGame extends BattleService {
     this._core.events.activeFighterId(fighterId);
   }
 
+  public setCombatRewards(rewards: BattleCombatRewards): void {
+    this._state.combat.rewards = rewards;
+    this._core.events.combatRewards(rewards);
+  }
+
   protected getNextFighterId(): string | null {
     let fighterId = null;
     const index = this._state.initiativeRating.findIndex(
@@ -699,6 +741,11 @@ export class BattleGame extends BattleService {
     this.setAttackCells([]);
     this.setTargetCells([]);
     this.setCombatResult(result || null);
+    this.setCombatRewards({
+      coins: 0,
+      crystals: 0,
+      xp: 0
+    });
 
     this._state.enemySquad = this._enemySquad.getInitialState();
     this._state.initiativeRating = [];

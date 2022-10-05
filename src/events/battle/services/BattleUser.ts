@@ -63,8 +63,9 @@ export class BattleUser {
     return this._state;
   }
 
-  public debitCurrency(currency: string, amount: number): void {
-    this._state.balance[currency] -= amount;
+  public modifyBalance(currency: string, amount: number): void {
+    //console.log('modifyBalance', { currency, amount });
+    this._state.balance[currency] += amount;
     if (this._state.balance[currency] < 0) {
       this._state.balance[currency] = 0;
     }

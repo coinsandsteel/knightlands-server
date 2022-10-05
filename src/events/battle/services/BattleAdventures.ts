@@ -3,11 +3,14 @@ import {
   GAME_DIFFICULTY_HIGH,
   GAME_DIFFICULTY_MEDIUM,
   ADVENTURES,
+  ADVENTURE_ENEGRY_PRICE,
+  COMMODITY_COINS,
 } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import {
   BattleAdventureLevel,
   BattleAdventuresState,
+  BattleCombatRewards,
   BattleFighter,
   BattleTerrainMap,
 } from "../types";
@@ -33,6 +36,10 @@ export class BattleAdventures extends BattleService {
 
   get level(): number | null {
     return this._state.level;
+  }
+
+  get energyPrice(): number {
+    return ADVENTURE_ENEGRY_PRICE[this.difficulty];
   }
 
   constructor(state: BattleAdventuresState, core: BattleCore) {
@@ -85,11 +92,13 @@ export class BattleAdventures extends BattleService {
       }
 
       // Open the next level
-      this._state.locations[location].levels[level][GAME_DIFFICULTY_MEDIUM] = true;
+      this._state.locations[location].levels[level][GAME_DIFFICULTY_MEDIUM] =
+        true;
 
       // Open first high level if the last medium was done
       if (this.level === this._levelsCount - 1) {
-        this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] = true;
+        this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] =
+          true;
       }
     } else if (this.difficulty === GAME_DIFFICULTY_HIGH) {
       // Find the next level
@@ -99,7 +108,8 @@ export class BattleAdventures extends BattleService {
       }
 
       // Open the next level
-      this._state.locations[location].levels[level][GAME_DIFFICULTY_HIGH] = true;
+      this._state.locations[location].levels[level][GAME_DIFFICULTY_HIGH] =
+        true;
     }
 
     this._core.events.adventures(this._state);
@@ -117,7 +127,16 @@ export class BattleAdventures extends BattleService {
   }
 
   public getLevelMeta(location: number, level: number): BattleAdventureLevel {
-    return ADVENTURES[location].levels[level][this.difficulty];
+    return _.cloneDeep(ADVENTURES[location].levels[level][this.difficulty]);
+  }
+
+  public getCurrentLevelReward(): BattleCombatRewards {
+    const levelMeta = this.getLevelMeta(this.location, this.level);
+    return {
+      coins: levelMeta.reward.coins + levelMeta.bossReward.coins,
+      crystals: levelMeta.bossReward.crystals,
+      xp: levelMeta.reward.xp,
+    };
   }
 
   public getMap(location: number, level: number): BattleTerrainMap {
@@ -125,7 +144,7 @@ export class BattleAdventures extends BattleService {
   }
 
   public getEnemySquad(location: number, level: number): BattleFighter[] {
-    const levelMeta = _.cloneDeep(this.getLevelMeta(location, level));
+    const levelMeta = this.getLevelMeta(location, level);
     const enemySquad = levelMeta.enemies.templates.map((template) => {
       const unitMeta = game.battleManager.getUnitMeta(template);
       const unit = Unit.createUnit(
@@ -140,12 +159,17 @@ export class BattleAdventures extends BattleService {
 
   protected locationPassed(location: number, difficulty: string): boolean {
     const currentLocation = this._state.locations[location];
-    const locationPassed = currentLocation.levels.every((level) => level[difficulty]);
+    const locationPassed = currentLocation.levels.every(
+      (level) => level[difficulty]
+    );
     return locationPassed;
   }
 
   public canEnterLevel(location: number, level: number): boolean {
-    return this._state.locations[location].levels[level][this.difficulty];
+    return (
+      this._core.user.energy >= this.energyPrice &&
+      this._state.locations[location].levels[level][this.difficulty]
+    );
   }
 
   public getState(): BattleAdventuresState {

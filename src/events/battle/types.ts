@@ -85,6 +85,7 @@ export interface BattleCombatState {
   started: boolean;
   result: string | null; // "win" | "loose"
   activeFighterId: string | null;
+  rewards: BattleCombatRewards;
   runtime: {
     selectedIndex: number | null;
     selectedAbilityClass: string | null;
@@ -92,6 +93,12 @@ export interface BattleCombatState {
     attackCells: number[];
     targetCells: number[];
   };
+}
+
+export interface BattleCombatRewards {
+  coins: number;
+  crystals: number;
+  xp: number;
 }
 
 export interface BattleSquadState {

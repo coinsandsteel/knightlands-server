@@ -189,7 +189,7 @@ export class Unit {
     this._quantity += value;
   }
 
-  public addExpirience(value): void {
+  public addExpirience(value: number): void {
     if (this._tier === 1 && this._levelInt >= SETTINGS.maxUnitTierLevel[1]) {
       return;
     }

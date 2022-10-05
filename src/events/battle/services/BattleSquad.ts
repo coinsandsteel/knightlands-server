@@ -243,6 +243,12 @@ export class BattleSquad extends BattleService {
     });
   }
 
+  public addExp(expValue: number): void {
+    this.fighters.forEach((fighter, index) => {
+      this._core.inventory.addExp(fighter.template, expValue);
+    });
+  }
+
   public regenerateFighterIds(): void {
     this.fighters.forEach((fighter, index) => {
       fighter.regenerateFighterId();
