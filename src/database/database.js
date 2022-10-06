@@ -102,6 +102,7 @@ module.exports = {
         AprilRewards: "april_rewards",
         BattleUsers: "battle_users",
         BattleRanks: "battle_ranks",
+        BattleRewards: "battle_rewards",
         BattleSettings: "battle_settings",
         BattleClasses: "battle_classes",
         BattleAbilities: "battle_abilities",

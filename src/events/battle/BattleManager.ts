@@ -12,17 +12,22 @@ import {
   BattleClassMeta,
 } from "./units/MetaDB";
 import * as battle from "../../knightlands-shared/battle";
+import errors from "../../knightlands-shared/errors";
+
+const isProd = process.env.ENV == "prod";
 
 export class BattleManager {
   protected _meta: BattleMeta;
   protected _saveCollection: Collection;
   protected _rankCollection: Collection;
+  protected _rewardCollection: Collection;
   protected _mode: string = null;
   protected _abilityTypes: { [abilityClass: string]: string };
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
+    this._rewardCollection = Game.db.collection(Collections.BattleRewards);
     this._abilityTypes = {};
   }
 
@@ -32,13 +37,13 @@ export class BattleManager {
 
   get eventStartDate() {
     return new Date(
-      this._meta.settings.eventStartDate * 1000 || "2021-04-01 00:00:00"
+      this._meta.settings.eventStartDate * 1000 || "2021-10-05 00:00:00"
     );
   }
 
   get eventEndDate() {
     return new Date(
-      this._meta.settings.eventEndDate * 1000 || "2022-04-14 00:00:00"
+      this._meta.settings.eventEndDate * 1000 || "2022-11-05 00:00:00"
     );
   }
 
@@ -51,7 +56,114 @@ export class BattleManager {
   }
 
   get rankingRewards() {
-    return this._meta.settings.rankingRewards || [];
+    return (
+      this._meta.settings.rankingRewards || [
+        {
+          items: [
+            {
+              item: 3110,
+              quantity: 6,
+            },
+            {
+              item: 2982,
+              quantity: 1,
+            },
+            {
+              item: 812,
+              quantity: 1,
+            },
+            {
+              item: 817,
+              quantity: 3,
+            },
+            {
+              item: 2383,
+              quantity: 2500000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110,
+              quantity: 5,
+            },
+            {
+              item: 2982,
+              quantity: 1,
+            },
+            {
+              item: 812,
+              quantity: 1,
+            },
+            {
+              item: 817,
+              quantity: 2,
+            },
+            {
+              item: 2383,
+              quantity: 2000000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110,
+              quantity: 4,
+            },
+            {
+              item: 2982,
+              quantity: 1,
+            },
+            {
+              item: 817,
+              quantity: 2,
+            },
+            {
+              item: 2383,
+              quantity: 1500000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110,
+              quantity: 3,
+            },
+            {
+              item: 2982,
+              quantity: 1,
+            },
+            {
+              item: 817,
+              quantity: 1,
+            },
+            {
+              item: 2383,
+              quantity: 1000000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110,
+              quantity: 1,
+            },
+            {
+              item: 817,
+              quantity: 5,
+            },
+            {
+              item: 2383,
+              quantity: 500000,
+            },
+          ],
+        },
+      ]
+    );
   }
 
   get squadRewards() {
@@ -74,17 +186,58 @@ export class BattleManager {
       Game.db.collection(Collections.BattleUnits).find().toArray(),
       Game.db.collection(Collections.BattleAbilities).find().toArray(),
       Game.db.collection(Collections.BattleEffects).find().toArray(),
+      Game.db.collection(Collections.BattleSettings).find().toArray(),
     ]);
 
     this._meta = {
-      settings: {},
       classes: _.keyBy(values[0] || [], "_id"),
       units: _.keyBy(values[1] || [], (entry) => parseInt(entry._id)),
       abilities: _.keyBy(values[2] || [], "_id"),
       effects: _.keyBy(values[3] || [], (entry) => parseInt(entry._id)),
+      settings: {},
     };
 
-    this.testMeta();
+    // this.testMeta();
+
+    if (!isProd) {
+      await this._rankCollection.deleteMany({});
+      await this.addTestRatings();
+      await this.distributeRewards();
+    }
+  }
+
+  async getRankingsByMode(mode: string) {
+    const records = await this._rankCollection
+      .aggregate([
+        { $sort: { mode: -1, order: 1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $project: {
+            id: "$_id",
+            name: {
+              $ifNull: [{ $arrayElemAt: ["$user.character.name.v", 0] }, ""],
+            },
+            avatar: {
+              $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1],
+            },
+            score: { $convert: { input: "$" + mode, to: "string" } },
+          },
+        },
+        {
+          $project: { _id: 0 },
+        },
+      ])
+      .toArray();
+
+    return records;
   }
 
   // Getters
@@ -242,11 +395,11 @@ export class BattleManager {
       this.loadUnitMeta(parseInt(unitId));
     }
     for (const abilityClass in this._meta.abilities) {
-      const abilityMeta = this.loadAbilityMeta(abilityClass);
-      console.log({
+      this.loadAbilityMeta(abilityClass);
+      /*console.log({
         class: abilityMeta.abilityClass,
         type: abilityMeta.abilityType,
-      });
+      });*/
     }
   }
 
@@ -275,16 +428,149 @@ export class BattleManager {
     );
   }
 
-  async getRankings() {
-    const result = [];
-    return result;
+  public async userHasRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    return (
+      rewardsEntry &&
+      rewardsEntry.items &&
+      rewardsEntry.items.length &&
+      !rewardsEntry.claimed
+    );
   }
 
-  public async userHasRewards(user: User) {}
+  public async claimRankingRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    if (!rewardsEntry || !rewardsEntry.items.length || rewardsEntry.claimed) {
+      throw errors.IncorrectArguments;
+    }
 
-  public async claimRankingRewards(user: User) {}
+    await user.inventory.addItemTemplates(rewardsEntry.items);
+    await this._rewardCollection.updateOne(
+      { _id: user.id },
+      {
+        $set: {
+          claimed: true,
+          time: Game.nowSec,
+        },
+      }
+    );
 
-  public async addTestRatings() {}
+    return rewardsEntry.items;
+  }
+
+  public async addTestRatings() {
+    const users = await Game.db
+      .collection(Collections.Users)
+      .aggregate([
+        {
+          $sample: { size: 100 },
+        },
+      ])
+      .toArray();
+
+    // For tests: email
+    ["pvp", "power"].forEach(async (mode) => {
+      const me = await Game.db
+        .collection(Collections.Users)
+        .findOne({ address: "uniwerts@gmail.com" });
+
+      if (me) {
+        await this.updateRank(
+          me._id,
+          mode,
+          // For tests: score
+          2985
+        );
+      }
+
+      users.forEach(async (user) => {
+        await this.updateRank(user._id, mode, _.random(0, 3000));
+      });
+    });
+  }
+
+  async distributeRewards() {
+    const modes = ["pvp", "power"];
+    for await (const mode of modes) {
+      // Rankings page
+      const heroClassRankings = await this.getRankingsByMode(mode);
+      let rankIndex = 0;
+      for await (const rankingEntry of heroClassRankings) {
+        if (+rankingEntry.score == 0) {
+          continue;
+        }
+        await this.debitUserReward(rankingEntry.id, mode, rankIndex + 1);
+        rankIndex++;
+      }
+    }
+  }
+
+  async debitUserReward(userId: ObjectId, mode: string, rank: number) {
+    let rewardsEntry =
+      (await this._rewardCollection.findOne({ _id: userId })) || {};
+    let items = rewardsEntry.items || [];
+
+    let rewardIndex = null;
+    if (rank >= 1 && rank <= 4) {
+      rewardIndex = rank - 1;
+    } else if (rank >= 5 && rank <= 10) {
+      rewardIndex = 4;
+    } else {
+      return;
+    }
+
+    const rewardItems = this.rankingRewards[rewardIndex].items;
+
+    /*if (!isProd) {
+      console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
+    }*/
+    rewardItems.forEach((itemEntry) => {
+      let receivedItemIndex = items.findIndex(
+        (receivedItem) => receivedItem.item === itemEntry.item
+      );
+      if (receivedItemIndex === -1) {
+        items.push(_.cloneDeep(itemEntry));
+      } else {
+        items[receivedItemIndex].quantity += itemEntry.quantity;
+        /*if (!isProd) {
+          console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
+        }*/
+      }
+    });
+    /*if (!isProd) {
+      console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
+      console.log('');
+    }*/
+
+    await this._rewardCollection.updateOne(
+      { _id: userId },
+      { $set: { items, [`ranks.${mode}`]: rank } },
+      { upsert: true }
+    );
+  }
+
+  async updateRank(userId: ObjectId, mode: string, points: number) {
+    if (this.eventFinished()) {
+      return;
+    }
+
+    const setOnInsert = { pvp: 0, power: 0 };
+    delete setOnInsert[mode];
+
+    await this._rankCollection.updateOne(
+      { _id: userId },
+      {
+        $setOnInsert: setOnInsert,
+        $set: {
+          order: Game.now,
+        },
+        $inc: {
+          [mode]: points,
+        },
+      },
+      { upsert: true }
+    );
+  }
 
   public resetMode() {
     this._mode = null;

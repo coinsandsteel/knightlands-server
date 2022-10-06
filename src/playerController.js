@@ -2339,8 +2339,12 @@ class PlayerController extends IPaymentListener {
       return this.battle.getDuelOptions();
     }
 
-    async _battleRankings() {
-      return Game.battleManager.getRankings();
+    async _battleRankings(user, { mode }) {
+        return {
+            rankings: await Game.battleManager.getRankingsByMode(mode),
+            hasRewards: await Game.battleManager.userHasRewards(user),
+            timeLeft: Game.battleManager.timeLeft
+        };
     }
 
     async _battleRestart() {

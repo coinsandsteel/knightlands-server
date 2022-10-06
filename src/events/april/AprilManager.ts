@@ -27,11 +27,11 @@ export class AprilManager {
     this._finalRankCollection = Game.db.collection(Collections.AprilFinalRanks);
     this._rewardCollection = Game.db.collection(Collections.AprilRewards);
   }
-  
+
   get eventStartDate() {
     return new Date(this._meta.eventStartDate * 1000 || '2021-04-01 00:00:00');
   }
-  
+
   get eventEndDate() {
     return new Date(this._meta.eventEndDate * 1000 || '2022-04-14 00:00:00');
   }
@@ -151,7 +151,7 @@ export class AprilManager {
     }
 
     //console.log(`[AprilManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`);
-    
+
     // Distribute rewards for winners
     await this.distributeRewards();
 
@@ -165,7 +165,7 @@ export class AprilManager {
         { upsert: true }
       );
     });
-      
+
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
@@ -205,7 +205,7 @@ export class AprilManager {
     if (heroClass === april.HERO_CLASS_PALADIN && Game.now < this.relativeDayStart(2)) {
       return false;
     }
-    
+
     if (heroClass === april.HERO_CLASS_ROGUE && Game.now < this.relativeDayStart(3)) {
       return false;
     }
@@ -227,7 +227,7 @@ export class AprilManager {
     }
 
     const rewardItems = this.rankingRewards[rewardIndex].items;
-    
+
     /*if (!isProd) {
       console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
     }*/
@@ -246,9 +246,9 @@ export class AprilManager {
       console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
       console.log('');
     }*/
-    
+
     await this._rewardCollection.updateOne(
-      { _id: userId }, 
+      { _id: userId },
       { $set: { items, [`ranks.${heroClass}`]: rank }},
       { upsert: true }
     );
@@ -258,7 +258,7 @@ export class AprilManager {
     if (this.eventFinished()) {
       return;
     }
-  
+
     const setOnInsert = april.HEROES.reduce(
       (previousValue, currentValue) => {
         previousValue[currentValue.heroClass] = 0
@@ -331,16 +331,16 @@ export class AprilManager {
     }
 
     await user.inventory.addItemTemplates(rewardsEntry.items);
-    
+
     delete rewardsEntry.history;
     const time = Game.nowSec;
-    await this._rewardCollection.updateOne({ _id: user.id }, { 
+    await this._rewardCollection.updateOne({ _id: user.id }, {
       $set: {
         items: [],
         ranks: {},
         [`history.${time}`]: rewardsEntry,
         claimed: 0
-      } 
+      }
     });
     //console.log('[User rewards]', user.id, receivedItems);
 
