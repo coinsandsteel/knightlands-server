@@ -131,6 +131,12 @@ export class BattleController {
     this.core.events.flush();
   }
 
+  async merge(template: number) {
+    const newUnit = this.core.inventory.merge(template);
+    this.core.events.flush();
+    return newUnit;
+  }
+
   async exit() {
     this.core.game.exit();
     this.core.events.flush();
@@ -155,6 +161,7 @@ export class BattleController {
       }
       case 'addUnit':{
         const unit = this.core.inventory.getRandomUnit();
+        unit.modifyQuantity(2);
         this.core.inventory.addUnit(unit);
         break;
       }

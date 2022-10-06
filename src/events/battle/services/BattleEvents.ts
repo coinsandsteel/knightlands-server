@@ -32,6 +32,10 @@ export class BattleEvents extends BattleService {
     this._events.addUnit.push(unit.serialize());
   }
 
+  removeUnit(unit: Unit) {
+    this._events.removeUnit = unit.template;
+  }
+
   inventory(units: Unit[]) {
     this._events.inventory = units.map((unit: Unit) => unit.serialize());
   }

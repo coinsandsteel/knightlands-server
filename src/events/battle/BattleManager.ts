@@ -101,6 +101,14 @@ export class BattleManager {
     return _.cloneDeep(this._meta.units[template]) || null;
   }
 
+  public getUnitMetaByParams(params: {
+    class: string;
+    tribe: string;
+    tier: number;
+  }): BattleUnitMeta | null {
+    return _.cloneDeep(_.find(Object.values(this._meta.units), params)) || null;
+  }
+
   public getClassMeta(unitClass: string): BattleClassMeta | null {
     return _.cloneDeep(this._meta.classes[unitClass]) || null;
   }
@@ -152,14 +160,14 @@ export class BattleManager {
         targetAllies: true,
         targetSelf: true,
         targetEnemies: false,
-        targetEmptyCell: false
+        targetEmptyCell: false,
       },
       [battle.ABILITY_TYPE_ATTACK]: {
         affectHp: true,
         targetAllies: false,
         targetSelf: false,
         targetEnemies: true,
-        targetEmptyCell: false
+        targetEmptyCell: false,
       },
     };
 

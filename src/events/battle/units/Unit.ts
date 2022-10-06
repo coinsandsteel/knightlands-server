@@ -185,7 +185,7 @@ export class Unit {
     return _.cloneDeep(unit);
   }
 
-  public updateQuantity(value: number): void {
+  public modifyQuantity(value: number): void {
     this._quantity += value;
   }
 

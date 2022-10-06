@@ -45,6 +45,33 @@ export class BattleInventory extends BattleService {
     return this._state;
   }
 
+  public merge(template: number): BattleUnit {
+    console.log('Merge', { template });
+    const unit = this.getUnitByTemplate(template);
+    if (!unit || unit.quantity < 3 || unit.tier > 2) {
+      return;
+    }
+
+    const newUnitMeta = game.battleManager.getUnitMetaByParams({
+      class: unit.class,
+      tribe: unit.tribe,
+      tier: unit.tier + 1
+    });
+    if (!newUnitMeta) {
+      throw Error(`Merge failed. No such unit meta (class: ${unit.class}, tribe: ${unit.tribe}, tier: ${unit.tier})`);
+    }
+
+    // Add new unit
+    const newUnit = this.addUnit(
+      Unit.createUnit(newUnitMeta, this._core.events)
+    );
+
+    // Spend 3 source units
+    this.removeUnit(unit, 3);
+
+    return newUnit.serialize();
+  }
+
   public getRandomUnit(): Unit {
     // Get random unit blueprint
     const unitBlueprint = _.cloneDeep(
@@ -98,10 +125,28 @@ export class BattleInventory extends BattleService {
       this.log("Unit added", unit.unitId);
       return unit;
     } else {
-      this._units[index].updateQuantity(unit.quantity);
+      this._units[index].modifyQuantity(1);
       this.updateUnitState(this._units[index]);
       this.log("Unit stacked", unit.unitId);
       return this._units[index];
+    }
+  }
+
+  public removeUnit(unit: Unit, quantity: number): void {
+    // Search by template
+    const index = this._units.findIndex(
+      (entry) => entry.template === unit.template
+    );
+
+    if (index !== -1) {
+      this._units[index].modifyQuantity(-quantity);
+      if (this._units[index].quantity <= 0) {
+        delete this._units[index];
+        this._units = this._units.filter(e => e);
+        this._core.events.removeUnit(unit);
+      } else {
+        this.updateUnitState(this._units[index]);
+      }
     }
   }
 
