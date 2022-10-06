@@ -254,11 +254,44 @@ export class Unit {
     return true;
   }
 
-  public setLevel(value: number): void {
+  public randomize() {
+    let maxLevel = 1;
+    if (this._tier === 1) {
+      maxLevel = SETTINGS.maxUnitTierLevel[1];
+    }
+    if (this._tier === 2) {
+      maxLevel = SETTINGS.maxUnitTierLevel[2];
+    }
+    let level = _.random(1, maxLevel);
+    this.setLevel(level, true);
+
+    let addExp = _.random(1, Unit.getExpForLevel(this._levelInt + 1) - Unit.getExpForLevel(this._levelInt) - 1);
+    this.addExpirience(addExp);
+    console.log('Maximize unit', { maxLevel, level, addExp });
+
+    this.abilities.abilities.forEach(ability => {
+      if (ability.enabled) {
+        let abilityLevel = _.random(1, this.abilities.getMaxAbilityLevel(ability.tier));
+        this.abilities.setAbilityLevel(
+          ability.abilityClass,
+          abilityLevel
+        );
+        console.log('Maximize unit ability', { abilityClass: ability.abilityClass, abilityLevel });
+      }
+    });
+  }
+
+  public setLevel(value: number, addExp?: boolean): void {
     this._levelInt = value;
     this._level.current = value;
     this._level.next = null;
     this._level.price = null;
+
+    if (addExp) {
+      this._expirience.value = Unit.getExpForLevel(value);
+      this._expirience.currentLevelExp = 0;
+      this._expirience.nextLevelExp = Unit.getExpForLevel(value + 1);
+    }
   }
 
   public static getCharacteristics(

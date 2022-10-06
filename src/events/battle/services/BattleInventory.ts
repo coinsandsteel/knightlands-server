@@ -61,9 +61,32 @@ export class BattleInventory extends BattleService {
     }
 
     // Add new unit
-    const newUnit = this.addUnit(
-      Unit.createUnit(newUnitMeta, this._core.events)
-    );
+    const newUnitEntry = Unit.createUnit(newUnitMeta, this._core.events);
+    console.log('Merge abilities', {
+      source: unit.abilities.abilities,
+      target: newUnitEntry.abilities.abilities
+    });
+
+    // Set the same level
+    newUnitEntry.setLevel(unit.levelInt, true);
+    console.log('Merge set level', unit.levelInt);
+
+    // Unlock abilities
+    newUnitEntry.addExpirience(0);
+
+    // Calc abilities
+    newUnitEntry.abilities.abilities.forEach(ability => {
+      const sourceUnitAbilityData = unit.abilities.getAbilityByClass(ability.abilityClass);
+      if (sourceUnitAbilityData.enabled) {
+        console.log('Merge ability', { abilityClass: ability.abilityClass, levelInt: sourceUnitAbilityData.levelInt });
+        newUnitEntry.abilities.setAbilityLevel(
+          ability.abilityClass,
+          sourceUnitAbilityData.levelInt
+        );
+      }
+    });
+
+    const newUnit = this.addUnit(newUnitEntry);
 
     // Spend 3 source units
     this.removeUnit(unit, 3);

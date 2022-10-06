@@ -292,6 +292,10 @@ export default class UnitAbilities {
   }
 
   public setAbilityLevel(abilityClass: string, level: number) {
+    if ([ABILITY_MOVE, ABILITY_ATTACK].includes(abilityClass)) {
+      return;
+    }
+
     this._abilities.forEach((ability) => {
       if (ability.abilityClass !== abilityClass) {
         return;
@@ -311,6 +315,10 @@ export default class UnitAbilities {
     this.update();
   }
 
+  public getMaxAbilityLevel(abilityTier: number): number {
+    return ABILITY_SCHEME[this._unit.levelInt - 1][abilityTier - 1].lvl;
+  }
+
   public upgradeAbility(abilityClass: string): boolean {
     if (!this.canUpgradeAbility(abilityClass)) {
       return false;
@@ -325,7 +333,7 @@ export default class UnitAbilities {
     ability.level.current++;
     ability.levelInt++;
 
-    const canUpgradeMore = ability.level.current < abilityScheme.lvl;
+    const canUpgradeMore = ability.level.current < this.getMaxAbilityLevel(ability.tier);
     ability.level.next = canUpgradeMore ? ability.level.next + 1 : null;
     ability.level.price = canUpgradeMore
       ? this.getAbilityUpgradePrice(ability.tier, ability.level.next)

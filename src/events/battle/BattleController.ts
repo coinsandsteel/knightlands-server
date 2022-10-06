@@ -5,6 +5,7 @@ import User from "../../user";
 
 import { BattleCore } from './services/BattleCore';
 import { BattleSaveData } from './types';
+import { Unit } from "./units/Unit";
 
 const isProd = process.env.ENV == "prod";
 
@@ -162,6 +163,7 @@ export class BattleController {
       case 'addUnit':{
         const unit = this.core.inventory.getRandomUnit();
         unit.modifyQuantity(2);
+        unit.randomize();
         this.core.inventory.addUnit(unit);
         break;
       }
