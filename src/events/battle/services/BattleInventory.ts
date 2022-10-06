@@ -46,7 +46,6 @@ export class BattleInventory extends BattleService {
   }
 
   public merge(template: number): BattleUnit {
-    console.log('Merge', { template });
     const unit = this.getUnitByTemplate(template);
     if (!unit || unit.quantity < 3 || unit.tier > 2) {
       return;
@@ -144,6 +143,13 @@ export class BattleInventory extends BattleService {
         delete this._units[index];
         this._units = this._units.filter(e => e);
         this._core.events.removeUnit(unit);
+
+        const squadIndex = this._core.game.userSquad.fighters.findIndex(
+          entry => entry.template === unit.template
+        );
+        if (squadIndex !== -1) {
+          this._core.game.userSquad.clearSlot(squadIndex);
+        }
       } else {
         this.updateUnitState(this._units[index]);
       }
