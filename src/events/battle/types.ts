@@ -99,6 +99,7 @@ export interface BattleCombatRewards {
   coins: number;
   crystals: number;
   xp: number;
+  rank: number;
 }
 
 export interface BattleSquadState {

@@ -1,32 +1,26 @@
 import _ from "lodash";
+import game from "../../../game";
 import {
-  GAME_DIFFICULTY_HIGH,
-  GAME_DIFFICULTY_LOW,
-  GAME_DIFFICULTY_MEDIUM,
-  GAME_MODE_DUEL,
   ABILITY_ATTACK,
-  ABILITY_MOVE,
-  GAME_MODE_ADVENTURE,
-  COMMODITY_ENERGY,
-  COMMODITY_CRYSTALS,
-  DUEL_REWARDS,
-  COMMODITY_COINS,
+  ABILITY_MOVE, COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, DUEL_REWARDS, GAME_DIFFICULTY_HIGH,
+  GAME_DIFFICULTY_LOW,
+  GAME_DIFFICULTY_MEDIUM, GAME_MODE_ADVENTURE, GAME_MODE_DUEL
 } from "../../../knightlands-shared/battle";
 import errors from "../../../knightlands-shared/errors";
-import { BattleCore } from "./BattleCore";
 import {
   BattleCombatRewards,
   BattleFighter,
   BattleGameState,
   BattleInitiativeRatingEntry,
-  BattleTerrainMap,
+  BattleTerrainMap
 } from "../types";
+import { Fighter } from "../units/Fighter";
 import { BattleCombat } from "./BattleCombat";
+import { BattleCore } from "./BattleCore";
 import { BattleMovement } from "./BattleMovement";
 import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
-import { Fighter } from "../units/Fighter";
 
 export class BattleGame extends BattleService {
   protected _state: BattleGameState;
@@ -616,12 +610,14 @@ export class BattleGame extends BattleService {
       this._core.adventures.handleLevelPassed();
 
     } else if (this._state.mode === GAME_MODE_DUEL) {
-      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.win);
+      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.win.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS.win,
-        xp: 0
+        crystals: DUEL_REWARDS.win.crystals,
+        xp: 0,
+        rank: DUEL_REWARDS.win.rank
       });
+      game.battleManager.updateRank(this._core.userId, 'pvp', DUEL_REWARDS.win.rank);
     }
 
     this.setCombatResult("win");
@@ -631,11 +627,13 @@ export class BattleGame extends BattleService {
 
   public loose(): void {
     if (this._state.mode === GAME_MODE_DUEL) {
-      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.loose);
+      game.battleManager.updateRank(this._core.userId, 'pvp', DUEL_REWARDS.loose.rank);
+      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.loose.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS.loose,
-        xp: 0
+        crystals: DUEL_REWARDS.loose.crystals,
+        xp: 0,
+        rank: DUEL_REWARDS.loose.rank
       });
     }
 

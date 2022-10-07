@@ -10,6 +10,7 @@ import { BattleGameState, BattleUserState } from "../types";
 import { BattleAdventures } from "./BattleAdventures";
 
 export class BattleCore {
+  protected _userId: ObjectId;
   protected _battleEvents: BattleEvents;
   protected _battleUser: BattleUser;
   protected _battleGame: BattleGame;
@@ -17,6 +18,7 @@ export class BattleCore {
   protected _battleAdventures: BattleAdventures;
 
   constructor(userId: ObjectId) {
+    this._userId = userId;
     this._battleEvents = new BattleEvents(userId);
   }
 
@@ -38,6 +40,10 @@ export class BattleCore {
 
   get user(): BattleUser {
     return this._battleUser;
+  }
+
+  get userId(): ObjectId {
+    return this.userId;
   }
 
   public init(saveData?: BattleSaveData) {

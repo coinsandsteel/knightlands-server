@@ -136,6 +136,7 @@ export class BattleAdventures extends BattleService {
       coins: levelMeta.reward.coins + levelMeta.bossReward.coins,
       crystals: levelMeta.bossReward.crystals,
       xp: levelMeta.reward.xp,
+      rank: 0
     };
   }
 
