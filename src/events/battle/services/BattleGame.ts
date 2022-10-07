@@ -742,7 +742,8 @@ export class BattleGame extends BattleService {
     this.setCombatRewards({
       coins: 0,
       crystals: 0,
-      xp: 0
+      xp: 0,
+      rank: 0
     });
 
     this._state.enemySquad = this._enemySquad.getInitialState();
