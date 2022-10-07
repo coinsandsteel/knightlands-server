@@ -61,104 +61,120 @@ export class BattleManager {
         {
           items: [
             {
-              item: 3110,
-              quantity: 6,
+              item: 3110, // raid_ticket
+              quantity: 94,
             },
             {
-              item: 2982,
-              quantity: 1,
+              item: 2982, // adv_summon_scroll
+              quantity: 19,
             },
             {
-              item: 812,
-              quantity: 1,
+              item: 812, // big_armour_xp
+              quantity: 11,
             },
             {
-              item: 817,
-              quantity: 3,
+              item: 817, // demonic_key
+              quantity: 38,
             },
             {
-              item: 2383,
-              quantity: 2500000,
+              item: 2383, // gold
+              quantity: 37500000,
             },
           ],
         },
         {
           items: [
             {
-              item: 3110,
+              item: 3110, // raid_ticket
+              quantity: 75,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 15,
+            },
+            {
+              item: 812, // big_armour_xp
+              quantity: 9,
+            },
+            {
+              item: 817, // demonic_key
+              quantity: 30,
+            },
+            {
+              item: 2383, // gold
+              quantity: 30000000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110, // raid_ticket
+              quantity: 56,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 11,
+            },
+            {
+              item: 812, // big_armour_xp
+              quantity: 7,
+            },
+            {
+              item: 817, // demonic_key
+              quantity: 23,
+            },
+            {
+              item: 2383, // gold
+              quantity: 22500000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110, // raid_ticket
+              quantity: 38,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 8,
+            },
+            {
+              item: 812, // big_armour_xp
               quantity: 5,
             },
             {
-              item: 2982,
-              quantity: 1,
+              item: 817, // demonic_key
+              quantity: 15,
             },
             {
-              item: 812,
-              quantity: 1,
-            },
-            {
-              item: 817,
-              quantity: 2,
-            },
-            {
-              item: 2383,
-              quantity: 2000000,
+              item: 2383, // gold
+              quantity: 15000000,
             },
           ],
         },
         {
           items: [
             {
-              item: 3110,
+              item: 3110, // raid_ticket
+              quantity: 19,
+            },
+            {
+              item: 2982, // adv_summon_scroll
               quantity: 4,
             },
             {
-              item: 2982,
-              quantity: 1,
-            },
-            {
-              item: 817,
+              item: 812, // big_armour_xp
               quantity: 2,
             },
             {
-              item: 2383,
-              quantity: 1500000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110,
-              quantity: 3,
+              item: 817, // demonic_key
+              quantity: 8,
             },
             {
-              item: 2982,
-              quantity: 1,
-            },
-            {
-              item: 817,
-              quantity: 1,
-            },
-            {
-              item: 2383,
-              quantity: 1000000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110,
-              quantity: 1,
-            },
-            {
-              item: 817,
-              quantity: 5,
-            },
-            {
-              item: 2383,
-              quantity: 500000,
+              item: 2383, // gold
+              quantity: 7500000,
             },
           ],
         },
