@@ -53,7 +53,7 @@ export class BattleManager {
       secondsLeft = 0;
     }
     return secondsLeft;
-  }
+}
 
   get rankingRewards() {
     return (
@@ -62,95 +62,23 @@ export class BattleManager {
           items: [
             {
               item: 3110, // raid_ticket
-              quantity: 94,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 19,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 11,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 38,
-            },
-            {
-              item: 2383, // gold
-              quantity: 37500000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 75,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 15,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 9,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 30,
-            },
-            {
-              item: 2383, // gold
-              quantity: 30000000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 56,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 11,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 7,
-            },
-            {
-              item: 817, // demonic_key
               quantity: 23,
             },
             {
-              item: 2383, // gold
-              quantity: 22500000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 38,
-            },
-            {
               item: 2982, // adv_summon_scroll
-              quantity: 8,
-            },
-            {
-              item: 812, // big_armour_xp
               quantity: 5,
             },
             {
+              item: 812, // big_armour_xp
+              quantity: 3,
+            },
+            {
               item: 817, // demonic_key
-              quantity: 15,
+              quantity: 9,
             },
             {
               item: 2383, // gold
-              quantity: 15000000,
+              quantity: 9375000,
             },
           ],
         },
@@ -175,6 +103,78 @@ export class BattleManager {
             {
               item: 2383, // gold
               quantity: 7500000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110, // raid_ticket
+              quantity: 14,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 3,
+            },
+            {
+              item: 812, // big_armour_xp
+              quantity: 2,
+            },
+            {
+              item: 817, // demonic_key
+              quantity: 6,
+            },
+            {
+              item: 2383, // gold
+              quantity: 5625000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110, // raid_ticket
+              quantity: 9,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 2,
+            },
+            {
+              item: 812, // big_armour_xp
+              quantity: 1,
+            },
+            {
+              item: 817, // demonic_key
+              quantity: 4,
+            },
+            {
+              item: 2383, // gold
+              quantity: 3750000,
+            },
+          ],
+        },
+        {
+          items: [
+            {
+              item: 3110, // raid_ticket
+              quantity: 5,
+            },
+            {
+              item: 2982, // adv_summon_scroll
+              quantity: 1,
+            },
+            {
+              item: 812, // big_armour_xp
+              quantity: 1,
+            },
+            {
+              item: 817, // demonic_key
+              quantity: 2,
+            },
+            {
+              item: 2383, // gold
+              quantity: 1875000,
             },
           ],
         },
