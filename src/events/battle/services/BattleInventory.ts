@@ -45,6 +45,14 @@ export class BattleInventory extends BattleService {
     return this._state;
   }
 
+  public handleInventoryChanged(): void {
+    const totalPower = this._units.reduce(
+      (prev: number, current: Unit) => prev + current.power,
+      0
+    );
+    game.battleManager.updateRank(this._core.userId, 'power', totalPower);
+  }
+
   public merge(template: number): BattleUnit {
     const unit = this.getUnitByTemplate(template);
     if (!unit || unit.quantity < 3 || unit.tier > 2) {
@@ -140,18 +148,21 @@ export class BattleInventory extends BattleService {
     );
 
     // Add or increase quantity
+    let resultUnit = unit;
     if (index === -1) {
       this._units.push(unit);
       this._state.push(unit.serialize());
       this._core.events.addUnit(unit);
       this.log("Unit added", unit.unitId);
-      return unit;
     } else {
       this._units[index].modifyQuantity(1);
       this.updateUnitState(this._units[index]);
       this.log("Unit stacked", unit.unitId);
-      return this._units[index];
+      resultUnit = this._units[index];
     }
+    this.handleInventoryChanged();
+
+    return resultUnit;
   }
 
   public removeUnit(unit: Unit, quantity: number): void {
@@ -162,6 +173,7 @@ export class BattleInventory extends BattleService {
 
     if (index !== -1) {
       this._units[index].modifyQuantity(-quantity);
+
       if (this._units[index].quantity <= 0) {
         delete this._units[index];
         this._units = this._units.filter(e => e);
@@ -176,6 +188,8 @@ export class BattleInventory extends BattleService {
       } else {
         this.updateUnitState(this._units[index]);
       }
+
+      this.handleInventoryChanged();
     }
   }
 
@@ -183,6 +197,7 @@ export class BattleInventory extends BattleService {
     this._units = units;
     this._state = this._units.map((unit) => unit.serialize());
     this._core.events.inventory(units);
+    this.handleInventoryChanged();
   }
 
   public addExp(template: number, value: number) {
@@ -235,6 +250,8 @@ export class BattleInventory extends BattleService {
     ) {
       this._core.game.proxyUnit(unit.unitId);
     }
+
+    this.handleInventoryChanged();
   }
 
   public upgradeUnitAbility(unitId: string, ability: string): void {
@@ -258,5 +275,7 @@ export class BattleInventory extends BattleService {
     ) {
       this._core.game.proxyUnit(unit.unitId);
     }
+
+    this.handleInventoryChanged();
   }
 }

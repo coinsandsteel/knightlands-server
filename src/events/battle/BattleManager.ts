@@ -567,19 +567,25 @@ export class BattleManager {
       return;
     }
 
-    const setOnInsert = { pvp: 0, power: 0 };
-    delete setOnInsert[mode];
+    let setOnInsert;
+    let set = { order: Game.now };
+    let inc = {};
+
+    if (mode === "pvp") {
+      setOnInsert = { power: 0 };
+      inc["pvp"] = points;
+
+    } else if (mode === "power") {
+      setOnInsert = { pvp: 0 };
+      set["power"] = points;
+    }
 
     await this._rankCollection.updateOne(
       { _id: userId },
       {
         $setOnInsert: setOnInsert,
-        $set: {
-          order: Game.now,
-        },
-        $inc: {
-          [mode]: points,
-        },
+        $set: set,
+        $inc: inc,
       },
       { upsert: true }
     );
