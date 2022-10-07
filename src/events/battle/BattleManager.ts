@@ -209,7 +209,7 @@ export class BattleManager {
   async getRankingsByMode(mode: string) {
     const records = await this._rankCollection
       .aggregate([
-        { $sort: { mode: -1, order: 1 } },
+        { $sort: { [mode]: -1, order: 1 } },
         { $limit: 10 },
         {
           $lookup: {
@@ -228,7 +228,7 @@ export class BattleManager {
             avatar: {
               $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1],
             },
-            score: { $convert: { input: "$" + mode, to: "string" } },
+            score: "$" + mode
           },
         },
         {
