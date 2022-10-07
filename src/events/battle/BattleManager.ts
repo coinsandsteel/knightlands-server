@@ -1,18 +1,18 @@
+import _ from "lodash";
 import { Collection, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
-import _ from "lodash";
 
 import Game from "../../game";
+import * as battle from "../../knightlands-shared/battle";
+import errors from "../../knightlands-shared/errors";
 import User from "../../user";
 import {
   BattleAbilityMeta,
-  BattleMeta,
-  BattleEffectMeta,
-  BattleUnitMeta,
   BattleClassMeta,
+  BattleEffectMeta,
+  BattleMeta,
+  BattleUnitMeta,
 } from "./units/MetaDB";
-import * as battle from "../../knightlands-shared/battle";
-import errors from "../../knightlands-shared/errors";
 
 const isProd = process.env.ENV == "prod";
 
@@ -228,7 +228,7 @@ export class BattleManager {
             avatar: {
               $ifNull: [{ $arrayElemAt: ["$user.character.avatar", 0] }, -1],
             },
-            score: "$" + mode
+            score: "$" + mode,
           },
         },
         {
@@ -469,24 +469,21 @@ export class BattleManager {
       .toArray();
 
     // For tests: email
-    ["pvp", "power"].forEach(async (mode) => {
+    for await (const mode of ["pvp", "power"]) {
       const me = await Game.db
         .collection(Collections.Users)
-        .findOne({ address: "uniwerts@gmail.com" });
+        .findOne({ address: "uniwertz@gmail.com" });
 
       if (me) {
-        await this.updateRank(
-          me._id,
-          mode,
-          // For tests: score
-          2985
-        );
+        await this.updateRank(me._id, mode, 2985);
       }
 
-      users.forEach(async (user) => {
+      for await (const user of users) {
         await this.updateRank(user._id, mode, _.random(0, 3000));
-      });
-    });
+      }
+    }
+
+    console.log(`[BattleManager] Test ratings were created`);
   }
 
   async distributeRewards() {
