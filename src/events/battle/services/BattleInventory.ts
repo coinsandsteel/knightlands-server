@@ -41,7 +41,7 @@ export class BattleInventory extends BattleService {
     return new Unit(unit, this._core.events);
   }
 
-  getState(): BattleUnit[] {
+  public getState(): BattleUnit[] {
     return this._state;
   }
 

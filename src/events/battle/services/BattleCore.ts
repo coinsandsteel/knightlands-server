@@ -43,7 +43,7 @@ export class BattleCore {
   }
 
   get userId(): ObjectId {
-    return this.userId;
+    return this._userId;
   }
 
   public init(saveData?: BattleSaveData) {
