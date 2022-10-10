@@ -2343,7 +2343,8 @@ class PlayerController extends IPaymentListener {
         return {
             rankings: await Game.battleManager.getRankingsByMode(mode),
             hasRewards: await Game.battleManager.userHasRewards(user),
-            timeLeft: Game.battleManager.timeLeft
+            timeLeft: Game.battleManager.timeLeft,
+            resetTimeLeft: Game.battleManager.resetTimeLeft
         };
     }
 

@@ -137,8 +137,8 @@ export class AprilManager {
       }, RANKING_WATCHER_PERIOD_MILSECONDS);
     }
   }
-
-  relativeDayStart(day: number) {
+s
+  protected relativeDayStart(day: number) {
     return this.eventStartDate.getTime() + (DAY * (day - 1));
   }
 

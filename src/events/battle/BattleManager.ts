@@ -15,24 +15,25 @@ import {
 } from "./units/MetaDB";
 
 const isProd = process.env.ENV == "prod";
+const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
+const DAY = 24 * 60 * 60 * 1000;
 
 export class BattleManager {
   protected _meta: BattleMeta;
+  protected _abilityTypes: { [abilityClass: string]: string };
+
   protected _saveCollection: Collection;
   protected _rankCollection: Collection;
+  protected _finalRankCollection: Collection;
   protected _rewardCollection: Collection;
-  protected _mode: string = null;
-  protected _abilityTypes: { [abilityClass: string]: string };
+
+  protected _lastRankingsReset: number;
 
   constructor() {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
     this._rewardCollection = Game.db.collection(Collections.BattleRewards);
     this._abilityTypes = {};
-  }
-
-  get autoCombat() {
-    return this._mode === "auto";
   }
 
   get eventStartDate() {
@@ -53,133 +54,18 @@ export class BattleManager {
       secondsLeft = 0;
     }
     return secondsLeft;
-}
+  }
+
+  get resetTimeLeft() {
+    let secondsLeft = this.nextMidnight / 1000 - Game.nowSec;
+    if (secondsLeft < 0) {
+      secondsLeft = 0;
+    }
+    return secondsLeft;
+  }
 
   get rankingRewards() {
-    return (
-      this._meta.settings.rankingRewards || [
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 23,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 5,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 3,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 9,
-            },
-            {
-              item: 2383, // gold
-              quantity: 9375000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 19,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 4,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 2,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 8,
-            },
-            {
-              item: 2383, // gold
-              quantity: 7500000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 14,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 3,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 2,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 6,
-            },
-            {
-              item: 2383, // gold
-              quantity: 5625000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 9,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 2,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 1,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 4,
-            },
-            {
-              item: 2383, // gold
-              quantity: 3750000,
-            },
-          ],
-        },
-        {
-          items: [
-            {
-              item: 3110, // raid_ticket
-              quantity: 5,
-            },
-            {
-              item: 2982, // adv_summon_scroll
-              quantity: 1,
-            },
-            {
-              item: 812, // big_armour_xp
-              quantity: 1,
-            },
-            {
-              item: 817, // demonic_key
-              quantity: 2,
-            },
-            {
-              item: 2383, // gold
-              quantity: 1875000,
-            },
-          ],
-        },
-      ]
-    );
+    return this._meta.settings.rankingRewards || battle.RANKING_REWADS;
   }
 
   get squadRewards() {
@@ -189,6 +75,12 @@ export class BattleManager {
   get midnight() {
     const midnight = new Date();
     midnight.setHours(0, 0, 0, 0);
+    return midnight.getTime();
+  }
+
+  get nextMidnight() {
+    const midnight = new Date();
+    midnight.setHours(23, 59, 59, 0);
     return midnight.getTime();
   }
 
@@ -210,7 +102,7 @@ export class BattleManager {
       units: _.keyBy(values[1] || [], (entry) => parseInt(entry._id)),
       abilities: _.keyBy(values[2] || [], "_id"),
       effects: _.keyBy(values[3] || [], (entry) => parseInt(entry._id)),
-      settings: {},
+      settings: values[4] || [],
     };
 
     // this.testMeta();
@@ -220,6 +112,204 @@ export class BattleManager {
       await this.addTestRatings();
       await this.distributeRewards();
     }
+
+    // Retrieve lastReset from meta. Once.
+    // Since this moment we'll be updating memory variable only.
+    this._lastRankingsReset = this._meta.settings.lastReset || this.midnight;
+    //console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+
+    await this.watchResetRankings();
+  }
+
+  public eventIsInProgress() {
+    const now = new Date();
+    const start = this.eventStartDate;
+    const end = this.eventEndDate;
+    return now >= start && now <= end;
+  }
+
+  public eventFinished() {
+    const now = new Date();
+    const end = this.eventEndDate;
+    return now > end;
+  }
+
+  async loadProgress(userId: ObjectId) {
+    return this._saveCollection.findOne({ _id: userId });
+  }
+
+  async saveProgress(userId: ObjectId, saveData: any) {
+    return this._saveCollection.updateOne(
+      { _id: userId },
+      { $set: saveData },
+      { upsert: true }
+    );
+  }
+
+  async watchResetRankings() {
+    if (!isProd) {
+      await this._rankCollection.deleteMany({});
+      await this.addTestRatings();
+      await this.distributeRewards();
+    } else {
+      setInterval(async () => {
+        await this.commitResetRankings();
+      }, RANKING_WATCHER_PERIOD_MILSECONDS);
+    }
+  }
+
+  protected relativeDayStart(day: number) {
+    return this.eventStartDate.getTime() + DAY * (day - 1);
+  }
+
+  async commitResetRankings() {
+    const midnight = this.midnight;
+    // Last reset was in midnight or earlier? Skip reset then.
+    if (this._lastRankingsReset >= midnight) {
+      console.log(
+        `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`
+      );
+      return;
+    }
+
+    console.log(
+      `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`
+    );
+
+    // Distribute rewards for winners
+    await this.distributeRewards();
+
+    // Last reset was more that day ago? Launch reset.
+    await Game.dbClient.withTransaction(async (db) => {
+      await db.collection(Collections.BattleRanks).deleteMany({});
+      await db
+        .collection(Collections.Meta)
+        .updateOne(
+          { _id: "battle_meta" },
+          { $set: { lastReset: midnight } },
+          { upsert: true }
+        );
+    });
+
+    // Update reset time.
+    // Meta was updated already. It's nothing to do with meta.
+    this._lastRankingsReset = midnight;
+    console.log(`[BattleManager] Rankings reset FINISH.`, {
+      _lastRankingsReset: this._lastRankingsReset,
+    });
+  }
+
+  async distributeRewards() {
+    console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
+
+    const dateRanks = {};
+    const modes = ["pvp", "power"];
+    for await (const mode of modes) {
+      const modeRankings = await this.getRankingsByMode(mode);
+      let rankIndex = 0;
+      for await (const rankingEntry of modeRankings) {
+        if (+rankingEntry.score == 0) {
+          continue;
+        }
+        await this.debitUserReward(rankingEntry.id, mode, rankIndex + 1);
+        rankIndex++;
+      }
+      dateRanks[mode] = modeRankings;
+    }
+
+    await this._finalRankCollection.insertOne({
+      date: Game.nowSec,
+      ranks: dateRanks,
+    });
+
+    console.log(`[BattleManager] Rankings distribution FINISHED.`);
+  }
+
+  async debitUserReward(userId: ObjectId, mode: string, rank: number) {
+    let rewardsEntry =
+      (await this._rewardCollection.findOne({ _id: userId })) || {};
+    let items = rewardsEntry.items || [];
+
+    let rewardIndex = null;
+    if (rank >= 1 && rank <= 4) {
+      rewardIndex = rank - 1;
+    } else if (rank >= 5 && rank <= 10) {
+      rewardIndex = 4;
+    } else {
+      return;
+    }
+
+    const rewardItems = this.rankingRewards[rewardIndex].items;
+
+    if (!isProd) {
+      console.log(`[BattleManager] Rewards BEFORE debit`, {
+        userId,
+        mode,
+        rank,
+        items,
+      });
+    }
+    rewardItems.forEach((itemEntry) => {
+      let receivedItemIndex = items.findIndex(
+        (receivedItem) => receivedItem.item === itemEntry.item
+      );
+      if (receivedItemIndex === -1) {
+        items.push(_.cloneDeep(itemEntry));
+      } else {
+        items[receivedItemIndex].quantity += itemEntry.quantity;
+        if (!isProd) {
+          console.log(`[BattleManager] Quantity increased`, {
+            userId,
+            mode,
+            rank,
+            ...itemEntry,
+          });
+        }
+      }
+    });
+    if (!isProd) {
+      console.log(`[BattleManager] Rewards AFTER debit`, {
+        userId,
+        mode,
+        rank,
+        items,
+      });
+      console.log("");
+    }
+
+    await this._rewardCollection.updateOne(
+      { _id: userId },
+      { $set: { items, [`ranks.${mode}`]: rank } },
+      { upsert: true }
+    );
+  }
+
+  async updateRank(userId: ObjectId, mode: string, points: number) {
+    if (this.eventFinished()) {
+      return;
+    }
+
+    let setOnInsert;
+    let set = { order: Game.now };
+    let inc = {};
+
+    if (mode === "pvp") {
+      setOnInsert = { power: 0 };
+      inc["pvp"] = points;
+    } else if (mode === "power") {
+      setOnInsert = { pvp: 0 };
+      set["power"] = points;
+    }
+
+    await this._rankCollection.updateOne(
+      { _id: userId },
+      {
+        $setOnInsert: setOnInsert,
+        $set: set,
+        $inc: inc,
+      },
+      { upsert: true }
+    );
   }
 
   async getRankingsByMode(mode: string) {
@@ -256,7 +346,73 @@ export class BattleManager {
     return records;
   }
 
-  // Getters
+  public async userHasRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    return (
+      rewardsEntry &&
+      rewardsEntry.items &&
+      rewardsEntry.items.length &&
+      !rewardsEntry.claimed
+    );
+  }
+
+  public async claimRankingRewards(user: User) {
+    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
+    if (!rewardsEntry || !rewardsEntry.items.length || rewardsEntry.claimed) {
+      throw errors.IncorrectArguments;
+    }
+
+    await user.inventory.addItemTemplates(rewardsEntry.items);
+
+    delete rewardsEntry.history;
+    const time = Game.nowSec;
+    await this._rewardCollection.updateOne(
+      { _id: user.id },
+      {
+        $set: {
+          items: [],
+          ranks: {},
+          [`history.${time}`]: rewardsEntry,
+          claimed: true,
+          time,
+        },
+      }
+    );
+
+    return rewardsEntry.items;
+  }
+
+  public async addTestRatings() {
+    const users = await Game.db
+      .collection(Collections.Users)
+      .aggregate([
+        {
+          $sample: { size: 100 },
+        },
+      ])
+      .toArray();
+
+    // For tests: email
+    for await (const mode of ["pvp", "power"]) {
+      const me = await Game.db
+        .collection(Collections.Users)
+        .findOne({ address: "uniwertz@gmail.com" });
+
+      if (me) {
+        await this.updateRank(me._id, mode, 2985);
+      }
+
+      for await (const user of users) {
+        await this.updateRank(user._id, mode, _.random(0, 3000));
+      }
+    }
+
+    console.log(`[BattleManager] Test ratings were created`);
+  }
+
+  // #######################################################################
+  // Meta
+  // #######################################################################
 
   public getEffectMeta(effectId: number): BattleEffectMeta | null {
     return _.cloneDeep(this._meta.effects[effectId]) || null;
@@ -360,7 +516,9 @@ export class BattleManager {
     return "*** unknown ***";
   }
 
+  // #######################################################################
   // Loaders
+  // #######################################################################
 
   public loadAbilityMeta(
     abilityClass: string,
@@ -417,185 +575,5 @@ export class BattleManager {
         type: abilityMeta.abilityType,
       });*/
     }
-  }
-
-  public eventIsInProgress() {
-    const now = new Date();
-    const start = this.eventStartDate;
-    const end = this.eventEndDate;
-    return now >= start && now <= end;
-  }
-
-  public eventFinished() {
-    const now = new Date();
-    const end = this.eventEndDate;
-    return now > end;
-  }
-
-  async loadProgress(userId: ObjectId) {
-    return this._saveCollection.findOne({ _id: userId });
-  }
-
-  async saveProgress(userId: ObjectId, saveData: any) {
-    return this._saveCollection.updateOne(
-      { _id: userId },
-      { $set: saveData },
-      { upsert: true }
-    );
-  }
-
-  public async userHasRewards(user: User) {
-    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
-    return (
-      rewardsEntry &&
-      rewardsEntry.items &&
-      rewardsEntry.items.length &&
-      !rewardsEntry.claimed
-    );
-  }
-
-  public async claimRankingRewards(user: User) {
-    const rewardsEntry = await this._rewardCollection.findOne({ _id: user.id });
-    if (!rewardsEntry || !rewardsEntry.items.length || rewardsEntry.claimed) {
-      throw errors.IncorrectArguments;
-    }
-
-    await user.inventory.addItemTemplates(rewardsEntry.items);
-    await this._rewardCollection.updateOne(
-      { _id: user.id },
-      {
-        $set: {
-          claimed: true,
-          time: Game.nowSec,
-        },
-      }
-    );
-
-    return rewardsEntry.items;
-  }
-
-  public async addTestRatings() {
-    const users = await Game.db
-      .collection(Collections.Users)
-      .aggregate([
-        {
-          $sample: { size: 100 },
-        },
-      ])
-      .toArray();
-
-    // For tests: email
-    for await (const mode of ["pvp", "power"]) {
-      const me = await Game.db
-        .collection(Collections.Users)
-        .findOne({ address: "uniwertz@gmail.com" });
-
-      if (me) {
-        await this.updateRank(me._id, mode, 2985);
-      }
-
-      for await (const user of users) {
-        await this.updateRank(user._id, mode, _.random(0, 3000));
-      }
-    }
-
-    console.log(`[BattleManager] Test ratings were created`);
-  }
-
-  async distributeRewards() {
-    const modes = ["pvp", "power"];
-    for await (const mode of modes) {
-      // Rankings page
-      const heroClassRankings = await this.getRankingsByMode(mode);
-      let rankIndex = 0;
-      for await (const rankingEntry of heroClassRankings) {
-        if (+rankingEntry.score == 0) {
-          continue;
-        }
-        await this.debitUserReward(rankingEntry.id, mode, rankIndex + 1);
-        rankIndex++;
-      }
-    }
-  }
-
-  async debitUserReward(userId: ObjectId, mode: string, rank: number) {
-    let rewardsEntry =
-      (await this._rewardCollection.findOne({ _id: userId })) || {};
-    let items = rewardsEntry.items || [];
-
-    let rewardIndex = null;
-    if (rank >= 1 && rank <= 4) {
-      rewardIndex = rank - 1;
-    } else if (rank >= 5 && rank <= 10) {
-      rewardIndex = 4;
-    } else {
-      return;
-    }
-
-    const rewardItems = this.rankingRewards[rewardIndex].items;
-
-    /*if (!isProd) {
-      console.log(`[AprilManager] Rewards BEFORE debit`, { userId, heroClass, rank, items });
-    }*/
-    rewardItems.forEach((itemEntry) => {
-      let receivedItemIndex = items.findIndex(
-        (receivedItem) => receivedItem.item === itemEntry.item
-      );
-      if (receivedItemIndex === -1) {
-        items.push(_.cloneDeep(itemEntry));
-      } else {
-        items[receivedItemIndex].quantity += itemEntry.quantity;
-        /*if (!isProd) {
-          console.log(`[AprilManager] Quantity increased`, { userId, heroClass, rank, ...itemEntry });
-        }*/
-      }
-    });
-    /*if (!isProd) {
-      console.log(`[AprilManager] Rewards AFTER debit`, { userId, heroClass, rank, items });
-      console.log('');
-    }*/
-
-    await this._rewardCollection.updateOne(
-      { _id: userId },
-      { $set: { items, [`ranks.${mode}`]: rank } },
-      { upsert: true }
-    );
-  }
-
-  async updateRank(userId: ObjectId, mode: string, points: number) {
-    if (this.eventFinished()) {
-      return;
-    }
-
-    let setOnInsert;
-    let set = { order: Game.now };
-    let inc = {};
-
-    if (mode === "pvp") {
-      setOnInsert = { power: 0 };
-      inc["pvp"] = points;
-
-    } else if (mode === "power") {
-      setOnInsert = { pvp: 0 };
-      set["power"] = points;
-    }
-
-    await this._rankCollection.updateOne(
-      { _id: userId },
-      {
-        $setOnInsert: setOnInsert,
-        $set: set,
-        $inc: inc,
-      },
-      { upsert: true }
-    );
-  }
-
-  public resetMode() {
-    this._mode = null;
-  }
-
-  public enableAutoCombat() {
-    this._mode = "auto";
   }
 }
