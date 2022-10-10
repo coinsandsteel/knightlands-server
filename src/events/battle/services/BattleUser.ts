@@ -1,4 +1,4 @@
-import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY } from "../../../knightlands-shared/battle";
+import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, UNIT_TRIBE_FALLEN_KING, UNIT_TRIBE_LEGENDARY, UNIT_TRIBE_TITAN } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import { BattleUserState } from "../types";
 
@@ -46,9 +46,12 @@ export class BattleUser {
         energy: 0
       },
       rewards: {
-        // TODO set rewards
         dailyRewards: [],
-        rankingRewards: {}
+        squadRewards: [
+          { tribe: UNIT_TRIBE_TITAN, activeTemplates: [], claimed: false },
+          { tribe: UNIT_TRIBE_LEGENDARY, activeTemplates: [], claimed: false },
+          { tribe: UNIT_TRIBE_FALLEN_KING, activeTemplates: [], claimed: false },
+        ]
       },
     } as BattleUserState;
 

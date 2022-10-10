@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import game from "../../../game";
 import events from "../../../knightlands-shared/events";
 import { BattleService } from "./BattleService";
-import { BattleRewardDayData, BattleRewardRankingData, BattleSquadState, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility, BattleAdventuresState, BattleCombatRewards } from "../types";
+import { BattleRewardDayData, BattleSquadState, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility, BattleAdventuresState, BattleCombatRewards, BattleRewardSquadData } from "../types";
 import { Unit } from "../units/Unit";
 import { Fighter } from "../units/Fighter";
 
@@ -52,8 +52,8 @@ export class BattleEvents extends BattleService {
     this._events.dailyRewards = rewards;
   }
 
-  rankingRewards(rewards: BattleRewardRankingData) {
-    this._events.rankingRewards = rewards;
+  squadRewards(rewards: BattleRewardSquadData[]) {
+    this._events.squadRewards = rewards;
   }
 
   combatRewards(rewards: BattleCombatRewards) {

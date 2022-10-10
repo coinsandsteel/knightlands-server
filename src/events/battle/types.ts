@@ -51,7 +51,7 @@ export interface BattleUserState {
   };
   rewards: {
     dailyRewards: BattleRewardDayData[];
-    rankingRewards: BattleRewardRankingData;
+    squadRewards: BattleRewardSquadData[];
   };
 }
 
@@ -62,7 +62,11 @@ export interface BattleRewardDayData {
   date?: string;
 }
 
-export interface BattleRewardRankingData {}
+export interface BattleRewardSquadData {
+  tribe: string;
+  activeTemplates: number[];
+  claimed: boolean;
+}
 
 export interface BattleGameState {
   mode: string | null; // "duel" | "adventure"
