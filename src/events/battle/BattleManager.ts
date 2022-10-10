@@ -33,7 +33,9 @@ export class BattleManager {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
     this._rewardCollection = Game.db.collection(Collections.BattleRewards);
-    this._finalRankCollection = Game.db.collection(Collections.BattleFinalRanks);
+    this._finalRankCollection = Game.db.collection(
+      Collections.BattleFinalRanks
+    );
     this._abilityTypes = {};
   }
 
@@ -285,32 +287,35 @@ export class BattleManager {
     );
   }
 
-  async updateRank(userId: ObjectId, mode: string, points: number) {
+  async updateRank(
+    userId: ObjectId,
+    mode: string,
+    points: number
+  ): Promise<any> {
     if (this.eventFinished()) {
       return;
     }
 
-    let setOnInsert;
-    let set = { order: Game.now };
-    let inc = {};
+    let request = {};
 
     if (mode === "pvp") {
-      setOnInsert = { power: 0 };
-      inc["pvp"] = points;
+      request = {
+        $setOnInsert: { power: 0 },
+        $set: { order: Game.now },
+        $inc: { pvp: points },
+      };
     } else if (mode === "power") {
-      setOnInsert = { pvp: 0 };
-      set["power"] = points;
+      request = {
+        $setOnInsert: { pvp: 0 },
+        $set: { order: Game.now, power: points },
+      };
+    } else {
+      return;
     }
 
-    await this._rankCollection.updateOne(
-      { _id: userId },
-      {
-        $setOnInsert: setOnInsert,
-        $set: set,
-        $inc: inc,
-      },
-      { upsert: true }
-    );
+    await this._rankCollection.updateOne({ _id: userId }, request, {
+      upsert: true,
+    });
   }
 
   async getRankingsByMode(mode: string) {
