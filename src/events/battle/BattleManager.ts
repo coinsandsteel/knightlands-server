@@ -33,6 +33,7 @@ export class BattleManager {
     this._saveCollection = Game.db.collection(Collections.BattleUsers);
     this._rankCollection = Game.db.collection(Collections.BattleRanks);
     this._rewardCollection = Game.db.collection(Collections.BattleRewards);
+    this._finalRankCollection = Game.db.collection(Collections.BattleFinalRanks);
     this._abilityTypes = {};
   }
 
@@ -65,7 +66,7 @@ export class BattleManager {
   }
 
   get rankingRewards() {
-    return this._meta.settings.rankingRewards || battle.RANKING_REWADS;
+    return this._meta.settings.rankingRewards || battle.RANKING_REWARDS;
   }
 
   get squadRewards() {
