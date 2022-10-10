@@ -6,7 +6,7 @@ const {
 import Random from "./random";
 const bounds = require("binary-search-bounds");
 import GachaType from "./knightlands-shared/gacha_type";
-const ItemType = require("./knightlands-shared/item_type");
+const { ItemType } = require("./knightlands-shared/item_type");
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
 import CharacterStat from "./knightlands-shared/character_stat";
@@ -291,7 +291,7 @@ class LootGenerator {
 
         while (itemsToRoll > 0) {
             itemsToRoll--;
-            //first no loot 
+            //first no loot
             let roll = 0;
             if (weights.noLoot > 0) {
                 roll = Random.range(0, weights.totalWeight, true);
@@ -310,7 +310,7 @@ class LootGenerator {
                     let newContext = {...lootContext };
                     newContext.itemsToRoll = 1;
                     lootRecord = await this._rollItemsFromLootTable(newContext, lootRecord.table, lootRecord.table.weights, [], {}, skipConsumables);
-                    // returns array 
+                    // returns array
                     this._addLootToTable(items, itemsHash, lootRecord[0]);
                     // item already rolled at this point
                     continue;
@@ -488,7 +488,7 @@ class LootGenerator {
         let dropModifier;
 
         if (lootContext.tableTag) {
-            // try get drop amounts by table tag first 
+            // try get drop amounts by table tag first
             let dbRequest = { tableTag: lootContext.tableTag };
             if (lootContext.isBoss) {
                 dbRequest.isBoss = lootContext.isBoss;

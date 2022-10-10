@@ -8,7 +8,7 @@ import { Collections } from "../../database/database";
 import Random from "../../random";
 import CurrencyType from "../../knightlands-shared/currency_type";
 import { ITEM_RARITY_EXPERT } from "../../knightlands-shared/lunar";
-import ItemType from "../../knightlands-shared/item_type";
+import { ItemType } from "../../knightlands-shared/item_type";
 
 const Config = require("../../config");
 const bounds = require("binary-search-bounds");
@@ -30,7 +30,7 @@ export class LunarUser {
           this.setInitialState();
         }
     }
-  
+
     public async init() {
       this.setEventDay();
       this.distributeDailyRewards();
@@ -102,12 +102,12 @@ export class LunarUser {
 
       let rarity;
       const itemsToRemove = {};
-      
+
       {
         const templates = await Game.itemTemplates.getTemplates(items.map(x => x.template), true);
         for (let index = 0; index < items.length; index++) {
           const item = items[index];
-          if (!item) { 
+          if (!item) {
             // no such item
             return;
           }
@@ -135,7 +135,7 @@ export class LunarUser {
        * If templates list is exhausted - we add everything from it, except items provided for exchange
        */
 
-      
+
       const itemsFilteredByCategory = Game.lunarManager.getItemsByRarity(rarity);
       const lunarInventory = this._user.inventory._items
         .filter(item => item.template > 3213)
@@ -145,7 +145,7 @@ export class LunarUser {
 
       let sampleItems = [];
       let fullSampleItems = new Array(itemsFilteredByCategory.length - Object.keys(itemsToRemove).length);
-      let templateIndex = 0;  
+      let templateIndex = 0;
       let fullSampleIndex = 0;
 
       for (let index = 0; index < lunarInventory.length && templateIndex < itemsFilteredByCategory.length; index++) {
@@ -177,7 +177,7 @@ export class LunarUser {
       } else if (sampleItems.length == 0) {
         sampleItems = fullSampleItems;
       }
-      
+
       const randomItem = _.sample(sampleItems);
 
       await this._user.inventory.addItemTemplates([
@@ -207,19 +207,19 @@ export class LunarUser {
         }
         case 'addBaseItems':{
           await this._user.inventory.addItemTemplates([
-            { 
+            {
               item: BASE_ELEMENTS[0],
               quantity: 1
             },
-            { 
+            {
               item: BASE_ELEMENTS[1],
               quantity: 1
             },
-            { 
+            {
               item: BASE_ELEMENTS[2],
               quantity: 1
             },
-            { 
+            {
               item: BASE_ELEMENTS[3],
               quantity: 1
             },
@@ -285,7 +285,7 @@ export class LunarUser {
       this._state = _.cloneDeep(state);
       this.distributeDailyRewards();
     }
-    
+
     async collectDailyLunarReward() {
       const entry = this._state.dailyRewards[this.day - 1];
       const rewardItems = entry.items;
@@ -309,7 +309,7 @@ export class LunarUser {
       this._events.dailyRewards(this._state.dailyRewards);
       this._events.flush();
     }
-    
+
     async purchase(shopIndex, itemsCount, currency) {
       // Retrieve meta
       // let meta = [{ quantity: 4, hard: 9999, flesh: 9999 }]

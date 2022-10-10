@@ -36,7 +36,7 @@ const {
     getSlot
 } = require("./knightlands-shared/equipment_slot");
 
-const ItemType = require("./knightlands-shared/item_type");
+const { ItemType } = require("./knightlands-shared/item_type");
 
 const Trials = require("./Trials/Trials");
 const uuidv4 = require('uuid/v4');
@@ -1062,7 +1062,7 @@ class User {
         switch (actionData.action) {
             case ItemActions.RefillTimer:
                 if (actionData.relative) {
-                    // % restoration from maximum base 
+                    // % restoration from maximum base
                     await this.modifyTimerValue(actionData.stat, this.getMaxStatValue(actionData.stat) * actionValue / 100);
                 } else {
                     await this.modifyTimerValue(actionData.stat, actionValue);
@@ -1121,7 +1121,7 @@ class User {
 
         let currentBuff = buffs.find(x => x.template == templateId);
         if (!currentBuff) {
-            // create new 
+            // create new
             currentBuff = {
                 template: templateId,
                 duration: actionData.duration,
@@ -1918,7 +1918,7 @@ class User {
 
         return dailyRewardCollect;
     }
-    
+
     async collectDailyReward() {
         const dailyRewardsMeta = (await Game.dbClient.db.collection(Collections.Meta).findOne({ _id: "daily_rewards" })).rewards;
         const dailyRewardCollect = this._processDailyReward(dailyRewardsMeta);

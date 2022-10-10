@@ -2,7 +2,7 @@ const {
     Collections
 } = require("./database/database");
 
-import ItemType from "./knightlands-shared/item_type";
+import { ItemType } from "./knightlands-shared/item_type";
 import Elements from "./knightlands-shared/elements";
 import Game from "./game";
 import Errors from "./knightlands-shared/errors";
@@ -223,7 +223,7 @@ class Inventory {
         if (inventory.items) {
             this._items = inventory.items;
 
-            // build index 
+            // build index
             let i = 0;
             const length = this._items.length;
             for (; i < length; i++) {
@@ -261,7 +261,7 @@ class Inventory {
         let queries = [];
         // update/insert queries
         if (this._newItems.size > 0) {
-            // replace queries 
+            // replace queries
             for (let [id, item] of this._newItems) {
                 let query;
 
@@ -349,7 +349,7 @@ class Inventory {
 
         await db.collection(Collections.Inventory).bulkWrite(queries);
 
-        // reset 
+        // reset
         this._newItems.clear();
         this._removedItems.clear();
 
@@ -520,7 +520,7 @@ class Inventory {
         let newIndex = this._items.push(item) - 1;
         //add to index
         this._itemsById.set(item.id, newIndex);
-        // mark as new 
+        // mark as new
         this._newItems.set(item.id, item);
         // check if is in deleted list
         this._removedItems.delete(item.id);

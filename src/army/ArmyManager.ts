@@ -12,7 +12,7 @@ import { ArmyUnits } from "./ArmyUnits";
 import { ArmyCombatLegion } from "./ArmyCombatLegion";
 import Events from "../knightlands-shared/events";
 import SummonType from "../knightlands-shared/army_summon_type";
-import ItemType from "../knightlands-shared/item_type";
+import { ItemType } from "../knightlands-shared/item_type";
 import Random from "../random";
 import { isNumber } from "../validation";
 import { getSlot } from "../knightlands-shared/equipment_slot";
@@ -711,4 +711,3 @@ export class ArmyManager {
         )).value;
     }
 }
-

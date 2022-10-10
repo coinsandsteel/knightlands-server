@@ -13,7 +13,7 @@ const {
     getSlot
 } = require("../knightlands-shared/equipment_slot");
 
-const ItemType = require("../knightlands-shared/item_type");
+const { ItemType } = require("../knightlands-shared/item_type");
 const ROLLBACK_LEVEL = 5;
 
 class Crafting {
@@ -301,7 +301,7 @@ class Crafting {
 
         this._inventory.consumeIngridients(stepData.ingridients);
 
-        // roll success 
+        // roll success
         if (Random.range(0, 100, true) > stepData.successRate) {
             return false;
         }
@@ -536,7 +536,7 @@ class Crafting {
 
         try {
             for (const material in materials) {
-                // check if material item can be used as leveling material 
+                // check if material item can be used as leveling material
                 let materialItem = this._inventory.getItemById(material);
                 if (!materialItem) {
                     throw Errors.NoMaterial;
