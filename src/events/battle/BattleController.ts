@@ -167,6 +167,15 @@ export class BattleController {
         this.core.inventory.addUnit(unit);
         break;
       }
+      case 'addTopUnits':{
+        battle.SQUAD_REWARDS.forEach(entry => {
+          entry.templates.forEach(template => {
+            const unit = this.core.inventory.getNewUnit(template);
+            this.core.inventory.addUnit(unit);
+          });
+        });
+        break;
+      }
       case 'clearUnits':{
         this.core.game.clearSquad();
         this.core.inventory.setUnits([]);

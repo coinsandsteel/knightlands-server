@@ -1,6 +1,7 @@
-import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, UNIT_TRIBE_FALLEN_KING, UNIT_TRIBE_LEGENDARY, UNIT_TRIBE_TITAN } from "../../../knightlands-shared/battle";
+import _ from "lodash";
 import { BattleCore } from "./BattleCore";
 import { BattleUserState } from "../types";
+import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, SQUAD_REWARDS, UNIT_TRIBE_FALLEN_KING, UNIT_TRIBE_LEGENDARY, UNIT_TRIBE_TITAN } from "../../../knightlands-shared/battle";
 
 export class BattleUser {
   protected _state: BattleUserState;
@@ -81,6 +82,19 @@ export class BattleUser {
 
   public claimSquadReward(): void {
 
+  }
+
+  public checkSquadReward(): void {
+    // Update user state
+    _.cloneDeep(SQUAD_REWARDS).forEach(entry => {
+      const rewardData = this._state.rewards.squadRewards.find(e => e.tribe === entry.tribe);
+      const currentTemplates = this._core.game.userFighters.map(u => u.template);
+      rewardData.activeTemplates = _.intersection(currentTemplates, entry.templates);
+      if (rewardData.activeTemplates.length === 5) {
+        rewardData.canClaim = true;
+      }
+    });
+    this._core.events.squadRewards(this._state.rewards.squadRewards);
   }
 
   public purchase(commodity: string, currency: string, shopIndex: number): void {

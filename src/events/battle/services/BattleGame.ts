@@ -175,6 +175,7 @@ export class BattleGame extends BattleService {
 
   public fillSquadSlot(unitId: string, index: number): void {
     this._userSquad.fillSlot(unitId, index);
+    this._core.user.checkSquadReward();
   }
 
   public clearSquadSlot(index: number): void {
