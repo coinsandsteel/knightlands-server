@@ -2284,8 +2284,8 @@ class PlayerController extends IPaymentListener {
       return this.battle.load();
     }
 
-    async _battleClaimReward(_, { type }) {
-      return this.battle.claimReward(type);
+    async _battleClaimReward(_, { type, tribe }) {
+      return this.battle.claimReward(type, tribe);
     }
 
     async _battlePurchase(_, { commodity, currency, shopIndex }) {

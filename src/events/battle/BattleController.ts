@@ -5,7 +5,6 @@ import User from "../../user";
 
 import { BattleCore } from './services/BattleCore';
 import { BattleSaveData } from './types';
-import { Unit } from "./units/Unit";
 
 const isProd = process.env.ENV == "prod";
 
@@ -14,7 +13,7 @@ export class BattleController {
   protected _user: User;
 
   constructor(user: User) {
-    this._battleCore = new BattleCore(user.id);
+    this._battleCore = new BattleCore(user);
     this._user = user;
   }
 
@@ -50,7 +49,7 @@ export class BattleController {
     return this.getState();
   }
 
-  async claimReward(type: string) {
+  async claimReward(type: string, tribe?: string) {
     let items;
     switch (type) {
       case battle.REWARD_TYPE_DAILY: {
@@ -62,7 +61,7 @@ export class BattleController {
         break;
       }
       case battle.REWARD_TYPE_SQUAD: {
-        items = await this.core.user.claimSquadReward();
+        items = await this.core.user.claimSquadReward(tribe);
         break;
       }
     }

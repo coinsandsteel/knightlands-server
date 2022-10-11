@@ -618,7 +618,7 @@ export class BattleGame extends BattleService {
         xp: 0,
         rank: DUEL_REWARDS.win.rank
       });
-      game.battleManager.updateRank(this._core.userId, 'pvp', DUEL_REWARDS.win.rank);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.win.rank);
     }
 
     this.setCombatResult("win");
@@ -628,7 +628,7 @@ export class BattleGame extends BattleService {
 
   public loose(): void {
     if (this._state.mode === GAME_MODE_DUEL) {
-      game.battleManager.updateRank(this._core.userId, 'pvp', DUEL_REWARDS.loose.rank);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.loose.rank);
       this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.loose.crystals);
       this.setCombatRewards({
         coins: 0,

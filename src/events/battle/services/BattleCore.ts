@@ -8,18 +8,19 @@ import { BattleInventory } from './BattleInventory';
 import { BattleAdventuresState, BattleSaveData, BattleUnit } from '../types';
 import { BattleGameState, BattleUserState } from "../types";
 import { BattleAdventures } from "./BattleAdventures";
+import User from "../../../user";
 
 export class BattleCore {
-  protected _userId: ObjectId;
+  protected _user: User;
   protected _battleEvents: BattleEvents;
   protected _battleUser: BattleUser;
   protected _battleGame: BattleGame;
   protected _battleInventory: BattleInventory;
   protected _battleAdventures: BattleAdventures;
 
-  constructor(userId: ObjectId) {
-    this._userId = userId;
-    this._battleEvents = new BattleEvents(userId);
+  constructor(user: User) {
+    this._user = user;
+    this._battleEvents = new BattleEvents(user.id);
   }
 
   get events(): BattleEvents {
@@ -42,8 +43,8 @@ export class BattleCore {
     return this._battleUser;
   }
 
-  get userId(): ObjectId {
-    return this._userId;
+  get gameUser(): User {
+    return this._user;
   }
 
   public init(saveData?: BattleSaveData) {

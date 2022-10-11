@@ -66,6 +66,7 @@ export interface BattleRewardSquadData {
   tribe: string;
   activeTemplates: number[];
   canClaim: boolean;
+  claimed: boolean;
 }
 
 export interface BattleGameState {

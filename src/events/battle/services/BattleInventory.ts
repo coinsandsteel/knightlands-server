@@ -50,7 +50,7 @@ export class BattleInventory extends BattleService {
       (prev: number, current: Unit) => prev + current.power,
       0
     );
-    game.battleManager.updateRank(this._core.userId, 'power', totalPower);
+    game.battleManager.updateRank(this._core.gameUser.id, 'power', totalPower);
   }
 
   public merge(template: number): BattleUnit {

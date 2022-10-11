@@ -1,7 +1,15 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
 import { BattleUserState } from "../types";
-import { COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, SQUAD_REWARDS, UNIT_TRIBE_FALLEN_KING, UNIT_TRIBE_LEGENDARY, UNIT_TRIBE_TITAN } from "../../../knightlands-shared/battle";
+import {
+  COMMODITY_COINS,
+  COMMODITY_CRYSTALS,
+  COMMODITY_ENERGY,
+  SQUAD_REWARDS,
+  UNIT_TRIBE_FALLEN_KING,
+  UNIT_TRIBE_LEGENDARY,
+  UNIT_TRIBE_TITAN,
+} from "../../../knightlands-shared/battle";
 
 export class BattleUser {
   protected _state: BattleUserState;
@@ -44,15 +52,30 @@ export class BattleUser {
         [COMMODITY_CRYSTALS]: 1000000,
       },
       timers: {
-        energy: 0
+        energy: 0,
       },
       rewards: {
         dailyRewards: [],
         squadRewards: [
-          { tribe: UNIT_TRIBE_TITAN, activeTemplates: [], canClaim: false },
-          { tribe: UNIT_TRIBE_LEGENDARY, activeTemplates: [], canClaim: false },
-          { tribe: UNIT_TRIBE_FALLEN_KING, activeTemplates: [], canClaim: false },
-        ]
+          {
+            tribe: UNIT_TRIBE_TITAN,
+            activeTemplates: [],
+            canClaim: false,
+            claimed: false,
+          },
+          {
+            tribe: UNIT_TRIBE_LEGENDARY,
+            activeTemplates: [],
+            canClaim: false,
+            claimed: false,
+          },
+          {
+            tribe: UNIT_TRIBE_FALLEN_KING,
+            activeTemplates: [],
+            canClaim: false,
+            claimed: false,
+          },
+        ],
       },
     } as BattleUserState;
 
@@ -76,28 +99,63 @@ export class BattleUser {
     this._core.events.balance(this._state.balance);
   }
 
-  public claimDailyReward(): void {
+  public claimDailyReward(): void {}
 
-  }
+  public async claimSquadReward(tribe: string): Promise<any> {
+    const rewardData = this._state.rewards.squadRewards.find(
+      (e) => e.tribe === tribe
+    );
+    if (!rewardData.canClaim || rewardData.claimed) {
+      return;
+    }
 
-  public claimSquadReward(): void {
+    const rewardMeta = _.cloneDeep(SQUAD_REWARDS).find(
+      (e) => e.tribe === tribe
+    );
+    const rewardItems = [
+      {
+        item: rewardMeta.reward,
+        quantity: 1,
+      },
+    ];
+    await this._core.gameUser.inventory.addItemTemplates(rewardItems);
 
+    rewardData.claimed = true;
+    rewardData.canClaim = false;
+
+    this._core.events.squadRewards(this._state.rewards.squadRewards);
+
+    return rewardItems;
   }
 
   public checkSquadReward(): void {
     // Update user state
-    _.cloneDeep(SQUAD_REWARDS).forEach(entry => {
-      const rewardData = this._state.rewards.squadRewards.find(e => e.tribe === entry.tribe);
-      const currentTemplates = this._core.game.userFighters.map(u => u.template);
-      rewardData.activeTemplates = _.intersection(currentTemplates, entry.templates);
-      if (rewardData.activeTemplates.length === 5) {
+    _.cloneDeep(SQUAD_REWARDS).forEach((entry) => {
+      const rewardData = this._state.rewards.squadRewards.find(
+        (e) => e.tribe === entry.tribe
+      );
+      if (rewardData.claimed) {
+        return;
+      }
+
+      const currentTemplates = this._core.game.userFighters.map(
+        (u) => u.template
+      );
+      rewardData.activeTemplates = _.intersection(
+        currentTemplates,
+        entry.templates
+      );
+      if (rewardData.activeTemplates.length === entry.templates.length) {
         rewardData.canClaim = true;
       }
     });
+
     this._core.events.squadRewards(this._state.rewards.squadRewards);
   }
 
-  public purchase(commodity: string, currency: string, shopIndex: number): void {
-
-  }
+  public purchase(
+    commodity: string,
+    currency: string,
+    shopIndex: number
+  ): void {}
 }
