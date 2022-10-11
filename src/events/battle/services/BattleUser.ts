@@ -48,9 +48,9 @@ export class BattleUser {
       rewards: {
         dailyRewards: [],
         squadRewards: [
-          { tribe: UNIT_TRIBE_TITAN, activeTemplates: [], claimed: false },
-          { tribe: UNIT_TRIBE_LEGENDARY, activeTemplates: [], claimed: false },
-          { tribe: UNIT_TRIBE_FALLEN_KING, activeTemplates: [], claimed: false },
+          { tribe: UNIT_TRIBE_TITAN, activeTemplates: [], canClaim: false },
+          { tribe: UNIT_TRIBE_LEGENDARY, activeTemplates: [], canClaim: false },
+          { tribe: UNIT_TRIBE_FALLEN_KING, activeTemplates: [], canClaim: false },
         ]
       },
     } as BattleUserState;
