@@ -10,10 +10,18 @@ import {
   UNIT_TRIBE_LEGENDARY,
   UNIT_TRIBE_TITAN,
 } from "../../../knightlands-shared/battle";
+import game from "../../../game";
+
+const ENERGY_MAX = 36;
+const ENERGY_CYCLE_SEC = 15 * 60 / 2;
+const ENERGY_AMOUNT_PER_CYCLE = 1;
+
+const isProd = process.env.ENV == "prod";
 
 export class BattleUser {
   protected _state: BattleUserState;
   protected _core: BattleCore;
+  protected _energyInterval: any;
   protected day = 1;
 
   constructor(state: BattleUserState | null, core: BattleCore) {
@@ -42,17 +50,18 @@ export class BattleUser {
     //('User load');
     this.setEventDay();
     this.setActiveReward();
+    this.wakeUp();
   }
 
   public setInitialState() {
     this._state = {
       balance: {
-        [COMMODITY_ENERGY]: 1000000,
-        [COMMODITY_COINS]: 1000000,
-        [COMMODITY_CRYSTALS]: 1000000,
+        [COMMODITY_ENERGY]: ENERGY_MAX,
+        [COMMODITY_COINS]: isProd ? 0 : 1000000,
+        [COMMODITY_CRYSTALS]: isProd ? 0 : 1000000,
       },
       timers: {
-        energy: 0,
+        energy: game.nowSec,
       },
       rewards: {
         dailyRewards: [],
@@ -82,6 +91,60 @@ export class BattleUser {
     this.setActiveReward();
   }
 
+  public dispose() {
+    clearInterval(this._energyInterval);
+  }
+
+  protected setEnergyTimer() {}
+
+  protected gainEnergy() {}
+
+  protected wakeUp() {
+    // Debit energy if possible
+    if (this.energy < ENERGY_MAX) {
+      let accumulatedEnergy = this.getAccumulatedEnergy();
+      this.modifyBalance(COMMODITY_ENERGY, accumulatedEnergy);
+      this.launchEnergyTimer(true);
+    }
+  }
+
+  protected getAccumulatedEnergy(): number {
+    let cycleLength = ENERGY_CYCLE_SEC;
+    let energyPerCycle = ENERGY_AMOUNT_PER_CYCLE;
+    let energyPerSecond = energyPerCycle / cycleLength;
+
+    let passedTime = game.nowSec - this._state.timers.energy;
+    let accumulatedEnergy = passedTime * energyPerSecond;
+
+    return Math.floor(accumulatedEnergy);
+  }
+
+  protected launchEnergyTimer(force: boolean): void {
+    if (this._energyInterval) {
+      if (force) {
+        clearInterval(this._energyInterval);
+        this._energyInterval = null;
+      } else {
+        return;
+      }
+    }
+
+    this._energyInterval = setTimeout(() => {
+      this.modifyBalance(COMMODITY_ENERGY, ENERGY_AMOUNT_PER_CYCLE);
+      this._state.timers.energy = game.nowSec;
+
+      if (this.energy < ENERGY_MAX) {
+        this.launchEnergyTimer(true);
+      } else {
+        this._state.balance[COMMODITY_ENERGY] = ENERGY_MAX;
+        clearInterval(this._energyInterval);
+        this._energyInterval = null;
+      }
+
+      this._core.events.flush();
+    }, ENERGY_CYCLE_SEC * 1000);
+  }
+
   protected setEventDay() {}
 
   public setActiveReward() {}
@@ -93,10 +156,16 @@ export class BattleUser {
   public modifyBalance(currency: string, amount: number): void {
     //console.log('modifyBalance', { currency, amount });
     this._state.balance[currency] += amount;
+
     if (this._state.balance[currency] < 0) {
       this._state.balance[currency] = 0;
     }
+
     this._core.events.balance(this._state.balance);
+
+    if (currency === COMMODITY_ENERGY && this.energy < ENERGY_MAX && amount < 0) {
+      this.launchEnergyTimer(false);
+    }
   }
 
   public claimDailyReward(): void {}
