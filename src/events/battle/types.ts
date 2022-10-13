@@ -53,15 +53,6 @@ export interface BattleUserState {
     dailyRewards: BattleRewardDayData[];
     squadRewards: BattleRewardSquadData[];
   };
-  items: BattleItem[];
-}
-
-export interface BattleItem {
-  type: string; // chest, energy_potion
-  price?: number;
-  unitsCount?: number;
-  unitsProbabilities?: number[];
-  activated: boolean;
 }
 
 export interface BattleRewardDayData {

@@ -15,7 +15,7 @@ import game from "../../../game";
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
-const ENERGY_CYCLE_SEC = isProd ? (15 * 60 / 2) : 1;
+const ENERGY_CYCLE_SEC = isProd ? (15 * 60) / 2 : 1;
 const ENERGY_AMOUNT_PER_CYCLE = 1;
 
 export class BattleUser {
@@ -86,7 +86,6 @@ export class BattleUser {
           },
         ],
       },
-      items: []
     } as BattleUserState;
 
     this.setActiveReward();
@@ -160,7 +159,11 @@ export class BattleUser {
 
     this._core.events.balance(this._state.balance);
 
-    if (currency === COMMODITY_ENERGY && this.energy < ENERGY_MAX && amount < 0) {
+    if (
+      currency === COMMODITY_ENERGY &&
+      this.energy < ENERGY_MAX &&
+      amount < 0
+    ) {
       this.launchEnergyTimer(false);
     }
   }
@@ -219,9 +222,7 @@ export class BattleUser {
     this._core.events.squadRewards(this._state.rewards.squadRewards);
   }
 
-  public purchase(
-    commodity: string,
-    currency: string,
-    shopIndex: number
-  ): void {}
+  public purchase(id: number): void {
+    const
+  }
 }

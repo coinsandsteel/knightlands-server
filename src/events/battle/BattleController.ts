@@ -52,10 +52,6 @@ export class BattleController {
   async claimReward(type: string, tribe?: string) {
     let items;
     switch (type) {
-      case battle.REWARD_TYPE_DAILY: {
-        await this.core.user.claimDailyReward();
-        break;
-      }
       case battle.REWARD_TYPE_RANKING: {
         items = await Game.battleManager.claimRankingRewards(this._user);
         break;
@@ -69,8 +65,8 @@ export class BattleController {
     return items;
   }
 
-  async purchase(commodity: string, currency: string, shopIndex: number) {
-    this.core.user.purchase(commodity, currency, shopIndex);
+  async purchase(id: number) {
+    this.core.user.purchase(id);
     this.core.events.flush();
   }
 
