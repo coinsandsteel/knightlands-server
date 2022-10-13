@@ -2,7 +2,7 @@ import _ from "lodash";
 import game from "../../../game";
 import {
   ABILITY_ATTACK,
-  ABILITY_MOVE, CURRENCY_COINS, CURRENCY_CRYSTALS, COMMODITY_ENERGY, DUEL_REWARDS, GAME_DIFFICULTY_HIGH,
+  ABILITY_MOVE, CURRENCY_COINS, CURRENCY_CRYSTALS, CURRENCY_ENERGY, DUEL_REWARDS, GAME_DIFFICULTY_HIGH,
   GAME_DIFFICULTY_LOW,
   GAME_DIFFICULTY_MEDIUM, GAME_MODE_ADVENTURE, GAME_MODE_DUEL
 } from "../../../knightlands-shared/battle";
@@ -220,7 +220,7 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    this._core.user.modifyBalance(COMMODITY_ENERGY, -this._core.adventures.energyPrice);
+    this._core.user.modifyBalance(CURRENCY_ENERGY, -this._core.adventures.energyPrice);
 
     this._core.adventures.setLevel(location, level);
     this.setMode(GAME_MODE_ADVENTURE);

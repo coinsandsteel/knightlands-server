@@ -4,7 +4,7 @@ import { BattleUserState } from "../types";
 import {
   CURRENCY_COINS,
   CURRENCY_CRYSTALS,
-  COMMODITY_ENERGY,
+  CURRENCY_ENERGY,
   SQUAD_REWARDS,
   UNIT_TRIBE_FALLEN_KING,
   UNIT_TRIBE_LEGENDARY,
@@ -56,7 +56,7 @@ export class BattleUser {
   public setInitialState() {
     this._state = {
       balance: {
-        [COMMODITY_ENERGY]: ENERGY_MAX,
+        [CURRENCY_ENERGY]: ENERGY_MAX,
         [CURRENCY_COINS]: isProd ? 0 : 1000000,
         [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
       },
@@ -99,7 +99,7 @@ export class BattleUser {
     // Debit energy if possible
     if (this.energy < ENERGY_MAX) {
       let accumulatedEnergy = this.getAccumulatedEnergy();
-      this.modifyBalance(COMMODITY_ENERGY, accumulatedEnergy);
+      this.modifyBalance(CURRENCY_ENERGY, accumulatedEnergy);
       this.launchEnergyTimer(true);
     }
   }
@@ -126,13 +126,13 @@ export class BattleUser {
     }
 
     this._energyInterval = setTimeout(() => {
-      this.modifyBalance(COMMODITY_ENERGY, ENERGY_AMOUNT_PER_CYCLE);
+      this.modifyBalance(CURRENCY_ENERGY, ENERGY_AMOUNT_PER_CYCLE);
       this._state.timers.energy = game.nowSec;
 
       if (this.energy < ENERGY_MAX) {
         this.launchEnergyTimer(true);
       } else {
-        this._state.balance[COMMODITY_ENERGY] = ENERGY_MAX;
+        this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
         clearInterval(this._energyInterval);
         this._energyInterval = null;
       }
@@ -160,7 +160,7 @@ export class BattleUser {
     this._core.events.balance(this._state.balance);
 
     if (
-      currency === COMMODITY_ENERGY &&
+      currency === CURRENCY_ENERGY &&
       this.energy < ENERGY_MAX &&
       amount < 0
     ) {
@@ -223,6 +223,6 @@ export class BattleUser {
   }
 
   public purchase(id: number): void {
-    const
+    console.log('Purchase', { id });
   }
 }
