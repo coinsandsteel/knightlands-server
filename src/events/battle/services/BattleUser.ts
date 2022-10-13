@@ -2,8 +2,8 @@ import _ from "lodash";
 import { BattleCore } from "./BattleCore";
 import { BattleUserState } from "../types";
 import {
-  COMMODITY_COINS,
-  COMMODITY_CRYSTALS,
+  CURRENCY_COINS,
+  CURRENCY_CRYSTALS,
   COMMODITY_ENERGY,
   SQUAD_REWARDS,
   UNIT_TRIBE_FALLEN_KING,
@@ -12,11 +12,11 @@ import {
 } from "../../../knightlands-shared/battle";
 import game from "../../../game";
 
-const ENERGY_MAX = 36;
-const ENERGY_CYCLE_SEC = 15 * 60 / 2;
-const ENERGY_AMOUNT_PER_CYCLE = 1;
-
 const isProd = process.env.ENV == "prod";
+
+const ENERGY_MAX = 36;
+const ENERGY_CYCLE_SEC = isProd ? (15 * 60 / 2) : 1;
+const ENERGY_AMOUNT_PER_CYCLE = 1;
 
 export class BattleUser {
   protected _state: BattleUserState;
@@ -57,8 +57,8 @@ export class BattleUser {
     this._state = {
       balance: {
         [COMMODITY_ENERGY]: ENERGY_MAX,
-        [COMMODITY_COINS]: isProd ? 0 : 1000000,
-        [COMMODITY_CRYSTALS]: isProd ? 0 : 1000000,
+        [CURRENCY_COINS]: isProd ? 0 : 1000000,
+        [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
       },
       timers: {
         energy: game.nowSec,
@@ -86,6 +86,7 @@ export class BattleUser {
           },
         ],
       },
+      items: []
     } as BattleUserState;
 
     this.setActiveReward();
@@ -94,10 +95,6 @@ export class BattleUser {
   public dispose() {
     clearInterval(this._energyInterval);
   }
-
-  protected setEnergyTimer() {}
-
-  protected gainEnergy() {}
 
   protected wakeUp() {
     // Debit energy if possible

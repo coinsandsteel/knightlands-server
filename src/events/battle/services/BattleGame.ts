@@ -2,7 +2,7 @@ import _ from "lodash";
 import game from "../../../game";
 import {
   ABILITY_ATTACK,
-  ABILITY_MOVE, COMMODITY_COINS, COMMODITY_CRYSTALS, COMMODITY_ENERGY, DUEL_REWARDS, GAME_DIFFICULTY_HIGH,
+  ABILITY_MOVE, CURRENCY_COINS, CURRENCY_CRYSTALS, COMMODITY_ENERGY, DUEL_REWARDS, GAME_DIFFICULTY_HIGH,
   GAME_DIFFICULTY_LOW,
   GAME_DIFFICULTY_MEDIUM, GAME_MODE_ADVENTURE, GAME_MODE_DUEL
 } from "../../../knightlands-shared/battle";
@@ -604,14 +604,14 @@ export class BattleGame extends BattleService {
       const reward = this._core.adventures.getCurrentLevelReward();
 
       this._userSquad.addExp(reward.xp);
-      this._core.user.modifyBalance(COMMODITY_COINS, reward.coins);
-      this._core.user.modifyBalance(COMMODITY_CRYSTALS, reward.crystals);
+      this._core.user.modifyBalance(CURRENCY_COINS, reward.coins);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, reward.crystals);
       this.setCombatRewards(reward);
 
       this._core.adventures.handleLevelPassed();
 
     } else if (this._state.mode === GAME_MODE_DUEL) {
-      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.win.crystals);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS.win.crystals);
       this.setCombatRewards({
         coins: 0,
         crystals: DUEL_REWARDS.win.crystals,
@@ -629,7 +629,7 @@ export class BattleGame extends BattleService {
   public loose(): void {
     if (this._state.mode === GAME_MODE_DUEL) {
       game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.loose.rank);
-      this._core.user.modifyBalance(COMMODITY_CRYSTALS, DUEL_REWARDS.loose.crystals);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS.loose.crystals);
       this.setCombatRewards({
         coins: 0,
         crystals: DUEL_REWARDS.loose.crystals,

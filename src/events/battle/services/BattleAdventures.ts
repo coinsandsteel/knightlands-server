@@ -4,7 +4,7 @@ import {
   GAME_DIFFICULTY_MEDIUM,
   ADVENTURES,
   ADVENTURE_ENEGRY_PRICE,
-  COMMODITY_COINS,
+  CURRENCY_COINS,
 } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import {

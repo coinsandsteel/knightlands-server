@@ -1,6 +1,6 @@
 import _ from "lodash";
 import errors from "../../../knightlands-shared/errors";
-import { COMMODITY_COINS } from "../../../knightlands-shared/battle";
+import { CURRENCY_COINS } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import { BattleUnit } from "../types";
 import { Unit } from "../units/Unit";
@@ -240,7 +240,7 @@ export class BattleInventory extends BattleService {
       throw errors.NotEnoughCurrency;
     }
 
-    this._core.user.modifyBalance(COMMODITY_COINS, -unit.level.price);
+    this._core.user.modifyBalance(CURRENCY_COINS, -unit.level.price);
     unit.upgradeLevel();
     this.updateUnitState(unit);
 
@@ -264,7 +264,7 @@ export class BattleInventory extends BattleService {
       throw errors.NotEnoughCurrency;
     }
 
-    this._core.user.modifyBalance(COMMODITY_COINS, -unit.level.price);
+    this._core.user.modifyBalance(CURRENCY_COINS, -unit.level.price);
     unit.abilities.upgradeAbility(ability);
     unit.setPower();
     this.updateUnitState(unit);

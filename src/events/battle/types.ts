@@ -1,6 +1,6 @@
 import {
-  COMMODITY_COINS,
-  COMMODITY_CRYSTALS
+  CURRENCY_COINS,
+  CURRENCY_CRYSTALS
 } from "../../knightlands-shared/battle";
 import { BattleEffectMeta } from "./units/MetaDB";
 
@@ -28,8 +28,8 @@ export interface BattleAdventureLevel {
     coins: number;
   },
   bossReward: {
-    [COMMODITY_COINS]: number;
-    [COMMODITY_CRYSTALS]: number;
+    [CURRENCY_COINS]: number;
+    [CURRENCY_CRYSTALS]: number;
   },
   enemies: {
     level: number;
@@ -53,6 +53,15 @@ export interface BattleUserState {
     dailyRewards: BattleRewardDayData[];
     squadRewards: BattleRewardSquadData[];
   };
+  items: BattleItem[];
+}
+
+export interface BattleItem {
+  type: string; // chest, energy_potion
+  price?: number;
+  unitsCount?: number;
+  unitsProbabilities?: number[];
+  activated: boolean;
 }
 
 export interface BattleRewardDayData {
