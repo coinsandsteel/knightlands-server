@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
-import { BattleItem, BattleUserState } from "../types";
+import { BattleItem, BattleShopItemMeta, BattleUnit, BattleUserState } from "../types";
 import {
   COMMODITY_STARTER_PACK,
   CURRENCY_COINS,
@@ -60,7 +60,7 @@ export class BattleUser {
         [CURRENCY_COINS]: isProd ? 0 : 1000000,
         [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
       },
-      items: [{ commodity: COMMODITY_STARTER_PACK, quantity: 1 }],
+      items: [{ id: 1, quantity: 1 }],
       timers: {
         energy: game.nowSec,
         purchase: {},
@@ -217,25 +217,30 @@ export class BattleUser {
     this._core.events.squadRewards(this._state.rewards.squadRewards);
   }
 
-  public purchase(id: number): void {
+  public purchase(id: number): BattleUnit[] {
     const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id));
     if (!positionMeta) {
       return;
     }
 
     const commodity = positionMeta.commodity;
+    const itemEntry = this.getItem(commodity);
+    const quantity = itemEntry ? itemEntry.quantity : 1;
 
     // Check daily purchase limits
     if (
-      positionMeta.dailyMax &&
-      this.overDailyLimit(commodity, positionMeta.dailyMax)
+      positionMeta.dailyMax && positionMeta.dailyMax > 0
+      &&
+      !this.dailyLimitExceeded(id, positionMeta.dailyMax)
+      &&
+      !this.increaseDailyCounter(id, quantity)
     ) {
-      console.log("Purchase failed. Expired daily max");
+      console.log("Purchase failed. Daily limit exeeded");
       return;
     }
 
     // Check if can claim
-    if (positionMeta.claimable && !this.hasItem(commodity)) {
+    if (positionMeta.claimable && !this.hasItem(id)) {
       console.log("Purchase failed. Nothing to claim");
       return;
     }
@@ -267,32 +272,72 @@ export class BattleUser {
       }
     }
 
-    if (positionMeta.claimable && !this.hasItem(commodity)) {
-      console.log("Purchase failed. Nothing to claim");
-      return;
-    }
-
-    const itemEntry = this.getItem(commodity);
-    const quantity = itemEntry ? itemEntry.quantity : 1;
-    if (!this.increaseDailyCounter(id, quantity)) {
-      console.log("Purchase failed. Overhead");
-      return;
-    }
-
-    this.activate(id, quantity);
+    return this.activate(positionMeta, quantity);
   }
 
-  protected activate(id: number, quantity: number): void {
-    console.log('Activate purchase', { id, quantity });
+  protected activateLootbox(unitsCount: number, probabilities: number[]): BattleUnit[] {
+    const resultItems = [] as BattleUnit[];
+    for (let i = 0; i < unitsCount; i++) {
+      let tier = 1;
+      let controlValue = Math.random() * 100;
+
+      // Tier 3
+      if (controlValue <= probabilities[2]) {
+        tier = 3;
+        // Tier 2
+      } else if (controlValue <= probabilities[1]) {
+        tier = 2;
+      }
+
+      const unit = this._core.inventory.getNewUnitByPropsRandom({ tier });
+      this._core.inventory.addUnit(unit);
+      resultItems.push(unit.serialize());
+      console.log('Added unit from lootbox', { class: unit.class, tribe: unit.tribe, tier: unit.tier });
+    }
+    return resultItems;
   }
 
-  protected hasItem(commodity: string): boolean {
-    const item = this._state.items.find((item) => item.commodity === commodity);
+  protected activate(positionMeta: BattleShopItemMeta, quantity: number): BattleUnit[] {
+    console.log('Activate purchase', { positionMeta, quantity });
+
+    const entryIndex = this._state.items.findIndex(entry => entry.id === positionMeta.id);
+    if (entryIndex === -1) {
+      throw new Error(`Trying to activate unexisted item: #${positionMeta.id} x${quantity}`);
+    }
+
+    this._state.items[entryIndex].quantity--;
+    if (this._state.items[entryIndex].quantity <= 0) {
+      this._state.items.splice(entryIndex, 1);
+    }
+    this._core.events.items(this._state.items);
+
+    let items = [] as BattleUnit[];
+    if (
+      positionMeta.content.units
+      &&
+      positionMeta.content.tierProbabilities
+      &&
+      positionMeta.content.tierProbabilities.length === 3
+    ) {
+      items = this.activateLootbox(positionMeta.content.units, positionMeta.content.tierProbabilities);
+
+    } else if (positionMeta.content.energy) {
+      this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);
+
+    } else {
+      throw new Error(`Malformed shop position format at #${positionMeta.id}`);
+    }
+
+    return items;
+  }
+
+  protected hasItem(id: number): boolean {
+    const item = this._state.items.find((item) => item.id === id);
     return !!item && item.quantity > 0;
   }
 
-  protected getItem(commodity: string): BattleItem {
-    return this._state.items.find((item) => item.commodity === commodity);
+  protected getItem(id: number): BattleItem {
+    return this._state.items.find((item) => item.id === id);
   }
 
   protected purgePreviousDates(): void {
@@ -300,12 +345,12 @@ export class BattleUser {
     this._state.timers.purchase = _.pick(this._state.timers.purchase, currentDate);
   }
 
-  protected overDailyLimit(commodity: string, max: number): boolean {
+  protected dailyLimitExceeded(id: number, max: number): boolean {
     const date = new Date().toLocaleDateString("en-US");
     const dateEntry = this._state.timers.purchase[date];
     if (dateEntry) {
-      const commodityPurchases = dateEntry[commodity] || 0;
-      if (commodityPurchases >= max) {
+      const idPurchases = dateEntry[id] || 0;
+      if (idPurchases >= max) {
         return true;
       }
     }
@@ -313,7 +358,7 @@ export class BattleUser {
   }
 
   protected increaseDailyCounter(id: number, count: number): boolean {
-    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id));
+    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id) as BattleShopItemMeta);
     if (!positionMeta) {
       return false;
     }
@@ -321,9 +366,9 @@ export class BattleUser {
     if (positionMeta.dailyMax) {
       const date = new Date().toLocaleDateString("en-US");
       const dateEntry = this._state.timers.purchase[date];
-      const newCount = (dateEntry[id] || 0) + count;
+      const newCount = (dateEntry? dateEntry[id] : 0) + count;
       // Overhead
-      if (newCount > count) {
+      if (newCount > positionMeta.dailyMax) {
         return false;
       // Increase counter
       } else {

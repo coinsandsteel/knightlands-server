@@ -48,6 +48,10 @@ export class BattleEvents extends BattleService {
     this._events.timers = timers;
   }
 
+  items(items) {
+    this._events.items = items;
+  }
+
   dailyRewards(rewards: BattleRewardDayData[]) {
     this._events.dailyRewards = rewards;
   }

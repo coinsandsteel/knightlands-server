@@ -66,8 +66,9 @@ export class BattleController {
   }
 
   async purchase(id: number) {
-    this.core.user.purchase(id);
+    const items = this.core.user.purchase(id);
     this.core.events.flush();
+    return items;
   }
 
   async fillSquadSlot(unitId: string, index: number) {

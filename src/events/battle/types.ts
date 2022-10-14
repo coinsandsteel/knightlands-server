@@ -59,7 +59,7 @@ export interface BattleUserState {
 }
 
 export interface BattleItem {
-  commodity: string;
+  id: number;
   quantity: number;
 }
 
@@ -224,4 +224,19 @@ export interface BattleBuff extends BattleEffectMeta {
 
   stackValue?: number;
   max?: number;
+}
+
+export interface BattleShopItemMeta {
+  id: number;
+  name: string;
+  commodity: string;
+  claimable: boolean;
+  price: { currency: string; amount: number; } | null;
+  content: {
+    units?: number;
+    energy?: number;
+    tierProbabilities?: number[];
+    description: string[];
+  };
+  dailyMax: number|null;
 }
