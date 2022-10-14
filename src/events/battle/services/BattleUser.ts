@@ -2,7 +2,6 @@ import _ from "lodash";
 import { BattleCore } from "./BattleCore";
 import { BattleItem, BattleShopItemMeta, BattleUnit, BattleUserState } from "../types";
 import {
-  COMMODITY_STARTER_PACK,
   CURRENCY_COINS,
   CURRENCY_CRYSTALS,
   CURRENCY_ENERGY,
@@ -63,7 +62,7 @@ export class BattleUser {
       items: [{ id: 1, quantity: 1 }],
       timers: {
         energy: game.nowSec,
-        purchase: {},
+        purchase: {}
       },
       rewards: {
         dailyRewards: [],
@@ -346,6 +345,7 @@ export class BattleUser {
   protected purgePreviousDates(): void {
     const currentDate = new Date().toLocaleDateString("en-US");
     this._state.timers.purchase = _.pick(this._state.timers.purchase, currentDate);
+    this._core.events.timers(this._state.timers.purchase);
   }
 
   protected dailyLimitExceeded(id: number, max: number): boolean {
@@ -382,6 +382,8 @@ export class BattleUser {
         console.log('Increased daily counter', this._state.timers.purchase[date]);
       }
     }
+
+    this._core.events.timers(this._state.timers.purchase);
 
     return true;
   }

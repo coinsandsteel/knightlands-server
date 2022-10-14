@@ -49,7 +49,7 @@ export interface BattleUserState {
   timers: {
     energy: number;
     purchase: {
-      [date: string]: { [commodity: string]: number }
+      [date: string]: { [id: number]: number }
     }
   };
   rewards: {
