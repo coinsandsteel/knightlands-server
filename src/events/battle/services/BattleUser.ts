@@ -156,6 +156,10 @@ export class BattleUser {
 
     this._core.events.balance(this._state.balance);
 
+    if (currency === CURRENCY_ENERGY && this.energy > ENERGY_MAX) {
+      this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
+    }
+
     if (
       currency === CURRENCY_ENERGY &&
       this.energy < ENERGY_MAX &&
@@ -218,13 +222,12 @@ export class BattleUser {
   }
 
   public purchase(id: number): BattleUnit[] {
-    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id));
+    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id)) as BattleShopItemMeta;
     if (!positionMeta) {
       return;
     }
 
-    const commodity = positionMeta.commodity;
-    const itemEntry = this.getItem(commodity);
+    const itemEntry = this.getItem(id);
     const quantity = itemEntry ? itemEntry.quantity : 1;
 
     // Check daily purchase limits
@@ -242,6 +245,11 @@ export class BattleUser {
     // Check if can claim
     if (positionMeta.claimable && !this.hasItem(id)) {
       console.log("Purchase failed. Nothing to claim");
+      return;
+    }
+
+    if (positionMeta.content.energy && this.energy >= ENERGY_MAX) {
+      console.log("Purchase failed. Energy is already at maximum");
       return;
     }
 
@@ -319,11 +327,8 @@ export class BattleUser {
     ) {
       items = this.activateLootbox(positionMeta.content.units, positionMeta.content.tierProbabilities);
 
-    } else if (positionMeta.content.energy) {
+    } else if (positionMeta.content.energy && this.energy < ENERGY_MAX) {
       this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);
-
-    } else {
-      throw new Error(`Malformed shop position format at #${positionMeta.id}`);
     }
 
     return items;
