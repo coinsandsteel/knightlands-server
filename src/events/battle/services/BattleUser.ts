@@ -301,15 +301,13 @@ export class BattleUser {
     console.log('Activate purchase', { positionMeta, quantity });
 
     const entryIndex = this._state.items.findIndex(entry => entry.id === positionMeta.id);
-    if (entryIndex === -1) {
-      throw new Error(`Trying to activate unexisted item: #${positionMeta.id} x${quantity}`);
+    if (entryIndex !== -1) {
+      this._state.items[entryIndex].quantity--;
+      if (this._state.items[entryIndex].quantity <= 0) {
+        this._state.items.splice(entryIndex, 1);
+      }
+      this._core.events.items(this._state.items);
     }
-
-    this._state.items[entryIndex].quantity--;
-    if (this._state.items[entryIndex].quantity <= 0) {
-      this._state.items.splice(entryIndex, 1);
-    }
-    this._core.events.items(this._state.items);
 
     let items = [] as BattleUnit[];
     if (
