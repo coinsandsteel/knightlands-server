@@ -345,7 +345,7 @@ export class BattleUser {
   protected purgePreviousDates(): void {
     const currentDate = new Date().toLocaleDateString("en-US");
     this._state.timers.purchase = _.pick(this._state.timers.purchase, currentDate);
-    this._core.events.timers(this._state.timers.purchase);
+    this._core.events.timers(this._state.timers);
   }
 
   protected dailyLimitExceeded(id: number, max: number): boolean {
@@ -383,7 +383,7 @@ export class BattleUser {
       }
     }
 
-    this._core.events.timers(this._state.timers.purchase);
+    this._core.events.timers(this._state.timers);
 
     return true;
   }
