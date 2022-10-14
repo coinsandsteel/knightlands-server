@@ -1,16 +1,19 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
-import { BattleUserState } from "../types";
+import { BattleItem, BattleUserState } from "../types";
 import {
+  COMMODITY_STARTER_PACK,
   CURRENCY_COINS,
   CURRENCY_CRYSTALS,
   CURRENCY_ENERGY,
+  SHOP,
   SQUAD_REWARDS,
   UNIT_TRIBE_FALLEN_KING,
   UNIT_TRIBE_LEGENDARY,
   UNIT_TRIBE_TITAN,
 } from "../../../knightlands-shared/battle";
 import game from "../../../game";
+import errors from "../../../knightlands-shared/errors";
 
 const isProd = process.env.ENV == "prod";
 
@@ -47,9 +50,6 @@ export class BattleUser {
   }
 
   public async load() {
-    //('User load');
-    this.setEventDay();
-    this.setActiveReward();
     this.wakeUp();
   }
 
@@ -60,8 +60,10 @@ export class BattleUser {
         [CURRENCY_COINS]: isProd ? 0 : 1000000,
         [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
       },
+      items: [{ commodity: COMMODITY_STARTER_PACK, quantity: 1 }],
       timers: {
         energy: game.nowSec,
+        purchase: {},
       },
       rewards: {
         dailyRewards: [],
@@ -87,8 +89,6 @@ export class BattleUser {
         ],
       },
     } as BattleUserState;
-
-    this.setActiveReward();
   }
 
   public dispose() {
@@ -102,6 +102,7 @@ export class BattleUser {
       this.modifyBalance(CURRENCY_ENERGY, accumulatedEnergy);
       this.launchEnergyTimer(true);
     }
+    this.purgePreviousDates();
   }
 
   protected getAccumulatedEnergy(): number {
@@ -141,10 +142,6 @@ export class BattleUser {
     }, ENERGY_CYCLE_SEC * 1000);
   }
 
-  protected setEventDay() {}
-
-  public setActiveReward() {}
-
   public getState(): BattleUserState {
     return this._state;
   }
@@ -167,8 +164,6 @@ export class BattleUser {
       this.launchEnergyTimer(false);
     }
   }
-
-  public claimDailyReward(): void {}
 
   public async claimSquadReward(tribe: string): Promise<any> {
     const rewardData = this._state.rewards.squadRewards.find(
@@ -223,6 +218,123 @@ export class BattleUser {
   }
 
   public purchase(id: number): void {
-    console.log('Purchase', { id });
+    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id));
+    if (!positionMeta) {
+      return;
+    }
+
+    const commodity = positionMeta.commodity;
+
+    // Check daily purchase limits
+    if (
+      positionMeta.dailyMax &&
+      this.overDailyLimit(commodity, positionMeta.dailyMax)
+    ) {
+      console.log("Purchase failed. Expired daily max");
+      return;
+    }
+
+    // Check if can claim
+    if (positionMeta.claimable && !this.hasItem(commodity)) {
+      console.log("Purchase failed. Nothing to claim");
+      return;
+    }
+
+    // Check if enough money
+    if (positionMeta.price && positionMeta.price.amount > 0) {
+      // Flesh
+      if (
+        positionMeta.price.currency === "flesh" &&
+        this._core.gameUser.dkt >= positionMeta.price.amount
+      ) {
+        this._core.gameUser.addDkt(-positionMeta.price.amount);
+
+      // Event currency
+      } else if (
+        [CURRENCY_COINS, CURRENCY_CRYSTALS].includes(
+          positionMeta.price.currency
+        ) &&
+        this._state.balance[positionMeta.price.currency] >=
+          positionMeta.price.amount
+      ) {
+        this.modifyBalance(
+          positionMeta.price.currency,
+          -positionMeta.price.amount
+        );
+      } else {
+        console.log("Purchase failed. Not enough currency");
+        throw errors.NotEnoughCurrency;
+      }
+    }
+
+    if (positionMeta.claimable && !this.hasItem(commodity)) {
+      console.log("Purchase failed. Nothing to claim");
+      return;
+    }
+
+    const itemEntry = this.getItem(commodity);
+    const quantity = itemEntry ? itemEntry.quantity : 1;
+    if (!this.increaseDailyCounter(id, quantity)) {
+      console.log("Purchase failed. Overhead");
+      return;
+    }
+
+    this.activate(id, quantity);
+  }
+
+  protected activate(id: number, quantity: number): void {
+    console.log('Activate purchase', { id, quantity });
+  }
+
+  protected hasItem(commodity: string): boolean {
+    const item = this._state.items.find((item) => item.commodity === commodity);
+    return !!item && item.quantity > 0;
+  }
+
+  protected getItem(commodity: string): BattleItem {
+    return this._state.items.find((item) => item.commodity === commodity);
+  }
+
+  protected purgePreviousDates(): void {
+    const currentDate = new Date().toLocaleDateString("en-US");
+    this._state.timers.purchase = _.pick(this._state.timers.purchase, currentDate);
+  }
+
+  protected overDailyLimit(commodity: string, max: number): boolean {
+    const date = new Date().toLocaleDateString("en-US");
+    const dateEntry = this._state.timers.purchase[date];
+    if (dateEntry) {
+      const commodityPurchases = dateEntry[commodity] || 0;
+      if (commodityPurchases >= max) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected increaseDailyCounter(id: number, count: number): boolean {
+    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id));
+    if (!positionMeta) {
+      return false;
+    }
+
+    if (positionMeta.dailyMax) {
+      const date = new Date().toLocaleDateString("en-US");
+      const dateEntry = this._state.timers.purchase[date];
+      const newCount = (dateEntry[id] || 0) + count;
+      // Overhead
+      if (newCount > count) {
+        return false;
+      // Increase counter
+      } else {
+        this._state.timers.purchase[date] = {
+          ...dateEntry,
+          [id]: newCount
+        };
+        console.log('Increased daily counter', this._state.timers.purchase[date]);
+      }
+    }
+
+    return true;
   }
 }

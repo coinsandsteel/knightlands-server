@@ -42,17 +42,25 @@ export interface BattleAdventureLevel {
 export interface BattleUserState {
   balance: {
     energy: number;
-    coins: number; // PvE, upgrade unit level
-    crystals: number; // PvP, upgrade ability level
+    coins: number;
+    crystals: number;
   };
+  items: BattleItem[];
   timers: {
-    // TODO research timers
     energy: number;
+    purchase: {
+      [date: string]: { [commodity: string]: number }
+    }
   };
   rewards: {
     dailyRewards: BattleRewardDayData[];
     squadRewards: BattleRewardSquadData[];
   };
+}
+
+export interface BattleItem {
+  commodity: string;
+  quantity: number;
 }
 
 export interface BattleRewardDayData {
