@@ -33,6 +33,7 @@ export class BattleController {
 
   async dispose() {
     this.core.user.dispose();
+    this._save();
   }
 
   public getState(): BattleSaveData {
