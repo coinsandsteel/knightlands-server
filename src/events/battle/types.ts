@@ -128,6 +128,7 @@ export interface BattleUnit {
   tribe: string;
   class: string;
   tier: number;
+  isBoss: boolean;
   level: BattleLevelScheme;
   levelInt: number;
   power: number;
@@ -154,6 +155,7 @@ export interface BattleFighter extends BattleUnit {
   tribe: string;
   class: string;
   fighterId: string;
+  isBoss: boolean;
   isEnemy: boolean;
   isDead: boolean;
   ratingIndex: number;

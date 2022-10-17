@@ -14,6 +14,7 @@ export class Fighter {
   protected _unitId: string;
   protected _unitTemplate: number;
   protected _fighterId: string;
+  protected _isBoss: boolean;
   protected _isEnemy: boolean;
   protected _isDead: boolean;
   protected _ratingIndex: number;
@@ -43,6 +44,10 @@ export class Fighter {
 
   get template(): number {
     return this._unit.template;
+  }
+
+  get isBoss(): boolean {
+    return this._isBoss;
   }
 
   get abilities(): UnitAbilities {
@@ -171,6 +176,7 @@ export class Fighter {
     this._unitId = unit.unitId;
     this._unitTemplate = unit.template;
     this._fighterId = blueprint.fighterId;
+    this._isBoss = blueprint.isBoss;
     this._isEnemy = blueprint.isEnemy;
     this._isDead = blueprint.isDead;
     this._ratingIndex = blueprint.ratingIndex;
@@ -195,6 +201,7 @@ export class Fighter {
       unitTemplate: unit.template,
       tier: unit.tier,
       fighterId: uuidv4().split("-").pop(),
+      isBoss: unit.isBoss,
       isEnemy,
       isDead: false,
       ratingIndex: 0,
@@ -246,6 +253,7 @@ export class Fighter {
       tier: this._unit.tier,
       unitTemplate: this._unitTemplate,
       fighterId: this._fighterId,
+      isBoss: this._isBoss,
       isEnemy: this._isEnemy,
       isDead: this._isDead,
       ratingIndex: this._ratingIndex,

@@ -152,6 +152,12 @@ export class BattleAdventures extends BattleService {
         { ...unitMeta, _id: template },
         this._core.events
       );
+
+      const isBoss = levelMeta.enemies.boss === template;
+      if (isBoss) {
+        unit.turnIntoBoss();
+      }
+
       const fighter = Fighter.createFighter(unit, true, this._core.events);
       return fighter.serializeFighter();
     });

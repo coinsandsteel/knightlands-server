@@ -6,7 +6,7 @@ import {
   UNIT_CLASS_MELEE,
   UNIT_CLASS_TANK,
 } from "../../../knightlands-shared/battle";
-import { ABILITY_LEVEL_UP_PRICES, ABILITY_SCHEME } from "../meta";
+import { ABILITY_LEVEL_UP_PRICES, ABILITY_SCHEME, SETTINGS } from "../meta";
 import { BattleLevelScheme, BattleUnitAbility } from "../types";
 import { Unit } from "./Unit";
 import game from "../../../game";
@@ -131,7 +131,7 @@ export default class UnitAbilities {
       classMeta.damage *
       (abilityMeta.baseMultiplier +
         abilityMeta.levelStep * (abilityData.levelInt - 1)) *
-      abilityMeta.finalMultiplier;
+      abilityMeta.finalMultiplier * (this._unit.isBoss ? SETTINGS.bossPower : 1);
 
     return Math.round(abilityValue);
   }

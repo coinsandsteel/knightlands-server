@@ -4,6 +4,7 @@ export const PATH_SCHEME_ROOK = "rook";
 export const PATH_SCHEME_QUEEN = "queen";
 
 export const SETTINGS = {
+  bossPower: 1.3,
   maxExp: 99000,
   moveScheme: PATH_SCHEME_ROOK,
   maxUnitTierLevel: {

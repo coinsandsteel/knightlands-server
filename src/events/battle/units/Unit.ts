@@ -20,6 +20,7 @@ export class Unit {
   protected _class: string;
   protected _name: string;
   protected _tier: number;
+  protected _isBoss: boolean;
 
   protected _level: BattleLevelScheme;
   protected _levelInt: number;
@@ -45,6 +46,10 @@ export class Unit {
 
   get tier(): number {
     return this._tier;
+  }
+
+  get isBoss(): boolean {
+    return this._isBoss;
   }
 
   get tribe(): string {
@@ -102,6 +107,7 @@ export class Unit {
     this._class = blueprint.class;
     this._name = blueprint.name;
     this._tier = blueprint.tier;
+    this._isBoss = blueprint.isBoss;
     this._level = blueprint.level;
     this._levelInt = blueprint.levelInt;
     this._power = blueprint.power;
@@ -123,6 +129,7 @@ export class Unit {
       class: meta.class,
       name: meta.name,
       tier: meta.tier,
+      isBoss: false,
       level: {
         current: 1,
         next: null,
@@ -171,6 +178,7 @@ export class Unit {
       tribe: this._tribe,
       class: this._class,
       tier: this._tier,
+      isBoss: this._isBoss,
 
       level: this._level,
       levelInt: this._level.current,
@@ -267,7 +275,7 @@ export class Unit {
 
     let addExp = _.random(1, Unit.getExpForLevel(this._levelInt + 1) - Unit.getExpForLevel(this._levelInt) - 1);
     this.addExpirience(addExp);
-    console.log('Maximize unit', { maxLevel, level, addExp });
+    //console.log('Maximize unit', { maxLevel, level, addExp });
 
     this.abilities.abilities.forEach(ability => {
       if (ability.enabled) {
@@ -276,7 +284,7 @@ export class Unit {
           ability.abilityClass,
           abilityLevel
         );
-        console.log('Maximize unit ability', { abilityClass: ability.abilityClass, abilityLevel });
+        //console.log('Maximize unit ability', { abilityClass: ability.abilityClass, abilityLevel });
       }
     });
   }
@@ -294,9 +302,11 @@ export class Unit {
     }
   }
 
+  // TODO apply boss rules
   public static getCharacteristics(
     template: number,
-    level: number
+    level: number,
+    isBoss?: boolean
   ): BattleUnitCharacteristics {
     const unitsMeta = game.battleManager.meta.units;
     const unitMeta = _.cloneDeep(unitsMeta[template]) || {};
@@ -322,20 +332,20 @@ export class Unit {
     };
 
     // HP: ClassHp*((MultiplierHp+LevelStepHp*(Level-1))
-    const hp = v.ClassHp * (v.MultiplierHp + v.LevelStepHp * (v.Level - 1));
+    const hp = v.ClassHp * (v.MultiplierHp + v.LevelStepHp * (v.Level - 1)) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Damage: ClassDamage*((MultiplierDamage+LevelStepDamage*(Level-1))
     const damage =
-      v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level - 1));
+      v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level - 1)) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Defense: ClassDefense*MultiplierDefence^(Level-1)
-    const defence = Math.pow(v.ClassDefense * v.MultiplierDefence, v.Level - 1);
+    const defence = Math.pow(v.ClassDefense * v.MultiplierDefence, v.Level - 1) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Speed: ClassSpeed+MultiplierSpeed*(Level-1)
-    const speed = v.ClassSpeed + v.MultiplierSpeed * (v.Level - 1);
+    const speed = v.ClassSpeed + v.MultiplierSpeed * (v.Level - 1) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Initiative: Speed * MultiplierInitiative
-    const initiative = speed * v.MultiplierInitiative;
+    const initiative = speed * v.MultiplierInitiative * (isBoss ? SETTINGS.bossPower : 1);
 
     return {
       hp: Math.round(hp),
@@ -349,8 +359,15 @@ export class Unit {
   protected setCharacteristics(): void {
     this._characteristics = Unit.getCharacteristics(
       this._template,
-      this._levelInt
+      this._levelInt,
+      this._isBoss
     );
+  }
+
+  public turnIntoBoss(): void {
+    this._isBoss = true;
+    this.setCharacteristics();
+    this.abilities.update();
   }
 
   public maximize() {

@@ -97,6 +97,10 @@ export class BattleSquad extends BattleService {
       );
     }
 
+    if (blueprint.isBoss) {
+      unit.turnIntoBoss();
+    }
+
     blueprint.isEnemy = this._isEnemy;
     return new Fighter(unit, blueprint, this._core.events);
   }
