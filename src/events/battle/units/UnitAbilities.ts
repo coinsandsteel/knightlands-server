@@ -210,10 +210,6 @@ export default class UnitAbilities {
     const combatValue = this.getAbilityCombatValue(abilityClass);
     const range = abilityMeta.range[abilityData.levelInt - 1];
 
-    if (abilityClass === 'stun_shot') {
-      console.log('calcAbility', abilityClass, abilityData);
-    }
-
     const moveRange = abilityData.enabled
       ? range.move.value + (range.move.addSpeed ? this._unit.speed : 0)
       : 0;

@@ -249,7 +249,7 @@ export class BattleGame extends BattleService {
   }
 
   public start(enemyFighters: BattleFighter[]): void {
-    if (!this._state.userSquad.fighters.length) {
+    if (!this._userSquad.fighters.length) {
       return;
     }
 
@@ -258,7 +258,6 @@ export class BattleGame extends BattleService {
     this._enemySquad.regenerateFighterIds();
     this._enemySquad.arrange();
 
-    this.spawnUserSquad(this._state.userSquad.fighters);
     this._userSquad.load();
     this._userSquad.regenerateFighterIds();
     this._userSquad.arrange();
