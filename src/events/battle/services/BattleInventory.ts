@@ -59,13 +59,25 @@ export class BattleInventory extends BattleService {
       return;
     }
 
-    const newUnitMeta = game.battleManager.getUnitMetaByParams({
+    const oldUnitMeta = game.battleManager.getUnitMeta(template);
+    const newUnitMetaList = game.battleManager.getAllUnitsMetaByParams({
       class: unit.class,
       tribe: unit.tribe,
       tier: unit.tier + 1
     });
-    if (!newUnitMeta) {
+    if (!newUnitMetaList.length) {
       throw Error(`Merge failed. No such unit meta (class: ${unit.class}, tribe: ${unit.tribe}, tier: ${unit.tier})`);
+    }
+
+    // Find exact match by abilities
+    let newUnitMeta = null;
+    if (newUnitMetaList.length > 1) {
+      newUnitMeta = newUnitMetaList.find(entry => _.intersection(oldUnitMeta.abilityList, entry.abilityList).length === 3);
+    } else {
+      newUnitMeta = newUnitMetaList[0];
+    }
+    if (!newUnitMeta) {
+      throw Error(`Merge failed. Next tier not found (class: ${unit.class}, tribe: ${unit.tribe}, tier: ${unit.tier})`);
     }
 
     // Add new unit

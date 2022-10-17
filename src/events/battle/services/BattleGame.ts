@@ -559,7 +559,7 @@ export class BattleGame extends BattleService {
 
     // Apply effects
     if (abilityMeta.effects.length) {
-      this.combat.applyEffect(fighter, fighter, abilityClass);
+      this.combat.applyEffect(fighter, target, abilityClass);
     }
 
     this.combat.enableCooldown(fighter, abilityClass);

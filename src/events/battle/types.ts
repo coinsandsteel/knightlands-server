@@ -201,6 +201,7 @@ export interface BattleUnitAbility {
     estimate: number;
   };
   effects: BattleEffectMeta[][];
+  targets: { [targetType: string]: boolean };
 }
 
 export interface BattleUnitAttribute {

@@ -440,6 +440,14 @@ export class BattleManager {
     return _.cloneDeep(_.find(Object.values(this._meta.units), params)) || null;
   }
 
+  public getAllUnitsMetaByParams(params: {
+    class?: string;
+    tribe?: string;
+    tier?: number;
+  }): BattleUnitMeta[] | null {
+    return _.cloneDeep(_.filter(Object.values(this._meta.units), params)) || null;
+  }
+
   public getClassMeta(unitClass: string): BattleClassMeta | null {
     return _.cloneDeep(this._meta.classes[unitClass]) || null;
   }

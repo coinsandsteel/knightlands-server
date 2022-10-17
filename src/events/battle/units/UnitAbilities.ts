@@ -59,6 +59,10 @@ export default class UnitAbilities {
         attack: 0,
       },
       effects: [],
+      targets: abilityClass === ABILITY_ATTACK ?
+        { targetEnemies: true, targetAllies: false, targetSelf: false, targetEmptyCell: false }
+        :
+        _.pick(abilityMeta, ['targetEnemies', 'targetAllies', 'targetSelf', 'targetEmptyCell'])
     } as BattleUnitAbility;
     return blueprint;
   }
@@ -256,13 +260,18 @@ export default class UnitAbilities {
           enabled: ability.cooldown ? ability.cooldown.enabled : false,
           estimate: ability.cooldown ? ability.cooldown.estimate : 0,
         },
-        effects: ability.effects
+        effects: ability.effects,
+        targets: ability.targets
       } as BattleUnitAbility;
     });
   }
 
   public unlock(): void {
     this._abilities.forEach((ability) => {
+      if (ability.abilityClass === ABILITY_ATTACK) {
+        return;
+      }
+
       const abilityScheme =
         ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
 
