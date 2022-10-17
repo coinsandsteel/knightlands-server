@@ -96,8 +96,8 @@ export const SQUAD_BONUSES = {
     // Tier 1
     [
       // Attack +5%
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.5 },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.7 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.05 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
       {
         target: "attack",

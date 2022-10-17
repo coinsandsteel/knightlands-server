@@ -189,27 +189,28 @@ export class BattleSquad extends BattleService {
       };
     });
 
+    let bonusesData = [];
     let bonuses = [];
     _.forOwn(stat, (tribeStat, fighterTribe) => {
       _.forOwn(tribeStat, (tierCount, fighterTier) => {
         if (tierCount >= 2) {
-          bonuses.push(
+          bonusesData.push(
             SQUAD_BONUSES[fighterTribe][parseInt(fighterTier) - 1][tierCount - 2]
           );
+          bonuses.push(`${fighterTribe}-${fighterTier}-${tierCount}`);
         }
       });
     });
 
-    this._state.bonuses = bonuses;
-
     // Apply bonuses
     this.fighters.forEach((fighter) => {
       fighter.buffs.reset();
-      bonuses.forEach((bonus) =>
+      bonusesData.forEach((bonus) =>
         fighter.buffs.addBuff({ source: "squad", ...bonus })
       );
     });
 
+    this._state.bonuses = bonuses;
     // this.log("Squad bonuses", { bonuses });
   }
 
