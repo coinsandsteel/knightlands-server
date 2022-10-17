@@ -287,6 +287,9 @@ export class Fighter {
 
     if (this._hp <= 0) {
       this._isDead = true;
+      this._index = null;
+      this._isStunned = false;
+
       if (this._isEnemy) {
         this._events.enemyFighter(this);
       } else {
