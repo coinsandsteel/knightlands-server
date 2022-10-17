@@ -210,6 +210,10 @@ export default class UnitAbilities {
     const combatValue = this.getAbilityCombatValue(abilityClass);
     const range = abilityMeta.range[abilityData.levelInt - 1];
 
+    if (abilityClass === 'stun_shot') {
+      console.log('calcAbility', abilityClass, abilityData);
+    }
+
     const moveRange = abilityData.enabled
       ? range.move.value + (range.move.addSpeed ? this._unit.speed : 0)
       : 0;
@@ -310,6 +314,25 @@ export default class UnitAbilities {
         return;
       }
 
+      ability.enabled = true;
+      ability.level = {
+        current: level,
+        next: null,
+        price: null,
+      };
+      ability.levelInt = level;
+      ability.level.next = null;
+      ability.level.price = null;
+    });
+
+    this.update();
+  }
+
+  public setAbilityLevelByTier(tier: number, level: number) {
+    this._abilities.forEach((ability) => {
+      if (ability.tier !== tier || ability.abilityClass === ABILITY_ATTACK) {
+        return;
+      }
       ability.enabled = true;
       ability.level = {
         current: level,

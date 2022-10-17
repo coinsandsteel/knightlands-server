@@ -153,6 +153,17 @@ export class BattleAdventures extends BattleService {
         this._core.events
       );
 
+      // Level
+      unit.setLevel(levelMeta.enemies.level);
+
+      // Abilities level
+      unit.setAbilitiesLevels([
+        { tier: 1, level: levelMeta.enemies.abilities[0] },
+        { tier: 2, level: levelMeta.enemies.abilities[1] },
+        { tier: 3, level: levelMeta.enemies.abilities[2] },
+      ]);
+
+      // Boss
       const isBoss = levelMeta.enemies.boss === template;
       if (isBoss) {
         unit.turnIntoBoss();

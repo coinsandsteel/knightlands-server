@@ -247,18 +247,7 @@ export class Unit {
     if (!this.canUpgradeLevel()) {
       return false;
     }
-
-    this._levelInt = this._level.next;
-    this._level.current = this._level.next;
-    this._level.next = null;
-    this._level.price = null;
-
-    this.addExpirience(0);
-    this.setCharacteristics();
-    this.setPower();
-
-    this.abilities.update();
-
+    this.setLevel(this._level.next);
     return true;
   }
 
@@ -273,18 +262,22 @@ export class Unit {
     let level = _.random(1, maxLevel);
     this.setLevel(level, true);
 
-    let addExp = _.random(1, Unit.getExpForLevel(this._levelInt + 1) - Unit.getExpForLevel(this._levelInt) - 1);
-    this.addExpirience(addExp);
-    //console.log('Maximize unit', { maxLevel, level, addExp });
+    this.setAbilitiesLevels([
+      { tier: 1, level: _.random(1, this.abilities.getMaxAbilityLevel(1)) },
+      { tier: 2, level: _.random(1, this.abilities.getMaxAbilityLevel(2)) },
+      { tier: 3, level: _.random(1, this.abilities.getMaxAbilityLevel(3)) },
+    ]);
 
-    this.abilities.abilities.forEach(ability => {
-      if (ability.enabled) {
-        let abilityLevel = _.random(1, this.abilities.getMaxAbilityLevel(ability.tier));
-        this.abilities.setAbilityLevel(
-          ability.abilityClass,
-          abilityLevel
-        );
-        //console.log('Maximize unit ability', { abilityClass: ability.abilityClass, abilityLevel });
+    this.abilities.update();
+  }
+
+  public setAbilitiesLevels(entries: { tier?: number, abilityClass?: string, level: number }[]): void {
+    entries.forEach(entry => {
+      if (entry.tier && entry.level) {
+        this.abilities.setAbilityLevelByTier(entry.tier, entry.level);
+      }
+      if (entry.abilityClass && entry.level) {
+        this.abilities.setAbilityLevel(entry.abilityClass, entry.level);
       }
     });
   }
@@ -300,6 +293,15 @@ export class Unit {
       this._expirience.currentLevelExp = 0;
       this._expirience.nextLevelExp = Unit.getExpForLevel(value + 1);
     }
+
+    this.update();
+  }
+
+  public update(): void {
+    this.addExpirience(0);
+    this.setCharacteristics();
+    this.abilities.update();
+    this.setPower();
   }
 
   // TODO apply boss rules
@@ -318,7 +320,7 @@ export class Unit {
 
       ClassHp: classMeta.hp || 0,
       ClassDamage: classMeta.damage || 0,
-      ClassDefense: classMeta.defence || 0,
+      ClassDefence: classMeta.defence || 0,
       ClassSpeed: classMeta.speed || 0,
 
       MultiplierHp: unitMeta.multiplierHp || 0,
@@ -338,14 +340,14 @@ export class Unit {
     const damage =
       v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level - 1)) * (isBoss ? SETTINGS.bossPower : 1);
 
-    // Defense: ClassDefense*MultiplierDefence^(Level-1)
-    const defence = Math.pow(v.ClassDefense * v.MultiplierDefence, v.Level - 1) * (isBoss ? SETTINGS.bossPower : 1);
+    // Defence: ClassDefence*MultiplierDefence^(Level-1)
+    const defence = v.ClassDefence * Math.pow(v.MultiplierDefence, v.Level - 1) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Speed: ClassSpeed+MultiplierSpeed*(Level-1)
-    const speed = v.ClassSpeed + v.MultiplierSpeed * (v.Level - 1) * (isBoss ? SETTINGS.bossPower : 1);
+    const speed = (v.ClassSpeed + v.MultiplierSpeed * (v.Level - 1)) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Initiative: Speed * MultiplierInitiative
-    const initiative = speed * v.MultiplierInitiative * (isBoss ? SETTINGS.bossPower : 1);
+    const initiative = (speed * v.MultiplierInitiative) * (isBoss ? SETTINGS.bossPower : 1);
 
     return {
       hp: Math.round(hp),

@@ -18,7 +18,7 @@ export interface BattleClassMeta {
   _id: number;
   damage: number;
   hp: number;
-  defense: number;
+  defence: number;
   speed: number;
   initiativeMultiplier: number;
 }

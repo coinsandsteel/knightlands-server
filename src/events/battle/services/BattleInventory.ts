@@ -91,9 +91,6 @@ export class BattleInventory extends BattleService {
     newUnitEntry.setLevel(unit.levelInt, true);
     //console.log('Merge set level', unit.levelInt);
 
-    // Unlock abilities
-    newUnitEntry.addExpirience(0);
-
     // Calc abilities
     newUnitEntry.abilities.abilities.forEach(ability => {
       const sourceUnitAbilityData = unit.abilities.getAbilityByClass(ability.abilityClass);
