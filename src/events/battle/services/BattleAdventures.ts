@@ -5,12 +5,15 @@ import {
   ADVENTURES,
   ADVENTURE_ENEGRY_PRICE,
   CURRENCY_COINS,
+  CURRENCY_CRYSTALS,
 } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import {
-  BattleAdventureLevel,
+  BattleAdventureLevelData,
+  BattleAdventureLevelDifficultyMeta,
   BattleAdventureLevelMeta,
-  BattleAdventureLocation,
+  BattleAdventureLocationData,
+  BattleAdventureLocationMeta,
   BattleAdventuresState,
   BattleCombatRewards,
   BattleFighter,
@@ -44,32 +47,49 @@ export class BattleAdventures extends BattleService {
     return ADVENTURE_ENEGRY_PRICE[this.difficulty];
   }
 
+  get levelDifficultyMeta(): BattleAdventureLevelDifficultyMeta | null {
+    if (this.location !== null && this.level !== null) {
+      return _.cloneDeep(
+        ADVENTURES[this.location].levels[this.level][this.difficulty]
+      );
+    }
+    return null;
+  }
+
   constructor(state: BattleAdventuresState, core: BattleCore) {
     super();
     this._core = core;
+    this._locationsCount = ADVENTURES.length;
+    this._levelsCount = ADVENTURES[0].levels.length;
 
     if (state) {
       this._state = state;
     } else {
       this.setInitialState();
     }
-
-    this._locationsCount = ADVENTURES.length;
-    this._levelsCount = ADVENTURES[0].levels.length;
   }
 
   protected setInitialState() {
-    const locations = _.cloneDeep(ADVENTURES).map((location) => {
+    const locations = _.cloneDeep(
+      ADVENTURES as BattleAdventureLocationMeta[]
+    ).map((location) => {
       return {
-        levels: location.levels.map(() => {
-          return {
-            [GAME_DIFFICULTY_MEDIUM]: false,
-            [GAME_DIFFICULTY_HIGH]: false,
-            bossRewardClaimed: false
-          } as BattleAdventureLevel;
-        }),
+        levels: location.levels.map(
+          (level: BattleAdventureLevelMeta, index) => {
+            const levelData = {
+              [GAME_DIFFICULTY_MEDIUM]: false,
+              [GAME_DIFFICULTY_HIGH]: false,
+            } as BattleAdventureLevelData;
+
+            if (level[GAME_DIFFICULTY_MEDIUM].bossReward.coins) {
+              levelData.bossRewardClaimed = false;
+            }
+
+            return levelData;
+          }
+        ),
       };
-    }) as BattleAdventureLocation[];
+    }) as BattleAdventureLocationData[];
 
     // Open the very first level
     locations[0].levels[0][GAME_DIFFICULTY_MEDIUM] = true;
@@ -83,40 +103,51 @@ export class BattleAdventures extends BattleService {
   }
 
   public handleLevelPassed(): void {
+    const levelMeta = this.levelDifficultyMeta;
+    if (!levelMeta) {
+      throw new Error("Cannot get enemy squad. Level or location is null");
+    }
+    if (
+      levelMeta.bossReward &&
+      (levelMeta.bossReward.coins || levelMeta.bossReward.crystals)
+    ) {
+      this._state.locations[this.location].levels[
+        this.level
+      ].bossRewardClaimed = true;
+    }
+
     let location = this.location;
     let level = this.level;
 
-    if (this.difficulty === GAME_DIFFICULTY_MEDIUM) {
-      const levelMeta = this.getLevelMeta(location, level);
-      if (levelMeta.bossReward) {
-        this._state.locations[location].levels[level].bossRewardClaimed = true;
-      }
+    // Go to the next level
+    level++;
 
-      // Find the next level
-      level++;
-      if (level > this._levelsCount - 1) {
-        level = 0;
-        location++;
-      }
+    // Last level? Go to the next location
+    if (
+      this.difficulty === GAME_DIFFICULTY_MEDIUM &&
+      level > this._levelsCount - 1
+    ) {
+      level = 0;
+      location++;
+    }
 
-      // Open the next level
-      this._state.locations[location].levels[level][GAME_DIFFICULTY_MEDIUM] =
-        true;
+    // Open the next level
+    if (
+      // Do not unlock next high location
+      (this.difficulty === GAME_DIFFICULTY_HIGH &&
+        level <= this._levelsCount - 1) ||
+      // Unlock next medium location
+      this.difficulty === GAME_DIFFICULTY_MEDIUM
+    ) {
+      this._state.locations[location].levels[level][this.difficulty] = true;
+    }
 
-      // Open first high level if the last medium was done
-      if (this.level === this._levelsCount - 1) {
-        this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] =
-          true;
-      }
-    } else if (this.difficulty === GAME_DIFFICULTY_HIGH) {
-      // Find the next level
-      level++;
-      if (level > this._levelsCount - 1) {
-        return;
-      }
-
-      // Open the next level
-      this._state.locations[location].levels[level][GAME_DIFFICULTY_HIGH] =
+    // Open high difficulty in the current location
+    if (
+      this.difficulty === GAME_DIFFICULTY_MEDIUM &&
+      this.level === this._levelsCount - 1
+    ) {
+      this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] =
         true;
     }
 
@@ -134,22 +165,32 @@ export class BattleAdventures extends BattleService {
     this._core.events.adventures(this._state);
   }
 
-  public getLevelMeta(location: number, level: number): BattleAdventureLevelMeta {
-    return _.cloneDeep(ADVENTURES[location].levels[level][this.difficulty]);
-  }
-
-  public getLevelData(location: number, level: number): BattleAdventureLevel {
+  public getLevelData(
+    location: number,
+    level: number
+  ): BattleAdventureLevelData {
     return this._state.locations[location].levels[level];
   }
 
   public getCurrentLevelReward(): BattleCombatRewards {
-    const levelMeta = this.getLevelMeta(this.location, this.level);
+    const levelMeta = this.levelDifficultyMeta;
+    if (!levelMeta) {
+      throw new Error("Cannot get enemy squad. Level or location is null");
+    }
+
     const levelData = this.getLevelData(this.location, this.level);
     return {
-      coins: levelMeta.reward.coins + (!levelData.bossRewardClaimed ? levelMeta.bossReward.coins : 0),
-      crystals: !levelData.bossRewardClaimed ? levelMeta.bossReward.crystals : 0,
+      coins:
+        levelMeta.reward.coins +
+        (levelMeta.bossReward && !levelData.bossRewardClaimed
+          ? levelMeta.bossReward.coins
+          : 0),
+      crystals:
+        levelMeta.bossReward && !levelData.bossRewardClaimed
+          ? levelMeta.bossReward.crystals
+          : 0,
       xp: levelMeta.reward.xp,
-      rank: 0
+      rank: 0,
     };
   }
 
@@ -158,7 +199,11 @@ export class BattleAdventures extends BattleService {
   }
 
   public getEnemySquad(location: number, level: number): BattleFighter[] {
-    const levelMeta = this.getLevelMeta(location, level);
+    const levelMeta = this.levelDifficultyMeta;
+    if (!levelMeta) {
+      throw new Error("Cannot get enemy squad. Level or location is null");
+    }
+
     const enemySquad = levelMeta.enemies.templates.map((template) => {
       const unitMeta = game.battleManager.getUnitMeta(template);
       const unit = Unit.createUnit(

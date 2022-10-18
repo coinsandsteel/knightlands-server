@@ -17,20 +17,30 @@ export interface BattleAdventuresState {
   difficulty: string;
   location: number|null;
   level: number|null;
-  locations: BattleAdventureLocation[];
+  locations: BattleAdventureLocationData[];
 }
 
-export interface BattleAdventureLocation {
-  levels: BattleAdventureLevel[]
+export interface BattleAdventureLocationData {
+  levels: BattleAdventureLevelData[]
 }
 
-export interface BattleAdventureLevel {
+export interface BattleAdventureLevelData {
   [GAME_DIFFICULTY_MEDIUM]: boolean;
   [GAME_DIFFICULTY_HIGH]: boolean;
-  bossRewardClaimed: boolean;
+  bossRewardClaimed?: boolean;
+}
+
+export interface BattleAdventureLocationMeta {
+  name: string;
+  levels: BattleAdventureLevelMeta[];
 }
 
 export interface BattleAdventureLevelMeta {
+  [GAME_DIFFICULTY_MEDIUM]: BattleAdventureLevelDifficultyMeta;
+  [GAME_DIFFICULTY_HIGH]: BattleAdventureLevelDifficultyMeta;
+}
+
+export interface BattleAdventureLevelDifficultyMeta {
   reward: {
     xp: number;
     coins: number;
