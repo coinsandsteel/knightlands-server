@@ -5,6 +5,8 @@ import { Fighter } from "../units/Fighter";
 import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
+  UNIT_CLASS_MELEE,
+  UNIT_CLASS_TANK,
 } from "../../../knightlands-shared/battle";
 import { BattleBuff } from "../types";
 
@@ -98,7 +100,6 @@ export class BattleCombat extends BattleService {
         this.heal(source, target, abilityClass);
       }
     });
-    this.enableCooldown(source, abilityClass);
   }
 
   protected heal(source: Fighter, target: Fighter, abilityClass: string): void {
@@ -125,8 +126,6 @@ export class BattleCombat extends BattleService {
         criticalHit: false,
       },
     });
-
-    this.enableCooldown(source, abilityClass);
   }
 
   public applyEffect(
@@ -265,8 +264,6 @@ export class BattleCombat extends BattleService {
         criticalHit: false,
       },
     });
-
-    this.enableCooldown(source, abilityClass);
   }
 
   protected attackCallback(target: Fighter) {
@@ -344,7 +341,13 @@ export class BattleCombat extends BattleService {
   ) {
     const attackAreaNoMoving = this.getAttackAreaData(fighter, abilityClass);
     // Need to approach
-    if (!attackAreaNoMoving.targetCells.includes(target.index)) {
+    if (
+      fighter.class === UNIT_CLASS_MELEE
+      ||
+      fighter.class === UNIT_CLASS_TANK
+      ||
+      !attackAreaNoMoving.targetCells.includes(target.index)
+    ) {
       this.log("Need to approach the enemy");
 
       // Calc all the move cells

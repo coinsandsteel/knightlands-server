@@ -521,8 +521,9 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    const target = index === null ? null : this.getFighterByIndex(index);
     const abilityMeta = fighter.abilities.getMeta(abilityClass);
+    const selfAffect = abilityMeta && abilityMeta.targetSelf && !abilityMeta.targetAllies;
+    const target = index === null ? (selfAffect ? fighter : null) : this.getFighterByIndex(index);
 
     // Сheck all restrictions
     if (!this.combat.canApply(fighter, target, abilityClass)) {
@@ -534,16 +535,15 @@ export class BattleGame extends BattleService {
     if (abilityClass === ABILITY_MOVE || !target) {
       this.log("Moving the fighter...");
       this._movement.moveFighter(fighter, abilityClass, index);
-      return;
     }
 
     // Check if need to approach
-    if (abilityMeta.canMove && target) {
+    if (abilityMeta && abilityMeta.canMove && target) {
       this.combat.tryApproachEnemy(fighter, target, abilityClass);
     }
 
     // Attack
-    if (abilityMeta.affectHp) {
+    if (abilityMeta && abilityMeta.affectHp) {
       this.log("Trying to modify enemy's HP...");
       this.combat.handleHpChange(fighter, target, abilityClass);
 
@@ -560,7 +560,7 @@ export class BattleGame extends BattleService {
     }
 
     // Apply effects
-    if (abilityMeta.effects.length) {
+    if (abilityMeta && abilityMeta.effects.length) {
       this.combat.applyEffect(fighter, target, abilityClass);
     }
 
