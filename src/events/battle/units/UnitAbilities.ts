@@ -344,7 +344,8 @@ export default class UnitAbilities {
   }
 
   public getMaxAbilityLevel(abilityTier: number): number {
-    return ABILITY_SCHEME[this._unit.levelInt - 1][abilityTier - 1].lvl;
+    const levelData = ABILITY_SCHEME[this._unit.levelInt - 1][abilityTier - 1];
+    return levelData ? levelData.lvl : 0;
   }
 
   public upgradeAbility(abilityClass: string): boolean {
