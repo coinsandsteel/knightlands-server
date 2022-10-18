@@ -2,6 +2,7 @@ import _ from "lodash";
 import { BattleCore } from "./BattleCore";
 import { BattleItem, BattleShopItemMeta, BattleUnit, BattleUserState } from "../types";
 import {
+  BATTLE_MAX_DUELS_DAILY,
   CURRENCY_COINS,
   CURRENCY_CRYSTALS,
   CURRENCY_ENERGY,
@@ -362,7 +363,7 @@ export class BattleUser {
   public dailyDuelsLimitExceeded(): boolean {
     const date = new Date().toLocaleDateString("en-US");
     const dateEntry = this._state.counters.duels[date];
-    return (dateEntry || 0) >= SETTINGS.dailyDuelsLimit;
+    return (dateEntry || 0) >= BATTLE_MAX_DUELS_DAILY;
   }
 
   protected dailyPurchaseLimitExceeded(id: number, max: number): boolean {
@@ -383,7 +384,7 @@ export class BattleUser {
     const newCount = (dateEntry || 0) + 1;
 
     // Overhead
-    if (newCount > SETTINGS.dailyDuelsLimit) {
+    if (newCount > BATTLE_MAX_DUELS_DAILY) {
       return false;
     // Increase counter
     } else {
