@@ -30,6 +30,7 @@ export class Unit {
     value: number;
     currentLevelExp: number;
     nextLevelExp: number;
+    maxLevelReached: boolean;
   };
   protected _characteristics: BattleUnitCharacteristics;
   protected _quantity: number;
@@ -141,6 +142,7 @@ export class Unit {
         value: 0,
         currentLevelExp: 0,
         nextLevelExp: Unit.getExpForLevel(2),
+        maxLevelReached: false
       },
       characteristics: Unit.getCharacteristics(meta._id, 1),
       abilities: meta.abilityList.map((abilityClass) =>
@@ -198,26 +200,17 @@ export class Unit {
   }
 
   public addExpirience(value: number): void {
-    if (this._tier === 1 && this._levelInt >= SETTINGS.maxUnitTierLevel[1]) {
-      return;
+    // Max level reached
+    if (this._levelInt >= SETTINGS.maxUnitTierLevel[this._tier]) {
+      const lastLevelExpEnd = Unit.getExpForLevel(this._levelInt);
+      // Limit exp
+      if (this._expirience.value > lastLevelExpEnd) {
+        this._expirience.value = lastLevelExpEnd;
+      }
+      this._expirience.maxLevelReached = true;
+    } else {
+      this._expirience.value += value;
     }
-
-    if (this._tier === 2 && this._levelInt >= SETTINGS.maxUnitTierLevel[2]) {
-      return;
-    }
-
-    this._expirience.value += value;
-
-    const lastLevelExpEnd = Unit.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
-    if (
-      this._levelInt >= SETTINGS.maxUnitTierLevel[3] - 1 &&
-      this._expirience.value > lastLevelExpEnd
-    ) {
-      this._expirience.value = lastLevelExpEnd;
-      return;
-    }
-
-    let priceTable = _.cloneDeep(UNIT_LEVEL_UP_PRICES);
 
     let currentExp = this._expirience.value;
     let currentLevel = this._level.current;
@@ -228,7 +221,7 @@ export class Unit {
 
     if (currentExp >= currentLevelExpEnd) {
       this._level.next = currentLevel + 1;
-      this._level.price = priceTable[this._level.next - 1];
+      this._level.price = _.cloneDeep(UNIT_LEVEL_UP_PRICES[this._level.next - 1]);
     } else {
       this._level.next = null;
       this._level.price = null;
@@ -276,13 +269,13 @@ export class Unit {
     });
   }
 
-  public setLevel(value: number, addExp?: boolean): void {
+  public setLevel(value: number, resetExp?: boolean): void {
     this._levelInt = value;
     this._level.current = value;
     this._level.next = null;
     this._level.price = null;
 
-    if (addExp) {
+    if (resetExp) {
       this._expirience.value = Unit.getExpForLevel(value);
       this._expirience.currentLevelExp = 0;
       this._expirience.nextLevelExp = Unit.getExpForLevel(value + 1);
@@ -368,13 +361,7 @@ export class Unit {
 
   public maximize() {
     this._tier = 3;
-    this._levelInt = SETTINGS.maxUnitTierLevel[this._tier];
-    this._level.current = SETTINGS.maxUnitTierLevel[this._tier];
-    this._level.next = null;
-    this._expirience.value = Unit.getExpForLevel(SETTINGS.maxUnitTierLevel[3]);
-    this._expirience.currentLevelExp = 0;
-    this._expirience.nextLevelExp = 0;
-
+    this.setLevel(SETTINGS.maxUnitTierLevel[this._tier]);
     this.abilities.maximize();
     this.abilities.update();
     this.setPower();

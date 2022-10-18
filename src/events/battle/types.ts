@@ -158,6 +158,7 @@ export interface BattleUnit {
     value: number;
     currentLevelExp: number;
     nextLevelExp: number;
+    maxLevelReached: boolean;
   };
   characteristics: {
     hp: number;
