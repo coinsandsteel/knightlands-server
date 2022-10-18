@@ -232,7 +232,7 @@ export class BattleUser {
     this._core.events.squadRewards(this._state.rewards.squadRewards);
   }
 
-  public purchase(id: number): BattleUnit[] {
+  public purchase(id: number, tribe?: string): BattleUnit[] {
     const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id)) as BattleShopItemMeta;
     if (!positionMeta) {
       return;
@@ -291,10 +291,10 @@ export class BattleUser {
       }
     }
 
-    return this.activate(positionMeta, quantity);
+    return this.activate(positionMeta, quantity, tribe);
   }
 
-  protected activateLootbox(unitsCount: number, probabilities: number[]): BattleUnit[] {
+  protected activateLootbox(unitsCount: number, probabilities: number[], tribe?: string): BattleUnit[] {
     const resultItems = [] as BattleUnit[];
     for (let i = 0; i < unitsCount; i++) {
       let tier = 1;
@@ -308,7 +308,12 @@ export class BattleUser {
         tier = 2;
       }
 
-      const unit = this._core.inventory.getNewUnitByPropsRandom({ tier });
+      const params = { tier } as { tier: number; tribe?: string };
+      if (tribe) {
+        params.tribe = tribe;
+      }
+
+      const unit = this._core.inventory.getNewUnitByPropsRandom(params);
       this._core.inventory.addUnit(unit);
       resultItems.push(unit.serialize());
       console.log('Added unit from lootbox', { class: unit.class, tribe: unit.tribe, tier: unit.tier });
@@ -316,7 +321,7 @@ export class BattleUser {
     return resultItems;
   }
 
-  protected activate(positionMeta: BattleShopItemMeta, quantity: number): BattleUnit[] {
+  protected activate(positionMeta: BattleShopItemMeta, quantity: number, tribe?: string): BattleUnit[] {
     console.log('Activate purchase', { positionMeta, quantity });
 
     const entryIndex = this._state.items.findIndex(entry => entry.id === positionMeta.id);
@@ -336,7 +341,7 @@ export class BattleUser {
       &&
       positionMeta.content.tierProbabilities.length === 3
     ) {
-      items = this.activateLootbox(positionMeta.content.units, positionMeta.content.tierProbabilities);
+      items = this.activateLootbox(positionMeta.content.units, positionMeta.content.tierProbabilities, tribe);
 
     } else if (positionMeta.content.energy && this.energy < ENERGY_MAX) {
       this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);

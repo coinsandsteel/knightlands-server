@@ -66,8 +66,8 @@ export class BattleController {
     return items;
   }
 
-  async purchase(id: number) {
-    const items = this.core.user.purchase(id);
+  async purchase(id: number, tribe?: string) {
+    const items = this.core.user.purchase(id, tribe);
     this.core.events.flush();
     return items;
   }
