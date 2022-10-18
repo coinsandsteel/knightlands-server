@@ -44,6 +44,10 @@ export class BattleEvents extends BattleService {
     this._events.balance = balance;
   }
 
+  pvpScore(value) {
+    this._events.pvpScore = value;
+  }
+
   timers(timers) {
     this._events.timers = timers;
   }

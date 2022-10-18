@@ -1,6 +1,8 @@
 import {
   CURRENCY_COINS,
-  CURRENCY_CRYSTALS
+  CURRENCY_CRYSTALS,
+  GAME_DIFFICULTY_HIGH,
+  GAME_DIFFICULTY_MEDIUM
 } from "../../knightlands-shared/battle";
 import { BattleEffectMeta } from "./units/MetaDB";
 
@@ -23,6 +25,12 @@ export interface BattleAdventureLocation {
 }
 
 export interface BattleAdventureLevel {
+  [GAME_DIFFICULTY_MEDIUM]: boolean;
+  [GAME_DIFFICULTY_HIGH]: boolean;
+  bossRewardClaimed: boolean;
+}
+
+export interface BattleAdventureLevelMeta {
   reward: {
     xp: number;
     coins: number;
@@ -40,6 +48,7 @@ export interface BattleAdventureLevel {
 }
 
 export interface BattleUserState {
+  pvpScore: 0,
   balance: {
     energy: number;
     coins: number;

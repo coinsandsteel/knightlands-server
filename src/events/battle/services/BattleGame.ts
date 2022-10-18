@@ -618,6 +618,7 @@ export class BattleGame extends BattleService {
         rank: DUEL_REWARDS.win.rank
       });
       game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.win.rank);
+      this._core.user.updatePvpScore();
     }
 
     this.setCombatResult("win");
@@ -635,6 +636,7 @@ export class BattleGame extends BattleService {
         xp: 0,
         rank: DUEL_REWARDS.loose.rank
       });
+      this._core.user.updatePvpScore();
     }
 
     this.setCombatResult("loose");

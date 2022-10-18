@@ -9,6 +9,8 @@ import {
 import { BattleCore } from "./BattleCore";
 import {
   BattleAdventureLevel,
+  BattleAdventureLevelMeta,
+  BattleAdventureLocation,
   BattleAdventuresState,
   BattleCombatRewards,
   BattleFighter,
@@ -63,10 +65,11 @@ export class BattleAdventures extends BattleService {
           return {
             [GAME_DIFFICULTY_MEDIUM]: false,
             [GAME_DIFFICULTY_HIGH]: false,
-          };
+            bossRewardClaimed: false
+          } as BattleAdventureLevel;
         }),
       };
-    });
+    }) as BattleAdventureLocation[];
 
     // Open the very first level
     locations[0].levels[0][GAME_DIFFICULTY_MEDIUM] = true;
@@ -84,6 +87,11 @@ export class BattleAdventures extends BattleService {
     let level = this.level;
 
     if (this.difficulty === GAME_DIFFICULTY_MEDIUM) {
+      const levelMeta = this.getLevelMeta(location, level);
+      if (levelMeta.bossReward) {
+        this._state.locations[location].levels[level].bossRewardClaimed = true;
+      }
+
       // Find the next level
       level++;
       if (level > this._levelsCount - 1) {
@@ -126,15 +134,20 @@ export class BattleAdventures extends BattleService {
     this._core.events.adventures(this._state);
   }
 
-  public getLevelMeta(location: number, level: number): BattleAdventureLevel {
+  public getLevelMeta(location: number, level: number): BattleAdventureLevelMeta {
     return _.cloneDeep(ADVENTURES[location].levels[level][this.difficulty]);
+  }
+
+  public getLevelData(location: number, level: number): BattleAdventureLevel {
+    return this._state.locations[location].levels[level];
   }
 
   public getCurrentLevelReward(): BattleCombatRewards {
     const levelMeta = this.getLevelMeta(this.location, this.level);
+    const levelData = this.getLevelData(this.location, this.level);
     return {
-      coins: levelMeta.reward.coins + levelMeta.bossReward.coins,
-      crystals: levelMeta.bossReward.crystals,
+      coins: levelMeta.reward.coins + (!levelData.bossRewardClaimed ? levelMeta.bossReward.coins : 0),
+      crystals: !levelData.bossRewardClaimed ? levelMeta.bossReward.crystals : 0,
       xp: levelMeta.reward.xp,
       rank: 0
     };

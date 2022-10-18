@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { Collection, ObjectId } from "mongodb";
+import { Collection, Document, ObjectId } from "mongodb";
 import { Collections } from "../../database/database";
 
 import Game from "../../game";
@@ -318,7 +318,11 @@ export class BattleManager {
     });
   }
 
-  async getRankingsByMode(mode: string) {
+  public async getUserRankData(userId: ObjectId): Promise<Document> {
+    return await this._rankCollection.findOne({ _id: userId });
+  }
+
+  public async getRankingsByMode(mode: string) {
     const records = await this._rankCollection
       .aggregate([
         { $sort: { [mode]: -1, order: 1 } },
