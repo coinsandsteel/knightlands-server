@@ -59,10 +59,20 @@ export default class UnitAbilities {
         attack: 0,
       },
       effects: [],
-      targets: abilityClass === ABILITY_ATTACK ?
-        { targetEnemies: true, targetAllies: false, targetSelf: false, targetEmptyCell: false }
-        :
-        _.pick(abilityMeta, ['targetEnemies', 'targetAllies', 'targetSelf', 'targetEmptyCell'])
+      targets:
+        abilityClass === ABILITY_ATTACK
+          ? {
+              targetEnemies: true,
+              targetAllies: false,
+              targetSelf: false,
+              targetEmptyCell: false,
+            }
+          : _.pick(abilityMeta, [
+              "targetEnemies",
+              "targetAllies",
+              "targetSelf",
+              "targetEmptyCell",
+            ]),
     } as BattleUnitAbility;
     return blueprint;
   }
@@ -75,6 +85,10 @@ export default class UnitAbilities {
   }
 
   public getMeta(abilityClass: string) {
+    if (abilityClass === ABILITY_MOVE) {
+      return null;
+    }
+
     if (abilityClass === ABILITY_ATTACK) {
       const isTankOrMelee = [UNIT_CLASS_TANK, UNIT_CLASS_MELEE].includes(
         this._unit.class
@@ -118,6 +132,10 @@ export default class UnitAbilities {
   }
 
   protected getAbilityValue(ability: string): number | null {
+    if (ability === ABILITY_MOVE) {
+      return null;
+    }
+
     if (ability === ABILITY_ATTACK) {
       return this._unit.damage;
     }
@@ -131,12 +149,16 @@ export default class UnitAbilities {
       classMeta.damage *
       (abilityMeta.baseMultiplier +
         abilityMeta.levelStep * (abilityData.levelInt - 1)) *
-      abilityMeta.finalMultiplier * (this._unit.isBoss ? SETTINGS.bossPower : 1);
+      abilityMeta.finalMultiplier *
+      (this._unit.isBoss ? SETTINGS.bossPower : 1);
 
     return Math.round(abilityValue);
   }
 
   protected getAbilityCombatValue(ability: string): number | null {
+    if (ability === ABILITY_MOVE) {
+      return null;
+    }
     if (ability === ABILITY_ATTACK) {
       return this._unit.damage;
     }
@@ -146,12 +168,9 @@ export default class UnitAbilities {
       const effects = abilityData.effects;
       if (effects && effects.length && effects[0] && effects[0].length) {
         return effects[0][0].value;
-      } else {
-        return 0;
       }
-    } else {
-      return null;
     }
+    return null;
   }
 
   public enableAbilityCooldown(abilityClass: string): void {
@@ -163,6 +182,15 @@ export default class UnitAbilities {
       ) {
         const abilityScheme =
           ABILITY_SCHEME[this._unit.levelInt - 1][abilityEntry.tier - 1];
+
+        if (!abilityScheme) {
+          console.log("[UnitAbilities] enableAbilityCooldown", {
+            unitLevel: this._unit.levelInt,
+            abilityEntry,
+            abilityScheme,
+          });
+        }
+
         abilityEntry.cooldown = {
           enabled: true,
           estimate: abilityScheme.cd,
@@ -192,17 +220,11 @@ export default class UnitAbilities {
     });
   }
 
-  public getAbilityIgnoreObstacles(abilityClass: string): boolean {
-    const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
+  protected calcAbility(abilityClass: string): BattleUnitAbility|null {
+    if (abilityClass === ABILITY_MOVE) {
+      throw new Error('Cannot calc "move" ability stats. No stats were implemented');
+    }
 
-    let ignoreObstacles = abilityMeta.ignoreObstacles;
-    return _.isArray(ignoreObstacles)
-      ? ignoreObstacles[abilityData.levelInt - 1]
-      : ignoreObstacles;
-  }
-
-  protected calcAbility(abilityClass: string): BattleUnitAbility {
     const abilityData = this.getAbilityByClass(abilityClass);
     const abilityMeta = this._unit.abilities.getMeta(abilityClass);
 
@@ -228,7 +250,7 @@ export default class UnitAbilities {
       ...abilityData,
       abilityType: abilityMeta.abilityType,
       value,
-      combatValue: combatValue === null ? value : combatValue,
+      combatValue: abilityMeta.affectHp ? value : (effects.length ? combatValue : null),
       range: {
         move: abilityMeta.canMove ? (moveRange < 0 ? 0 : moveRange) : 0,
         attack: attackRange < 0 ? 0 : attackRange,
@@ -240,6 +262,9 @@ export default class UnitAbilities {
   }
 
   public movingOnly(abilityClass: string): boolean {
+    if (abilityClass === ABILITY_MOVE) {
+      return true;
+    }
     const abilityMeta = this._unit.abilities.getMeta(abilityClass);
     return abilityMeta.canMove && abilityMeta.targetEmptyCell;
   }
@@ -261,7 +286,7 @@ export default class UnitAbilities {
           estimate: ability.cooldown ? ability.cooldown.estimate : 0,
         },
         effects: ability.effects,
-        targets: ability.targets
+        targets: ability.targets,
       } as BattleUnitAbility;
     });
   }
@@ -274,6 +299,13 @@ export default class UnitAbilities {
 
       const abilityScheme =
         ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
+
+      console.log("[UnitAbilities] Trying to unlock", {
+        unitName: this._unit.name,
+        abilityScheme: !!abilityScheme,
+        unitLevel: this._unit.levelInt,
+        abilityTier: ability.tier,
+      });
 
       if (abilityScheme) {
         // Unlock ability
@@ -310,7 +342,7 @@ export default class UnitAbilities {
         return;
       }
 
-      ability.enabled = true;
+      ability.enabled = !!level;
       ability.level = {
         current: level,
         next: null,
@@ -329,7 +361,7 @@ export default class UnitAbilities {
       if (ability.tier !== tier || ability.abilityClass === ABILITY_ATTACK) {
         return;
       }
-      ability.enabled = true;
+      ability.enabled = !!level;
       ability.level = {
         current: level,
         next: null,
@@ -356,13 +388,11 @@ export default class UnitAbilities {
     const ability = this._abilities.find(
       (entry) => entry.abilityClass === abilityClass
     );
-    const abilityScheme =
-      ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
-    ability.enabled = true;
     ability.level.current++;
     ability.levelInt++;
 
-    const canUpgradeMore = ability.level.current < this.getMaxAbilityLevel(ability.tier);
+    const canUpgradeMore =
+      ability.level.current < this.getMaxAbilityLevel(ability.tier);
     ability.level.next = canUpgradeMore ? ability.level.next + 1 : null;
     ability.level.price = canUpgradeMore
       ? this.getAbilityUpgradePrice(ability.tier, ability.level.next)

@@ -34,6 +34,10 @@ export class Fighter {
     abilities: number;
   };
 
+  get name(): string {
+    return this._unit.name;
+  }
+
   get class(): string {
     return this._unit.class;
   }

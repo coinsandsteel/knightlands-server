@@ -252,20 +252,14 @@ export class Unit {
   }
 
   public randomize() {
-    let maxLevel = 1;
-    if (this._tier === 1) {
-      maxLevel = SETTINGS.maxUnitTierLevel[1];
-    }
-    if (this._tier === 2) {
-      maxLevel = SETTINGS.maxUnitTierLevel[2];
-    }
+    let maxLevel = SETTINGS.maxUnitTierLevel[this._tier];
     let level = _.random(1, maxLevel);
     this.setLevel(level, true);
 
     this.setAbilitiesLevels([
       { tier: 1, level: _.random(1, this.abilities.getMaxAbilityLevel(1)) },
-      { tier: 2, level: _.random(1, this.abilities.getMaxAbilityLevel(2)) },
-      { tier: 3, level: _.random(1, this.abilities.getMaxAbilityLevel(3)) },
+      { tier: 2, level: _.random(0, this.abilities.getMaxAbilityLevel(2)) },
+      { tier: 3, level: _.random(0, this.abilities.getMaxAbilityLevel(3)) },
     ]);
 
     this.abilities.update();

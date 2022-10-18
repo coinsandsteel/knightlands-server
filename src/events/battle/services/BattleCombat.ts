@@ -29,15 +29,15 @@ export class BattleCombat extends BattleService {
       return false;
     }
 
+    // Allow movement
+    if (abilityClass === ABILITY_MOVE) {
+      return true;
+    }
+
     // Check if unit can use ability
     if (!fighter.abilities.canUseAbility(abilityClass)) {
       this.log("Fighter cannot use this ability. Abort.");
       return false;
-    }
-
-    // Allow movement
-    if (abilityClass === ABILITY_MOVE) {
-      return true;
     }
 
     // Check if target is dead
@@ -66,11 +66,15 @@ export class BattleCombat extends BattleService {
     return true;
   }
 
-  public acceptableRange(
+  public acceptableRangeForAttack(
     fighter: Fighter,
     target: Fighter | null,
     abilityClass: string
   ): boolean {
+    if (abilityClass === ABILITY_MOVE) {
+      return false;
+    }
+
     const abilityMeta = fighter.abilities.getMeta(abilityClass);
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
 
@@ -130,6 +134,10 @@ export class BattleCombat extends BattleService {
     target: Fighter,
     abilityClass: string
   ): void {
+    if ([ABILITY_ATTACK, ABILITY_MOVE].includes(abilityClass)) {
+      return;
+    }
+
     this.log("Buff", { abilityClass });
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
     const draws = abilityData.effects;
@@ -192,6 +200,9 @@ export class BattleCombat extends BattleService {
     target: Fighter | null,
     abilityClass: string
   ): void {
+    if (abilityClass === ABILITY_MOVE) {
+      return;
+    }
     const abilityMeta = fighter.abilities.getMeta(abilityClass);
     if (abilityMeta.targetEnemies) {
       this.attack(fighter, target, abilityClass);

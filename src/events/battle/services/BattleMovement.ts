@@ -263,23 +263,29 @@ export class BattleMovement extends BattleService {
 
     // Calc if there's any obstacles on the way
     // Interim cells only.
-    let path = this.getPath(fighter.index, index, false);
-    for (let pathIndex of path) {
-      const terrain = this._core.game.terrain.getTerrainTypeByIndex(+pathIndex);
-      //this.log(`[Tile]`, { index: +pathIndex, terrain });
-      if (!terrain) {
-        continue;
-      }
+    const abilityMeta = fighter.abilities.getMeta(abilityClass);
+    const ignoreTerrain = abilityMeta ? abilityMeta.ignoreTerrain : false;
+    const ignoreObstacles = abilityMeta ? abilityMeta.ignoreObstacles : false;
 
-      let result = this.handleTerrain(fighter, pathIndex, terrain, true);
-      if (result.stop) {
-        this.log(`Tile stopped the fighter`, { index: +pathIndex});
-        // Found an obstacle, stop
-        index = +pathIndex;
-        break;
-      }
-      if (result.effects.length) {
-        effects.push(...result.effects);
+    if (!ignoreTerrain) {
+      let path = this.getPath(fighter.index, index, ignoreObstacles);
+      for (let pathIndex of path) {
+        const terrain = this._core.game.terrain.getTerrainTypeByIndex(+pathIndex);
+        //this.log(`[Tile]`, { index: +pathIndex, terrain });
+        if (!terrain) {
+          continue;
+        }
+
+        let result = this.handleTerrain(fighter, pathIndex, terrain, true);
+        if (result.stop) {
+          this.log(`Tile stopped the fighter`, { index: +pathIndex});
+          // Found an obstacle, stop
+          index = +pathIndex;
+          break;
+        }
+        if (result.effects.length) {
+          effects.push(...result.effects);
+        }
       }
     }
 

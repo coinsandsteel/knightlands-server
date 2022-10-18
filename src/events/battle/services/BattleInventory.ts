@@ -273,7 +273,9 @@ export class BattleInventory extends BattleService {
       throw errors.NotEnoughCurrency;
     }
 
-    this._core.user.modifyBalance(CURRENCY_CRYSTALS, -unit.level.price);
+    const abilityData = unit.abilities.getAbilityByClass(ability);
+    this._core.user.modifyBalance(CURRENCY_CRYSTALS, -abilityData.level.price);
+
     unit.abilities.upgradeAbility(ability);
     unit.setPower();
     this.updateUnitState(unit);

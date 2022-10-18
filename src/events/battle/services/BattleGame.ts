@@ -22,6 +22,8 @@ import { BattleService } from "./BattleService";
 import { BattleSquad } from "./BattleSquad";
 import { BattleTerrain } from "./BattleTerrain";
 
+const isProd = process.env.ENV == "prod";
+
 export class BattleGame extends BattleService {
   protected _state: BattleGameState;
   protected _core: BattleCore;
@@ -239,7 +241,7 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    if (!this._core.user.increaseDailyDuelsCounter()) {
+    if (isProd && !this._core.user.increaseDailyDuelsCounter()) {
       return;
     }
 
@@ -452,10 +454,7 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    if (
-      abilityClass === ABILITY_MOVE ||
-      fighter.abilities.movingOnly(abilityClass)
-    ) {
+    if (fighter.abilities.movingOnly(abilityClass)) {
       const moveCells = this._movement.getMoveCellsByAbility(
         fighter,
         abilityClass
@@ -531,15 +530,15 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    // Check if need to approach
-    if (abilityClass === ABILITY_MOVE) {
+    // Go to empty cell
+    if (abilityClass === ABILITY_MOVE || !target) {
       this.log("Moving the fighter...");
       this._movement.moveFighter(fighter, abilityClass, index);
       return;
     }
 
     // Check if need to approach
-    if (abilityMeta.canMove) {
+    if (abilityMeta.canMove && target) {
       this.combat.tryApproachEnemy(fighter, target, abilityClass);
     }
 
@@ -554,7 +553,7 @@ export class BattleGame extends BattleService {
           fighter: fighter.fighterId,
           target: target.fighterId,
         });
-        if (this.combat.acceptableRange(target, fighter, ABILITY_ATTACK)) {
+        if (this.combat.acceptableRangeForAttack(target, fighter, ABILITY_ATTACK)) {
           this.combat.handleHpChange(target, fighter, ABILITY_ATTACK);
         }
       }
