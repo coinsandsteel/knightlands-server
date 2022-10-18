@@ -124,31 +124,35 @@ export class BattleAdventures extends BattleService {
 
     // Last level? Go to the next location
     if (
-      this.difficulty === GAME_DIFFICULTY_MEDIUM &&
+      this.difficulty === GAME_DIFFICULTY_MEDIUM
+      &&
       level > this._levelsCount - 1
     ) {
       level = 0;
       location++;
+
+      // Open high difficulty in the current location
+      this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] = true;
     }
 
     // Open the next level
     if (
+      // Do not open next location in the last location
+      this.location <= this._locationsCount - 1
+      &&
       // Do not unlock next high location
-      (this.difficulty === GAME_DIFFICULTY_HIGH &&
-        level <= this._levelsCount - 1) ||
-      // Unlock next medium location
-      this.difficulty === GAME_DIFFICULTY_MEDIUM
+      (
+        (
+          this.difficulty === GAME_DIFFICULTY_HIGH
+          &&
+          level <= this._levelsCount - 1
+        )
+        ||
+        // Unlock next medium location
+        this.difficulty === GAME_DIFFICULTY_MEDIUM
+      )
     ) {
       this._state.locations[location].levels[level][this.difficulty] = true;
-    }
-
-    // Open high difficulty in the current location
-    if (
-      this.difficulty === GAME_DIFFICULTY_MEDIUM &&
-      this.level === this._levelsCount - 1
-    ) {
-      this._state.locations[this.location].levels[0][GAME_DIFFICULTY_HIGH] =
-        true;
     }
 
     this._core.events.adventures(this._state);
