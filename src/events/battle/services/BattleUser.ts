@@ -13,6 +13,7 @@ import {
 } from "../../../knightlands-shared/battle";
 import game from "../../../game";
 import errors from "../../../knightlands-shared/errors";
+import { SETTINGS } from "../meta";
 
 const isProd = process.env.ENV == "prod";
 
@@ -61,9 +62,10 @@ export class BattleUser {
         [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
       },
       items: [{ id: 1, quantity: 1 }],
-      timers: {
+      counters: {
         energy: game.nowSec,
-        purchase: {}
+        purchase: {},
+        duels: {}
       },
       rewards: {
         dailyRewards: [],
@@ -112,7 +114,7 @@ export class BattleUser {
     let energyPerCycle = ENERGY_AMOUNT_PER_CYCLE;
     let energyPerSecond = energyPerCycle / cycleLength;
 
-    let passedTime = game.nowSec - this._state.timers.energy;
+    let passedTime = game.nowSec - this._state.counters.energy;
     let accumulatedEnergy = passedTime * energyPerSecond;
 
     return Math.floor(accumulatedEnergy);
@@ -130,7 +132,7 @@ export class BattleUser {
 
     this._energyInterval = setTimeout(() => {
       this.modifyBalance(CURRENCY_ENERGY, ENERGY_AMOUNT_PER_CYCLE);
-      this._state.timers.energy = game.nowSec;
+      this._state.counters.energy = game.nowSec;
 
       if (this.energy < ENERGY_MAX) {
         this.launchEnergyTimer(true);
@@ -242,9 +244,9 @@ export class BattleUser {
     if (
       positionMeta.dailyMax && positionMeta.dailyMax > 0
       &&
-      !this.dailyLimitExceeded(id, positionMeta.dailyMax)
+      !this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax)
       &&
-      !this.increaseDailyCounter(id, quantity)
+      !this.increaseDailyPurchaseCounter(id, quantity)
     ) {
       console.log("Purchase failed. Daily limit exeeded");
       return;
@@ -353,13 +355,19 @@ export class BattleUser {
 
   protected purgePreviousDates(): void {
     const currentDate = new Date().toLocaleDateString("en-US");
-    this._state.timers.purchase = _.pick(this._state.timers.purchase, currentDate);
-    this._core.events.timers(this._state.timers);
+    this._state.counters.purchase = _.pick(this._state.counters.purchase, currentDate);
+    this._core.events.counters(this._state.counters);
   }
 
-  protected dailyLimitExceeded(id: number, max: number): boolean {
+  public dailyDuelsLimitExceeded(): boolean {
     const date = new Date().toLocaleDateString("en-US");
-    const dateEntry = this._state.timers.purchase[date];
+    const dateEntry = this._state.counters.duels[date];
+    return (dateEntry || 0) >= SETTINGS.dailyDuelsLimit;
+  }
+
+  protected dailyPurchaseLimitExceeded(id: number, max: number): boolean {
+    const date = new Date().toLocaleDateString("en-US");
+    const dateEntry = this._state.counters.purchase[date];
     if (dateEntry) {
       const idPurchases = dateEntry[id] || 0;
       if (idPurchases >= max) {
@@ -369,7 +377,26 @@ export class BattleUser {
     return false;
   }
 
-  protected increaseDailyCounter(id: number, count: number): boolean {
+  public increaseDailyDuelsCounter(): boolean {
+    const date = new Date().toLocaleDateString("en-US");
+    const dateEntry = this._state.counters.duels[date];
+    const newCount = (dateEntry || 0) + 1;
+
+    // Overhead
+    if (newCount > SETTINGS.dailyDuelsLimit) {
+      return false;
+    // Increase counter
+    } else {
+      this._state.counters.duels[date] = newCount;
+      console.log('Increased daily duels counter', this._state.counters.duels[date]);
+    }
+
+    this._core.events.counters(this._state.counters);
+
+    return true;
+  }
+
+  public increaseDailyPurchaseCounter(id: number, count: number): boolean {
     const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id) as BattleShopItemMeta);
     if (!positionMeta) {
       return false;
@@ -377,22 +404,22 @@ export class BattleUser {
 
     if (positionMeta.dailyMax) {
       const date = new Date().toLocaleDateString("en-US");
-      const dateEntry = this._state.timers.purchase[date];
+      const dateEntry = this._state.counters.purchase[date];
       const newCount = (dateEntry? dateEntry[id] : 0) + count;
       // Overhead
       if (newCount > positionMeta.dailyMax) {
         return false;
       // Increase counter
       } else {
-        this._state.timers.purchase[date] = {
+        this._state.counters.purchase[date] = {
           ...dateEntry,
           [id]: newCount
         };
-        console.log('Increased daily counter', this._state.timers.purchase[date]);
+        console.log('Increased daily counter', this._state.counters.purchase[date]);
       }
     }
 
-    this._core.events.timers(this._state.timers);
+    this._core.events.counters(this._state.counters);
 
     return true;
   }

@@ -239,6 +239,10 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
+    if (!this._core.user.increaseDailyDuelsCounter()) {
+      return;
+    }
+
     this.setMode(GAME_MODE_DUEL);
 
     // Terrain

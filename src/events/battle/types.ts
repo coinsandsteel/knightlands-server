@@ -65,10 +65,13 @@ export interface BattleUserState {
     crystals: number;
   };
   items: BattleItem[];
-  timers: {
+  counters: {
     energy: number;
     purchase: {
       [date: string]: { [id: number]: number }
+    },
+    duels: {
+      [date: string]: number;
     }
   };
   rewards: {
