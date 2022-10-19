@@ -341,7 +341,11 @@ export class BattleUser {
       &&
       positionMeta.content.tierProbabilities.length === 3
     ) {
-      items = this.activateLootbox(positionMeta.content.units, positionMeta.content.tierProbabilities, tribe);
+      items = this.activateLootbox(
+        positionMeta.content.units,
+        positionMeta.content.tierProbabilities,
+        positionMeta.content.canSelectTribe ? tribe : null
+      );
 
     } else if (positionMeta.content.energy && this.energy < ENERGY_MAX) {
       this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);

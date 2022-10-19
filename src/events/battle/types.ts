@@ -261,6 +261,7 @@ export interface BattleShopItemMeta {
   content: {
     units?: number;
     energy?: number;
+    canSelectTribe?: boolean;
     tierProbabilities?: number[];
     description: string[];
   };
