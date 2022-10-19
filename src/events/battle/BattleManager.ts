@@ -110,7 +110,7 @@ export class BattleManager {
 
     // this.testMeta();
 
-    if (!isProd) {
+    if (false && !isProd) {
       await this._rankCollection.deleteMany({});
       await this.addTestRatings();
       await this.distributeRewards();
@@ -151,9 +151,9 @@ export class BattleManager {
 
   async watchResetRankings() {
     if (!isProd) {
-      await this._rankCollection.deleteMany({});
-      await this.addTestRatings();
-      await this.distributeRewards();
+      // await this._rankCollection.deleteMany({});
+      // await this.addTestRatings();
+      // await this.distributeRewards();
     } else {
       setInterval(async () => {
         await this.commitResetRankings();

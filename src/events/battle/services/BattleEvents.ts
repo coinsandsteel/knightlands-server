@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import game from "../../../game";
 import events from "../../../knightlands-shared/events";
 import { BattleService } from "./BattleService";
-import { BattleRewardDayData, BattleSquadState, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility, BattleAdventuresState, BattleCombatRewards, BattleRewardSquadData } from "../types";
+import { BattleRewardDayData, BattleSquadState, BattleTerrainMap, BattleBuff, BattleInitiativeRatingEntry, BattleUnitAbility, BattleAdventuresState, BattleCombatRewards, BattleRewardSquadData, BattleUnit, BattleFighter } from "../types";
 import { Unit } from "../units/Unit";
 import { Fighter } from "../units/Fighter";
 
@@ -23,21 +23,21 @@ export class BattleEvents extends BattleService {
     this._events = {};
   }
 
-  updateUnit(unit: Unit) {
-    this._events.updateUnit = unit.serialize();
+  updateUnit(unit: BattleUnit) {
+    this._events.updateUnit = unit;
   }
 
-  addUnit(unit: Unit) {
+  addUnit(unit: BattleUnit) {
     this._events.addUnit = this._events.addUnit || [];
-    this._events.addUnit.push(unit.serialize());
+    this._events.addUnit.push(unit);
   }
 
   removeUnit(unit: Unit) {
     this._events.removeUnit = unit.template;
   }
 
-  inventory(units: Unit[]) {
-    this._events.inventory = units.map((unit: Unit) => unit.serialize());
+  inventory(units: BattleUnit[]) {
+    this._events.inventory = units;
   }
 
   balance(balance) {
@@ -114,18 +114,18 @@ export class BattleEvents extends BattleService {
     this._events.abilities[fighterId] = abilities;
   }
 
-  userFighter(fighter: Fighter) {
+  userFighter(fighter: BattleFighter) {
     if (this._events.userFighter === undefined) {
       this._events.userFighter = [];
     }
-    this._events.userFighter.push(fighter.serializeFighter());
+    this._events.userFighter.push(fighter);
   }
 
-  enemyFighter(fighter: Fighter) {
+  enemyFighter(fighter: BattleFighter) {
     if (this._events.enemyFighter === undefined) {
       this._events.enemyFighter = [];
     }
-    this._events.enemyFighter.push(fighter.serializeFighter());
+    this._events.enemyFighter.push(fighter);
   }
 
   terrain(terrain: BattleTerrainMap) {

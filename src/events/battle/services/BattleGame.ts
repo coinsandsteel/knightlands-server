@@ -31,7 +31,7 @@ export class BattleGame extends BattleService {
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
   protected _enemyOptions: {
-    [difficulty: string]: BattleFighter[]
+    [difficulty: string]: Fighter[]
   } | null = null;
 
   protected _combat: BattleCombat;
@@ -232,7 +232,7 @@ export class BattleGame extends BattleService {
     this.terrain.setMap(map);
 
     // Enemy squad
-    const enemySquad = this._core.adventures.getEnemySquad(location, level);
+    const enemySquad = this._core.adventures.getEnemySquad();
     this.start(enemySquad);
   }
 
@@ -250,44 +250,28 @@ export class BattleGame extends BattleService {
     // Terrain
     this.terrain.setRandomMap();
 
-    const enemyFighters = this._enemyOptions[difficulty];
-    this.start(enemyFighters);
+    this.start(this._enemyOptions[difficulty]);
+    this._enemyOptions = null;
   }
 
-  public start(enemyFighters: BattleFighter[]): void {
+  public start(enemyFighters: Fighter[]): void {
     if (!this._userSquad.fighters.length) {
       return;
     }
 
-    this.spawnEnemySquad(enemyFighters);
-    this._enemySquad.load();
-    this._enemySquad.regenerateFighterIds();
-    this._enemySquad.arrange();
-
-    this._userSquad.load();
-    this._userSquad.regenerateFighterIds();
-    this._userSquad.arrange();
+    this._enemySquad.setFighters(enemyFighters);
+    this._enemySquad.prepare();
+    this._userSquad.prepare();
+    this.setInitiativeRating();
 
     // Start combat
     this.setCombatStarted(true);
-    this.setInitiativeRating();
 
     // Sync & flush
     this.sync();
     this._core.events.flush();
 
     this.nextFighter();
-  }
-
-  public spawnUserSquad(userSquad: BattleFighter[]) {
-    //console.log("Spawn user squad");
-    this._userSquad = new BattleSquad(userSquad, false, this._core);
-  }
-
-  public spawnEnemySquad(enemySquad: BattleFighter[]) {
-    //console.log("Spawn enemy squad");
-    this._enemySquad = new BattleSquad(enemySquad, true, this._core);
-    this._enemyOptions = null;
   }
 
   public setTerrain(map: BattleTerrainMap) {
@@ -305,23 +289,29 @@ export class BattleGame extends BattleService {
       [GAME_DIFFICULTY_MEDIUM]: [],
       [GAME_DIFFICULTY_HIGH]: [],
     };
+
+    const result = {};
+    this._enemyOptions = {};
     for (let difficulty in enemyOptions) {
+      this._enemyOptions[difficulty] = [];
+      result[difficulty] = [];
       for (let index = 0; index < 5; index++) {
         const unit = this._core.inventory.getNewUnitRandom();
-        const fighter = Fighter.createFighter(unit, true, this._core.events);
-        enemyOptions[difficulty].push(fighter.serializeFighter());
+        const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
+        this._enemyOptions[difficulty].push(fighter);
+        result[difficulty].push(fighter.serialize());
       }
     }
-    this._enemyOptions = enemyOptions;
-    return enemyOptions;
+
+    return result;
   }
 
   public getRandomEnemySquad(): BattleFighter[] {
     const squad = [];
     for (let index = 0; index < 5; index++) {
       const unit = this._core.inventory.getNewUnitRandom();
-      const fighter = Fighter.createFighter(unit, true, this._core.events);
-      squad.push(fighter.serializeFighter());
+      const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
+      squad.push(fighter.serialize());
     }
     return squad;
   }
@@ -400,8 +390,9 @@ export class BattleGame extends BattleService {
       );
       const moveCells = this._movement.getMoveCellsByAbility(
         activeFighter,
-        ABILITY_MOVE
-      );
+        ABILITY_MOVE,
+        true
+      ) as number[];
       this.setMoveCells(moveCells);
     }
 
@@ -457,8 +448,9 @@ export class BattleGame extends BattleService {
     if (fighter.abilities.movingOnly(abilityClass)) {
       const moveCells = this._movement.getMoveCellsByAbility(
         fighter,
-        abilityClass
-      );
+        abilityClass,
+        true
+      ) as number[];
       this.setAttackCells([]);
       this.setTargetCells([]);
       this.setMoveCells(moveCells);
@@ -499,7 +491,7 @@ export class BattleGame extends BattleService {
       this.log("AI attacks", { attackAreaData, index, ability });
     } else {
       ability = ABILITY_MOVE;
-      const moveCells = this._movement.getMoveCellsByAbility(fighter, ability);
+      const moveCells = this._movement.getMoveCellsByAbility(fighter, ability, true) as number[];
       index = _.sample(moveCells);
       this.log("AI moves", { moveCells, choosedIndex: index });
     }
@@ -531,7 +523,7 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    // Go to empty cell
+    // Go to an empty cell
     if (abilityClass === ABILITY_MOVE || !target) {
       this.log("Moving the fighter...");
       this._movement.moveFighter(fighter, abilityClass, index);
@@ -548,7 +540,7 @@ export class BattleGame extends BattleService {
       this.combat.handleHpChange(fighter, target, abilityClass);
 
       // Counter-attack
-      if (target.launchToCounterAttack) {
+      if (target.launchCounterAttack) {
         this.log("Target ia trying to counter-attack...", {
           fighter: fighter.fighterId,
           target: target.fighterId,

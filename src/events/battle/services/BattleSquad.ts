@@ -35,10 +35,13 @@ export class BattleSquad extends BattleService {
     this._state.fighters = fighters;
   }
 
+  public setFighters(fighters: Fighter[]) {
+    this._fighters = fighters;
+    this.updateStat();
+  }
+
   public load() {
-    //console.log("Squad load", this._isEnemy);
-    this.pullFighters();
-    //this.resetState();
+    this.deserializeFighters();
     this.updateStat();
   }
 
@@ -51,25 +54,25 @@ export class BattleSquad extends BattleService {
   }
 
   public getState(): BattleSquadState {
-    this.pushFighters();
+    this.serializeFighters();
     return this._state;
   }
 
-  protected pullFighters(): void {
+  protected deserializeFighters(): void {
     this._fighters = [];
     if (this._state && this._state.fighters) {
       this._state.fighters.forEach((blueprint: BattleFighter | null) => {
-        this._fighters.push(blueprint ? this.makeFighter(blueprint) : null);
+        this._fighters.push(blueprint ? new Fighter(blueprint, this._core.events) : null);
       });
     }
   }
 
-  public pushFighters(): void {
+  public serializeFighters(): void {
     this._state.fighters = [];
     if (this._fighters) {
       this._fighters.forEach((fighter: Fighter | null, index: number) => {
         this._state.fighters[index] = fighter
-          ? fighter.serializeFighter()
+          ? fighter.serialize()
           : null;
       });
     }
@@ -102,7 +105,7 @@ export class BattleSquad extends BattleService {
     }
 
     blueprint.isEnemy = this._isEnemy;
-    return new Fighter(unit, blueprint, this._core.events);
+    return new Fighter(blueprint, this._core.events);
   }
 
   public fillSlot(unitId: string, index: number): void {
@@ -115,7 +118,7 @@ export class BattleSquad extends BattleService {
       throw new Error(`[fillSlot] Unit #${unitId} not found in the inventory`);
     }
 
-    const figher = Fighter.createFighter(
+    const figher = Fighter.createFighterFromUnit(
       unit,
       this._isEnemy,
       this._core.events
@@ -147,7 +150,7 @@ export class BattleSquad extends BattleService {
 
   public proxyUnit(unitId: string): void {
     for (let index = 0; index < 5; index++) {
-      if (this._fighters[index] && this._fighters[index].unitId === unitId) {
+      if (this._fighters[index] && this._fighters[index].unit.unitId === unitId) {
         this.fillSlot(unitId, index);
       }
     }
@@ -156,7 +159,7 @@ export class BattleSquad extends BattleService {
   }
 
   public sync(): void {
-    this.pushFighters();
+    this.serializeFighters();
     this._core.events.userSquad(this._state);
   }
 
@@ -204,7 +207,7 @@ export class BattleSquad extends BattleService {
     this.fighters.forEach((fighter) => {
       fighter.buffs.reset();
       bonuses.forEach((bonus) =>
-        fighter.buffs.addBuff({ source: "squad", ...bonus })
+        fighter.buffs.addBuff({ source: "squad", ...bonus }, false)
       );
     });
 
@@ -223,7 +226,7 @@ export class BattleSquad extends BattleService {
 
   public includesUnit(unitId: string): boolean {
     return (
-      this.fighters.findIndex((fighters) => fighters.unitId === unitId) !== -1
+      this.fighters.findIndex((fighters) => fighters.unit.unitId === unitId) !== -1
     );
   }
 
@@ -232,29 +235,18 @@ export class BattleSquad extends BattleService {
     this.setPower();
   }
 
-  public resetState(): void {
+  public prepare(): void {
     this.fighters.forEach((fighter, index) => {
-      // Reset
+      // Reset fighter state
       fighter.reset();
-    });
-  }
-
-  public arrange(): void {
-    this.fighters.forEach((fighter, index) => {
-      // Reset indexes
+      // Reset index
       fighter.setIndex(index + (this._isEnemy ? 0 : 30));
     });
   }
 
   public addExp(expValue: number): void {
     this.fighters.forEach((fighter, index) => {
-      this._core.inventory.addExp(fighter.template, expValue);
-    });
-  }
-
-  public regenerateFighterIds(): void {
-    this.fighters.forEach((fighter, index) => {
-      fighter.regenerateFighterId();
+      this._core.inventory.addExp(fighter.unit.template, expValue);
     });
   }
 

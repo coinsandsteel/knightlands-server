@@ -218,7 +218,7 @@ export class BattleUser {
       }
 
       const currentTemplates = this._core.game.userFighters.map(
-        (u) => u.template
+        (u) => u.unit.template
       );
       rewardData.activeTemplates = _.intersection(
         currentTemplates,

@@ -11,17 +11,16 @@ import { BattleLevelScheme, BattleUnitAbility } from "../types";
 import { Unit } from "./Unit";
 import game from "../../../game";
 import { BattleAbilityMeta } from "./MetaDB";
-import { Fighter } from "./Fighter";
 
 export default class UnitAbilities {
-  protected _unit: Unit | Fighter;
+  protected readonly _unit: Unit;
   protected _abilities: BattleUnitAbility[];
 
   get abilities(): BattleUnitAbility[] {
     return this._abilities;
   }
 
-  constructor(unit: Unit | Fighter, abilities: BattleUnitAbility[]) {
+  constructor(unit: Unit, abilities: BattleUnitAbility[]) {
     this._unit = unit;
     this._abilities = abilities;
 
@@ -141,7 +140,7 @@ export default class UnitAbilities {
     }
 
     const abilityData = this.getAbilityByClass(ability);
-    const abilityMeta = this._unit.abilities.getMeta(ability);
+    const abilityMeta = this.getMeta(ability);
     const classMeta = game.battleManager.getClassMeta(this._unit.class);
 
     // ClassDamage * (BaseMultiplier + LevelStep * (AbilityLevel-1))) * FinalMultiplier
@@ -162,7 +161,7 @@ export default class UnitAbilities {
     if (ability === ABILITY_ATTACK) {
       return this._unit.damage;
     }
-    const abilityMeta = this._unit.abilities.getMeta(ability);
+    const abilityMeta = this.getMeta(ability);
     const abilityData = this.getAbilityByClass(ability);
     if (!abilityMeta.affectHp) {
       const effects = abilityData.effects;
@@ -226,7 +225,7 @@ export default class UnitAbilities {
     }
 
     const abilityData = this.getAbilityByClass(abilityClass);
-    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
+    const abilityMeta = this.getMeta(abilityClass);
 
     const value = this.getAbilityValue(abilityClass);
     const combatValue = this.getAbilityCombatValue(abilityClass);
@@ -265,7 +264,7 @@ export default class UnitAbilities {
     if (abilityClass === ABILITY_MOVE) {
       return true;
     }
-    const abilityMeta = this._unit.abilities.getMeta(abilityClass);
+    const abilityMeta = this.getMeta(abilityClass);
     return abilityMeta.canMove && abilityMeta.targetEmptyCell;
   }
 
@@ -300,12 +299,12 @@ export default class UnitAbilities {
       const abilityScheme =
         ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
 
-      console.log("[UnitAbilities] Trying to unlock", {
+      /*console.log("[UnitAbilities] Trying to unlock", {
         unitName: this._unit.name,
         abilityScheme: !!abilityScheme,
         unitLevel: this._unit.levelInt,
         abilityTier: ability.tier,
-      });
+      });*/
 
       if (abilityScheme) {
         // Unlock ability

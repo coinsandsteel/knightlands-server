@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { BattleEvents } from "../services/BattleEvents";
-import { BattleFighter, BattleUnitCharacteristics } from "../types";
+import { BattleFighter, BattleUnit, BattleUnitCharacteristics } from "../types";
 import FighterBuffs from "./FighterBuffs";
 import { Unit } from "./Unit";
 import UnitAbilities from "./UnitAbilities";
@@ -10,9 +10,6 @@ export class Fighter {
   protected _events: BattleEvents;
   protected readonly _unit: Unit; // Unit copy
 
-  protected _name: string;
-  protected _unitId: string;
-  protected _unitTemplate: number;
   protected _fighterId: string;
   protected _isBoss: boolean;
   protected _isEnemy: boolean;
@@ -22,8 +19,6 @@ export class Fighter {
   protected _index: number | null;
   protected _hp: number;
   protected _buffs: FighterBuffs;
-  protected _characteristics: BattleUnitCharacteristics;
-  protected _abilities: UnitAbilities;
 
   public _modifiers: {
     speed: number;
@@ -33,22 +28,6 @@ export class Fighter {
     attack: number;
     abilities: number;
   };
-
-  get name(): string {
-    return this._unit.name;
-  }
-
-  get class(): string {
-    return this._unit.class;
-  }
-
-  get levelInt(): number {
-    return this._unit.levelInt;
-  }
-
-  get template(): number {
-    return this._unit.template;
-  }
 
   get isBoss(): boolean {
     return this._isBoss;
@@ -84,10 +63,6 @@ export class Fighter {
 
   get isDead(): boolean {
     return this._isDead;
-  }
-
-  get unitId(): string {
-    return this._unitId;
   }
 
   get hp(): number {
@@ -154,7 +129,7 @@ export class Fighter {
       .map((buff) => buff.targetFighterId);
   }
 
-  get launchToCounterAttack(): boolean {
+  get launchCounterAttack(): boolean {
     return (
       !this.isStunned &&
       this.buffs
@@ -163,8 +138,8 @@ export class Fighter {
     );
   }
 
-  constructor(unit: Unit, blueprint: BattleFighter, events: BattleEvents) {
-    this._unit = unit;
+  constructor(blueprint: BattleFighter, events: BattleEvents) {
+    this._unit = new Unit(blueprint.unit, events);
     this._events = events;
 
     this._modifiers = {
@@ -176,9 +151,6 @@ export class Fighter {
       abilities: -1,
     };
 
-    this._name = unit.name;
-    this._unitId = unit.unitId;
-    this._unitTemplate = unit.template;
     this._fighterId = blueprint.fighterId;
     this._isBoss = blueprint.isBoss;
     this._isEnemy = blueprint.isEnemy;
@@ -187,25 +159,19 @@ export class Fighter {
     this._isStunned = blueprint.isStunned;
     this._index = blueprint.index;
     this._hp = blueprint.hp;
-
     this._buffs = new FighterBuffs(events, this, blueprint.buffs);
-    this._abilities = new UnitAbilities(this, blueprint.abilities);
 
     this.update();
   }
 
-  public static createFighter(
+  public static createFighterFromUnit(
     unit: Unit,
     isEnemy: boolean,
     events: BattleEvents
   ): Fighter {
     const blueprint = {
-      name: unit.name,
-      unitId: unit.unitId,
-      unitTemplate: unit.template,
-      tier: unit.tier,
+      unit: unit.serialize(),
       fighterId: uuidv4().split("-").pop(),
-      isBoss: unit.isBoss,
       isEnemy,
       isDead: false,
       ratingIndex: 0,
@@ -215,7 +181,7 @@ export class Fighter {
       buffs: [],
       abilities: unit.abilities.serialize(),
     } as BattleFighter;
-    return new Fighter(unit, blueprint, events);
+    return new Fighter(blueprint, events);
   }
 
   public reset(): void {
@@ -248,16 +214,10 @@ export class Fighter {
     this.buffs.handleDamageCallback();
   }
 
-  public serializeFighter(): BattleFighter {
+  public serialize(): BattleFighter {
     const fighter = {
-      name: this._name,
-      unitId: this._unitId,
-      tribe: this._unit.tribe,
-      class: this._unit.class,
-      tier: this._unit.tier,
-      unitTemplate: this._unitTemplate,
+      unit: this.unit.serialize(),
       fighterId: this._fighterId,
-      isBoss: this._isBoss,
       isEnemy: this._isEnemy,
       isDead: this._isDead,
       ratingIndex: this._ratingIndex,
@@ -265,8 +225,7 @@ export class Fighter {
       index: this._index,
       hp: this._hp,
       buffs: this.buffs.serialize(),
-      abilities: this.abilities.serialize(),
-      characteristics: this.characteristics,
+      characteristics: this.characteristics
     } as BattleFighter;
     return _.cloneDeep(fighter);
   }
@@ -292,9 +251,9 @@ export class Fighter {
     if (this._hp <= 0) {
       this._isDead = true;
       if (this._isEnemy) {
-        this._events.enemyFighter(this);
+        this._events.enemyFighter(this.serialize());
       } else {
-        this._events.userFighter(this);
+        this._events.userFighter(this.serialize());
       }
     } else if (this._hp > this.unit.maxHp) {
       this._hp = this.unit.maxHp;

@@ -108,7 +108,7 @@ export default class UnitBuffs {
     };
   }
 
-  public addBuff(buff: BattleBuff): void {
+  public addBuff(buff: BattleBuff, sendEvent?: boolean): void {
     if (buff.mode === "stack") {
       buff.stackValue = 0;
     }
@@ -117,7 +117,7 @@ export default class UnitBuffs {
     this.fighter.update();
     this._events.buffs(this.fighter.fighterId, this.buffs);
 
-    if (buff.target !== "no") {
+    if (sendEvent && buff.target !== "no") {
       this._events.abilities(
         this.fighter.fighterId,
         this.fighter.abilities.serialize()

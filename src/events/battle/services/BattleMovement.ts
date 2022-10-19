@@ -80,27 +80,28 @@ export class BattleMovement extends BattleService {
     //this.log("Attack cells calculation", { unitIndex, moveRange, attackRange });
     let result = [];
     const moveCells = this.getMoveCellsByRange(unitIndex, moveRange, ignoreObstacles, ignoreTerrain);
-    moveCells.push(unitIndex);
-    moveCells.forEach(moveCell => {
-      for (let index = 0; index < 35; index++) {
-        let path = this.getPath(moveCell, index, true);
+    moveCells[unitIndex] = 0;
+    for (let moveIndex in moveCells) {
+      for (let attackIndex = 0; attackIndex < 35; attackIndex++) {
+        // Calc attack path
+        let path = this.getPath(parseInt(moveIndex), attackIndex, true);
         //this.log("Attack path", { from: moveCell, to: index, path });
         if (
           path
           &&
-          path.length < attackRange
+          (path.length + 1) <= attackRange
         ) {
           //this.log("Attack path accepted (path.length=${path.length} < attackRange=${path.length})", { pathLength: moveCell, to: index, path });
-          result.push(index);
+          result.push(attackIndex);
         }
       }
-    });
+    }
     result = _.uniq(result);
     //this.log("Attack cells", { unitIndex, moveRange, attackRange, result });
     return result;
   };
 
-  public getMoveCellsByAbility(fighter: Fighter, abilityClass: string): number[] {
+  public getMoveCellsByAbility(fighter: Fighter, abilityClass: string, onlyIndexes?: boolean): { [index: number]: number; } | number[] {
     let moveRange = 0;
     let ignoreObstacles = false;
     let ignoreTerrain = false;
@@ -115,11 +116,17 @@ export class BattleMovement extends BattleService {
       ignoreTerrain = abilityMeta.ignoreTerrain;
     }
 
-    return this.getMoveCellsByRange(fighter.index, moveRange, ignoreObstacles, ignoreTerrain);
+    let result = this.getMoveCellsByRange(fighter.index, moveRange, ignoreObstacles, ignoreTerrain);
+    if (onlyIndexes) {
+      result = _.uniq(Object.keys(result).map(index => parseInt(index))) as number[];
+    }
+
+    return result;
   };
 
-  public getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean, ignoreTerrain: boolean): number[] {
-    const result = [];
+  // { index: path length }
+  protected getMoveCellsByRange(unitIndex: number, range: number, ignoreObstacles: boolean, ignoreTerrain: boolean): { [index: number]: number; } {
+    const result = {};
     const unitIndexes = this._core.game.allFighters.map(unit => unit.index);
     for (let index = 0; index < 35; index++) {
       const terrain = this._core.game.terrain.getTerrainTypeByIndex(index);
@@ -133,21 +140,33 @@ export class BattleMovement extends BattleService {
       }
 
       let path = this.getPath(unitIndex, index, ignoreObstacles);
+      if (path) {
+        path = this.cutPathToClosestStopper(path);
+      }
+
       //this.log("Move path", { from: unitIndex, to: index, path });
       if (
         path
         &&
-        path.length < range
+        (path.length + 1) <= range
       ) {
         //this.log("Move path accepted (path.length=${path.length} < range=${range})", { pathLength: path.length, to: index, path });
-        result.push(index);
+        result[index] = path.length + 1;
       }
     }
     //this.log("Move cells", { unitIndex, range, result });
     return result;
   };
 
-  public getPath(from: number, to: number, ignoreObstacles: boolean): any {
+  protected cutPathToClosestStopper(path: number[]): number[] {
+    const stopperIndex = path.findIndex(index => {
+      const terrain = this._core.game.terrain.getTerrainTypeByIndex(index);
+      return [TERRAIN_ICE, TERRAIN_SWAMP].includes(terrain);
+    });
+    return stopperIndex !== -1 ? path.slice(0, stopperIndex + 1) : path;
+  }
+
+  public getPath(from: number, to: number, ignoreObstacles: boolean): number[]|null {
     const avoidNodes  = [];
 
     if (!ignoreObstacles) {
@@ -167,7 +186,7 @@ export class BattleMovement extends BattleService {
       `${to}`,
       { trim: true, avoid: avoidNodes }
     );
-    return path;
+    return path ? path.map(index => parseInt(index)) : null;
   }
 
   public getIndex(index: number): { vertical: number, horizontal: number } {
@@ -254,7 +273,7 @@ export class BattleMovement extends BattleService {
   }
 
   public moveFighter(fighter: Fighter, abilityClass: string, index: number): void {
-    const moveCells = this.getMoveCellsByAbility(fighter, abilityClass);
+    const moveCells = this.getMoveCellsByAbility(fighter, abilityClass, true) as number[];
     if (!moveCells.includes(index)) {
       return;
     }

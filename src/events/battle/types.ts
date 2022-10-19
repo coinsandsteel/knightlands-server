@@ -172,6 +172,7 @@ export interface BattleUnit {
 }
 
 export interface BattleFighter extends BattleUnit {
+  unit: BattleUnit,
   name: string;
   unitId?: string;
   unitTemplate: number;

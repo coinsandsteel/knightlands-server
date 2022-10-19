@@ -51,10 +51,22 @@ export class BattleCombat extends BattleService {
     // Check target restrictions
     if (
       !(
-        (!fighter.isEnemy && abilityMeta.targetAllies && target && !target.isEnemy) ||
-        (!fighter.isEnemy && abilityMeta.targetEnemies && target && target.isEnemy) ||
-        (fighter.isEnemy && abilityMeta.targetAllies && target && target.isEnemy) ||
-        (fighter.isEnemy && abilityMeta.targetEnemies && target && !target.isEnemy) ||
+        (!fighter.isEnemy &&
+          abilityMeta.targetAllies &&
+          target &&
+          !target.isEnemy) ||
+        (!fighter.isEnemy &&
+          abilityMeta.targetEnemies &&
+          target &&
+          target.isEnemy) ||
+        (fighter.isEnemy &&
+          abilityMeta.targetAllies &&
+          target &&
+          target.isEnemy) ||
+        (fighter.isEnemy &&
+          abilityMeta.targetEnemies &&
+          target &&
+          !target.isEnemy) ||
         (abilityMeta.targetSelf &&
           target &&
           target.fighterId === fighter.fighterId) ||
@@ -160,7 +172,7 @@ export class BattleCombat extends BattleService {
           sourceId: abilityClass,
           mode: "constant",
           activated: false,
-          caseId: abilityData.levelInt - 1
+          caseId: abilityData.levelInt - 1,
         } as BattleBuff;
 
         if (buff.subEffect === "agro") {
@@ -339,57 +351,47 @@ export class BattleCombat extends BattleService {
     target: Fighter,
     abilityClass: string
   ) {
-    const attackAreaNoMoving = this.getAttackAreaData(fighter, abilityClass);
-    // Need to approach
-    if (
-      fighter.class === UNIT_CLASS_MELEE
-      ||
-      fighter.class === UNIT_CLASS_TANK
-      ||
-      !attackAreaNoMoving.targetCells.includes(target.index)
-    ) {
-      this.log("Need to approach the enemy");
+    // Only melee and tanks can move during attack
+    if (![UNIT_CLASS_MELEE, UNIT_CLASS_TANK].includes(fighter.unit.class)) {
+      return;
+    }
 
-      // Calc all the move cells
-      const moveCells = this._core.game.movement.getMoveCellsByAbility(
-        fighter,
-        abilityClass
+    // Calc all the move cells
+    const moveCells = this._core.game.movement.getMoveCellsByAbility(
+      fighter,
+      abilityClass,
+      false
+    );
+
+    // Iterate move cells to check if fighter can reach enemy from there
+    const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
+    let canAttackFrom = [];
+    for (let moveCell in moveCells) {
+      // Calc attack path
+      // TODO test zero range
+      const attackPath = this._core.game.movement.getPath(
+        parseInt(moveCell),
+        target.index,
+        true
       );
-
-      // Iterate move cells to check if fighter can reach enemy from there
-      const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
-      let canAttackFrom = [];
-      moveCells.forEach((moveCell) => {
-        const attackPath = this._core.game.movement.getPath(
-          moveCell,
-          target.index,
-          true
+      if (attackPath.length + 1 <= abilityData.range.attack) {
+        this.log(
+          "Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})",
+          { attackPath }
         );
-        if (attackPath.length < abilityData.range.attack) {
-          this.log(
-            "Attack path accepted (length=${attackPath.length} < attackRange=${abilityStat.attackRange})",
-            { attackPath }
-          );
-          canAttackFrom.push({ index: moveCell, range: attackPath.length });
-        }
-      });
-
-      // Have spots to approach
-      if (canAttackFrom.length) {
-        // Move to a closest move cell
-        const closestCell = _.head(_.sortBy(canAttackFrom, "range"));
-        if (closestCell) {
-          canAttackFrom = _.filter(canAttackFrom, { range: closestCell.range });
-        }
-        // Move to attack spot
-        const targetIndex = _.sample(canAttackFrom).index;
-        this._core.game.movement.moveFighter(
-          fighter,
-          ABILITY_MOVE,
-          targetIndex
-        );
-        this.log(`Approaching enemy onto index ${targetIndex}`);
+        canAttackFrom.push({
+          index: moveCell,
+          range: attackPath.length + moveCells[moveCell]
+        });
       }
+    }
+
+    // Have spots to approach
+    if (canAttackFrom.length) {
+      // Move to attack spot
+      const targetIndex = _.head(_.sortBy(canAttackFrom, "range"));
+      this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex);
+      this.log(`Approaching enemy onto index ${targetIndex}`);
     }
   }
 

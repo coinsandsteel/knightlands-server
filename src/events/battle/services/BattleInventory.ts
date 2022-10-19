@@ -160,8 +160,9 @@ export class BattleInventory extends BattleService {
     let resultUnit = unit;
     if (index === -1) {
       this._units.push(unit);
-      this._state.push(unit.serialize());
-      this._core.events.addUnit(unit);
+      const serializedUnit = unit.serialize();
+      this._state.push(serializedUnit);
+      this._core.events.addUnit(serializedUnit);
       this.log("Unit added", unit.unitId);
     } else {
       this._units[index].modifyQuantity(1);
@@ -189,7 +190,7 @@ export class BattleInventory extends BattleService {
         this._core.events.removeUnit(unit);
 
         const squadIndex = this._core.game.userSquad.fighters.findIndex(
-          entry => entry.template === unit.template
+          entry => entry.unit.template === unit.template
         );
         if (squadIndex !== -1) {
           this._core.game.userSquad.clearSlot(squadIndex);
@@ -205,7 +206,7 @@ export class BattleInventory extends BattleService {
   public setUnits(units: Unit[]) {
     this._units = units;
     this._state = this._units.map((unit) => unit.serialize());
-    this._core.events.inventory(units);
+    this._core.events.inventory(this._state);
     this.handleInventoryChanged();
   }
 
@@ -223,7 +224,7 @@ export class BattleInventory extends BattleService {
       (entry) => entry.template === unit.template
     );
     this._state[stateIndex] = this._units[unitIndex].serialize();
-    this._core.events.updateUnit(unit);
+    this._core.events.updateUnit(unit.serialize());
   }
 
   public getUnit(unitId: string): Unit | null {

@@ -81,7 +81,7 @@ export class BattleAdventures extends BattleService {
               [GAME_DIFFICULTY_HIGH]: false,
             } as BattleAdventureLevelData;
 
-            if (level[GAME_DIFFICULTY_MEDIUM].bossReward.coins) {
+            if (level[GAME_DIFFICULTY_MEDIUM].bossReward[CURRENCY_COINS]) {
               levelData.bossRewardClaimed = false;
             }
 
@@ -109,7 +109,7 @@ export class BattleAdventures extends BattleService {
     }
     if (
       levelMeta.bossReward &&
-      (levelMeta.bossReward.coins || levelMeta.bossReward.crystals)
+      (levelMeta.bossReward[CURRENCY_COINS] || levelMeta.bossReward[CURRENCY_CRYSTALS])
     ) {
       this._state.locations[this.location].levels[
         this.level
@@ -184,14 +184,14 @@ export class BattleAdventures extends BattleService {
 
     const levelData = this.getLevelData(this.location, this.level);
     return {
-      coins:
-        levelMeta.reward.coins +
+      [CURRENCY_COINS]:
+        levelMeta.reward[CURRENCY_COINS] +
         (levelMeta.bossReward && !levelData.bossRewardClaimed
-          ? levelMeta.bossReward.coins
+          ? levelMeta.bossReward[CURRENCY_COINS]
           : 0),
-      crystals:
+      [CURRENCY_CRYSTALS]:
         levelMeta.bossReward && !levelData.bossRewardClaimed
-          ? levelMeta.bossReward.crystals
+          ? levelMeta.bossReward[CURRENCY_CRYSTALS]
           : 0,
       xp: levelMeta.reward.xp,
       rank: 0,
@@ -202,7 +202,7 @@ export class BattleAdventures extends BattleService {
     return TERRAIN[location * 5 + level];
   }
 
-  public getEnemySquad(location: number, level: number): BattleFighter[] {
+  public getEnemySquad(): Fighter[] {
     const levelMeta = this.levelDifficultyMeta;
     if (!levelMeta) {
       throw new Error("Cannot get enemy squad. Level or location is null");
@@ -231,8 +231,8 @@ export class BattleAdventures extends BattleService {
         unit.turnIntoBoss();
       }
 
-      const fighter = Fighter.createFighter(unit, true, this._core.events);
-      return fighter.serializeFighter();
+      const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
+      return fighter;
     });
     return enemySquad;
   }
