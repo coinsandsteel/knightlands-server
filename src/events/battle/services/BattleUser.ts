@@ -1,6 +1,11 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
-import { BattleItem, BattleShopItemMeta, BattleUnit, BattleUserState } from "../types";
+import {
+  BattleItem,
+  BattleShopItemMeta,
+  BattleUnit,
+  BattleUserState,
+} from "../types";
 import {
   BATTLE_MAX_DUELS_DAILY,
   CURRENCY_COINS,
@@ -66,7 +71,7 @@ export class BattleUser {
       counters: {
         energy: game.nowSec,
         purchase: {},
-        duels: {}
+        duels: {},
       },
       rewards: {
         dailyRewards: [],
@@ -202,7 +207,9 @@ export class BattleUser {
   }
 
   public async updatePvpScore(): Promise<any> {
-    const rankData = await game.battleManager.getUserRankData(this._core.gameUser.id);
+    const rankData = await game.battleManager.getUserRankData(
+      this._core.gameUser.id
+    );
     this._state.pvpScore = (rankData ? rankData.pvp : null) || 0;
     this._core.events.pvpScore(this._state.pvpScore);
   }
@@ -233,7 +240,9 @@ export class BattleUser {
   }
 
   public purchase(id: number, tribe?: string): BattleUnit[] {
-    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id)) as BattleShopItemMeta;
+    const positionMeta = _.cloneDeep(
+      SHOP.find((entry) => entry.id === id)
+    ) as BattleShopItemMeta;
     if (!positionMeta) {
       return;
     }
@@ -243,10 +252,9 @@ export class BattleUser {
 
     // Check daily purchase limits
     if (
-      positionMeta.dailyMax && positionMeta.dailyMax > 0
-      &&
-      !this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax)
-      &&
+      positionMeta.dailyMax &&
+      positionMeta.dailyMax > 0 &&
+      !this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax) &&
       !this.increaseDailyPurchaseCounter(id, quantity)
     ) {
       console.log("Purchase failed. Daily limit exeeded");
@@ -273,7 +281,7 @@ export class BattleUser {
       ) {
         this._core.gameUser.addDkt(-positionMeta.price.amount);
 
-      // Event currency
+        // Event currency
       } else if (
         [CURRENCY_COINS, CURRENCY_CRYSTALS].includes(
           positionMeta.price.currency
@@ -294,7 +302,12 @@ export class BattleUser {
     return this.activate(positionMeta, quantity, tribe);
   }
 
-  protected activateLootbox(unitsCount: number, probabilities: number[], tribe?: string): BattleUnit[] {
+  protected activateLootbox(
+    unitsCount: number,
+    probabilities: number[],
+    tribe?: string,
+    unitClass?: string
+  ): BattleUnit[] {
     const resultItems = [] as BattleUnit[];
     for (let i = 0; i < unitsCount; i++) {
       let tier = 1;
@@ -308,23 +321,40 @@ export class BattleUser {
         tier = 2;
       }
 
-      const params = { tier } as { tier: number; tribe?: string };
+      const params = { tier } as {
+        tier: number;
+        tribe?: string;
+        class?: string;
+      };
       if (tribe) {
         params.tribe = tribe;
+      }
+      if (unitClass) {
+        params.class = unitClass;
       }
 
       const unit = this._core.inventory.getNewUnitByPropsRandom(params);
       this._core.inventory.addUnit(unit);
       resultItems.push(unit.serialize());
-      console.log('Added unit from lootbox', { class: unit.class, tribe: unit.tribe, tier: unit.tier });
+      console.log("Added unit from lootbox", {
+        class: unit.class,
+        tribe: unit.tribe,
+        tier: unit.tier,
+      });
     }
     return resultItems;
   }
 
-  protected activate(positionMeta: BattleShopItemMeta, quantity: number, tribe?: string): BattleUnit[] {
-    console.log('Activate purchase', { positionMeta, quantity });
+  protected activate(
+    positionMeta: BattleShopItemMeta,
+    quantity: number,
+    tribe?: string
+  ): BattleUnit[] {
+    console.log("Activate purchase", { positionMeta, quantity });
 
-    const entryIndex = this._state.items.findIndex(entry => entry.id === positionMeta.id);
+    const entryIndex = this._state.items.findIndex(
+      (entry) => entry.id === positionMeta.id
+    );
     if (entryIndex !== -1) {
       this._state.items[entryIndex].quantity--;
       if (this._state.items[entryIndex].quantity <= 0) {
@@ -334,19 +364,29 @@ export class BattleUser {
     }
 
     let items = [] as BattleUnit[];
-    if (
-      positionMeta.content.units
-      &&
-      positionMeta.content.tierProbabilities
-      &&
-      positionMeta.content.tierProbabilities.length === 3
-    ) {
-      items = this.activateLootbox(
-        positionMeta.content.units,
-        positionMeta.content.tierProbabilities,
-        positionMeta.content.canSelectTribe ? tribe : null
-      );
+    if (positionMeta.content.units) {
+      const tierProbabilities = positionMeta.content.tierProbabilities ?? [100, 0, 0];
+      const unitTribe = positionMeta.content.canSelectTribe ? tribe : null;
+      const unitClasses = positionMeta.content.unitClasses ?? null;
 
+      if (unitClasses) {
+        for (let unitClass in unitClasses) {
+          items.push(
+            ...this.activateLootbox(
+              unitClasses[unitClass],
+              tierProbabilities,
+              unitTribe,
+              unitClass
+            )
+          );
+        }
+      } else {
+        items = this.activateLootbox(
+          positionMeta.content.units,
+          tierProbabilities,
+          unitTribe
+        );
+      }
     } else if (positionMeta.content.energy && this.energy < ENERGY_MAX) {
       this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);
     }
@@ -365,8 +405,14 @@ export class BattleUser {
 
   protected purgePreviousDates(): void {
     const currentDate = new Date().toLocaleDateString("en-US");
-    this._state.counters.purchase = _.pick(this._state.counters.purchase, currentDate);
-    this._state.counters.duels = _.pick(this._state.counters.duels, currentDate);
+    this._state.counters.purchase = _.pick(
+      this._state.counters.purchase,
+      currentDate
+    );
+    this._state.counters.duels = _.pick(
+      this._state.counters.duels,
+      currentDate
+    );
     this._core.events.counters(this._state.counters);
   }
 
@@ -402,10 +448,13 @@ export class BattleUser {
     // Overhead
     if (newCount > BATTLE_MAX_DUELS_DAILY) {
       return false;
-    // Increase counter
+      // Increase counter
     } else {
       this._state.counters.duels[date] = newCount;
-      console.log('Increased daily duels counter', this._state.counters.duels[date]);
+      console.log(
+        "Increased daily duels counter",
+        this._state.counters.duels[date]
+      );
     }
 
     this._core.events.counters(this._state.counters);
@@ -414,7 +463,9 @@ export class BattleUser {
   }
 
   public increaseDailyPurchaseCounter(id: number, count: number): boolean {
-    const positionMeta = _.cloneDeep(SHOP.find((entry) => entry.id === id) as BattleShopItemMeta);
+    const positionMeta = _.cloneDeep(
+      SHOP.find((entry) => entry.id === id) as BattleShopItemMeta
+    );
     if (!positionMeta) {
       return false;
     }
@@ -422,17 +473,20 @@ export class BattleUser {
     if (positionMeta.dailyMax) {
       const date = new Date().toLocaleDateString("en-US");
       const dateEntry = this._state.counters.purchase[date];
-      const newCount = (dateEntry? dateEntry[id] : 0) + count;
+      const newCount = (dateEntry ? dateEntry[id] : 0) + count;
       // Overhead
       if (newCount > positionMeta.dailyMax) {
         return false;
-      // Increase counter
+        // Increase counter
       } else {
         this._state.counters.purchase[date] = {
           ...dateEntry,
-          [id]: newCount
+          [id]: newCount,
         };
-        console.log('Increased daily counter', this._state.counters.purchase[date]);
+        console.log(
+          "Increased daily counter",
+          this._state.counters.purchase[date]
+        );
       }
     }
 

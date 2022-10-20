@@ -262,6 +262,7 @@ export interface BattleShopItemMeta {
   price: { currency: string; amount: number; } | null;
   content: {
     units?: number;
+    unitClasses?: { [unitClass: string]: number; };
     energy?: number;
     canSelectTribe?: boolean;
     tierProbabilities?: number[];
