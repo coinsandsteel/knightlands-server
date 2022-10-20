@@ -88,7 +88,7 @@ export class BattleInventory extends BattleService {
     });*/
 
     // Set the same level
-    newUnitEntry.setLevel(unit.levelInt, true);
+    newUnitEntry.setLevel(unit.levelInt, true, false);
     //console.log('Merge set level', unit.levelInt);
 
     // Calc abilities

@@ -1,12 +1,13 @@
 import _ from "lodash";
 import {
+  BattleEnemySquadDifficultyMeta,
   BattleFighter,
   BattleInitiativeRatingEntry,
   BattleSquadState,
 } from "../types";
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
-import { SQUAD_BONUSES } from "../meta";
+import { ENEMY_SQUAD_META, SQUAD_BONUSES } from "../meta";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";
 
@@ -56,6 +57,66 @@ export class BattleSquad extends BattleService {
   public getState(): BattleSquadState {
     this.serializeFighters();
     return this._state;
+  }
+
+  public getBalancedEnemySquad(userSquad: BattleSquad, difficulty: string): Fighter[] {
+    const meta = ENEMY_SQUAD_META[difficulty] as BattleEnemySquadDifficultyMeta;
+    if (!meta) {
+      throw new Error('No such difficulty!');
+    }
+
+    // Levels mean value
+    const userSquadLevelMean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.levelInt, 0) / 5;
+    const userSquadAbilitiesTier1Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(1), 0) / 5;
+    const userSquadAbilitiesTier2Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(2), 0) / 5;
+    const userSquadAbilitiesTier3Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(3), 0) / 5;
+
+    // Collect by classes count
+    const fighters = [];
+    const allClasses = Object.keys(meta.classes);
+    while (fighters.length < 5) {
+      let choosedClass = _.sample(allClasses);
+      let classQuantity = meta.classes[choosedClass];
+      let fightersCount = _.random(classQuantity.min, classQuantity.max);
+      if (fightersCount > 0) {
+        for (let i = 0; i < fightersCount; i++) {
+          if (fighters.length >= 5) {
+            break;
+          }
+
+          // Get unit 1 tier
+          const unit = this._core.inventory.getNewUnitByPropsRandom({
+            class: choosedClass,
+            tier: 1
+          });
+
+          // Unit levels
+          const unitLevelModifier = meta.unitLevelModifier.min + Math.random();
+          const unitLevel = Math.round(userSquadLevelMean * unitLevelModifier);
+          unit.setLevel(unitLevel, false, true);
+
+          // Ability levels
+          unit.setAbilitiesLevels([
+            { tier: 1, level: Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier) },
+            { tier: 2, level: Math.round(userSquadAbilitiesTier2Mean + meta.abilityLevelModifier) },
+            { tier: 3, level: Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier) },
+          ]);
+
+          console.log({
+            userSquadLevelMean,
+            unitLevel: userSquadLevelMean * unitLevelModifier,
+            userSquadAbilitiesTier1Mean,
+            userSquadAbilitiesTier2Mean,
+            userSquadAbilitiesTier3Mean,
+          });
+
+          const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
+          fighters.push(fighter);
+        }
+      }
+    }
+
+    return fighters;
   }
 
   protected deserializeFighters(): void {
@@ -273,6 +334,12 @@ export class BattleSquad extends BattleService {
       // Decrease the buff estimate
       fighter.buffs.decreaseBuffsEstimate();
     });
+  }
+
+  public setTier(tier: number): void {
+    this.fighters.forEach((fighter) => fighter.unit.setTier(tier));
+    this.setPower();
+    this.sync();
   }
 
   public maximize(): void {

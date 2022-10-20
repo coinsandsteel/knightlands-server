@@ -370,7 +370,6 @@ export class BattleCombat extends BattleService {
     for (let moveCell in moveCells) {
       let movePathLength = moveCells[moveCell];
       // Calc attack path
-      // TODO test zero range
       const attackPath = this._core.game.movement.getPath(
         parseInt(moveCell),
         target.index,

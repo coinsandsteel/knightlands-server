@@ -211,6 +211,10 @@ export class BattleGame extends BattleService {
     this._userSquad.maximize();
   }
 
+  public setUserSquadTier(tier: number): void {
+    this._userSquad.setTier(tier);
+  }
+
   public clearSquad(): void {
     for (let index = 0; index < 5; index++) {
       this._userSquad.clearSlot(index);
@@ -293,14 +297,9 @@ export class BattleGame extends BattleService {
     const result = {};
     this._enemyOptions = {};
     for (let difficulty in enemyOptions) {
-      this._enemyOptions[difficulty] = [];
-      result[difficulty] = [];
-      for (let index = 0; index < 5; index++) {
-        const unit = this._core.inventory.getNewUnitRandom();
-        const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
-        this._enemyOptions[difficulty].push(fighter);
-        result[difficulty].push(fighter.serialize());
-      }
+      const enemySquad = this._enemySquad.getBalancedEnemySquad(this._userSquad, difficulty);
+      this._enemyOptions[difficulty] = enemySquad;
+      result[difficulty] = enemySquad.map(fighter => fighter.serialize());
     }
 
     return result;

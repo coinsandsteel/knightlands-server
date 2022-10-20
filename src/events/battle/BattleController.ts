@@ -190,6 +190,14 @@ export class BattleController {
         this.core.game.buildSquad();
         break;
       }
+      case 'makeSquadTier2':{
+        this.core.game.setUserSquadTier(2);
+        break;
+      }
+      case 'makeSquadTier3':{
+        this.core.game.setUserSquadTier(3);
+        break;
+      }
       case 'maxSquad':{
         this.core.game.maximizeUserSquad();
         break;

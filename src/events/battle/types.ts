@@ -270,3 +270,15 @@ export interface BattleShopItemMeta {
   };
   dailyMax: number|null;
 }
+
+export interface BattleEnemySquadMeta {
+  [difficulty: string]: BattleEnemySquadDifficultyMeta
+}
+
+export interface BattleEnemySquadDifficultyMeta {
+  classes: {
+    [unitClass: string]: { min: number; max: number; }
+  };
+  unitLevelModifier: { min: number; max: number; };
+  abilityLevelModifier: number;
+}

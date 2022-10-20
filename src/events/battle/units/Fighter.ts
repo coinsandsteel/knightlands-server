@@ -112,7 +112,7 @@ export class Fighter {
     const bonusDelta = this.buffs.getBonusDelta("damage");
     return (
       Math.round(
-        this.unit.characteristics.damage *
+        this.unit.damage *
           this._modifiers.power *
           this._modifiers.attack
       ) + bonusDelta

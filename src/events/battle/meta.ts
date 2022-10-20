@@ -1,4 +1,5 @@
 import * as battle from "./../../knightlands-shared/battle";
+import { BattleEnemySquadMeta } from "./types";
 
 export const PATH_SCHEME_ROOK = "rook";
 export const PATH_SCHEME_QUEEN = "queen";
@@ -2208,3 +2209,39 @@ export const ABILITY_SCHEME = [
     { cd: 3, lvl: 3 },
   ],
 ];
+
+export const ENEMY_SQUAD_META = {
+  [battle.GAME_DIFFICULTY_LOW]: {
+    classes: {
+      [battle.UNIT_CLASS_MELEE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_RANGE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_MAGE]: { min: 0, max: 0 },
+      [battle.UNIT_CLASS_TANK]: { min: 1, max: 2 },
+      [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 2 }
+    },
+    unitLevelModifier: { min: 0.7, max: 0.8 },
+    abilityLevelModifier: -2
+  },
+  [battle.GAME_DIFFICULTY_MEDIUM]: {
+    classes: {
+      [battle.UNIT_CLASS_MELEE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_RANGE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_MAGE]: { min: 0, max: 0 },
+      [battle.UNIT_CLASS_TANK]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
+    },
+    unitLevelModifier: { min: 0.9, max: 1 },
+    abilityLevelModifier: -1
+  },
+  [battle.GAME_DIFFICULTY_HIGH]: {
+    classes: {
+      [battle.UNIT_CLASS_MELEE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_RANGE]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_MAGE]: { min: 1, max: 1 },
+      [battle.UNIT_CLASS_TANK]: { min: 1, max: 3 },
+      [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
+    },
+    unitLevelModifier: { min: 1.2, max: 1.3 },
+    abilityLevelModifier: 0
+  },
+} as BattleEnemySquadMeta;

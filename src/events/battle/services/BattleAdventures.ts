@@ -216,7 +216,7 @@ export class BattleAdventures extends BattleService {
       );
 
       // Level
-      unit.setLevel(levelMeta.enemies.level);
+      unit.setLevel(levelMeta.enemies.level, false, false);
 
       // Abilities level
       unit.setAbilitiesLevels([

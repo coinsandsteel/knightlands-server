@@ -357,47 +357,71 @@ export default class UnitAbilities {
     });
   }
 
-  public setAbilityLevel(abilityClass: string, level: number) {
+  public setAbilityLevel(abilityClass: string, level: number): void {
     if ([ABILITY_MOVE, ABILITY_ATTACK].includes(abilityClass)) {
       return;
     }
+    if (level < 1) {
+      level = 1;
+    }
 
-    this._abilities.forEach((ability) => {
-      if (ability.abilityClass !== abilityClass) {
-        return;
-      }
+    const ability = this._abilities.find(ability => ability.abilityClass === abilityClass);
+    if (!ability) {
+      throw new Error('No such tier!');
+    }
 
-      ability.enabled = !!level;
-      ability.level = {
-        current: level,
-        next: null,
-        price: null,
-      };
-      ability.levelInt = level;
-      ability.level.next = null;
-      ability.level.price = null;
-    });
+    const abilityScheme = ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
+    if (!abilityScheme || level > abilityScheme.lvl) {
+      return;
+    }
+
+    ability.enabled = !!level;
+    ability.level = {
+      current: level,
+      next: null,
+      price: null,
+    };
+    ability.levelInt = level;
+    ability.level.next = null;
+    ability.level.price = null;
 
     this.update();
   }
 
-  public setAbilityLevelByTier(tier: number, level: number) {
-    this._abilities.forEach((ability) => {
-      if (ability.tier !== tier || ability.abilityClass === ABILITY_ATTACK) {
-        return;
-      }
-      ability.enabled = !!level;
-      ability.level = {
-        current: level,
-        next: null,
-        price: null,
-      };
-      ability.levelInt = level;
-      ability.level.next = null;
-      ability.level.price = null;
-    });
+  public setAbilityLevelByTier(tier: number, level: number): void {
+    if (level < 1) {
+      level = 1;
+    }
+
+    const ability = this._abilities.find(ability => ability.tier === tier && ability.abilityClass !== ABILITY_ATTACK);
+    if (!ability) {
+      throw new Error('No such tier!');
+    }
+
+    const abilityScheme = ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
+    if (!abilityScheme || level > abilityScheme.lvl) {
+      return;
+    }
+
+    ability.enabled = !!level;
+    ability.level = {
+      current: level,
+      next: null,
+      price: null,
+    };
+    ability.levelInt = level;
+    ability.level.next = null;
+    ability.level.price = null;
 
     this.update();
+  }
+
+  public getAbilityLevelByTier(tier: number): number {
+    const ability = this._abilities.find(ability => ability.tier === tier && ability.abilityClass !== ABILITY_ATTACK);
+    if (!ability) {
+      throw new Error('No such tier!');
+    }
+    return ability.levelInt;
   }
 
   public getMaxAbilityLevel(abilityTier: number): number {

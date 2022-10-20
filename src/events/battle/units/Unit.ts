@@ -90,7 +90,7 @@ export class Unit {
   }
 
   get damage(): number {
-    return this._characteristics.damage;
+    return this._characteristics.damage * 2;
   }
 
   get maxHp(): number {
@@ -258,7 +258,7 @@ export class Unit {
     this.abilities.update();
   }
 
-  public setAbilitiesLevels(entries: { tier?: number, abilityClass?: string, level: number }[]): void {
+  public setAbilitiesLevels(entries: { tier?: number, abilityClass?: string, level: number }[], force?: boolean): void {
     entries.forEach(entry => {
       if (entry.tier && entry.level) {
         this.abilities.setAbilityLevelByTier(entry.tier, entry.level);
@@ -269,17 +269,58 @@ export class Unit {
     });
   }
 
-  public setLevel(value: number, resetExp?: boolean): void {
-    this._levelInt = value;
-    this._level.current = value;
+  public setLevel(level: number, resetExp?: boolean, upgradeTier?: boolean): void {
+    if (level < 1) {
+      level = 1;
+    }
+    if (level > 45) {
+      level = 45;
+    }
+
+    if (upgradeTier) {
+      if (level > SETTINGS.maxUnitTierLevel[1]) {
+        this._tier = 2;
+      }
+      if (level > SETTINGS.maxUnitTierLevel[2]) {
+        this._tier = 3;
+      }
+    } else if (level > SETTINGS.maxUnitTierLevel[this.tier]) {
+      throw new Error('Cannot set level. It`s too big for unit`s tier.');
+    }
+
+    this._levelInt = level;
+    this._level.current = level;
     this._level.next = null;
     this._level.price = null;
 
     if (resetExp) {
-      this._expirience.value = Unit.getExpForLevel(value);
+      this._expirience.value = Unit.getExpForLevel(level);
       this._expirience.currentLevelExp = 0;
-      this._expirience.nextLevelExp = Unit.getExpForLevel(value + 1);
+      this._expirience.nextLevelExp = Unit.getExpForLevel(level + 1);
     }
+
+    this.update();
+  }
+
+  public setTier(tier: number): void {
+    if (tier < 1) {
+      tier = 1;
+    }
+    if (tier > 3) {
+      tier = 3;
+    }
+
+    this._tier = tier;
+
+    const newLevel = tier === 1 ? 1 : SETTINGS.maxUnitTierLevel[tier - 1] + 1;
+    this._levelInt = newLevel;
+    this._level.current = newLevel;
+    this._level.next = null;
+    this._level.price = null;
+
+    this._expirience.value = Unit.getExpForLevel(newLevel);
+    this._expirience.currentLevelExp = 0;
+    this._expirience.nextLevelExp = Unit.getExpForLevel(newLevel + 1);
 
     this.update();
   }
@@ -291,7 +332,6 @@ export class Unit {
     this.setPower();
   }
 
-  // TODO apply boss rules
   public static getCharacteristics(
     template: number,
     level: number,
