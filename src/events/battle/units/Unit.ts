@@ -89,6 +89,14 @@ export class Unit {
     return this._characteristics.speed;
   }
 
+  get initiative(): number {
+    return this._characteristics.initiative;
+  }
+
+  get defence(): number {
+    return this._characteristics.defence;
+  }
+
   get damage(): number {
     return this._characteristics.damage * 2;
   }
@@ -161,11 +169,11 @@ export class Unit {
 
   public setPower() {
     const statsSum =
-      this._characteristics.hp +
-      this._characteristics.damage +
-      this._characteristics.defence +
-      this._characteristics.initiative +
-      this._characteristics.speed;
+      this.maxHp +
+      this.damage +
+      this.defence +
+      this.initiative +
+      this.speed;
 
     const abilitySum = this.abilities.getPower();
     this._power = (statsSum + abilitySum) * 2;

@@ -160,6 +160,7 @@ export default class UnitAbilities {
 
     // ClassDamage * (BaseMultiplier + LevelStep * (AbilityLevel-1))) * FinalMultiplier
     const abilityValue =
+      2 *
       classMeta.damage *
       (abilityMeta.baseMultiplier +
         abilityMeta.levelStep * (abilityData.levelInt - 1)) *

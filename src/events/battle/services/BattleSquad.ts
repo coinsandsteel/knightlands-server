@@ -91,7 +91,7 @@ export class BattleSquad extends BattleService {
           });
 
           // Unit levels
-          const unitLevelModifier = meta.unitLevelModifier.min + Math.random();
+          const unitLevelModifier = meta.unitLevelModifier.min + (Math.random()/10);
           const unitLevel = Math.round(userSquadLevelMean * unitLevelModifier);
           unit.setLevel(unitLevel, false, true);
 
