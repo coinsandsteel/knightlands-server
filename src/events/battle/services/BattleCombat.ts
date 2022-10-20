@@ -380,8 +380,9 @@ export class BattleCombat extends BattleService {
           { attackPath }
         );
         canAttackFrom.push({
-          index: moveCell,
-          range: attackPath.length + moveCells[moveCell]
+          index: parseInt(moveCell),
+          totalRange: attackPath.length + 1 + moveCells[moveCell],
+          attackRange: attackPath.length + 1
         });
       }
     }
@@ -389,8 +390,8 @@ export class BattleCombat extends BattleService {
     // Have spots to approach
     if (canAttackFrom.length) {
       // Move to attack spot
-      const targetIndex = _.head(_.sortBy(canAttackFrom, "range"));
-      this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex);
+      const targetIndex = _.head(_.sortBy(canAttackFrom, ["totalRange", "attackRange"]));
+      this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex.index);
       this.log(`Approaching enemy onto index ${targetIndex}`);
     }
   }
