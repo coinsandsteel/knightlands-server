@@ -241,7 +241,7 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    if (isProd && !this._core.user.increaseDailyDuelsCounter()) {
+    if (!this._core.user.increaseDailyDuelsCounter()) {
       return;
     }
 

@@ -366,6 +366,13 @@ export class BattleUser {
   protected purgePreviousDates(): void {
     const currentDate = new Date().toLocaleDateString("en-US");
     this._state.counters.purchase = _.pick(this._state.counters.purchase, currentDate);
+    this._state.counters.duels = _.pick(this._state.counters.duels, currentDate);
+    this._core.events.counters(this._state.counters);
+  }
+
+  public purgeCounters(): void {
+    this._state.counters.purchase = {};
+    this._state.counters.duels = {};
     this._core.events.counters(this._state.counters);
   }
 

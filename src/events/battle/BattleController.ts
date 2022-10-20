@@ -153,6 +153,10 @@ export class BattleController {
         this.core.game.win();
         break;
       }
+      case 'resetDuelsCounter':{
+        this.core.user.purgeCounters();
+        break;
+      }
       case 'loose':{
         this.core.game.loose();
         break;
