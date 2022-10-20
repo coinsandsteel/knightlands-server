@@ -3,6 +3,7 @@ import {
   ABILITY_ATTACK,
   ABILITY_MOVE,
   ABILITY_TYPE_ATTACK,
+  ABILITY_TYPE_SELF_BUFF,
   UNIT_CLASS_MELEE,
   UNIT_CLASS_TANK,
 } from "../../../knightlands-shared/battle";
@@ -291,6 +292,9 @@ export default class UnitAbilities {
 
   public serialize(): BattleUnitAbility[] {
     return this._abilities.map((ability) => {
+      const abilityMeta = this.getMeta(ability.abilityClass);
+      const twoStepActivation =
+        (abilityMeta.targetSelf && !abilityMeta.targetEnemies && !abilityMeta.targetEmptyCell) || abilityMeta.affectFullSquad;
       return {
         abilityClass: ability.abilityClass,
         abilityType: ability.abilityType,
@@ -307,6 +311,7 @@ export default class UnitAbilities {
         },
         effects: ability.effects,
         targets: ability.targets,
+        twoStepActivation
       } as BattleUnitAbility;
     });
   }

@@ -120,12 +120,12 @@ export class Fighter {
   }
 
   get hasAgro(): boolean {
-    return !!this.buffs.getBuffs({ type: "agro" }).length;
+    return !!this.buffs.getBuffs({ subEffect: "agro" }).length;
   }
 
   get agroTargets(): string[] {
     return this.buffs
-      .getBuffs({ type: "agro" })
+      .getBuffs({ subEffect: "agro" })
       .map((buff) => buff.targetFighterId);
   }
 
@@ -133,7 +133,7 @@ export class Fighter {
     return (
       !this.isStunned &&
       this.buffs
-        .getBuffs({ type: "counter_attack" })
+        .getBuffs({ subEffect: "counter_attack" })
         .some((buff) => Math.random() <= buff.probability)
     );
   }
@@ -268,21 +268,21 @@ export class Fighter {
     this.buffs.update(initial);
 
     // Characteristics
-    this._modifiers.defence = this.buffs.getBuffModifier({ type: "defence" });
-    this._modifiers.speed = this.buffs.getBuffModifier({ type: "speed" });
+    this._modifiers.defence = this.buffs.getBuffModifier({ target: "defence" });
+    this._modifiers.speed = this.buffs.getBuffModifier({ target: "speed" });
     this._modifiers.initiative = this.buffs.getBuffModifier({
-      type: "initiative",
+      target: "initiative",
     });
 
     // Attack bonuses
-    this._modifiers.power = this.buffs.getBuffModifier({ type: "power" });
-    this._modifiers.attack = this.buffs.getBuffModifier({ type: "attack" });
+    this._modifiers.power = this.buffs.getBuffModifier({ target: "power" });
+    this._modifiers.attack = this.buffs.getBuffModifier({ target: "attack" });
     this._modifiers.abilities = this.buffs.getBuffModifier({
-      type: "abilities",
+      target: "abilities",
     });
 
     // Stun
-    const stunBuffs = this.buffs.getBuffs({ type: "stun" });
+    const stunBuffs = this.buffs.getBuffs({ subEffect: "stun" });
     if (stunBuffs.length) {
       this._isStunned = stunBuffs.some(
         (buff) => Math.random() <= buff.probability

@@ -158,8 +158,8 @@ export class BattleCombat extends BattleService {
 
     const abilityMeta = source.abilities.getMeta(abilityClass);
     let buffsCount = 0;
-    draws.forEach((draws) => {
-      draws.forEach((effect) => {
+    draws.forEach((draw) => {
+      draw.forEach((effect) => {
         const buff = {
           name: effect.name,
           target: effect.target,

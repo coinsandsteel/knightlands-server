@@ -69,28 +69,28 @@ export default class UnitBuffs {
       // HP
       if (initial && buff.target === "hp") {
         const hp = Math.round(
-          this.fighter.unit.maxHp * this.getBuffModifier({ type: "hp" })
+          this.fighter.unit.maxHp * this.getBuffModifier({ target: "hp" })
         );
         this.fighter.modifyHp(hp, true);
       }
     });
 
     // Characteristics
-    this._modifiers.defence = this.getBuffModifier({ type: "defence" });
-    this._modifiers.speed = this.getBuffModifier({ type: "speed" });
+    this._modifiers.defence = this.getBuffModifier({ target: "defence" });
+    this._modifiers.speed = this.getBuffModifier({ target: "speed" });
     this._modifiers.initiative = this.getBuffModifier({
-      type: "initiative",
+      target: "initiative",
     });
 
     // Attack bonuses
-    this._modifiers.power = this.getBuffModifier({ type: "power" });
-    this._modifiers.attack = this.getBuffModifier({ type: "attack" });
+    this._modifiers.power = this.getBuffModifier({ target: "power" });
+    this._modifiers.attack = this.getBuffModifier({ target: "attack" });
     this._modifiers.abilities = this.getBuffModifier({
-      type: "abilities",
+      target: "abilities",
     });
 
     // Stun
-    const stunBuffs = this.getBuffs({ type: "stun" });
+    const stunBuffs = this.getBuffs({ subEffect: "stun" });
     this.fighter.setStunned(!!stunBuffs.length);
 
     // stunBuffs.some((buff) => Math.random() <= buff.probability)
@@ -133,14 +133,15 @@ export default class UnitBuffs {
   }
 
   public getBuffs(params: {
+    target?: string;
     source?: string;
-    type?: string;
+    subEffect?: string;
     trigger?: string;
   }): BattleBuff[] {
     return _.filter(this._buffs, params);
   }
 
-  public getBuffModifier(params: { source?: string; type?: string }): number {
+  public getBuffModifier(params: { source?: string; target?: string }): number {
     const buffs = this.getBuffs(params);
     if (!buffs.length) {
       return 1;
@@ -150,8 +151,8 @@ export default class UnitBuffs {
     buffs.forEach((buff) => {
       // Constant
       if (buff.mode === "constant" && buff.operation === "multiply" && !buff.trigger) {
-        //{ source: "self-buff", mode: "constant", type: "power", modifier: 1.15 }
-        //{ source: "squad", mode: "constant", type: "power", terrain: "hill", scheme: "hill-1" }
+        //{ source: "self-buff", mode: "constant", target: "power", modifier: 1.15 }
+        //{ source: "squad", mode: "constant", target: "power", terrain: "hill", scheme: "hill-1" }
         modifier =
           modifier *
           (buff.terrain
@@ -160,7 +161,7 @@ export default class UnitBuffs {
 
         // Burst
       } else if (buff.mode === "burst") {
-        //{ source: "squad", mode: "burst", type: "power", modifier: 1.3, probability: 0.07 },
+        //{ source: "squad", mode: "burst", target: "power", modifier: 1.3, probability: 0.07 },
         modifier =
           modifier * (Math.random() <= buff.probability ? buff.value : 1);
 
@@ -173,8 +174,8 @@ export default class UnitBuffs {
     return modifier;
   }
 
-  public getBonusDelta(type: string): number {
-    const buffs = this.getBuffs({ type });
+  public getBonusDelta(target: string): number {
+    const buffs = this.getBuffs({ target });
     if (!buffs.length) {
       return 0;
     }
@@ -199,9 +200,9 @@ export default class UnitBuffs {
   }
 
   public handleDamageCallback() {
-    // { source: "squad", mode: "stack", type: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", type: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", type: "defence", trigger: "damage", delta: 1, max: 4 },
+    // { source: "squad", mode: "stack", target: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    // { source: "squad", mode: "stack", target: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
+    // { source: "squad", mode: "stack", target: "defence", trigger: "damage", delta: 1, max: 4 },
     const buffs = this.getBuffs({ trigger: "damage" });
     if (buffs.length) {
       buffs.forEach((buff) => {

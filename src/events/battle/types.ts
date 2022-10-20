@@ -228,6 +228,7 @@ export interface BattleUnitAbility {
   };
   effects: BattleEffectMeta[][];
   targets: { [targetType: string]: boolean };
+  twoStepActivation: boolean;
 }
 
 export interface BattleUnitAttribute {
