@@ -98,7 +98,7 @@ export class Unit {
   }
 
   get damage(): number {
-    return this._characteristics.damage * 2;
+    return this._characteristics.damage * SETTINGS.damageModifier;
   }
 
   get maxHp(): number {

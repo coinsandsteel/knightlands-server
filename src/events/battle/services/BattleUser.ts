@@ -257,18 +257,18 @@ export class BattleUser {
       !this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax) &&
       !this.increaseDailyPurchaseCounter(id, quantity)
     ) {
-      console.log("Purchase failed. Daily limit exeeded");
+      //console.log("Purchase failed. Daily limit exeeded");
       return;
     }
 
     // Check if can claim
     if (positionMeta.claimable && !this.hasItem(id)) {
-      console.log("Purchase failed. Nothing to claim");
+      //console.log("Purchase failed. Nothing to claim");
       return;
     }
 
     if (positionMeta.content.energy && this.energy >= ENERGY_MAX) {
-      console.log("Purchase failed. Energy is already at maximum");
+      //console.log("Purchase failed. Energy is already at maximum");
       return;
     }
 
@@ -294,7 +294,7 @@ export class BattleUser {
           -positionMeta.price.amount
         );
       } else {
-        console.log("Purchase failed. Not enough currency");
+        //console.log("Purchase failed. Not enough currency");
         throw errors.NotEnoughCurrency;
       }
     }
@@ -336,11 +336,11 @@ export class BattleUser {
       const unit = this._core.inventory.getNewUnitByPropsRandom(params);
       this._core.inventory.addUnit(unit);
       resultItems.push(unit.serialize());
-      console.log("Added unit from lootbox", {
+      /*console.log("Added unit from lootbox", {
         class: unit.class,
         tribe: unit.tribe,
         tier: unit.tier,
-      });
+      });*/
     }
     return resultItems;
   }
@@ -350,7 +350,7 @@ export class BattleUser {
     quantity: number,
     tribe?: string
   ): BattleUnit[] {
-    console.log("Activate purchase", { positionMeta, quantity });
+    //console.log("Activate purchase", { positionMeta, quantity });
 
     const entryIndex = this._state.items.findIndex(
       (entry) => entry.id === positionMeta.id
@@ -451,10 +451,10 @@ export class BattleUser {
       // Increase counter
     } else {
       this._state.counters.duels[date] = newCount;
-      console.log(
+      /*console.log(
         "Increased daily duels counter",
         this._state.counters.duels[date]
-      );
+      );*/
     }
 
     this._core.events.counters(this._state.counters);
@@ -483,10 +483,10 @@ export class BattleUser {
           ...dateEntry,
           [id]: newCount,
         };
-        console.log(
+        /*console.log(
           "Increased daily counter",
           this._state.counters.purchase[date]
-        );
+        );*/
       }
     }
 

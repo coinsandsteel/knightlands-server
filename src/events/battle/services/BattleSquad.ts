@@ -102,13 +102,13 @@ export class BattleSquad extends BattleService {
             { tier: 3, level: Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier) },
           ]);
 
-          console.log({
+          /*console.log({
             userSquadLevelMean,
             unitLevel: userSquadLevelMean * unitLevelModifier,
             userSquadAbilitiesTier1Mean,
             userSquadAbilitiesTier2Mean,
             userSquadAbilitiesTier3Mean,
-          });
+          });*/
 
           const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
           fighters.push(fighter);

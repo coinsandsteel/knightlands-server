@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ABILITY_MOVE, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS } from "../../../knightlands-shared/battle";
+import { ABILITY_MOVE, TERRAIN_ICE, TERRAIN_SWAMP, TERRAIN_LAVA, TERRAIN_WOODS, TERRAIN_HILL, TERRAIN_THORNS, ABILITY_SHIELD_WALL } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import { PATH_SCHEME_QUEEN, PATH_SCHEME_ROOK, SETTINGS } from "../meta";
 import { Unit } from "../units/Unit";
@@ -102,6 +102,10 @@ export class BattleMovement extends BattleService {
   };
 
   public getMoveCellsByAbility(fighter: Fighter, abilityClass: string, onlyIndexes?: boolean): { [index: number]: number; } | number[] {
+    if (fighter.hasAgro && fighter.buffs.getBuffs({ source: ABILITY_SHIELD_WALL })) {
+      return [];
+    }
+
     let moveRange = 0;
     let ignoreObstacles = false;
     let ignoreTerrain = false;

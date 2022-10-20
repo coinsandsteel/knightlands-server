@@ -523,13 +523,13 @@ export class BattleGame extends BattleService {
     }
 
     // Go to an empty cell
-    if (abilityClass === ABILITY_MOVE || !target) {
+    if ((abilityClass === ABILITY_MOVE || !target) && !fighter.hasAgro) {
       this.log("Moving the fighter...");
       this._movement.moveFighter(fighter, abilityClass, index);
     }
 
     // Check if need to approach
-    if (abilityMeta && abilityMeta.canMove && target) {
+    if (abilityMeta && abilityMeta.canMove && target && !fighter.hasAgro) {
       this.combat.tryApproachEnemy(fighter, target, abilityClass);
     }
 
@@ -538,8 +538,13 @@ export class BattleGame extends BattleService {
       this.log("Trying to modify enemy's HP...");
       this.combat.handleHpChange(fighter, target, abilityClass);
 
+      if (target.isDead) {
+        this._state.initiativeRating = this._state.initiativeRating.filter(entry => entry.fighterId !== target.fighterId);
+        this._core.events.initiativeRating(this._state.initiativeRating);
+      }
+
       // Counter-attack
-      if (target.launchCounterAttack) {
+      if (!target.isDead && target.launchCounterAttack) {
         this.log("Target ia trying to counter-attack...", {
           fighter: fighter.fighterId,
           target: target.fighterId,
@@ -713,6 +718,12 @@ export class BattleGame extends BattleService {
     const index = this._state.initiativeRating.findIndex(
       (entry) => entry.active === true
     );
+    console.log('getNextFighterId', {
+      initiativeRating: this._state.initiativeRating,
+      nextIndex: index + 1,
+      nextFighter: this._state.initiativeRating[index + 1],
+      index
+    });
     if (this._state.initiativeRating[index + 1]) {
       fighterId = this._state.initiativeRating[index + 1].fighterId;
     } else {

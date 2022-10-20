@@ -169,15 +169,15 @@ export class BattleManager {
     const midnight = this.midnight;
     // Last reset was in midnight or earlier? Skip reset then.
     if (this._lastRankingsReset >= midnight) {
-      console.log(
+      /*console.log(
         `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`
-      );
+      );*/
       return;
     }
 
-    console.log(
+    /*console.log(
       `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`
-    );
+    );*/
 
     // Distribute rewards for winners
     await this.distributeRewards();
@@ -197,13 +197,13 @@ export class BattleManager {
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = midnight;
-    console.log(`[BattleManager] Rankings reset FINISH.`, {
+    /*console.log(`[BattleManager] Rankings reset FINISH.`, {
       _lastRankingsReset: this._lastRankingsReset,
-    });
+    });*/
   }
 
   async distributeRewards() {
-    console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
+    //console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
 
     const dateRanks = {};
     const modes = ["pvp", "power"];
@@ -225,7 +225,7 @@ export class BattleManager {
       ranks: dateRanks,
     });
 
-    console.log(`[BattleManager] Rankings distribution FINISHED.`);
+    //console.log(`[BattleManager] Rankings distribution FINISHED.`);
   }
 
   async debitUserReward(userId: ObjectId, mode: string, rank: number) {
@@ -245,12 +245,12 @@ export class BattleManager {
     const rewardItems = this.rankingRewards[rewardIndex].items;
 
     if (!isProd) {
-      console.log(`[BattleManager] Rewards BEFORE debit`, {
+      /*console.log(`[BattleManager] Rewards BEFORE debit`, {
         userId,
         mode,
         rank,
         items,
-      });
+      });*/
     }
     rewardItems.forEach((itemEntry) => {
       let receivedItemIndex = items.findIndex(
@@ -261,23 +261,23 @@ export class BattleManager {
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
         if (!isProd) {
-          console.log(`[BattleManager] Quantity increased`, {
+          /*console.log(`[BattleManager] Quantity increased`, {
             userId,
             mode,
             rank,
             ...itemEntry,
-          });
+          });*/
         }
       }
     });
     if (!isProd) {
-      console.log(`[BattleManager] Rewards AFTER debit`, {
+      /*console.log(`[BattleManager] Rewards AFTER debit`, {
         userId,
         mode,
         rank,
         items,
       });
-      console.log("");
+      console.log("");*/
     }
 
     await this._rewardCollection.updateOne(
@@ -406,7 +406,7 @@ export class BattleManager {
     for await (const mode of ["pvp", "power"]) {
       const me = await Game.db
         .collection(Collections.Users)
-        .findOne({ address: "uniwertz@gmail.com" });
+        .findOne({ address: "" });
 
       if (me) {
         await this.updateRank(me._id, mode, 2985);
@@ -417,7 +417,7 @@ export class BattleManager {
       }
     }
 
-    console.log(`[BattleManager] Test ratings were created`);
+    //console.log(`[BattleManager] Test ratings were created`);
   }
 
   // #######################################################################
