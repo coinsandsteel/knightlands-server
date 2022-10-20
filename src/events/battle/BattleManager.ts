@@ -1,5 +1,7 @@
 import _ from "lodash";
-import { Collection, Document, ObjectId } from "mongodb";
+import moment from 'moment';
+import { Collection, Document } from "mongodb";
+import { ObjectId } from "bson";
 import { Collections } from "../../database/database";
 
 import Game from "../../game";
@@ -41,13 +43,13 @@ export class BattleManager {
 
   get eventStartDate() {
     return new Date(
-      this._meta.settings.eventStartDate * 1000 || "2021-10-05 00:00:00"
+      this._meta.settings.eventStartDate ? this._meta.settings.eventStartDate * 1000 : "2022-10-20 00:00:00"
     );
   }
 
   get eventEndDate() {
     return new Date(
-      this._meta.settings.eventEndDate * 1000 || "2022-11-05 00:00:00"
+      this._meta.settings.eventEndDate ? this._meta.settings.eventEndDate * 1000 : "2022-11-19 00:00:00"
     );
   }
 
@@ -60,7 +62,7 @@ export class BattleManager {
   }
 
   get resetTimeLeft() {
-    let secondsLeft = this.nextMidnight / 1000 - Game.nowSec;
+    let secondsLeft = this.nextResetDate / 1000 - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -75,16 +77,16 @@ export class BattleManager {
     return this._meta.settings.squadRewards || [];
   }
 
-  get midnight() {
-    const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0);
-    return midnight.getTime();
+  // This friday
+  get resetDate() {
+    //return moment().day(5).second(0).minute(0).hour(0).valueOf();
+    return moment().minute(0).valueOf();
   }
 
-  get nextMidnight() {
-    const midnight = new Date();
-    midnight.setHours(23, 59, 59, 0);
-    return midnight.getTime();
+  // Next friday
+  get nextResetDate() {
+    //return moment().day(13).second(0).minute(0).hour(0).valueOf();
+    return moment().minute(59).valueOf();
   }
 
   get meta() {
@@ -118,7 +120,7 @@ export class BattleManager {
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this._meta.settings.lastReset || this.midnight;
+    this._lastRankingsReset = this._meta.settings.lastReset || this.resetDate;
     //console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     await this.watchResetRankings();
@@ -166,17 +168,17 @@ export class BattleManager {
   }
 
   async commitResetRankings() {
-    const midnight = this.midnight;
-    // Last reset was in midnight or earlier? Skip reset then.
-    if (this._lastRankingsReset >= midnight) {
+    const resetDate = this.resetDate;
+    // Last reset was in resetDate or earlier? Skip reset then.
+    if (this._lastRankingsReset >= resetDate) {
       /*console.log(
-        `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= midnight(${midnight})`
+        `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= resetDate(${resetDate})`
       );*/
       return;
     }
 
     /*console.log(
-      `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < midnight(${midnight})`
+      `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
     );*/
 
     // Distribute rewards for winners
@@ -189,14 +191,14 @@ export class BattleManager {
         .collection(Collections.Meta)
         .updateOne(
           { _id: "battle_meta" },
-          { $set: { lastReset: midnight } },
+          { $set: { lastReset: resetDate } },
           { upsert: true }
         );
     });
 
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
-    this._lastRankingsReset = midnight;
+    this._lastRankingsReset = resetDate;
     /*console.log(`[BattleManager] Rankings reset FINISH.`, {
       _lastRankingsReset: this._lastRankingsReset,
     });*/

@@ -38,6 +38,7 @@
         "lodash.difference": "^4.5.0",
         "long-timeout": "^0.1.1",
         "minimist": "1.1.0",
+        "moment": "^2.29.4",
         "mongodb": "^4.0.1",
         "morgan": "1.7.0",
         "node-dijkstra": "^2.5.0",
