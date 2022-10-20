@@ -366,7 +366,9 @@ export class BattleCombat extends BattleService {
     // Iterate move cells to check if fighter can reach enemy from there
     const abilityData = fighter.abilities.getAbilityByClass(abilityClass);
     let canAttackFrom = [];
+    moveCells[fighter.index] = 0;
     for (let moveCell in moveCells) {
+      let movePathLength = moveCells[moveCell];
       // Calc attack path
       // TODO test zero range
       const attackPath = this._core.game.movement.getPath(
@@ -381,8 +383,7 @@ export class BattleCombat extends BattleService {
         );
         canAttackFrom.push({
           index: parseInt(moveCell),
-          totalRange: attackPath.length + 1 + moveCells[moveCell],
-          attackRange: attackPath.length + 1
+          totalRange: attackPath.length + 1 + movePathLength
         });
       }
     }
@@ -390,7 +391,7 @@ export class BattleCombat extends BattleService {
     // Have spots to approach
     if (canAttackFrom.length) {
       // Move to attack spot
-      const targetIndex = _.head(_.sortBy(canAttackFrom, ["totalRange", "attackRange"]));
+      const targetIndex = _.head(_.sortBy(canAttackFrom, "totalRange"));
       this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex.index);
       this.log(`Approaching enemy onto index ${targetIndex}`);
     }
