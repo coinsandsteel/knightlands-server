@@ -118,6 +118,10 @@ export class BattleSquad extends BattleService {
       throw new Error(`[fillSlot] Unit #${unitId} not found in the inventory`);
     }
 
+    if (this.getFighterByTemplate(unit.template)) {
+      return;
+    }
+
     const figher = Fighter.createFighterFromUnit(
       unit,
       this._isEnemy,
@@ -253,6 +257,12 @@ export class BattleSquad extends BattleService {
   public getFighter(fighterId: string): Fighter | null {
     return (
       this.fighters.find((fighter) => fighter.fighterId === fighterId) || null
+    );
+  }
+
+  public getFighterByTemplate(template: number): Fighter | null {
+    return (
+      this.fighters.find((fighter) => fighter.unit.template === template) || null
     );
   }
 

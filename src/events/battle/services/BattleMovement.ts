@@ -140,15 +140,15 @@ export class BattleMovement extends BattleService {
       }
 
       let path = this.getPath(unitIndex, index, ignoreObstacles);
-      if (path) {
-        path = this.cutPathToClosestStopper(path);
-      }
+      let stopperIsOnTheWay = path ? this.stopperIsOnTheWay(path) : false;
 
       //this.log("Move path", { from: unitIndex, to: index, path });
       if (
         path
         &&
         (path.length + 1) <= range
+        &&
+        !stopperIsOnTheWay
       ) {
         //this.log("Move path accepted (path.length=${path.length} < range=${range})", { pathLength: path.length, to: index, path });
         result[index] = path.length + 1;
@@ -158,12 +158,12 @@ export class BattleMovement extends BattleService {
     return result;
   };
 
-  protected cutPathToClosestStopper(path: number[]): number[] {
+  protected stopperIsOnTheWay(path: number[]): boolean {
     const stopperIndex = path.findIndex(index => {
       const terrain = this._core.game.terrain.getTerrainTypeByIndex(index);
       return [TERRAIN_ICE, TERRAIN_SWAMP].includes(terrain);
     });
-    return stopperIndex !== -1 ? path.slice(0, stopperIndex + 1) : path;
+    return stopperIndex !== -1;
   }
 
   public getPath(from: number, to: number, ignoreObstacles: boolean): number[]|null {

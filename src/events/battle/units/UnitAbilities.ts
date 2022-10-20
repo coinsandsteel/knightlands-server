@@ -15,6 +15,10 @@ import { BattleAbilityMeta } from "./MetaDB";
 export default class UnitAbilities {
   protected readonly _unit: Unit;
   protected _abilities: BattleUnitAbility[];
+  protected _dependencies: {
+    damage: number;
+    speed: number;
+  };
 
   get abilities(): BattleUnitAbility[] {
     return this._abilities;
@@ -22,8 +26,12 @@ export default class UnitAbilities {
 
   constructor(unit: Unit, abilities: BattleUnitAbility[]) {
     this._unit = unit;
-    this._abilities = abilities;
+    this._dependencies = {
+      damage: unit.damage,
+      speed: unit.speed,
+    };
 
+    this._abilities = abilities;
     if (
       !this._abilities.find((entry) => entry.abilityClass === ABILITY_ATTACK)
     ) {
@@ -76,8 +84,14 @@ export default class UnitAbilities {
     return blueprint;
   }
 
-  public update(): void {
+  public update(dependencies?: { damage: number; speed: number }): void {
+    if (dependencies) {
+      this._dependencies.damage = dependencies.damage;
+      this._dependencies.speed = dependencies.speed;
+    }
+
     this.unlock();
+
     this._abilities = this._abilities.map((entry) =>
       this.calcAbility(entry.abilityClass)
     );
@@ -136,7 +150,7 @@ export default class UnitAbilities {
     }
 
     if (ability === ABILITY_ATTACK) {
-      return this._unit.damage;
+      return this._dependencies.damage;
     }
 
     const abilityData = this.getAbilityByClass(ability);
@@ -159,7 +173,7 @@ export default class UnitAbilities {
       return null;
     }
     if (ability === ABILITY_ATTACK) {
-      return this._unit.damage;
+      return this._dependencies.damage;
     }
     const abilityMeta = this.getMeta(ability);
     const abilityData = this.getAbilityByClass(ability);
@@ -219,9 +233,11 @@ export default class UnitAbilities {
     });
   }
 
-  protected calcAbility(abilityClass: string): BattleUnitAbility|null {
+  protected calcAbility(abilityClass: string): BattleUnitAbility | null {
     if (abilityClass === ABILITY_MOVE) {
-      throw new Error('Cannot calc "move" ability stats. No stats were implemented');
+      throw new Error(
+        'Cannot calc "move" ability stats. No stats were implemented'
+      );
     }
 
     const abilityData = this.getAbilityByClass(abilityClass);
@@ -232,11 +248,12 @@ export default class UnitAbilities {
     const range = abilityMeta.range[abilityData.levelInt - 1];
 
     const moveRange = abilityData.enabled
-      ? range.move.value + (range.move.addSpeed ? this._unit.speed : 0)
+      ? range.move.value + (range.move.addSpeed ? this._dependencies.speed : 0)
       : 0;
 
     const attackRange = abilityData.enabled
-      ? range.attack.value + (range.attack.addSpeed ? this._unit.speed : 0)
+      ? range.attack.value +
+        (range.attack.addSpeed ? this._dependencies.speed : 0)
       : 0;
 
     const effects = abilityMeta.effects.length
@@ -249,7 +266,11 @@ export default class UnitAbilities {
       ...abilityData,
       abilityType: abilityMeta.abilityType,
       value,
-      combatValue: abilityMeta.affectHp ? value : (effects.length ? combatValue : null),
+      combatValue: abilityMeta.affectHp
+        ? value
+        : effects.length
+        ? combatValue
+        : null,
       range: {
         move: abilityMeta.canMove ? (moveRange < 0 ? 0 : moveRange) : 0,
         attack: attackRange < 0 ? 0 : attackRange,
@@ -483,16 +504,10 @@ export default class UnitAbilities {
       const abilityScheme =
         ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
       if (abilityScheme) {
-        ability.enabled = true;
-        ability.level = {
-          current: abilityScheme.lvl,
-          next: null,
-          price: null,
-        };
-        ability.levelInt = abilityScheme.lvl;
-        ability.level.next = null;
-        ability.level.price = null;
+        this.setAbilityLevel(ability.abilityClass, abilityScheme.lvl);
       }
     });
+
+    this.update();
   }
 }

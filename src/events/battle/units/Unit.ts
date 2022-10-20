@@ -363,7 +363,6 @@ export class Unit {
     this._tier = 3;
     this.setLevel(SETTINGS.maxUnitTierLevel[this._tier]);
     this.abilities.maximize();
-    this.abilities.update();
     this.setPower();
   }
 

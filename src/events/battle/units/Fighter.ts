@@ -291,7 +291,10 @@ export class Fighter {
       this._isStunned = false;
     }
 
-    this.abilities.update();
+    this.abilities.update({
+      speed: this.speed,
+      damage: this.damage
+    });
   }
 
   public setStunned(value: boolean) {
