@@ -2280,6 +2280,10 @@ class PlayerController extends IPaymentListener {
     }
 
     // Battle
+    async _battleAddDailyReward() {
+      return this.battle.addDailyReward();
+    }
+
     async _battleLoad() {
       return this.battle.load();
     }

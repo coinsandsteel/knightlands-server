@@ -207,6 +207,17 @@ class DailyQuests {
         if (currentProgress >= maxProgress) {
             currentProgress = maxProgress;
 
+            if (
+                taskType === DailyQuestType.DailyAllTasks3
+                &&
+                !this._data.completedTasks[taskType]
+            ) {
+               const playerController = Game.getPlayerControllerById(this._user.id);
+                if (playerController) {
+                    await playerController._battleAddDailyReward();
+                }
+            }
+
             // complete task
             this._data.completedTasks[taskType] = true;
 

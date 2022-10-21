@@ -50,6 +50,10 @@ export class BattleController {
     return this.getState();
   }
 
+  async addDailyReward() {
+    await this.core.user.addDailyReward();
+  }
+
   async claimReward(type: string, tribe?: string) {
     let items;
     switch (type) {

@@ -406,6 +406,14 @@ export class BattleUser {
     return this._state.items.find((item) => item.id === id);
   }
 
+  public addDailyReward(): void {
+    if (this.hasItem(2)) {
+      return;
+    }
+    this._state.items.push({ id: 2, quantity: 1 });
+    this._core.events.items(this._state.items);
+  }
+
   protected purgePreviousDates(): void {
     const currentDate = moment.utc().format('DD/MM/YYYY');
     this._state.counters.purchase = _.pick(
