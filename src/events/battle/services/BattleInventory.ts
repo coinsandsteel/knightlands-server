@@ -165,6 +165,9 @@ export class BattleInventory extends BattleService {
       this._core.events.addUnit(serializedUnit);
       this.log("Unit added", unit.unitId);
     } else {
+      if (this._units[index].levelInt < unit.levelInt) {
+        this._units[index].setLevel(unit.levelInt);
+      }
       this._units[index].modifyQuantity(1);
       this.updateUnitState(this._units[index]);
       this.log("Unit stacked", unit.unitId);
