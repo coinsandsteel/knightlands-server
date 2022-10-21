@@ -86,7 +86,7 @@ export class Fighter {
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
-      Math.round(this.unit.characteristics.speed * this._modifiers.speed) +
+      Math.round(this.unit.speed * this._modifiers.speed) +
       bonusDelta
     );
   }
@@ -95,7 +95,7 @@ export class Fighter {
     const bonusDelta = this.buffs.getBonusDelta("initiative");
     return (
       Math.round(
-        this.unit.characteristics.initiative * this._modifiers.initiative
+        this.unit.initiative * this._modifiers.initiative
       ) + bonusDelta
     );
   }
@@ -103,7 +103,7 @@ export class Fighter {
   get defence(): number {
     const bonusDelta = this.buffs.getBonusDelta("defence");
     return (
-      Math.round(this.unit.characteristics.defence * this._modifiers.defence) +
+      Math.round(this.unit.defence * this._modifiers.defence) +
       bonusDelta
     );
   }

@@ -98,7 +98,7 @@ export class Unit {
   }
 
   get damage(): number {
-    return this._characteristics.damage * SETTINGS.damageModifier;
+    return this._characteristics.damage;
   }
 
   get maxHp(): number {
@@ -373,6 +373,7 @@ export class Unit {
 
     // Damage: ClassDamage*((MultiplierDamage+LevelStepDamage*(Level-1))
     const damage =
+      SETTINGS.damageModifier *
       v.ClassDamage * (v.MultiplierDamage + v.LevelStepDamage * (v.Level - 1)) * (isBoss ? SETTINGS.bossPower : 1);
 
     // Defence: ClassDefence*MultiplierDefence^(Level-1)
@@ -435,11 +436,11 @@ export class Unit {
 
   public getValueByFormula(formula: string) {
     return {
-      "speed-1": this._characteristics.speed - 1,
-      speed: this._characteristics.speed,
-      "speed+1": this._characteristics.speed + 1,
-      "speed+2": this._characteristics.speed + 2,
-      "speed+3": this._characteristics.speed + 3,
+      "speed-1": this.speed - 1,
+      speed: this.speed,
+      "speed+1": this.speed + 1,
+      "speed+2": this.speed + 2,
+      "speed+3": this.speed + 3,
     }[formula];
   }
 }
