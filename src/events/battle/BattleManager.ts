@@ -49,7 +49,7 @@ export class BattleManager {
 
   get eventEndDate() {
     return new Date(
-      this._meta.settings.eventEndDate ? this._meta.settings.eventEndDate * 1000 : "2022-11-19 00:00:00"
+      this._meta.settings.eventEndDate ? this._meta.settings.eventEndDate * 1000 : "2022-11-21 00:00:00"
     );
   }
 
