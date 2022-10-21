@@ -37,7 +37,7 @@ export class GoldMines {
         const mine = this.checkAndGetMine(mineIndex);
         const meta = await this.getMeta();
 
-        if (meta.mines.length <= mine.level) {
+        if (meta.mines.length <= mine.level + 1) {
             throw Errors.GoldMineMaxLevel;
         }
 

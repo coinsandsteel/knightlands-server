@@ -15,7 +15,7 @@ import CharacterStat from "../knightlands-shared/character_stat";
 import { isNumber } from "../validation";
 
 const WeaknessRotationCycle = 86400000 * 7; // 7 days
-const ElementalWeakness = [Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
+const ElementalWeakness = [Elements.Physical, Elements.Water, Elements.Earth, Elements.Light, Elements.Darkness];
 const WeaponWeaknesses = [EquipmentType.Axe, EquipmentType.Sword, EquipmentType.Bow, EquipmentType.Wand, EquipmentType.Spear];
 
 const DktFactorUpdateInterval = 1800000; // every 30 minutes

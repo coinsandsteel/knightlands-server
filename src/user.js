@@ -7,7 +7,7 @@ import CharacterStat, {
     DefaultStats
 }
 from "./knightlands-shared/character_stat";
-
+import Elements from "./knightlands-shared/elements";
 import TrainingCamp from "./knightlands-shared/training_camp";
 import ItemStatResolver from "./knightlands-shared/item_stat_resolver";
 import CurrencyType from "./knightlands-shared/currency_type";
@@ -273,7 +273,21 @@ class User {
         let item = this.inventory.getItemById(weapon.id);
         let template = await Game.itemTemplates.getTemplate(item.template);
         return {
-            element: item.element,
+            element: item.element || Elements.Physical,
+            type: template.equipmentType
+        }
+    }
+
+    async getOffhandWeaponCombatData() {
+        let weapon = this.equipment[EquipmentSlots.OffHand];
+        if (!weapon) {
+            return null;
+        }
+
+        let item = this.inventory.getItemById(weapon.id);
+        let template = await Game.itemTemplates.getTemplate(item.template);
+        return {
+            element: item.element || Elements.Physical,
             type: template.equipmentType
         }
     }
