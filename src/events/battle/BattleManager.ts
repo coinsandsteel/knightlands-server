@@ -17,8 +17,7 @@ import {
 } from "./units/MetaDB";
 
 const isProd = process.env.ENV == "prod";
-const RANKING_WATCHER_PERIOD_MILSECONDS = 1 * 60 * 1000;
-const DAY = 24 * 60 * 60 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 5 * 1000;
 
 export class BattleManager {
   protected _meta: BattleMeta;
@@ -41,20 +40,20 @@ export class BattleManager {
     this._abilityTypes = {};
   }
 
-  get eventStartDate() {
-    return new Date(
-      this._meta.settings.eventStartDate ? this._meta.settings.eventStartDate * 1000 : "2022-10-20 00:00:00"
-    );
+  get eventStartDate(): number {
+    return moment.utc(
+      this._meta.settings.eventStartDate ? this._meta.settings.eventStartDate : "2022-10-20 00:00:00"
+    ).unix();
   }
 
-  get eventEndDate() {
-    return new Date(
-      this._meta.settings.eventEndDate ? this._meta.settings.eventEndDate * 1000 : "2022-11-21 00:00:00"
-    );
+  get eventEndDate(): number {
+    return moment.utc(
+      this._meta.settings.eventEndDate ? this._meta.settings.eventEndDate : "2022-11-21 00:00:00"
+    ).unix();
   }
 
   get timeLeft() {
-    let secondsLeft = this.eventEndDate.getTime() / 1000 - Game.nowSec;
+    let secondsLeft = this.eventEndDate - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -124,15 +123,8 @@ export class BattleManager {
     await this.watchResetRankings();
   }
 
-  public eventIsInProgress() {
-    const now = new Date();
-    const start = this.eventStartDate;
-    const end = this.eventEndDate;
-    return now >= start && now <= end;
-  }
-
   public eventFinished() {
-    const now = new Date();
+    const now = moment().utc().unix();
     const end = this.eventEndDate;
     return now > end;
   }
@@ -155,12 +147,8 @@ export class BattleManager {
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
-  protected relativeDayStart(day: number) {
-    return this.eventStartDate.getTime() + DAY * (day - 1);
-  }
-
   async commitResetRankings() {
-    const resetDate = this.thisWeekResetDate;
+    const resetDate = this. thisWeekResetDate;
     // Last rankings reset was after monday? Skip then.
     if (resetDate <= this._lastRankingsReset) {
       /*console.log(
