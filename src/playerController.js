@@ -2354,11 +2354,11 @@ class PlayerController extends IPaymentListener {
       return this.battle.skip();
     }
 
-    async _battleEnterLevel(_, { location, level, difficulty }) {
-        if (!isNumber(parseInt(location)) || !isNumber(parseInt(level)) || !isString(difficulty)) {
+    async _battleEnterLevel(_, { location, level }) {
+        if (!isNumber(parseInt(location)) || !isNumber(parseInt(level))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.enterLevel(location, level, difficulty);
+      return this.battle.enterLevel(location, level);
     }
 
     async _battleEnterDuel(_, { difficulty }) {
