@@ -62,7 +62,7 @@ export class BattleManager {
   }
 
   get resetTimeLeft() {
-    let secondsLeft = this.nextWeekResetDate / 1000 - Game.nowSec;
+    let secondsLeft = this.nextWeekResetDate - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -79,12 +79,12 @@ export class BattleManager {
 
   // This friday
   get thisWeekResetDate() {
-    return moment().day(0).second(0).minute(0).hour(0).valueOf();
+    return moment().utc().day(1).second(0).minute(0).hour(0).unix();
   }
 
   // Next friday
   get nextWeekResetDate() {
-    return moment().day(7).second(0).minute(0).hour(0).valueOf();
+    return moment().utc().day(8).second(0).minute(0).hour(0).unix();
   }
 
   get meta() {
@@ -98,6 +98,7 @@ export class BattleManager {
       Game.db.collection(Collections.BattleAbilities).find().toArray(),
       Game.db.collection(Collections.BattleEffects).find().toArray(),
       Game.db.collection(Collections.BattleSettings).find().toArray(),
+      Game.db.collection(Collections.Meta).findOne({ _id: "battle_meta" })
     ]);
 
     this._meta = {
@@ -109,16 +110,15 @@ export class BattleManager {
     };
 
     // this.testMeta();
-
-    if (false && !isProd) {
+    /*if (!isProd) {
       await this._rankCollection.deleteMany({});
       await this.addTestRatings();
       await this.distributeRewards();
-    }
+    }*/
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this._meta.settings.lastReset || this.thisWeekResetDate;
+    this._lastRankingsReset = this.thisWeekResetDate;
     //console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     await this.watchResetRankings();
@@ -150,15 +150,9 @@ export class BattleManager {
   }
 
   async watchResetRankings() {
-    if (!isProd) {
-      // await this._rankCollection.deleteMany({});
-      // await this.addTestRatings();
-      // await this.distributeRewards();
-    } else {
-      setInterval(async () => {
-        await this.commitResetRankings();
-      }, RANKING_WATCHER_PERIOD_MILSECONDS);
-    }
+    setInterval(async () => {
+      await this.commitResetRankings();
+    }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
   protected relativeDayStart(day: number) {
