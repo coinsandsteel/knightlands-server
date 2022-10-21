@@ -157,7 +157,7 @@ export class BattleUser {
     return this._state;
   }
 
-  public modifyBalance(currency: string, amount: number): void {
+  public modifyBalance(currency: string, amount: number, force?: boolean): void {
     //console.log('modifyBalance', { currency, amount });
     this._state.balance[currency] += amount;
 
@@ -167,7 +167,7 @@ export class BattleUser {
 
     this._core.events.balance(this._state.balance);
 
-    if (currency === CURRENCY_ENERGY && this.energy > ENERGY_MAX) {
+    if (currency === CURRENCY_ENERGY && this.energy > ENERGY_MAX && !force) {
       this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
     }
 
@@ -265,11 +265,6 @@ export class BattleUser {
     // Check if can claim
     if (positionMeta.claimable && !this.hasItem(id)) {
       //console.log("Purchase failed. Nothing to claim");
-      return;
-    }
-
-    if (positionMeta.content.energy && this.energy >= ENERGY_MAX) {
-      //console.log("Purchase failed. Energy is already at maximum");
       return;
     }
 
@@ -390,8 +385,8 @@ export class BattleUser {
           unitTribe
         );
       }
-    } else if (positionMeta.content.energy && this.energy < ENERGY_MAX) {
-      this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy);
+    } else if (positionMeta.content.energy) {
+      this.modifyBalance(CURRENCY_ENERGY, positionMeta.content.energy, true);
     }
 
     return items;
