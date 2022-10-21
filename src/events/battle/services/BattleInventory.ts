@@ -187,18 +187,15 @@ export class BattleInventory extends BattleService {
       if (this._units[index].quantity <= 0) {
         delete this._units[index];
         this._units = this._units.filter(e => e);
-        this._core.events.removeUnit(unit);
-
         const squadIndex = this._core.game.userSquad.fighters.findIndex(
           entry => entry.unit.template === unit.template
         );
         if (squadIndex !== -1) {
           this._core.game.userSquad.clearSlot(squadIndex);
         }
-      } else {
-        this.updateUnitState(this._units[index]);
       }
 
+      this._core.events.inventory(this._state);
       this.handleInventoryChanged();
     }
   }

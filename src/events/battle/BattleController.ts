@@ -141,7 +141,8 @@ export class BattleController {
   }
 
   async testAction(data) {
-    return;
+    if (isProd) return;
+
     if (data === 'win') {
       this.core.game.win();
     }

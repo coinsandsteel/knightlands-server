@@ -101,6 +101,7 @@ export interface BattleRewardSquadData {
 
 export interface BattleGameState {
   mode: string | null; // "duel" | "adventure"
+  difficulty: string | null;
 
   userSquad: BattleSquadState;
   enemySquad: BattleSquadState;

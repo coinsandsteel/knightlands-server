@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
+import * as moment from 'moment';
 import {
   BattleItem,
   BattleShopItemMeta,
@@ -24,7 +25,7 @@ import { SETTINGS } from "../meta";
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
-const ENERGY_CYCLE_SEC = isProd ? (15 * 60) / 2 : 1;
+const ENERGY_CYCLE_SEC = (15 * 60) / 2;
 const ENERGY_AMOUNT_PER_CYCLE = 1;
 
 export class BattleUser {
@@ -64,8 +65,8 @@ export class BattleUser {
       pvpScore: 0,
       balance: {
         [CURRENCY_ENERGY]: ENERGY_MAX,
-        [CURRENCY_COINS]: isProd ? 0 : 1000000,
-        [CURRENCY_CRYSTALS]: isProd ? 0 : 1000000,
+        [CURRENCY_COINS]: 0,
+        [CURRENCY_CRYSTALS]: 0,
       },
       items: [{ id: 1, quantity: 1 }],
       counters: {
@@ -404,7 +405,7 @@ export class BattleUser {
   }
 
   protected purgePreviousDates(): void {
-    const currentDate = new Date().toLocaleDateString("en-US");
+    const currentDate = moment.utc().format('DD/MM/YYYY');
     this._state.counters.purchase = _.pick(
       this._state.counters.purchase,
       currentDate
@@ -423,13 +424,13 @@ export class BattleUser {
   }
 
   public dailyDuelsLimitExceeded(): boolean {
-    const date = new Date().toLocaleDateString("en-US");
+    const date = moment.utc().format('DD/MM/YYYY');
     const dateEntry = this._state.counters.duels[date];
     return (dateEntry || 0) >= BATTLE_MAX_DUELS_DAILY;
   }
 
   protected dailyPurchaseLimitExceeded(id: number, max: number): boolean {
-    const date = new Date().toLocaleDateString("en-US");
+    const date = moment.utc().format('DD/MM/YYYY');
     const dateEntry = this._state.counters.purchase[date];
     if (dateEntry) {
       const idPurchases = dateEntry[id] || 0;
@@ -441,7 +442,7 @@ export class BattleUser {
   }
 
   public increaseDailyDuelsCounter(): boolean {
-    const date = new Date().toLocaleDateString("en-US");
+    const date = moment.utc().format('DD/MM/YYYY');
     const dateEntry = this._state.counters.duels[date];
     const newCount = (dateEntry || 0) + 1;
 
@@ -471,7 +472,7 @@ export class BattleUser {
     }
 
     if (positionMeta.dailyMax) {
-      const date = new Date().toLocaleDateString("en-US");
+      const date = moment.utc().format('DD/MM/YYYY');
       const dateEntry = this._state.counters.purchase[date];
       const newCount = (dateEntry ? dateEntry[id] : 0) + count;
       // Overhead

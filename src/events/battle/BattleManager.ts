@@ -62,7 +62,7 @@ export class BattleManager {
   }
 
   get resetTimeLeft() {
-    let secondsLeft = this.nextResetDate / 1000 - Game.nowSec;
+    let secondsLeft = this.nextWeekResetDate / 1000 - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -78,15 +78,13 @@ export class BattleManager {
   }
 
   // This friday
-  get resetDate() {
-    //return moment().day(5).second(0).minute(0).hour(0).valueOf();
-    return moment().minute(0).valueOf();
+  get thisWeekResetDate() {
+    return moment().day(0).second(0).minute(0).hour(0).valueOf();
   }
 
   // Next friday
-  get nextResetDate() {
-    //return moment().day(13).second(0).minute(0).hour(0).valueOf();
-    return moment().minute(59).valueOf();
+  get nextWeekResetDate() {
+    return moment().day(7).second(0).minute(0).hour(0).valueOf();
   }
 
   get meta() {
@@ -120,7 +118,7 @@ export class BattleManager {
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this._meta.settings.lastReset || this.resetDate;
+    this._lastRankingsReset = this._meta.settings.lastReset || this.thisWeekResetDate;
     //console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
 
     await this.watchResetRankings();
@@ -168,9 +166,9 @@ export class BattleManager {
   }
 
   async commitResetRankings() {
-    const resetDate = this.resetDate;
-    // Last reset was in resetDate or earlier? Skip reset then.
-    if (this._lastRankingsReset >= resetDate) {
+    const resetDate = this.thisWeekResetDate;
+    // Last rankings reset was after monday? Skip then.
+    if (resetDate <= this._lastRankingsReset) {
       /*console.log(
         `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= resetDate(${resetDate})`
       );*/

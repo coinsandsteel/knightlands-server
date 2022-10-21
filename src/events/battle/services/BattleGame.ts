@@ -30,6 +30,7 @@ export class BattleGame extends BattleService {
 
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
+  protected _difficulty: string;
   protected _enemyOptions: {
     [difficulty: string]: Fighter[]
   } | null = null;
@@ -54,6 +55,8 @@ export class BattleGame extends BattleService {
       true,
       this._core
     );
+
+    this._difficulty = state ? state.difficulty : GAME_DIFFICULTY_MEDIUM;
 
     if (state) {
       this._state = state;
@@ -115,6 +118,7 @@ export class BattleGame extends BattleService {
   protected setInitialState() {
     this._state = {
       mode: null,
+      difficulty: GAME_DIFFICULTY_MEDIUM,
 
       userSquad: this._userSquad.getInitialState(),
       enemySquad: this._enemySquad.getInitialState(),
@@ -250,6 +254,7 @@ export class BattleGame extends BattleService {
     }
 
     this.setMode(GAME_MODE_DUEL);
+    this._difficulty = difficulty;
 
     // Terrain
     this.terrain.setRandomMap();
@@ -609,15 +614,16 @@ export class BattleGame extends BattleService {
       this._core.adventures.handleLevelPassed();
 
     } else if (this._state.mode === GAME_MODE_DUEL) {
-      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS.win.crystals);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this._difficulty].win.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS.win.crystals,
+        crystals: DUEL_REWARDS[this._difficulty].win.crystals,
         xp: 0,
-        rank: DUEL_REWARDS.win.rank
+        rank: DUEL_REWARDS[this._difficulty].win.rank
       });
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.win.rank);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this._difficulty].win.rank);
       this._core.user.updatePvpScore();
+      this._difficulty = null;
     }
 
     this.setCombatResult("win");
@@ -627,15 +633,16 @@ export class BattleGame extends BattleService {
 
   public loose(): void {
     if (this._state.mode === GAME_MODE_DUEL) {
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS.loose.rank);
-      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS.loose.crystals);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this._difficulty].loose.rank);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this._difficulty].loose.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS.loose.crystals,
+        crystals: DUEL_REWARDS[this._difficulty].loose.crystals,
         xp: 0,
-        rank: DUEL_REWARDS.loose.rank
+        rank: DUEL_REWARDS[this._difficulty].loose.rank
       });
       this._core.user.updatePvpScore();
+      this._difficulty = null;
     }
 
     this.setCombatResult("loose");

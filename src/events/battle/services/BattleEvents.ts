@@ -24,7 +24,10 @@ export class BattleEvents extends BattleService {
   }
 
   updateUnit(unit: BattleUnit) {
-    this._events.updateUnit = unit;
+    if (this._events.updateUnit === undefined) {
+      this._events.updateUnit = {};
+    }
+    this._events.updateUnit[unit.unitId] = unit;
   }
 
   addUnit(unit: BattleUnit) {
