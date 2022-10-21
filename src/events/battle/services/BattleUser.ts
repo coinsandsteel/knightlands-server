@@ -25,8 +25,7 @@ import { SETTINGS } from "../meta";
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
-//const ENERGY_CYCLE_SEC = (15 * 60) / 2;
-const ENERGY_CYCLE_SEC = 1;
+const ENERGY_CYCLE_SEC = (15 * 60) / 2;
 const ENERGY_AMOUNT_PER_CYCLE = 1;
 
 export class BattleUser {
