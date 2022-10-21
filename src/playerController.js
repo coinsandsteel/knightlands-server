@@ -2285,14 +2285,14 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleClaimReward(_, { type, tribe }) {
-        if (!isString(type) || !isString(tribe)) {
+        if (!isString(type) || (tribe && !isString(tribe))) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.claimReward(type, tribe);
     }
 
     async _battlePurchase(_, { id, tribe }) {
-        if (!isNumber(parseInt(id)) || !isString(tribe)) {
+        if (!isNumber(parseInt(id)) || (tribe && !isString(tribe))) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.purchase(id, tribe);
