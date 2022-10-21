@@ -2292,21 +2292,21 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battlePurchase(_, { id, tribe }) {
-        if (!isNumber(id) || !isString(tribe)) {
+        if (!isNumber(parseInt(id)) || !isString(tribe)) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.purchase(id, tribe);
     }
 
     async _battleFillSquadSlot(_, { unitId, index }) {
-        if (!isNumber(index) || !isString(unitId)) {
+        if (!isNumber(parseInt(index)) || !isString(unitId)) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.fillSquadSlot(unitId, index);
     }
 
     async _battleClearSquadSlot(_, { index }) {
-        if (!isNumber(index)) {
+        if (!isNumber(parseInt(index))) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.clearSquadSlot(index);
@@ -2355,7 +2355,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleEnterLevel(_, { location, level, difficulty }) {
-        if (!isNumber(location) || !isNumber(level) || !isString(difficulty)) {
+        if (!isNumber(parseInt(location)) || !isNumber(parseInt(level)) || !isString(difficulty)) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.enterLevel(location, level, difficulty);
@@ -2393,7 +2393,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleMerge(_, { template }) {
-        if (!isNumber(template)) {
+        if (!isNumber(parseInt(template))) {
             throw Errors.IncorrectArguments;
         }
       return this.battle.merge(template);
