@@ -198,13 +198,13 @@ export default class UnitAbilities {
         const abilityScheme =
           ABILITY_SCHEME[this._unit.levelInt - 1][abilityEntry.tier - 1];
 
-        if (!abilityScheme) {
+        /*if (!abilityScheme) {
           console.log("[UnitAbilities] enableAbilityCooldown", {
             unitLevel: this._unit.levelInt,
             abilityEntry,
             abilityScheme,
           });
-        }
+        }*/
 
         abilityEntry.cooldown = {
           enabled: true,
