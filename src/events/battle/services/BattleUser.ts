@@ -167,7 +167,7 @@ export class BattleUser {
 
     this._core.events.balance(this._state.balance);
 
-    if (currency === CURRENCY_ENERGY && this.energy > ENERGY_MAX && !force) {
+    if (currency === CURRENCY_ENERGY && amount >= 0 && this.energy > ENERGY_MAX && !force) {
       this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
     }
 
