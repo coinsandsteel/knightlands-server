@@ -470,6 +470,9 @@ export class BattleGame extends BattleService {
   }
 
   public apply(index: number | null, ability: string | null): void {
+    if (index < 0 || index > 34) {
+      return;
+    }
     if (!this._state.combat.activeFighterId) {
       return;
     }
@@ -725,12 +728,12 @@ export class BattleGame extends BattleService {
     const index = this._state.initiativeRating.findIndex(
       (entry) => entry.active === true
     );
-    console.log('getNextFighterId', {
+    /*console.log('getNextFighterId', {
       initiativeRating: this._state.initiativeRating,
       nextIndex: index + 1,
       nextFighter: this._state.initiativeRating[index + 1],
       index
-    });
+    });*/
     if (this._state.initiativeRating[index + 1]) {
       fighterId = this._state.initiativeRating[index + 1].fighterId;
     } else {

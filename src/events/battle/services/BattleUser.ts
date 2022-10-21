@@ -184,7 +184,7 @@ export class BattleUser {
     const rewardData = this._state.rewards.squadRewards.find(
       (e) => e.tribe === tribe
     );
-    if (!rewardData.canClaim || rewardData.claimed) {
+    if (!rewardData || !rewardData.canClaim || rewardData.claimed) {
       return;
     }
 
@@ -335,8 +335,10 @@ export class BattleUser {
       }
 
       const unit = this._core.inventory.getNewUnitByPropsRandom(params);
-      this._core.inventory.addUnit(unit);
-      resultItems.push(unit.serialize());
+      if (unit) {
+        this._core.inventory.addUnit(unit);
+        resultItems.push(unit.serialize());
+      }
       /*console.log("Added unit from lootbox", {
         class: unit.class,
         tribe: unit.tribe,

@@ -6,6 +6,7 @@ import {
   ADVENTURE_ENEGRY_PRICE,
   CURRENCY_COINS,
   CURRENCY_CRYSTALS,
+  GAME_DIFFICULTY_LOW,
 } from "../../../knightlands-shared/battle";
 import { BattleCore } from "./BattleCore";
 import {
@@ -159,6 +160,9 @@ export class BattleAdventures extends BattleService {
   }
 
   public setDifficulty(difficulty: string): void {
+    if (![GAME_DIFFICULTY_HIGH, GAME_DIFFICULTY_MEDIUM, GAME_DIFFICULTY_LOW].includes(difficulty)) {
+      return;
+    }
     this._state.difficulty = difficulty;
     this._core.events.adventures(this._state);
   }

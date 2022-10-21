@@ -2285,38 +2285,65 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleClaimReward(_, { type, tribe }) {
+        if (!isString(type) || !isString(tribe)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.claimReward(type, tribe);
     }
 
     async _battlePurchase(_, { id, tribe }) {
+        if (!isNumber(id) || !isString(tribe)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.purchase(id, tribe);
     }
 
     async _battleFillSquadSlot(_, { unitId, index }) {
+        if (!isNumber(index) || !isString(unitId)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.fillSquadSlot(unitId, index);
     }
 
     async _battleClearSquadSlot(_, { index }) {
+        if (!isNumber(index)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.clearSquadSlot(index);
     }
 
     async _battleUpgradeUnitLevel(_, { unitId }) {
+        if (!isString(unitId)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.upgradeUnitLevel(unitId);
     }
 
     async _battleUpgradeUnitAbility(_, { unitId, ability }) {
+        if (!isString(unitId) || !isString(ability)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.upgradeUnitAbility(unitId, ability);
     }
 
     async _battleSetAdventuresDifficulty(_, { difficulty }) {
-      return this.battle.setAdventuresDifficulty(difficulty);
+        if (!isString(difficulty)) {
+            throw Errors.IncorrectArguments;
+        }
+        return this.battle.setAdventuresDifficulty(difficulty);
     }
 
     async _battleChooseAbility(_, { abilityClass }) {
+        if (!isString(abilityClass)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.chooseAbility(abilityClass);
     }
 
     async _battleApply(_, { index, ability }) {
+        if (!isString(ability)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.apply(
         typeof index === 'undefined' ? null : index,
         ability
@@ -2328,10 +2355,16 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleEnterLevel(_, { location, level, difficulty }) {
+        if (!isNumber(location) || !isNumber(level) || !isString(difficulty)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.enterLevel(location, level, difficulty);
     }
 
     async _battleEnterDuel(_, { difficulty }) {
+        if (!isString(difficulty)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.enterDuel(difficulty);
     }
 
@@ -2340,6 +2373,9 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleRankings(user, { mode }) {
+        if (!isString(mode)) {
+            throw Errors.IncorrectArguments;
+        }
         return {
             rankings: await Game.battleManager.getRankingsByMode(mode),
             hasRewards: await Game.battleManager.userHasRewards(user),
@@ -2357,6 +2393,9 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleMerge(_, { template }) {
+        if (!isNumber(template)) {
+            throw Errors.IncorrectArguments;
+        }
       return this.battle.merge(template);
     }
 
