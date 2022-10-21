@@ -94,6 +94,7 @@ class Raid extends EventEmitter {
             participants: {
                 [summonerId]: 0
             },
+            participantsArr: [summonerId],
             counter: {
                 [summonerId]: 0
             },
@@ -297,6 +298,7 @@ class Raid extends EventEmitter {
         }
 
         this._data.participants[userId] = 0;
+        this._data.participantsArr.push(userId);
         this._data.loot[userId] = false;
         this._data.busySlots++;
 
@@ -304,6 +306,7 @@ class Raid extends EventEmitter {
             $set: {
                 counter: this._data.counter,
                 participants: this._data.participants,
+                participantsArr: this._data.participantsArr,
                 [`loot.${userId.toHexString()}`]: false,
                 busySlots: this._data.busySlots
             }
@@ -444,7 +447,7 @@ class Raid extends EventEmitter {
             attackLog.boss.health = this._bossUnit.getHealth();
             Game.emitPlayerEvent(attacker.address, Events.RaidDamaged, attackLog);
 
-            // finalize challenges to detect final changes inside 
+            // finalize challenges to detect final changes inside
             {
                 let i = 0;
                 const length = this._challenges.length;
@@ -493,6 +496,7 @@ class Raid extends EventEmitter {
                 timeLeft: this._data.timeLeft,
                 bossState: this._data.bossState,
                 participants: this._data.participants,
+                participantsArr: this._data.participantsArr,
                 finished: this.finished,
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
@@ -617,7 +621,7 @@ class Raid extends EventEmitter {
         } else {
             rewards.rp = await user.getBonusRP(rewards.rp);
         }
-        
+
         await this._updateLoot(userId, rewards);
 
         return rewards;

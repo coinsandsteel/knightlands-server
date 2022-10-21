@@ -190,7 +190,8 @@ class RaidManager {
                 finished: false,
                 isFree: false,
                 public: true,
-                [`participants.${userId}`]: { $exists: false },
+                //[`participants.${userId}`]: { $exists: false },
+                participantsArr: { $nin: [userId] },
                 $and: [
                     { $expr: { $lt: ["$busySlots", "$maxSlots"] } },
                     { $expr: { $lte: ["$level", userLevel] } }

@@ -67,6 +67,7 @@ export class DatabaseClient {
       .createIndex({ "items.template": 1, "items.id": 1 });
 
     await this.db.collection(Collections.Armies).createIndex({ "units.id": 1 });
+    await this.db.collection(Collections.Raids).createIndex({ "participantsArr": 1 });
 
     await this.db
       .collection(Collections.ActivityHistory)
