@@ -169,7 +169,7 @@ export class BattleSquad extends BattleService {
     return new Fighter(blueprint, this._core.events);
   }
 
-  public fillSlot(unitId: string, index: number): void {
+  public fillSlot(unitId: string, index: number, force?: boolean): void {
     if (!(index >= 0 && index <= 4)) {
       throw Error("Cannot fill this slot - no such a slot");
     }
@@ -179,7 +179,7 @@ export class BattleSquad extends BattleService {
       throw new Error(`[fillSlot] Unit #${unitId} not found in the inventory`);
     }
 
-    if (this.getFighterByTemplate(unit.template)) {
+    if (!force && this.getFighterByTemplate(unit.template)) {
       return;
     }
 
@@ -216,7 +216,7 @@ export class BattleSquad extends BattleService {
   public proxyUnit(unitId: string): void {
     for (let index = 0; index < 5; index++) {
       if (this._fighters[index] && this._fighters[index].unit.unitId === unitId) {
-        this.fillSlot(unitId, index);
+        this.fillSlot(unitId, index, true);
       }
     }
 

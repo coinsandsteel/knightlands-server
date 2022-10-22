@@ -307,6 +307,7 @@ class Raid extends EventEmitter {
                 counter: this._data.counter,
                 participants: this._data.participants,
                 participantsArr: this._data.participantsArr,
+                // TODO denormilize into array
                 [`loot.${userId.toHexString()}`]: false,
                 busySlots: this._data.busySlots
             }
