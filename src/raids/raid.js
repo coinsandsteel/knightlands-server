@@ -103,6 +103,7 @@ class Raid extends EventEmitter {
             loot: {
                 [summonerId]: false
             },
+            usersClaimedLoot: [],
             damageLog: [],
             isFree,
             public: isPublic
@@ -307,7 +308,6 @@ class Raid extends EventEmitter {
                 counter: this._data.counter,
                 participants: this._data.participants,
                 participantsArr: this._data.participantsArr,
-                // TODO denormilize into array
                 [`loot.${userId.toHexString()}`]: false,
                 busySlots: this._data.busySlots
             }
@@ -514,6 +514,7 @@ class Raid extends EventEmitter {
                 damageLog: this._damageLog.toArray(),
                 defeat: this.defeat,
                 loot: this._data.loot,
+                usersClaimedLoot: this._data.usersClaimedLoot,
                 challenges: this._data.challenges,
                 weakness: this._data.weakness
             }
@@ -654,11 +655,14 @@ class Raid extends EventEmitter {
         return rewards;
     }
 
-    async _updateLoot(userId, loot) {
+    async _updateLoot(userId, value) {
         let updateQuery = { $set: {} };
-        updateQuery.$set[`loot.${userId}`] = loot;
+        updateQuery.$set[`loot.${userId}`] = value;
 
-        this._data.loot[userId] = loot;
+        this._data.loot[userId] = value;
+        if (value === true) {
+            updateQuery.$addToSet = { usersClaimedLoot: userId };
+        }
 
         await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, updateQuery);
     }
