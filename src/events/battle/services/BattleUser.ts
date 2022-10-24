@@ -25,7 +25,7 @@ const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
 //const ENERGY_CYCLE_SEC = 15 * 60;
-const ENERGY_CYCLE_SEC = 3;
+const ENERGY_CYCLE_SEC = 60;
 const ENERGY_AMOUNT_TICK = 1;
 
 export class BattleUser {

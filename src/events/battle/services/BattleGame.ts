@@ -264,7 +264,7 @@ export class BattleGame extends BattleService {
   }
 
   public start(enemyFighters: Fighter[]): void {
-    if (!this._userSquad.fighters.length) {
+    if (!this._userSquad.fighters.length || this._state.combat.started) {
       return;
     }
 
