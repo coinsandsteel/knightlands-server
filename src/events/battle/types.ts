@@ -67,6 +67,7 @@ export interface BattleUserState {
   items: BattleItem[];
   counters: {
     energy: number;
+    energyAccumulated: number;
     purchase: {
       [date: string]: { [id: number]: number }
     },
