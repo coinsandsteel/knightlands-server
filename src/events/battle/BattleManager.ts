@@ -150,7 +150,7 @@ export class BattleManager {
   }
 
   async commitResetRankings() {
-    console.log('Battle.commitResetRankings');
+    //console.log('Battle.commitResetRankings');
 
     const resetDate = this. thisWeekResetDate;
     // Last rankings reset was after monday? Skip then.
