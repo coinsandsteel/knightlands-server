@@ -32,6 +32,7 @@ export class CPointsManager {
     }
 
     _schedulePayoutCommit() {
+        console.log('CPointsManager._schedulePayoutCommit');
         setTimeout(async () => {
             try {
                 await Game.dbClient.withTransaction(async db => {
@@ -91,7 +92,7 @@ export class CPointsManager {
                 this._totalPoints += points;
                 this._totalShares += shares;
                 Game.publishToChannel("total_cp", { totalPoints: this._totalPoints, totalShares: this._totalShares });
-                
+
 
                 await Game.db.collection(Collections.DivTokenState).updateOne(
                     { _id: STATE_RECORD_ID },

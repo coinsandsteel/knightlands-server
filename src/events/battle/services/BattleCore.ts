@@ -89,10 +89,10 @@ export class BattleCore {
   }
 
   async load() {
-    //console.log('Core load');
+    console.log('BattleCore.load');
     await this._battleUser.load();
     await this._battleInventory.load();
     await this._battleGame.load();
-    //console.log('Core loaded');
+    console.log('BattleCore.loaded');
   }
 }

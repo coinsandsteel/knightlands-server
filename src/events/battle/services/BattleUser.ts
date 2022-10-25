@@ -102,6 +102,7 @@ export class BattleUser {
   }
 
   public dispose() {
+    console.log('BattleUser.dispose');
     clearInterval(this._energyInterval);
   }
 

@@ -130,10 +130,12 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
+    console.log('Battle.loadProgress');
     return this._saveCollection.findOne({ _id: userId });
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
+    console.log('Battle.saveProgress');
     return this._saveCollection.updateOne(
       { _id: userId },
       { $set: saveData },
@@ -148,6 +150,8 @@ export class BattleManager {
   }
 
   async commitResetRankings() {
+    console.log('Battle.commitResetRankings');
+
     const resetDate = this. thisWeekResetDate;
     // Last rankings reset was after monday? Skip then.
     if (resetDate <= this._lastRankingsReset) {
