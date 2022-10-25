@@ -226,7 +226,7 @@ export class BattleGame extends BattleService {
   }
 
   public enterLevel(location: number, level: number): void {
-    if (!this._core.adventures.canEnterLevel(location, level)) {
+    if (!this._core.adventures.canEnterLevel(location, level) || this._state.combat.started) {
       return;
     }
 
@@ -249,7 +249,7 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    if (!this._core.user.increaseDailyDuelsCounter()) {
+    if (this._state.combat.started || !this._core.user.increaseDailyDuelsCounter()) {
       return;
     }
 
