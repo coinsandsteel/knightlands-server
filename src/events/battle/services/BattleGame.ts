@@ -44,17 +44,21 @@ export class BattleGame extends BattleService {
     super();
     this._core = core;
 
+    console.log('Create user squad', state ? state.userSquad.fighters : []);
     this._userSquad = new BattleSquad(
       state ? state.userSquad.fighters : [],
       false,
       this._core
     );
+    console.log('User squad created', this._userSquad);
 
+    console.log('Create enemy squad', state ? state.enemySquad.fighters : []);
     this._enemySquad = new BattleSquad(
       state ? state.enemySquad.fighters : [],
       true,
       this._core
     );
+    console.log('Enemy squad created', this._enemySquad);
 
     this._difficulty = state ? state.difficulty : GAME_DIFFICULTY_MEDIUM;
 
