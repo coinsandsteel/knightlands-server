@@ -151,6 +151,7 @@ export class BattleGame extends BattleService {
     this._state.userSquad = this._userSquad.getState();
     this._state.enemySquad = this._enemySquad.getState();
     this._state.terrain = this._terrain.getState();
+    console.log('Squad state', { userSquad: this._state.userSquad, enemySquad: this._state.enemySquad });
     return this._state;
   }
 

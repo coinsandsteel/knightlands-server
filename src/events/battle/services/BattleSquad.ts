@@ -120,23 +120,31 @@ export class BattleSquad extends BattleService {
   }
 
   protected deserializeFighters(): void {
+    console.log('De-serializing fighters', { fightersState: this._state.fighters });
     this._fighters = [];
     if (this._state && this._state.fighters) {
       this._state.fighters.forEach((blueprint: BattleFighter | null) => {
         this._fighters.push(blueprint ? new Fighter(blueprint, this._core.events) : null);
       });
+    } else {
+      console.log('No fighters to de-serialize');
     }
+    console.log('De-serialized fighters', { fighters: this._fighters });
   }
 
   public serializeFighters(): void {
+    console.log('Serializing fighters', { fighters: this._fighters });
     this._state.fighters = [];
     if (this._fighters) {
       this._fighters.forEach((fighter: Fighter | null, index: number) => {
         this._state.fighters[index] = fighter
-          ? fighter.serialize()
-          : null;
+        ? fighter.serialize()
+        : null;
       });
+    } else {
+      console.log('No fighters to serialize');
     }
+    console.log('Serialized fighters', { fightersState: this._state.fighters });
   }
 
   protected makeFighter(blueprint: BattleFighter): Fighter {
