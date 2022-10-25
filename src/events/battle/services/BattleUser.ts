@@ -24,9 +24,8 @@ import errors from "../../../knightlands-shared/errors";
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
-//const ENERGY_CYCLE_SEC = 15 * 60;
+const ENERGY_CYCLE_SEC = 15 * 60;
 const ENERGY_WATCH_CYCLE_SEC = 5;
-const ENERGY_CYCLE_SEC = 60;
 const ENERGY_AMOUNT_TICK = 1;
 
 export class BattleUser {
