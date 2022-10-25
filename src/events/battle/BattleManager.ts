@@ -130,12 +130,12 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
-    console.log('Battle.loadProgress');
+    //console.log('Battle.loadProgress');
     return this._saveCollection.findOne({ _id: userId });
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
-    console.log('Battle.saveProgress');
+    //console.log('Battle.saveProgress');
     return this._saveCollection.updateOne(
       { _id: userId },
       { $set: saveData },

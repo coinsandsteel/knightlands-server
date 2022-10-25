@@ -350,7 +350,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async onDisconnect(forced = false) {
-        console.log('onDisconnect', { forced })
+        //console.log('onDisconnect', { forced })
         if (this._closed && !forced) {
             return false;
         }
@@ -389,9 +389,7 @@ class PlayerController extends IPaymentListener {
         }
 
         if (this.battle) {
-            console.log('start battle dispose')
             await this.battle.dispose();
-            console.log('finish battle dispose')
             this.battle = null
         }
 

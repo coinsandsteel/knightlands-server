@@ -348,7 +348,7 @@ class Game extends EventEmitter {
                 return;
             }
 
-            console.log('start loading socket', controller.id);
+            //console.log('start loading socket', controller.id);
             await this._lock.acquire(controller.id);
             // console.log('continue loading socket', controller.id);
             // console.dir(this._playersById);
@@ -356,7 +356,7 @@ class Game extends EventEmitter {
                 // if there is previous controller registered - disconnect it and remove
                 let connectedController = this._playersById[controller.id];
                 if (connectedController) {
-                    console.log('found controller', connectedController.id, 'closing...')
+                    //console.log('found controller', connectedController.id, 'closing...')
                     await connectedController.forceDisconnect(DisconnectCodes.OtherClientSignedIn, "other account connected");
                     this._paymentProcessor.unregister(connectedController.id, connectedController);
                 }
@@ -374,14 +374,14 @@ class Game extends EventEmitter {
         });
 
         const disconnect = async() => {
-            console.log('start disconnect socket', controller.id);
+            //console.log('start disconnect socket', controller.id);
             await this._lock.acquire(controller.id);
             //console.log('continue disconnect socket', controller.id);
             // console.dir(this._playersById);
             try {
                 // if forced happened due to reconnection, it will not happen here, since it's already closed
                 if (await controller.onDisconnect()) {
-                    console.log('dorcefully closed');
+                    //console.log('dorcefully closed');
                     // console.dir(this._playersById);
                     this._paymentProcessor.unregister(controller.id, controller);
                     this._deletePlayerController(controller);

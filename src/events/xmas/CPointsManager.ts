@@ -32,7 +32,7 @@ export class CPointsManager {
     }
 
     _schedulePayoutCommit() {
-        console.log('CPointsManager._schedulePayoutCommit');
+        //console.log('CPointsManager._schedulePayoutCommit');
         setTimeout(async () => {
             try {
                 await Game.dbClient.withTransaction(async db => {

@@ -44,21 +44,21 @@ export class BattleGame extends BattleService {
     super();
     this._core = core;
 
-    console.log('Create user squad', state ? state.userSquad.fighters : []);
+    //console.log('Create user squad', state ? state.userSquad.fighters : []);
     this._userSquad = new BattleSquad(
       state ? state.userSquad.fighters : [],
       false,
       this._core
     );
-    console.log('User squad created', this._userSquad);
+    //console.log('User squad created', this._userSquad);
 
-    console.log('Create enemy squad', state ? state.enemySquad.fighters : []);
+    //console.log('Create enemy squad', state ? state.enemySquad.fighters : []);
     this._enemySquad = new BattleSquad(
       state ? state.enemySquad.fighters : [],
       true,
       this._core
     );
-    console.log('Enemy squad created', this._enemySquad);
+    //console.log('Enemy squad created', this._enemySquad);
 
     this._difficulty = state ? state.difficulty : GAME_DIFFICULTY_MEDIUM;
 
@@ -155,7 +155,7 @@ export class BattleGame extends BattleService {
     this._state.userSquad = this._userSquad.getState();
     this._state.enemySquad = this._enemySquad.getState();
     this._state.terrain = this._terrain.getState();
-    console.log('Squad state', { userSquad: this._state.userSquad, enemySquad: this._state.enemySquad });
+    //console.log('Squad state', { userSquad: this._state.userSquad, enemySquad: this._state.enemySquad });
     return this._state;
   }
 
