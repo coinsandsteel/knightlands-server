@@ -336,7 +336,7 @@ export class Unit {
   public update(): void {
     this.addExpirience(0);
     this.setCharacteristics();
-    this.abilities.update();
+    this.abilities.update({ damage: this.damage, speed: this.speed });
     this.setPower();
   }
 

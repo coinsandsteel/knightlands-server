@@ -82,11 +82,11 @@ class Game extends EventEmitter {
         this._players = {};
         this._playersById = {};
 
-        await this.lunarManager.init();
+        //await this.lunarManager.init();
         await this.dungeonManager.init(iapExecutor);
-        await this.xmasManager.init();
-        await this.marchManager.init();
-        await this.aprilManager.init();
+        //await this.xmasManager.init();
+        //await this.marchManager.init();
+        //await this.aprilManager.init();
         await this.battleManager.init();
 
         await this.questZones.init();
