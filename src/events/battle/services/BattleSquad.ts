@@ -34,6 +34,7 @@ export class BattleSquad extends BattleService {
 
     this._state = this.getInitialState();
     this._state.fighters = fighters;
+    this.deserializeFighters();
   }
 
   public setFighters(fighters: Fighter[]) {
