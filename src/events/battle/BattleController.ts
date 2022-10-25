@@ -28,7 +28,7 @@ export class BattleController {
   async init() {
     console.log('BattleController.init', { user: this._user, userId: this._user ? this._user.id : null });
     const saveData = await Game.battleManager.loadProgress(this._user.id);
-    console.log('BattleController progress loaded');
+    console.log('BattleController progress loaded', saveData.state);
     this.core.init(saveData ? saveData.state as BattleSaveData : null);
   }
 

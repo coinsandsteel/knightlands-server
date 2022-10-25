@@ -62,7 +62,9 @@ export class BattleCore {
   }
 
   protected initGame(saveData?: BattleGameState) {
+    console.log('Init game');
     if (!this._battleGame) {
+      console.log('Create game', saveData);
       this._battleGame = new BattleGame(saveData, this);
     }
   }
