@@ -114,7 +114,7 @@ export class BattleSquad extends BattleService {
 
     // Unit stats
     const unitLevelModifier = meta.unitLevelModifier;
-    const unitLevel = Math.round(userSquadLevelMean + unitLevelModifier);
+    const unitLevel = Math.max(Math.min(Math.round(userSquadLevelMean + unitLevelModifier), 45), 1);
     const unitTiers = meta.tierModifier.find(entry => unitLevel >= entry.minLevel && unitLevel <= entry.maxLevel).tiers;
     const abilityLevels = [
       Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier[0]),

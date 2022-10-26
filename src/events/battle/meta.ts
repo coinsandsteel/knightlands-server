@@ -2224,7 +2224,7 @@ export const ENEMY_SQUAD_META = {
     abilityLevelModifier: [0, 0, 0],
     tierModifier: [
       { minLevel: 1, maxLevel: 15, tiers: [1,2,3]},
-      { minLevel: 16, maxLevel: 30, tiers: [2,3]},
+      { minLev12el: 16, maxLevel: 30, tiers: [2,3]},
       { minLevel: 31, maxLevel: 45, tiers: [3]},
     ]
   },
