@@ -60,64 +60,112 @@ export class BattleSquad extends BattleService {
     return this._state;
   }
 
-  public getBalancedEnemySquad(userSquad: BattleSquad, difficulty: string): Fighter[] {
+  public getBalancedEnemySquad(
+    userSquad: BattleSquad,
+    difficulty: string
+  ): Fighter[] {
     const meta = ENEMY_SQUAD_META[difficulty] as BattleEnemySquadDifficultyMeta;
     if (!meta) {
-      throw new Error('No such difficulty!');
+      throw new Error("No such difficulty!");
     }
 
     // Levels mean value
-    const userSquadLevelMean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.levelInt, 0) / 5;
-    const userSquadAbilitiesTier1Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(1), 0) / 5;
-    const userSquadAbilitiesTier2Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(2), 0) / 5;
-    const userSquadAbilitiesTier3Mean = userSquad.fighters.reduce((value: number, fighter: Fighter) => value + fighter.unit.abilities.getAbilityLevelByTier(3), 0) / 5;
+    const userSquadLevelMean =
+      userSquad.fighters.reduce(
+        (value: number, fighter: Fighter) => value + fighter.unit.levelInt,
+        0
+      ) / 5;
+    const userSquadAbilitiesTier1Mean =
+      userSquad.fighters.reduce(
+        (value: number, fighter: Fighter) =>
+          value + fighter.unit.abilities.getAbilityLevelByTier(1),
+        0
+      ) / 5;
+    const userSquadAbilitiesTier2Mean =
+      userSquad.fighters.reduce(
+        (value: number, fighter: Fighter) =>
+          value + fighter.unit.abilities.getAbilityLevelByTier(2),
+        0
+      ) / 5;
+    const userSquadAbilitiesTier3Mean =
+      userSquad.fighters.reduce(
+        (value: number, fighter: Fighter) =>
+          value + fighter.unit.abilities.getAbilityLevelByTier(3),
+        0
+      ) / 5;
 
-    // Collect by classes count
-    const fighters = [];
-    const allClasses = Object.keys(meta.classes);
-    while (fighters.length < 5) {
-      let choosedClass = _.sample(allClasses);
-      let classQuantity = meta.classes[choosedClass];
-      let fightersCount = _.random(classQuantity.min, classQuantity.max);
-      if (fightersCount > 0) {
-        for (let i = 0; i < fightersCount; i++) {
-          if (fighters.length >= 5) {
-            break;
-          }
-
-          // Get unit 1 tier
-          const unit = this._core.inventory.getNewUnitByPropsRandom({
-            class: choosedClass,
-            tier: 1
-          });
-
-          // Unit levels
-          const unitLevelModifier = meta.unitLevelModifier.min + (Math.random()/10);
-          const unitLevel = Math.round(userSquadLevelMean * unitLevelModifier);
-          unit.setLevel(unitLevel, false, true);
-
-          // Ability levels
-          unit.setAbilitiesLevels([
-            { tier: 1, level: Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier) },
-            { tier: 2, level: Math.round(userSquadAbilitiesTier2Mean + meta.abilityLevelModifier) },
-            { tier: 3, level: Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier) },
-          ]);
-
-          /*console.log({
-            userSquadLevelMean,
-            unitLevel: userSquadLevelMean * unitLevelModifier,
-            userSquadAbilitiesTier1Mean,
-            userSquadAbilitiesTier2Mean,
-            userSquadAbilitiesTier3Mean,
-          });*/
-
-          const fighter = Fighter.createFighterFromUnit(unit, true, this._core.events);
-          fighters.push(fighter);
-        }
+    const allClasses = Object.keys(meta.classes).sort(() => _.random(-1, 1));
+    const classesCount = allClasses.map(unitClass => ({ unitClass, quantity: meta.classes[unitClass].min }));
+    while (_.sumBy(classesCount, 'quantity') < 5) {
+      const index = _.random(0, classesCount.length - 1);
+      if (classesCount[index].quantity < meta.classes[classesCount[index].unitClass].max) {
+        classesCount[index].quantity++;
       }
     }
 
+    // Unit stats
+    const unitLevelModifier = meta.unitLevelModifier.min + Math.random() / 10;
+    const unitLevel = Math.round(userSquadLevelMean * unitLevelModifier);
+    const abilityLevels = [
+      Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier),
+      Math.round(userSquadAbilitiesTier2Mean + meta.abilityLevelModifier),
+      Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier),
+    ];
+
+    const fighters = [];
+    classesCount.forEach(entry => {
+      const classFighters = [];
+      while (classFighters.length < entry.quantity) {
+        const newFighter = this.getBalancedFighter(entry.unitClass, unitLevel, abilityLevels);
+        // Disallow duplicated units
+        if (fighters.find((entry) => entry.unit.template === newFighter.unit.template)) {
+          continue;
+        }
+        classFighters.push(newFighter);
+      }
+      fighters.push(...classFighters);
+    });
+
+    //console.log(`[${difficulty}] Classes`, fighters.map(fighter => fighter.unit.class));
+
     return fighters;
+  }
+
+  protected getBalancedFighter(
+    unitClass: string,
+    unitLevel: number,
+    abilityLevels: number[]
+  ): Fighter {
+    // Get unit 1 tier
+    const unit = this._core.inventory.getNewUnitByPropsRandom({
+      class: unitClass,
+      tier: 1,
+    });
+
+    // Set level + upgrade tier + set new template
+    unit.setLevel(unitLevel, true, true);
+
+    // Set ability levels
+    unit.setAbilitiesLevels([
+      {
+        tier: 1,
+        level: abilityLevels[0],
+      },
+      {
+        tier: 2,
+        level: abilityLevels[1],
+      },
+      {
+        tier: 3,
+        level: abilityLevels[2],
+      },
+    ]);
+
+    return Fighter.createFighterFromUnit(
+      unit,
+      true,
+      this._core.events
+    );
   }
 
   protected deserializeFighters(): void {
@@ -125,7 +173,9 @@ export class BattleSquad extends BattleService {
     this._fighters = [];
     if (this._state && this._state.fighters) {
       this._state.fighters.forEach((blueprint: BattleFighter | null) => {
-        this._fighters.push(blueprint ? new Fighter(blueprint, this._core.events) : null);
+        this._fighters.push(
+          blueprint ? new Fighter(blueprint, this._core.events) : null
+        );
       });
     } else {
       //console.log('No fighters to de-serialize');
@@ -138,9 +188,7 @@ export class BattleSquad extends BattleService {
     this._state.fighters = [];
     if (this._fighters) {
       this._fighters.forEach((fighter: Fighter | null, index: number) => {
-        this._state.fighters[index] = fighter
-        ? fighter.serialize()
-        : null;
+        this._state.fighters[index] = fighter ? fighter.serialize() : null;
       });
     } else {
       //console.log('No fighters to serialize');
@@ -224,7 +272,10 @@ export class BattleSquad extends BattleService {
 
   public proxyUnit(unitId: string): void {
     for (let index = 0; index < 5; index++) {
-      if (this._fighters[index] && this._fighters[index].unit.unitId === unitId) {
+      if (
+        this._fighters[index] &&
+        this._fighters[index].unit.unitId === unitId
+      ) {
         this.fillSlot(unitId, index, true);
       }
     }
@@ -271,7 +322,9 @@ export class BattleSquad extends BattleService {
       _.forOwn(tribeStat, (tierCount, fighterTier) => {
         if (tierCount >= 2) {
           bonuses.push(
-            SQUAD_BONUSES[fighterTribe][parseInt(fighterTier) - 1][tierCount - 2]
+            SQUAD_BONUSES[fighterTribe][parseInt(fighterTier) - 1][
+              tierCount - 2
+            ]
           );
         }
       });
@@ -300,7 +353,8 @@ export class BattleSquad extends BattleService {
 
   public includesUnit(unitId: string): boolean {
     return (
-      this.fighters.findIndex((fighters) => fighters.unit.unitId === unitId) !== -1
+      this.fighters.findIndex((fighters) => fighters.unit.unitId === unitId) !==
+      -1
     );
   }
 
@@ -332,7 +386,8 @@ export class BattleSquad extends BattleService {
 
   public getFighterByTemplate(template: number): Fighter | null {
     return (
-      this.fighters.find((fighter) => fighter.unit.template === template) || null
+      this.fighters.find((fighter) => fighter.unit.template === template) ||
+      null
     );
   }
 

@@ -2221,7 +2221,7 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 2 }
     },
     unitLevelModifier: { min: 0.7, max: 0.8 },
-    abilityLevelModifier: -2
+    abilityLevelModifier: -1
   },
   [battle.GAME_DIFFICULTY_MEDIUM]: {
     classes: {
@@ -2232,7 +2232,7 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
     },
     unitLevelModifier: { min: 0.9, max: 1 },
-    abilityLevelModifier: -1
+    abilityLevelModifier: 0
   },
   [battle.GAME_DIFFICULTY_HIGH]: {
     classes: {
@@ -2240,9 +2240,9 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_RANGE]: { min: 1, max: 3 },
       [battle.UNIT_CLASS_MAGE]: { min: 1, max: 1 },
       [battle.UNIT_CLASS_TANK]: { min: 1, max: 3 },
-      [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
+      [battle.UNIT_CLASS_SUPPORT]: { min: 0, max: 0 }
     },
     unitLevelModifier: { min: 1.2, max: 1.3 },
-    abilityLevelModifier: 0
+    abilityLevelModifier: 1
   },
 } as BattleEnemySquadMeta;

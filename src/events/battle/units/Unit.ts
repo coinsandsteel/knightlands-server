@@ -10,6 +10,7 @@ import {
 import game from "../../../game";
 import UnitAbilities from "./UnitAbilities";
 import { BattleUnitMeta } from "./MetaDB";
+import { BattleManager } from "../BattleManager";
 
 export class Unit {
   protected _events: BattleEvents;
@@ -292,6 +293,18 @@ export class Unit {
       if (level > SETTINGS.maxUnitTierLevel[2]) {
         this._tier = 3;
       }
+
+      // Update template
+      const newMeta = game.battleManager.getUnitMetaByParams({
+        class: this.class,
+        tribe: this.tribe,
+        tier: this.tier
+      });
+      if (!newMeta) {
+        throw new Error('Meta not found');
+      }
+      this._template = newMeta._id;
+
     } else if (level > SETTINGS.maxUnitTierLevel[this.tier]) {
       throw new Error('Cannot set level. It`s too big for unit`s tier.');
     }
