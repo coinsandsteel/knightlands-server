@@ -68,31 +68,34 @@ export class BattleSquad extends BattleService {
     if (!meta) {
       throw new Error("No such difficulty!");
     }
+    if (!userSquad.fighters.length) {
+      throw new Error("Cannot spawn enemy against an empty squad!");
+    }
 
     // Levels mean value
     const userSquadLevelMean =
       userSquad.fighters.reduce(
         (value: number, fighter: Fighter) => value + fighter.unit.levelInt,
         0
-      ) / 5;
+      ) / userSquad.fighters.length;
     const userSquadAbilitiesTier1Mean =
       userSquad.fighters.reduce(
         (value: number, fighter: Fighter) =>
           value + fighter.unit.abilities.getAbilityLevelByTier(1),
         0
-      ) / 5;
+      ) / userSquad.fighters.length;
     const userSquadAbilitiesTier2Mean =
       userSquad.fighters.reduce(
         (value: number, fighter: Fighter) =>
           value + fighter.unit.abilities.getAbilityLevelByTier(2),
         0
-      ) / 5;
+      ) / userSquad.fighters.length;
     const userSquadAbilitiesTier3Mean =
       userSquad.fighters.reduce(
         (value: number, fighter: Fighter) =>
           value + fighter.unit.abilities.getAbilityLevelByTier(3),
         0
-      ) / 5;
+      ) / userSquad.fighters.length;
 
     const allClasses = Object.keys(meta.classes).sort(() => _.random(-1, 1));
     const classesCount = allClasses.map((unitClass) => ({
@@ -110,12 +113,13 @@ export class BattleSquad extends BattleService {
     }
 
     // Unit stats
-    const unitLevelModifier = meta.unitLevelModifier.min + Math.random() / 10;
-    const unitLevel = Math.round(userSquadLevelMean * unitLevelModifier);
+    const unitLevelModifier = meta.unitLevelModifier;
+    const unitLevel = Math.round(userSquadLevelMean + unitLevelModifier);
+    const unitTiers = meta.tierModifier.find(entry => unitLevel >= entry.minLevel && unitLevel <= entry.maxLevel).tiers;
     const abilityLevels = [
-      Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier),
-      Math.round(userSquadAbilitiesTier2Mean + meta.abilityLevelModifier),
-      Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier),
+      Math.round(userSquadAbilitiesTier1Mean + meta.abilityLevelModifier[0]),
+      Math.round(userSquadAbilitiesTier2Mean + meta.abilityLevelModifier[1]),
+      Math.round(userSquadAbilitiesTier3Mean + meta.abilityLevelModifier[2]),
     ];
 
     const fighters = [];
@@ -124,6 +128,7 @@ export class BattleSquad extends BattleService {
       while (classFighters.length < entry.quantity) {
         const newFighter = this.getBalancedFighter(
           entry.unitClass,
+          _.sample(unitTiers),
           unitLevel,
           abilityLevels
         );
@@ -147,13 +152,14 @@ export class BattleSquad extends BattleService {
 
   protected getBalancedFighter(
     unitClass: string,
+    unitTier: number,
     unitLevel: number,
     abilityLevels: number[]
   ): Fighter {
     // Get unit 1 tier
     const unit = this._core.inventory.getNewUnitByPropsRandom({
       class: unitClass,
-      tier: 1,
+      tier: unitTier
     });
 
     // Set level + upgrade tier + set new template

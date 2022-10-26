@@ -281,6 +281,7 @@ export interface BattleEnemySquadDifficultyMeta {
   classes: {
     [unitClass: string]: { min: number; max: number; }
   };
-  unitLevelModifier: { min: number; max: number; };
-  abilityLevelModifier: number;
+  unitLevelModifier: number;
+  abilityLevelModifier: number[];
+  tierModifier: { minLevel: number; maxLevel: number; tiers: number[] }[];
 }
