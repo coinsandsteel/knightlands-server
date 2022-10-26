@@ -95,10 +95,16 @@ export class BattleSquad extends BattleService {
       ) / 5;
 
     const allClasses = Object.keys(meta.classes).sort(() => _.random(-1, 1));
-    const classesCount = allClasses.map(unitClass => ({ unitClass, quantity: meta.classes[unitClass].min }));
-    while (_.sumBy(classesCount, 'quantity') < 5) {
+    const classesCount = allClasses.map((unitClass) => ({
+      unitClass,
+      quantity: meta.classes[unitClass].min,
+    }));
+    while (_.sumBy(classesCount, "quantity") < 5) {
       const index = _.random(0, classesCount.length - 1);
-      if (classesCount[index].quantity < meta.classes[classesCount[index].unitClass].max) {
+      if (
+        classesCount[index].quantity <
+        meta.classes[classesCount[index].unitClass].max
+      ) {
         classesCount[index].quantity++;
       }
     }
@@ -113,12 +119,20 @@ export class BattleSquad extends BattleService {
     ];
 
     const fighters = [];
-    classesCount.forEach(entry => {
+    classesCount.forEach((entry) => {
       const classFighters = [];
       while (classFighters.length < entry.quantity) {
-        const newFighter = this.getBalancedFighter(entry.unitClass, unitLevel, abilityLevels);
+        const newFighter = this.getBalancedFighter(
+          entry.unitClass,
+          unitLevel,
+          abilityLevels
+        );
         // Disallow duplicated units
-        if (fighters.find((entry) => entry.unit.template === newFighter.unit.template)) {
+        if (
+          fighters.find(
+            (entry) => entry.unit.template === newFighter.unit.template
+          )
+        ) {
           continue;
         }
         classFighters.push(newFighter);
@@ -161,11 +175,7 @@ export class BattleSquad extends BattleService {
       },
     ]);
 
-    return Fighter.createFighterFromUnit(
-      unit,
-      true,
-      this._core.events
-    );
+    return Fighter.createFighterFromUnit(unit, true, this._core.events);
   }
 
   protected deserializeFighters(): void {
@@ -321,11 +331,10 @@ export class BattleSquad extends BattleService {
     _.forOwn(stat, (tribeStat, fighterTribe) => {
       _.forOwn(tribeStat, (tierCount, fighterTier) => {
         if (tierCount >= 2) {
-          bonuses.push(
-            SQUAD_BONUSES[fighterTribe][parseInt(fighterTier) - 1][
-              tierCount - 2
-            ]
-          );
+          const tier = parseInt(fighterTier);
+          for (let i = 0; i < tier; i++) {
+            bonuses.push(SQUAD_BONUSES[fighterTribe][i][tierCount - 2]);
+          }
         }
       });
     });
