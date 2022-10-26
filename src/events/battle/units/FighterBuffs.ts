@@ -9,7 +9,7 @@ import {
   TERRAIN_LAVA,
 } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../services/BattleEvents";
-import { SETTINGS } from "../meta";
+import { BUFF_SOURCE_SQUAD, SETTINGS } from "../meta";
 import { Fighter } from "./Fighter";
 
 export default class UnitBuffs {
@@ -40,6 +40,17 @@ export default class UnitBuffs {
 
   get buffs(): BattleBuff[] {
     return this._buffs;
+  }
+
+  get modifiers(): {
+    speed: number;
+    initiative: number;
+    defence: number;
+    power: number;
+    attack: number;
+    abilities: number;
+  } {
+    return this._modifiers;
   }
 
   constructor(events: BattleEvents, fighter: Fighter, buffs?: BattleBuff[]) {
@@ -93,19 +104,18 @@ export default class UnitBuffs {
     const stunBuffs = this.getBuffs({ subEffect: "stun" });
     this.fighter.setStunned(!!stunBuffs.length);
 
-    // stunBuffs.some((buff) => Math.random() <= buff.probability)
+    if (!this.fighter.isEnemy) {
+      console.log('Buffs updated', this._modifiers);
+    }
   }
 
-  public reset() {
-    this._buffs = [];
-    this._modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
+  public reset(force?: boolean) {
+    if (force) {
+      this._buffs = [];
+    } else {
+      // Remove all the buffs except squad bonuses
+      this._buffs = this._buffs.filter(buff => buff.source === BUFF_SOURCE_SQUAD);
+    }
   }
 
   public addBuff(buff: BattleBuff, sendEvent?: boolean): void {
@@ -200,9 +210,6 @@ export default class UnitBuffs {
   }
 
   public handleDamageCallback() {
-    // { source: "squad", mode: "stack", target: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", target: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", target: "defence", trigger: "damage", delta: 1, max: 4 },
     const buffs = this.getBuffs({ trigger: "damage" });
     if (buffs.length) {
       buffs.forEach((buff) => {
@@ -215,6 +222,12 @@ export default class UnitBuffs {
           buff.stackValue += buff.value;
           //this.log(`${buff.type} stacked`, buff);
         }
+      });
+
+      this._modifiers.power = this.getBuffModifier({ target: "power" });
+      this._modifiers.attack = this.getBuffModifier({ target: "attack" });
+      this._modifiers.abilities = this.getBuffModifier({
+        target: "abilities",
       });
     }
   }

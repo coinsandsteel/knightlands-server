@@ -7,7 +7,7 @@ import {
 } from "../types";
 import { BattleCore } from "./BattleCore";
 import { Unit } from "../units/Unit";
-import { ENEMY_SQUAD_META, SQUAD_BONUSES } from "../meta";
+import { BUFF_SOURCE_SQUAD, ENEMY_SQUAD_META, SQUAD_BONUSES } from "../meta";
 import { BattleService } from "./BattleService";
 import { Fighter } from "../units/Fighter";
 
@@ -347,9 +347,9 @@ export class BattleSquad extends BattleService {
 
     // Apply bonuses
     this.fighters.forEach((fighter) => {
-      fighter.buffs.reset();
+      fighter.buffs.reset(true);
       bonuses.forEach((bonus) =>
-        fighter.buffs.addBuff({ source: "squad", ...bonus }, false)
+        fighter.buffs.addBuff({ source: BUFF_SOURCE_SQUAD, ...bonus }, false)
       );
     });
 

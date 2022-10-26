@@ -20,15 +20,6 @@ export class Fighter {
   protected _hp: number;
   protected _buffs: FighterBuffs;
 
-  public _modifiers: {
-    speed: number;
-    initiative: number;
-    defence: number;
-    power: number;
-    attack: number;
-    abilities: number;
-  };
-
   get isBoss(): boolean {
     return this._isBoss;
   }
@@ -86,7 +77,7 @@ export class Fighter {
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
-      Math.round(this.unit.speed * this._modifiers.speed) +
+      Math.round(this.unit.speed * this.buffs.modifiers.speed) +
       bonusDelta
     );
   }
@@ -95,7 +86,7 @@ export class Fighter {
     const bonusDelta = this.buffs.getBonusDelta("initiative");
     return (
       Math.round(
-        this.unit.initiative * this._modifiers.initiative
+        this.unit.initiative * this.buffs.modifiers.initiative
       ) + bonusDelta
     );
   }
@@ -103,7 +94,7 @@ export class Fighter {
   get defence(): number {
     const bonusDelta = this.buffs.getBonusDelta("defence");
     return (
-      Math.round(this.unit.defence * this._modifiers.defence) +
+      Math.round(this.unit.defence * this.buffs.modifiers.defence) +
       bonusDelta
     );
   }
@@ -113,8 +104,8 @@ export class Fighter {
     return (
       Math.round(
         this.unit.damage *
-          this._modifiers.power *
-          this._modifiers.attack
+          this.buffs.modifiers.power *
+          this.buffs.modifiers.attack
       ) + bonusDelta
     );
   }
@@ -141,15 +132,6 @@ export class Fighter {
   constructor(blueprint: BattleFighter, events: BattleEvents) {
     this._unit = new Unit(blueprint.unit, events);
     this._events = events;
-
-    this._modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
 
     this._fighterId = blueprint.fighterId;
     this._isBoss = blueprint.isBoss;
@@ -185,15 +167,6 @@ export class Fighter {
   }
 
   public reset(): void {
-    this._modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
-
     this._ratingIndex = null;
     this._isStunned = false;
     this._isDead = false;
@@ -266,31 +239,6 @@ export class Fighter {
 
   public update(initial?: boolean): void {
     this.buffs.update(initial);
-
-    // Characteristics
-    this._modifiers.defence = this.buffs.getBuffModifier({ target: "defence" });
-    this._modifiers.speed = this.buffs.getBuffModifier({ target: "speed" });
-    this._modifiers.initiative = this.buffs.getBuffModifier({
-      target: "initiative",
-    });
-
-    // Attack bonuses
-    this._modifiers.power = this.buffs.getBuffModifier({ target: "power" });
-    this._modifiers.attack = this.buffs.getBuffModifier({ target: "attack" });
-    this._modifiers.abilities = this.buffs.getBuffModifier({
-      target: "abilities",
-    });
-
-    // Stun
-    const stunBuffs = this.buffs.getBuffs({ subEffect: "stun" });
-    if (stunBuffs.length) {
-      this._isStunned = stunBuffs.some(
-        (buff) => Math.random() <= buff.probability
-      );
-    } else {
-      this._isStunned = false;
-    }
-
     this.abilities.update({
       speed: this.speed,
       damage: this.damage
