@@ -100,6 +100,7 @@ export class BattleController {
   }
 
   async setAdventuresDifficulty(difficulty: string) {
+    this.core.game.setDifficulty(difficulty);
     this.core.adventures.setDifficulty(difficulty);
     this.core.events.flush();
   }
