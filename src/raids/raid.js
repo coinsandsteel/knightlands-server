@@ -299,7 +299,7 @@ class Raid extends EventEmitter {
         }
 
         this._data.participants[userId] = 0;
-        this._data.participantsArr.push(userId);
+        this._data.participantsArr.push(userId.toHexString());
         this._data.loot[userId] = false;
         this._data.busySlots++;
 
