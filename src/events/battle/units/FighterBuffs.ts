@@ -9,7 +9,7 @@ import {
   TERRAIN_LAVA,
 } from "../../../knightlands-shared/battle";
 import { BattleEvents } from "../services/BattleEvents";
-import { SETTINGS } from "../meta";
+import { BUFF_SOURCE_SQUAD, SETTINGS } from "../meta";
 import { Fighter } from "./Fighter";
 
 export default class UnitBuffs {
@@ -42,6 +42,17 @@ export default class UnitBuffs {
     return this._buffs;
   }
 
+  get modifiers(): {
+    speed: number;
+    initiative: number;
+    defence: number;
+    power: number;
+    attack: number;
+    abilities: number;
+  } {
+    return this._modifiers;
+  }
+
   constructor(events: BattleEvents, fighter: Fighter, buffs?: BattleBuff[]) {
     this._events = events;
     this._fighter = fighter;
@@ -69,7 +80,7 @@ export default class UnitBuffs {
       // HP
       if (initial && buff.target === "hp") {
         const hp = Math.round(
-          this.fighter.unit.maxHp * this.getBuffModifier({ target: "hp" })
+          this.fighter.unit.maxHp * this.getMaxHpModifier()
         );
         this.fighter.modifyHp(hp, true);
       }
@@ -93,19 +104,20 @@ export default class UnitBuffs {
     const stunBuffs = this.getBuffs({ subEffect: "stun" });
     this.fighter.setStunned(!!stunBuffs.length);
 
-    // stunBuffs.some((buff) => Math.random() <= buff.probability)
+    if (!this.fighter.isEnemy) {
+      // console.log("Buffs updated", this.fighter.unit.name, this._modifiers);
+    }
   }
 
-  public reset() {
-    this._buffs = [];
-    this._modifiers = {
-      speed: -1,
-      initiative: -1,
-      defence: -1,
-      power: -1,
-      attack: -1,
-      abilities: -1,
-    };
+  public reset(force?: boolean) {
+    if (force) {
+      this._buffs = [];
+    } else {
+      // Remove all the buffs except squad bonuses
+      this._buffs = this._buffs.filter(
+        (buff) => buff.source === BUFF_SOURCE_SQUAD
+      );
+    }
   }
 
   public addBuff(buff: BattleBuff, sendEvent?: boolean): void {
@@ -137,11 +149,16 @@ export default class UnitBuffs {
     source?: string;
     subEffect?: string;
     trigger?: string;
+    mode?: string;
   }): BattleBuff[] {
     return _.filter(this._buffs, params);
   }
 
-  public getBuffModifier(params: { source?: string; target?: string }): number {
+  public getBuffModifier(params: {
+    source?: string;
+    target?: string;
+    mode?: string;
+  }): number {
     const buffs = this.getBuffs(params);
     if (!buffs.length) {
       return 1;
@@ -150,20 +167,14 @@ export default class UnitBuffs {
     let modifier = 1;
     buffs.forEach((buff) => {
       // Constant
-      if (buff.mode === "constant" && buff.operation === "multiply" && !buff.trigger) {
-        //{ source: "self-buff", mode: "constant", target: "power", modifier: 1.15 }
-        //{ source: "squad", mode: "constant", target: "power", terrain: "hill", scheme: "hill-1" }
+      if (
+        buff.mode === "constant" &&
+        buff.operation === "multiply" &&
+        !buff.trigger
+      ) {
         modifier =
           modifier *
-          (buff.terrain
-            ? this.getTerrainModifier(buff.terrain)
-            : buff.value);
-
-        // Burst
-      } else if (buff.mode === "burst") {
-        //{ source: "squad", mode: "burst", target: "power", modifier: 1.3, probability: 0.07 },
-        modifier =
-          modifier * (Math.random() <= buff.probability ? buff.value : 1);
+          (buff.terrain ? this.getTerrainModifier(buff.terrain) : buff.value);
 
         // Stacked
       } else if (buff.mode === "stack" && buff.operation === "multiply") {
@@ -200,9 +211,6 @@ export default class UnitBuffs {
   }
 
   public handleDamageCallback() {
-    // { source: "squad", mode: "stack", target: "power", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", target: "attack", trigger: "damage", delta: 2.5, percents: true, max: 15 },
-    // { source: "squad", mode: "stack", target: "defence", trigger: "damage", delta: 1, max: 4 },
     const buffs = this.getBuffs({ trigger: "damage" });
     if (buffs.length) {
       buffs.forEach((buff) => {
@@ -213,10 +221,51 @@ export default class UnitBuffs {
           buff.stackValue < buff.max
         ) {
           buff.stackValue += buff.value;
-          //this.log(`${buff.type} stacked`, buff);
         }
       });
+      this.update();
     }
+  }
+
+  public launchCounterAttack(): boolean {
+    const trigger = this.getBuffs({ subEffect: "counter_attack" }).some(
+      (buff) => Math.random() <= buff.probability
+    );
+    return !this._fighter.isStunned && trigger;
+  }
+
+  public getMaxHpModifier(): number {
+    const buffs = this.getBuffs({ target: "hp", mode: "constant" });
+    if (!buffs.length) {
+      return 1;
+    }
+
+    let modifier = 1;
+    buffs.forEach((buff) => {
+      if (buff.operation === "multiply") {
+        modifier =
+          modifier * buff.value;
+      } else if (buff.operation === "add") {
+        modifier += buff.value;
+      }
+    });
+
+    return modifier;
+  }
+
+  public getCriticalHitModifier(): number {
+    const buffs = this.getBuffs({ mode: "burst", target: "power" });
+    if (!buffs.length) {
+      return 1;
+    }
+
+    let modifier = 1;
+    buffs.forEach((buff) => {
+      modifier =
+        modifier * (Math.random() <= buff.probability ? buff.value : 1);
+    });
+
+    return modifier;
   }
 
   public decreaseBuffsEstimate(): void {
@@ -262,7 +311,6 @@ export default class UnitBuffs {
         // Hills, highlands - Increase damage to enemies by 25%
         // Forest - Increases unit's defense by 25%
         this.addBuff({
-          name: TERRAIN_WOODS,
           target: SETTINGS.terrain[terrain].target,
           subEffect: "no",
           operation: "multiply",
@@ -274,7 +322,7 @@ export default class UnitBuffs {
           sourceId: terrain,
           mode: "constant",
           activated: true,
-          caseId: parseInt(this._terrainModifiers[terrain].split('-')[1])
+          caseId: parseInt(this._terrainModifiers[terrain].split("-")[1]),
         });
         break;
       }
@@ -288,7 +336,9 @@ export default class UnitBuffs {
   }
 
   public getLavaDamage(): number {
-    return Math.round(this.fighter.unit.maxHp * this.getTerrainModifier(TERRAIN_LAVA));
+    return Math.round(
+      this.fighter.unit.maxHp * this.getTerrainModifier(TERRAIN_LAVA)
+    );
   }
 
   public getTerrainModifier(terrain: string): number {

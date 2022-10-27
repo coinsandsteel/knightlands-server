@@ -368,13 +368,16 @@ export default class UnitAbilities {
 
     const ability = this._abilities.find(ability => ability.abilityClass === abilityClass);
     if (!ability) {
-      throw new Error('No such tier!');
+      throw new Error('No such ability!');
     }
 
     const abilityScheme = ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
-    if (!abilityScheme || level > abilityScheme.lvl) {
+    if (!abilityScheme) {
       return;
     }
+
+    // Fallback to highest lvl
+    level = Math.min(level, abilityScheme.lvl);
 
     ability.enabled = !!level;
     ability.level = {
@@ -400,9 +403,12 @@ export default class UnitAbilities {
     }
 
     const abilityScheme = ABILITY_SCHEME[this._unit.levelInt - 1][ability.tier - 1];
-    if (!abilityScheme || level > abilityScheme.lvl) {
+    if (!abilityScheme) {
       return;
     }
+
+    // Fallback to highest lvl
+    level = Math.min(level, abilityScheme.lvl);
 
     ability.enabled = !!level;
     ability.level = {

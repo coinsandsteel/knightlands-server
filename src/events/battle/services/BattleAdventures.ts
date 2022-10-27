@@ -117,8 +117,8 @@ export class BattleAdventures extends BattleService {
       ].bossRewardClaimed = true;
     }
 
-    let location = this.location;
-    let level = this.level;
+    let location = _.clone(this.location);
+    let level = _.clone(this.level);
 
     // Go to the next level
     level++;
@@ -139,7 +139,7 @@ export class BattleAdventures extends BattleService {
     // Open the next level
     if (
       // Do not open next location in the last location
-      this.location <= this._locationsCount - 1
+      location <= this._locationsCount - 1
       &&
       // Do not unlock next high location
       (

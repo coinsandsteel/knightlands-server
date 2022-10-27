@@ -67,6 +67,7 @@ export interface BattleUserState {
   items: BattleItem[];
   counters: {
     energy: number;
+    energyAccumulated: number;
     purchase: {
       [date: string]: { [id: number]: number }
     },
@@ -241,9 +242,9 @@ export interface BattleUnitAttribute {
 
 export interface BattleBuff extends BattleEffectMeta {
   source: "terrain" | "pvp" | "squad";
-  sourceId: string;
+  sourceId?: string;
   mode: "stack" | "constant" | "burst";
-  activated: boolean;
+  activated?: boolean;
 
   caseId?: number;
   targetFighterId?: string;
@@ -280,6 +281,7 @@ export interface BattleEnemySquadDifficultyMeta {
   classes: {
     [unitClass: string]: { min: number; max: number; }
   };
-  unitLevelModifier: { min: number; max: number; };
-  abilityLevelModifier: number;
+  unitLevelModifier: number;
+  abilityLevelModifier: number[];
+  tierModifier: { minLevel: number; maxLevel: number; tiers: number[] }[];
 }

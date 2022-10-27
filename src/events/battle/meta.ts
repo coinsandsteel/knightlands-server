@@ -99,13 +99,13 @@ export const SQUAD_BONUSES = {
     [
       // Attack +5%
       { target: "attack", mode: "constant", operation: "multiply", value: 1.05 },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.15 },
       {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.15,
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -178,9 +178,9 @@ export const SQUAD_BONUSES = {
     [
       // Attack +5%
       { target: "hp", mode: "constant", operation: "multiply", value: 1.05 },
-      { target: "hp", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.1 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.15 },
+      { target: "hp", mode: "constant", operation: "multiply", value: 1.20 },
     ],
     // Tier 2
     [
@@ -241,14 +241,14 @@ export const SQUAD_BONUSES = {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
+        value: 1.1,
       },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.15 },
       {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.15,
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -293,9 +293,9 @@ export const SQUAD_BONUSES = {
     [
       // HP +5%
       { target: "hp", mode: "constant", operation: "multiply", value: 1.05 },
-      { target: "hp", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.1 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.15 },
+      { target: "hp", mode: "constant", operation: "multiply", value: 1.2 },
     ],
     // Tier 2
     [
@@ -466,14 +466,14 @@ export const SQUAD_BONUSES = {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
+        value: 1.1,
       },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.15 },
       {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.15,
+        value: 1.2,
       },
     ],
     // Tier 2
@@ -490,33 +490,33 @@ export const SQUAD_BONUSES = {
       {
         target: "attack",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.15,
       },
       {
         target: "attack",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.2,
       },
       {
         target: "attack",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.25,
       },
       {
         target: "attack",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.3,
       },
     ],
@@ -535,12 +535,6 @@ export const SQUAD_BONUSES = {
         target: "abilities",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
-      },
-      {
-        target: "abilities",
-        mode: "constant",
-        operation: "multiply",
         value: 1.1,
       },
       {
@@ -548,6 +542,12 @@ export const SQUAD_BONUSES = {
         mode: "constant",
         operation: "multiply",
         value: 1.15,
+      },
+      {
+        target: "abilities",
+        mode: "constant",
+        operation: "multiply",
+        value: 1.2,
       },
     ],
     // Tier 2
@@ -625,12 +625,6 @@ export const SQUAD_BONUSES = {
         target: "defence",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
-      },
-      {
-        target: "defence",
-        mode: "constant",
-        operation: "multiply",
         value: 1.1,
       },
       {
@@ -638,6 +632,12 @@ export const SQUAD_BONUSES = {
         mode: "constant",
         operation: "multiply",
         value: 1.15,
+      },
+      {
+        target: "defence",
+        mode: "constant",
+        operation: "multiply",
+        value: 1.2,
       },
     ],
     // Tier 2
@@ -651,10 +651,10 @@ export const SQUAD_BONUSES = {
     // Tier 3
     [
       //When a unit is debuffed, their speed is increased by +1
-      { target: "speed", mode: "constant", trigger: "debuff", delta: 1 },
-      { target: "speed", mode: "constant", trigger: "debuff", delta: 2 },
-      { target: "speed", mode: "constant", trigger: "debuff", delta: 3 },
-      { target: "speed", mode: "constant", trigger: "debuff", delta: 4 },
+      { target: "speed", mode: "constant", trigger: "debuff", operation: "add", value: 1 },
+      { target: "speed", mode: "constant", trigger: "debuff", operation: "add", value: 2 },
+      { target: "speed", mode: "constant", trigger: "debuff", operation: "add", value: 3 },
+      { target: "speed", mode: "constant", trigger: "debuff", operation: "add", value: 4 },
     ],
   ],
   [battle.UNIT_TRIBE_CLOCKWORK]: [
@@ -671,12 +671,6 @@ export const SQUAD_BONUSES = {
         target: "defence",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
-      },
-      {
-        target: "defence",
-        mode: "constant",
-        operation: "multiply",
         value: 1.1,
       },
       {
@@ -684,6 +678,12 @@ export const SQUAD_BONUSES = {
         mode: "constant",
         operation: "multiply",
         value: 1.15,
+      },
+      {
+        target: "defence",
+        mode: "constant",
+        operation: "multiply",
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -720,33 +720,33 @@ export const SQUAD_BONUSES = {
       {
         target: "power",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.15,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.2,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.25,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.3,
       },
     ],
@@ -756,9 +756,9 @@ export const SQUAD_BONUSES = {
     [
       // Defense +5%
       { target: "hp", mode: "constant", operation: "multiply", value: 1.05 },
-      { target: "hp", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.1 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.15 },
+      { target: "hp", mode: "constant", operation: "multiply", value: 1.2 },
     ],
     // Tier 2
     [
@@ -835,12 +835,6 @@ export const SQUAD_BONUSES = {
         target: "abilities",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
-      },
-      {
-        target: "abilities",
-        mode: "constant",
-        operation: "multiply",
         value: 1.1,
       },
       {
@@ -848,6 +842,12 @@ export const SQUAD_BONUSES = {
         mode: "constant",
         operation: "multiply",
         value: 1.15,
+      },
+      {
+        target: "abilities",
+        mode: "constant",
+        operation: "multiply",
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -892,9 +892,9 @@ export const SQUAD_BONUSES = {
     [
       // Abilities power +5%
       { target: "hp", mode: "constant", operation: "multiply", value: 1.05 },
-      { target: "hp", mode: "constant", operation: "multiply", value: 1.07 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.1 },
       { target: "hp", mode: "constant", operation: "multiply", value: 1.15 },
+      { target: "hp", mode: "constant", operation: "multiply", value: 1.20 },
     ],
     // Tier 2
     [
@@ -910,33 +910,33 @@ export const SQUAD_BONUSES = {
       {
         target: "power",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.15,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.025,
+        value: 0.025,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.2,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.25,
       },
       {
         target: "power",
         mode: "stack",
-        delta: 0.03,
+        value: 0.03,
         trigger: "damage",
-        multiply: true,
+        operation: "multiply",
         max: 0.3,
       },
     ],
@@ -955,14 +955,14 @@ export const SQUAD_BONUSES = {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
+        value: 1.1,
       },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.15 },
       {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.15,
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -1020,14 +1020,14 @@ export const SQUAD_BONUSES = {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
+        value: 1.1,
       },
-      { target: "attack", mode: "constant", operation: "multiply", value: 1.1 },
+      { target: "attack", mode: "constant", operation: "multiply", value: 1.15 },
       {
         target: "attack",
         mode: "constant",
         operation: "multiply",
-        value: 1.15,
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -1061,12 +1061,6 @@ export const SQUAD_BONUSES = {
         target: "abilities",
         mode: "constant",
         operation: "multiply",
-        value: 1.07,
-      },
-      {
-        target: "abilities",
-        mode: "constant",
-        operation: "multiply",
         value: 1.1,
       },
       {
@@ -1074,6 +1068,12 @@ export const SQUAD_BONUSES = {
         mode: "constant",
         operation: "multiply",
         value: 1.15,
+      },
+      {
+        target: "abilities",
+        mode: "constant",
+        operation: "multiply",
+        value: 1.20,
       },
     ],
     // Tier 2
@@ -1111,28 +1111,28 @@ export const SQUAD_BONUSES = {
         target: "speed",
         mode: "constant",
         trigger: "debuff",
-        operation: "multiply",
+        operation: "add",
         value: 1,
       },
       {
         target: "speed",
         mode: "constant",
         trigger: "debuff",
-        operation: "multiply",
+        operation: "add",
         value: 2,
       },
       {
         target: "speed",
         mode: "constant",
         trigger: "debuff",
-        operation: "multiply",
+        operation: "add",
         value: 3,
       },
       {
         target: "speed",
         mode: "constant",
         trigger: "debuff",
-        operation: "multiply",
+        operation: "add",
         value: 4,
       },
     ],
@@ -2220,8 +2220,13 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_TANK]: { min: 1, max: 2 },
       [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 2 }
     },
-    unitLevelModifier: { min: 0.7, max: 0.8 },
-    abilityLevelModifier: -2
+    unitLevelModifier: 0,
+    abilityLevelModifier: [0, 0, 0],
+    tierModifier: [
+      { minLevel: 1, maxLevel: 15, tiers: [1,2,3]},
+      { minLevel: 16, maxLevel: 30, tiers: [2,3]},
+      { minLevel: 31, maxLevel: 45, tiers: [3]},
+    ]
   },
   [battle.GAME_DIFFICULTY_MEDIUM]: {
     classes: {
@@ -2231,8 +2236,13 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_TANK]: { min: 1, max: 3 },
       [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
     },
-    unitLevelModifier: { min: 0.9, max: 1 },
-    abilityLevelModifier: -1
+    unitLevelModifier: 4,
+    abilityLevelModifier: [5, 2, 0],
+    tierModifier: [
+      { minLevel: 1, maxLevel: 15, tiers: [1,2,3]},
+      { minLevel: 16, maxLevel: 30, tiers: [2,3]},
+      { minLevel: 31, maxLevel: 45, tiers: [3]},
+    ]
   },
   [battle.GAME_DIFFICULTY_HIGH]: {
     classes: {
@@ -2240,9 +2250,14 @@ export const ENEMY_SQUAD_META = {
       [battle.UNIT_CLASS_RANGE]: { min: 1, max: 3 },
       [battle.UNIT_CLASS_MAGE]: { min: 1, max: 1 },
       [battle.UNIT_CLASS_TANK]: { min: 1, max: 3 },
-      [battle.UNIT_CLASS_SUPPORT]: { min: 1, max: 1 }
+      [battle.UNIT_CLASS_SUPPORT]: { min: 0, max: 0 }
     },
-    unitLevelModifier: { min: 1.2, max: 1.3 },
-    abilityLevelModifier: 0
+    unitLevelModifier: 10,
+    abilityLevelModifier: [10, 5, 2],
+    tierModifier: [
+      { minLevel: 1, maxLevel: 15, tiers: [1,2,3]},
+      { minLevel: 16, maxLevel: 30, tiers: [2,3]},
+      { minLevel: 31, maxLevel: 45, tiers: [3]},
+    ]
   },
 } as BattleEnemySquadMeta;

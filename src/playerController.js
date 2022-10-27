@@ -332,7 +332,9 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.BattleRestart, this._gameHandler(this._battleRestart.bind(this)));
         this._socket.on(Operations.BattleExit, this._gameHandler(this._battleExit.bind(this)));
         this._socket.on(Operations.BattleMerge, this._gameHandler(this._battleMerge.bind(this)));
-        //this._socket.on(Operations.BattleTestAction, this._gameHandler(this._battleTestAction.bind(this)));
+        if (!isProd) {
+            this._socket.on(Operations.BattleTestAction, this._gameHandler(this._battleTestAction.bind(this)));
+        }
 
         this._handleEventBind = this._handleEvent.bind(this);
     }
@@ -348,6 +350,7 @@ class PlayerController extends IPaymentListener {
     }
 
     async onDisconnect(forced = false) {
+        //console.log('onDisconnect', { forced })
         if (this._closed && !forced) {
             return false;
         }
@@ -362,9 +365,7 @@ class PlayerController extends IPaymentListener {
         this.address = null;
 
         if (this.simpleDungeon) {
-            // console.log('start dungeon dispose')
             await this.simpleDungeon.dispose();
-            // console.log('finish dungeon dispose')
             this.simpleDungeon = null
         }
 

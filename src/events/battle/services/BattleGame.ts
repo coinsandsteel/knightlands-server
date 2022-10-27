@@ -30,7 +30,6 @@ export class BattleGame extends BattleService {
 
   protected _userSquad: BattleSquad;
   protected _enemySquad: BattleSquad;
-  protected _difficulty: string;
   protected _enemyOptions: {
     [difficulty: string]: Fighter[]
   } | null = null;
@@ -44,19 +43,21 @@ export class BattleGame extends BattleService {
     super();
     this._core = core;
 
+    //console.log('Create user squad', state ? state.userSquad.fighters : []);
     this._userSquad = new BattleSquad(
       state ? state.userSquad.fighters : [],
       false,
       this._core
     );
+    //console.log('User squad created', this._userSquad);
 
+    //console.log('Create enemy squad', state ? state.enemySquad.fighters : []);
     this._enemySquad = new BattleSquad(
       state ? state.enemySquad.fighters : [],
       true,
       this._core
     );
-
-    this._difficulty = state ? state.difficulty : GAME_DIFFICULTY_MEDIUM;
+    //console.log('Enemy squad created', this._enemySquad);
 
     if (state) {
       this._state = state;
@@ -77,6 +78,10 @@ export class BattleGame extends BattleService {
     return activeFighter.isEnemy
       ? this._userSquad.liveFighters
       : this._enemySquad.liveFighters;
+  }
+
+  get difficulty(): string|null {
+    return this._state.difficulty;
   }
 
   get movement(): BattleMovement {
@@ -118,7 +123,7 @@ export class BattleGame extends BattleService {
   protected setInitialState() {
     this._state = {
       mode: null,
-      difficulty: GAME_DIFFICULTY_MEDIUM,
+      difficulty: null,
 
       userSquad: this._userSquad.getInitialState(),
       enemySquad: this._enemySquad.getInitialState(),
@@ -151,6 +156,7 @@ export class BattleGame extends BattleService {
     this._state.userSquad = this._userSquad.getState();
     this._state.enemySquad = this._enemySquad.getState();
     this._state.terrain = this._terrain.getState();
+    //console.log('Squad state', { userSquad: this._state.userSquad, enemySquad: this._state.enemySquad });
     return this._state;
   }
 
@@ -226,7 +232,7 @@ export class BattleGame extends BattleService {
   }
 
   public enterLevel(location: number, level: number): void {
-    if (!this._core.adventures.canEnterLevel(location, level)) {
+    if (!this._core.adventures.canEnterLevel(location, level) || this._state.combat.started) {
       return;
     }
 
@@ -249,12 +255,12 @@ export class BattleGame extends BattleService {
       throw errors.IncorrectArguments;
     }
 
-    if (!this._core.user.increaseDailyDuelsCounter()) {
+    if (this._state.combat.started || !this._core.user.increaseDailyDuelsCounter()) {
       return;
     }
 
     this.setMode(GAME_MODE_DUEL);
-    this._difficulty = difficulty;
+    this.setDifficulty(difficulty);
 
     // Terrain
     this.terrain.setRandomMap();
@@ -264,7 +270,7 @@ export class BattleGame extends BattleService {
   }
 
   public start(enemyFighters: Fighter[]): void {
-    if (!this._userSquad.fighters.length) {
+    if (!this._userSquad.fighters.length || this._state.combat.started) {
       return;
     }
 
@@ -323,6 +329,11 @@ export class BattleGame extends BattleService {
   public setMode(mode: string): void {
     this._state.mode = mode;
     this._core.events.mode(mode);
+  }
+
+  public setDifficulty(difficulty: string): void {
+    this._state.difficulty = difficulty;
+    this._core.events.difficulty(difficulty);
   }
 
   public setCombatStarted(value: boolean): void {
@@ -552,7 +563,7 @@ export class BattleGame extends BattleService {
       }
 
       // Counter-attack
-      if (!target.isDead && target.launchCounterAttack) {
+      if (!fighter.isDead && !target.isDead && target.buffs.launchCounterAttack()) {
         this.log("Target ia trying to counter-attack...", {
           fighter: fighter.fighterId,
           target: target.fighterId,
@@ -617,18 +628,18 @@ export class BattleGame extends BattleService {
       this._core.adventures.handleLevelPassed();
 
     } else if (this._state.mode === GAME_MODE_DUEL) {
-      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this._difficulty].win.crystals);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this.difficulty].win.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS[this._difficulty].win.crystals,
+        crystals: DUEL_REWARDS[this.difficulty].win.crystals,
         xp: 0,
-        rank: DUEL_REWARDS[this._difficulty].win.rank
+        rank: DUEL_REWARDS[this.difficulty].win.rank
       });
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this._difficulty].win.rank);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].win.rank);
       this._core.user.updatePvpScore();
-      this._difficulty = null;
     }
 
+    this.setDifficulty(null);
     this.setCombatResult("win");
     this.stop();
     this._core.events.flush();
@@ -636,18 +647,18 @@ export class BattleGame extends BattleService {
 
   public loose(): void {
     if (this._state.mode === GAME_MODE_DUEL) {
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this._difficulty].loose.rank);
-      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this._difficulty].loose.crystals);
+      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].loose.rank);
+      this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this.difficulty].loose.crystals);
       this.setCombatRewards({
         coins: 0,
-        crystals: DUEL_REWARDS[this._difficulty].loose.crystals,
+        crystals: DUEL_REWARDS[this.difficulty].loose.crystals,
         xp: 0,
-        rank: DUEL_REWARDS[this._difficulty].loose.rank
+        rank: DUEL_REWARDS[this.difficulty].loose.rank
       });
       this._core.user.updatePvpScore();
-      this._difficulty = null;
     }
 
+    this.setDifficulty(null);
     this.setCombatResult("loose");
     this.stop();
     this._core.events.flush();

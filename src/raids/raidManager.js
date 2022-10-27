@@ -284,16 +284,17 @@ class RaidManager {
 
     _getActiveRaidsQuery(userId) {
         let lootQuery = {};
-        lootQuery[`loot.${userId}`] = { $ne: true };
+        lootQuery.usersClaimedLoot = { $nin: [userId] };
         return {
-            $or: [{
+            $or: [
+                {
                     $and: [lootQuery, { defeat: true }]
                 },
                 {
                     finished: false
                 }
             ],
-            [`participants.${userId}`]: { $exists: true }
+            participantsArr: { $in: [userId] }
         };
     }
 
@@ -404,10 +405,8 @@ class RaidManager {
                 }
             };
 
-            let participantId = `participants.${userId}`;
-            let lootId = `loot.${userId}`;
-            matchQuery.$match[participantId] = { $exists: true };
-            matchQuery.$match[lootId] = { $ne: true };
+            matchQuery.$match.participantsArr = { $in: [userId] };
+            matchQuery.$match.usersClaimedLoot = { $nin: [userId] };
 
             let raidData = await this._db.collection(Collections.Raids).aggregate([
                 matchQuery

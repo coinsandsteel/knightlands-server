@@ -25,13 +25,13 @@ export interface BattleClassMeta {
 
 export interface BattleEffectMeta {
   _id?: number;
-  name: string;
+  name?: string;
   target: "no" | "damage" | "defence" | "speed" | "initiative" | "hp" | "attack" | "power" | "abilities";
   subEffect: "no" | "stun" | "agro" | "lava_damage" | "counter_attack";
-  operation: "multiply" | "add";
-  probability: number;
-  value: number;
-  duration: number;
+  operation?: "multiply" | "add";
+  probability?: number;
+  value?: number;
+  duration?: number;
 }
 
 export interface BattleRangeMeta {

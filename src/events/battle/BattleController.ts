@@ -26,12 +26,14 @@ export class BattleController {
   }
 
   async init() {
-    //console.log('Controller init');
+    //console.log('BattleController.init', { user: this._user, userId: this._user ? this._user.id : null });
     const saveData = await Game.battleManager.loadProgress(this._user.id);
+    //console.log('BattleController progress loaded', saveData.state);
     this.core.init(saveData ? saveData.state as BattleSaveData : null);
   }
 
   async dispose() {
+    //console.log('BattleController.dispose');
     this.core.user.dispose();
     await this._save();
   }
@@ -41,11 +43,12 @@ export class BattleController {
   }
 
   protected async _save() {
+    //console.log('BattleController.save');
     await Game.battleManager.saveProgress(this._user.id, { state: this.getState() });
   }
 
   async load() {
-    //('Controller load');
+    //console.log('BattleController.load');
     await this.core.load();
     return this.getState();
   }
@@ -97,6 +100,7 @@ export class BattleController {
   }
 
   async setAdventuresDifficulty(difficulty: string) {
+    this.core.game.setDifficulty(difficulty);
     this.core.adventures.setDifficulty(difficulty);
     this.core.events.flush();
   }

@@ -20,13 +20,13 @@ import {
 } from "../../../knightlands-shared/battle";
 import game from "../../../game";
 import errors from "../../../knightlands-shared/errors";
-import { SETTINGS } from "../meta";
 
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
 const ENERGY_CYCLE_SEC = 15 * 60;
-const ENERGY_AMOUNT_PER_CYCLE = 1;
+const ENERGY_WATCH_CYCLE_SEC = 5;
+const ENERGY_AMOUNT_TICK = 1;
 
 export class BattleUser {
   protected _state: BattleUserState;
@@ -71,6 +71,7 @@ export class BattleUser {
       items: [{ id: 1, quantity: 1 }],
       counters: {
         energy: game.nowSec,
+        energyAccumulated: 0,
         purchase: {},
         duels: {},
       },
@@ -101,14 +102,14 @@ export class BattleUser {
   }
 
   public dispose() {
+    //console.log('BattleUser.dispose');
     clearInterval(this._energyInterval);
   }
 
   protected wakeUp() {
     // Debit energy if possible
     if (this.energy < ENERGY_MAX) {
-      let accumulatedEnergy = this.getAccumulatedEnergy();
-      this.modifyBalance(CURRENCY_ENERGY, accumulatedEnergy);
+      this.commitOfflineAccumulatedEnergy();
       this.launchEnergyTimer(true);
     }
 
@@ -116,15 +117,45 @@ export class BattleUser {
     this.updatePvpScore();
   }
 
-  protected getAccumulatedEnergy(): number {
+  protected getAccumulatedEnergy(time: number): number {
     let cycleLength = ENERGY_CYCLE_SEC;
-    let energyPerCycle = ENERGY_AMOUNT_PER_CYCLE;
+    let energyPerCycle = ENERGY_AMOUNT_TICK;
     let energyPerSecond = energyPerCycle / cycleLength;
+    let accumulatedEnergy = time * energyPerSecond;
+    //console.log('[BattleUser] getAccumulatedEnergy', { time, accumulatedEnergy });
 
-    let passedTime = game.nowSec - this._state.counters.energy;
-    let accumulatedEnergy = passedTime * energyPerSecond;
+    return accumulatedEnergy;
+  }
 
-    return Math.floor(accumulatedEnergy);
+  protected commitOfflineAccumulatedEnergy(): void {
+    //console.log('[BattleUser] Check offline energy');
+    const accumulatedEnergy = this.getAccumulatedEnergy(game.nowSec - this._state.counters.energy);
+    const tail = this._state.counters.energyAccumulated;
+    this._state.counters.energyAccumulated += accumulatedEnergy;
+    if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
+      //console.log('[BattleUser] Have a portion, debit', { tail, accumulatedEnergy });
+      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this._state.counters.energyAccumulated));
+    }
+    this.resetEnergyCounter();
+  }
+
+  protected commitOnlineAccumulatedEnergy(): void {
+    //console.log('[BattleUser] Check online energy');
+    const accumulatedEnergy = this.getAccumulatedEnergy(ENERGY_WATCH_CYCLE_SEC);
+    this._state.counters.energyAccumulated += accumulatedEnergy;
+    //console.log('[BattleUser] Tick', { add: accumulatedEnergy, resultEnergy: this._state.counters.energyAccumulated });
+
+    // Granted a portion, debit
+    if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
+      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this._state.counters.energyAccumulated));
+      /*console.log('[BattleUser] Tick finished', {
+        add: Math.floor(this._state.counters.energyAccumulated),
+        resultEnergy: this._state.balance.energy
+      });*/
+      this.resetEnergyCounter();
+    }
+
+    this._state.counters.energy = game.nowSec;
   }
 
   protected launchEnergyTimer(force: boolean): void {
@@ -137,21 +168,39 @@ export class BattleUser {
       }
     }
 
+    // Every 5 seconds
     this._energyInterval = setTimeout(() => {
-      this.modifyBalance(CURRENCY_ENERGY, ENERGY_AMOUNT_PER_CYCLE);
-      this._state.counters.energy = game.nowSec;
+      this.commitOnlineAccumulatedEnergy();
 
       if (this.energy < ENERGY_MAX) {
+        // Continue
         this.launchEnergyTimer(true);
       } else {
+        // Stop
         this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
         clearInterval(this._energyInterval);
         this._energyInterval = null;
+        this.resetEnergyCounter(true);
       }
 
       this._core.events.flush();
-    }, ENERGY_CYCLE_SEC * 1000);
+    }, ENERGY_WATCH_CYCLE_SEC * 1000);
   }
+
+  protected resetEnergyCounter(resetAccumulated?: boolean): void {
+    this._state.counters.energy = game.nowSec;
+
+    if (resetAccumulated) {
+      this._state.counters.energyAccumulated = 0;
+    } else {
+      this._state.counters.energyAccumulated = this._state.counters.energyAccumulated - Math.floor(this._state.counters.energyAccumulated);
+    }
+
+    /*console.log('[BattleUser] Timer reset', {
+      timer: this._state.counters.energy,
+      energyAccumulated: this._state.counters.energyAccumulated,
+    });*/
+}
 
   public getState(): BattleUserState {
     return this._state;

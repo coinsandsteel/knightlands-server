@@ -62,7 +62,9 @@ export class BattleCore {
   }
 
   protected initGame(saveData?: BattleGameState) {
+    //console.log('Init game');
     if (!this._battleGame) {
+      //console.log('Create game', saveData);
       this._battleGame = new BattleGame(saveData, this);
     }
   }
@@ -89,10 +91,10 @@ export class BattleCore {
   }
 
   async load() {
-    //console.log('Core load');
+    //console.log('BattleCore.load');
     await this._battleUser.load();
     await this._battleInventory.load();
     await this._battleGame.load();
-    //console.log('Core loaded');
+    //console.log('BattleCore.loaded');
   }
 }
