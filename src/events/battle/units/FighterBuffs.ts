@@ -80,7 +80,7 @@ export default class UnitBuffs {
       // HP
       if (initial && buff.target === "hp") {
         const hp = Math.round(
-          this.fighter.unit.maxHp * this.getBuffModifier({ target: "hp" })
+          this.fighter.unit.maxHp * this.getMaxHpModifier()
         );
         this.fighter.modifyHp(hp, true);
       }
@@ -105,7 +105,7 @@ export default class UnitBuffs {
     this.fighter.setStunned(!!stunBuffs.length);
 
     if (!this.fighter.isEnemy) {
-      console.log("Buffs updated", this._modifiers);
+      // console.log("Buffs updated", this.fighter.unit.name, this._modifiers);
     }
   }
 
@@ -232,6 +232,25 @@ export default class UnitBuffs {
       (buff) => Math.random() <= buff.probability
     );
     return !this._fighter.isStunned && trigger;
+  }
+
+  public getMaxHpModifier(): number {
+    const buffs = this.getBuffs({ target: "hp", mode: "constant" });
+    if (!buffs.length) {
+      return 1;
+    }
+
+    let modifier = 1;
+    buffs.forEach((buff) => {
+      if (buff.operation === "multiply") {
+        modifier =
+          modifier * buff.value;
+      } else if (buff.operation === "add") {
+        modifier += buff.value;
+      }
+    });
+
+    return modifier;
   }
 
   public getCriticalHitModifier(): number {

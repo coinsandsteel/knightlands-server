@@ -216,7 +216,7 @@ export class Fighter {
       } else {
         this._events.userFighter(this.serialize());
       }
-    } else if (this._hp > this.unit.maxHp) {
+    } else if (!force && this._hp > this.unit.maxHp) {
       this._hp = this.unit.maxHp;
     }
   }
