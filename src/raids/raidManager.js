@@ -191,7 +191,7 @@ class RaidManager {
                 isFree: false,
                 public: true,
                 //[`participants.${userId}`]: { $exists: false },
-                participantsArr: { $nin: [userId] },
+                participantsArr: { $nin: [userId.toHexString()] },
                 $and: [
                     { $expr: { $lt: ["$busySlots", "$maxSlots"] } },
                     { $expr: { $lte: ["$level", userLevel] } }
@@ -284,17 +284,16 @@ class RaidManager {
 
     _getActiveRaidsQuery(userId) {
         let lootQuery = {};
-        lootQuery.usersClaimedLoot = { $nin: [userId] };
+        lootQuery.usersClaimedLoot = { $nin: [userId.toHexString()] };
         return {
-            $or: [
-                {
+            $or: [{
                     $and: [lootQuery, { defeat: true }]
                 },
                 {
                     finished: false
                 }
             ],
-            participantsArr: { $in: [userId] }
+            participantsArr: { $in: [userId.toHexString()] }
         };
     }
 
@@ -405,8 +404,8 @@ class RaidManager {
                 }
             };
 
-            matchQuery.$match.participantsArr = { $in: [userId] };
-            matchQuery.$match.usersClaimedLoot = { $nin: [userId] };
+            matchQuery.$match.participantsArr = { $in: [userId.toHexString()] };
+            matchQuery.$match.usersClaimedLoot = { $nin: [userId.toHexString()] };
 
             let raidData = await this._db.collection(Collections.Raids).aggregate([
                 matchQuery
