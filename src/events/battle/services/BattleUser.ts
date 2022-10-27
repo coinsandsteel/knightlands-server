@@ -39,6 +39,10 @@ export class BattleUser {
 
     if (state) {
       this._state = state;
+      // State patch
+      if (!Number.isInteger(this._state.counters.energyAccumulated)) {
+        this._state.counters.energyAccumulated = 0;
+      }
     } else {
       this.setInitialState();
     }
@@ -46,6 +50,10 @@ export class BattleUser {
 
   get energy(): number {
     return this._state.balance.energy;
+  }
+
+  get energyAccumulated(): number {
+    return this._state.counters.energyAccumulated ?? 0;
   }
 
   get coins(): number {
@@ -141,7 +149,7 @@ export class BattleUser {
       game.nowSec - this._state.counters.energy
     );
 
-    const tail = (this._state.counters.energyAccumulated ?? 0);
+    const tail = this.energyAccumulated;
     this._state.counters.energyAccumulated = tail + accumulatedEnergy;
 
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
@@ -152,7 +160,7 @@ export class BattleUser {
         });
       this.modifyBalance(
         CURRENCY_ENERGY,
-        Math.floor(this._state.counters.energyAccumulated)
+        Math.floor(this.energyAccumulated)
       );
     }
     this.resetEnergyCounter();
@@ -162,12 +170,12 @@ export class BattleUser {
     if (!isProd) console.log("[BattleUser] Check online energy");
     const accumulatedEnergy = this.getAccumulatedEnergy(ENERGY_WATCH_CYCLE_SEC);
 
-    this._state.counters.energyAccumulated = (this._state.counters.energyAccumulated ?? 0) + accumulatedEnergy;
+    this._state.counters.energyAccumulated = this.energyAccumulated + accumulatedEnergy;
 
     if (!isProd) {
       console.log("[BattleUser] Tick", {
         add: accumulatedEnergy,
-        resultEnergy: this._state.counters.energyAccumulated,
+        resultEnergy: this.energyAccumulated,
       });
     }
 
@@ -175,11 +183,11 @@ export class BattleUser {
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
       this.modifyBalance(
         CURRENCY_ENERGY,
-        Math.floor(this._state.counters.energyAccumulated)
+        Math.floor(this.energyAccumulated)
       );
       if (!isProd) {
         console.log("[BattleUser] Tick finished", {
-          add: Math.floor(this._state.counters.energyAccumulated),
+          add: Math.floor(this.energyAccumulated),
           resultEnergy: this._state.balance.energy,
         });
       }
