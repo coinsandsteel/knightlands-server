@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { BattleCore } from "./BattleCore";
-import * as moment from 'moment';
+import * as moment from "moment";
 import {
   BattleItem,
   BattleShopItemMeta,
@@ -24,7 +24,7 @@ import errors from "../../../knightlands-shared/errors";
 const isProd = process.env.ENV == "prod";
 
 const ENERGY_MAX = 36;
-const ENERGY_CYCLE_SEC = 15 * 60;
+const ENERGY_CYCLE_SEC = isProd ? 15 * 60 : 5;
 const ENERGY_WATCH_CYCLE_SEC = 5;
 const ENERGY_AMOUNT_TICK = 1;
 
@@ -124,36 +124,60 @@ export class BattleUser {
     let energyPerCycle = ENERGY_AMOUNT_TICK;
     let energyPerSecond = energyPerCycle / cycleLength;
     let accumulatedEnergy = time * energyPerSecond;
-    //console.log('[BattleUser] getAccumulatedEnergy', { time, accumulatedEnergy });
+
+    if (!isProd)
+      console.log("[BattleUser] getAccumulatedEnergy", {
+        time,
+        accumulatedEnergy,
+      });
 
     return accumulatedEnergy;
   }
 
   protected commitOfflineAccumulatedEnergy(): void {
-    //console.log('[BattleUser] Check offline energy');
-    const accumulatedEnergy = this.getAccumulatedEnergy(game.nowSec - this._state.counters.energy);
+    if (!isProd) console.log("[BattleUser] Check offline energy");
+    const accumulatedEnergy = this.getAccumulatedEnergy(
+      game.nowSec - this._state.counters.energy
+    );
     const tail = this._state.counters.energyAccumulated;
     this._state.counters.energyAccumulated += accumulatedEnergy;
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
-      //console.log('[BattleUser] Have a portion, debit', { tail, accumulatedEnergy });
-      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this._state.counters.energyAccumulated));
+      if (!isProd)
+        console.log("[BattleUser] Have a portion, debit", {
+          tail,
+          accumulatedEnergy,
+        });
+      this.modifyBalance(
+        CURRENCY_ENERGY,
+        Math.floor(this._state.counters.energyAccumulated)
+      );
     }
     this.resetEnergyCounter();
   }
 
   protected commitOnlineAccumulatedEnergy(): void {
-    //console.log('[BattleUser] Check online energy');
+    if (!isProd) console.log("[BattleUser] Check online energy");
     const accumulatedEnergy = this.getAccumulatedEnergy(ENERGY_WATCH_CYCLE_SEC);
     this._state.counters.energyAccumulated += accumulatedEnergy;
-    //console.log('[BattleUser] Tick', { add: accumulatedEnergy, resultEnergy: this._state.counters.energyAccumulated });
+    if (!isProd) {
+      console.log("[BattleUser] Tick", {
+        add: accumulatedEnergy,
+        resultEnergy: this._state.counters.energyAccumulated,
+      });
+    }
 
     // Granted a portion, debit
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
-      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this._state.counters.energyAccumulated));
-      /*console.log('[BattleUser] Tick finished', {
-        add: Math.floor(this._state.counters.energyAccumulated),
-        resultEnergy: this._state.balance.energy
-      });*/
+      this.modifyBalance(
+        CURRENCY_ENERGY,
+        Math.floor(this._state.counters.energyAccumulated)
+      );
+      if (!isProd) {
+        console.log("[BattleUser] Tick finished", {
+          add: Math.floor(this._state.counters.energyAccumulated),
+          resultEnergy: this._state.balance.energy,
+        });
+      }
       this.resetEnergyCounter();
     }
 
@@ -195,20 +219,28 @@ export class BattleUser {
     if (resetAccumulated) {
       this._state.counters.energyAccumulated = 0;
     } else {
-      this._state.counters.energyAccumulated = this._state.counters.energyAccumulated - Math.floor(this._state.counters.energyAccumulated);
+      this._state.counters.energyAccumulated =
+        this._state.counters.energyAccumulated -
+        Math.floor(this._state.counters.energyAccumulated);
     }
 
-    /*console.log('[BattleUser] Timer reset', {
-      timer: this._state.counters.energy,
-      energyAccumulated: this._state.counters.energyAccumulated,
-    });*/
-}
+    if (!isProd) {
+      console.log("[BattleUser] Timer reset", {
+        timer: this._state.counters.energy,
+        energyAccumulated: this._state.counters.energyAccumulated,
+      });
+    }
+  }
 
   public getState(): BattleUserState {
     return this._state;
   }
 
-  public modifyBalance(currency: string, amount: number, force?: boolean): void {
+  public modifyBalance(
+    currency: string,
+    amount: number,
+    force?: boolean
+  ): void {
     //console.log('modifyBalance', { currency, amount });
     this._state.balance[currency] += amount;
 
@@ -218,7 +250,12 @@ export class BattleUser {
 
     this._core.events.balance(this._state.balance);
 
-    if (currency === CURRENCY_ENERGY && amount >= 0 && this.energy > ENERGY_MAX && !force) {
+    if (
+      currency === CURRENCY_ENERGY &&
+      amount >= 0 &&
+      this.energy > ENERGY_MAX &&
+      !force
+    ) {
       this._state.balance[CURRENCY_ENERGY] = ENERGY_MAX;
     }
 
@@ -316,12 +353,14 @@ export class BattleUser {
     // Check daily purchase limits
     if (
       positionMeta.dailyMax &&
-      positionMeta.dailyMax > 0 &&
-      !this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax) &&
-      !this.increaseDailyPurchaseCounter(id, quantity)
+      positionMeta.dailyMax > 0
     ) {
-      //console.log("Purchase failed. Daily limit exeeded");
-      return;
+      if (!this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax)) {
+        this.increaseDailyPurchaseCounter(id, quantity)
+      } else {
+        //console.log("Purchase failed. Daily limit exeeded");
+        return;
+      }
     }
 
     // Check if can claim
@@ -425,7 +464,9 @@ export class BattleUser {
 
     let items = [] as BattleUnit[];
     if (positionMeta.content.units) {
-      const tierProbabilities = positionMeta.content.tierProbabilities ?? [100, 0, 0];
+      const tierProbabilities = positionMeta.content.tierProbabilities ?? [
+        100, 0, 0,
+      ];
       const unitTribe = positionMeta.content.canSelectTribe ? tribe : null;
       const unitClasses = positionMeta.content.unitClasses ?? null;
 
@@ -472,7 +513,7 @@ export class BattleUser {
   }
 
   protected purgePreviousDates(): void {
-    const currentDate = moment.utc().format('DD/MM/YYYY');
+    const currentDate = moment.utc().format("DD/MM/YYYY");
     this._state.counters.purchase = _.pick(
       this._state.counters.purchase,
       currentDate
@@ -491,13 +532,13 @@ export class BattleUser {
   }
 
   public dailyDuelsLimitExceeded(): boolean {
-    const date = moment.utc().format('DD/MM/YYYY');
+    const date = moment.utc().format("DD/MM/YYYY");
     const dateEntry = this._state.counters.duels[date];
     return (dateEntry || 0) >= BATTLE_MAX_DUELS_DAILY;
   }
 
   protected dailyPurchaseLimitExceeded(id: number, max: number): boolean {
-    const date = moment.utc().format('DD/MM/YYYY');
+    const date = moment.utc().format("DD/MM/YYYY");
     const dateEntry = this._state.counters.purchase[date];
     if (dateEntry) {
       const idPurchases = dateEntry[id] || 0;
@@ -509,7 +550,7 @@ export class BattleUser {
   }
 
   public increaseDailyDuelsCounter(): boolean {
-    const date = moment.utc().format('DD/MM/YYYY');
+    const date = moment.utc().format("DD/MM/YYYY");
     const dateEntry = this._state.counters.duels[date];
     const newCount = (dateEntry || 0) + 1;
 
@@ -539,7 +580,7 @@ export class BattleUser {
     }
 
     if (positionMeta.dailyMax) {
-      const date = moment.utc().format('DD/MM/YYYY');
+      const date = moment.utc().format("DD/MM/YYYY");
       const dateEntry = this._state.counters.purchase[date];
       const newCount = (dateEntry ? dateEntry[id] : 0) + count;
       // Overhead
