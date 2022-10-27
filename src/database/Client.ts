@@ -69,6 +69,8 @@ export class DatabaseClient {
     await this.db.collection(Collections.Armies).createIndex({ "units.id": 1 });
     await this.db.collection(Collections.Raids).createIndex({ "participantsArr": 1 });
     await this.db.collection(Collections.Raids).createIndex({ "usersClaimedLoot": 1 });
+    await this.db.collection(Collections.Raids).createIndex({ "finished": 1, "isFree":1, "public": 1 });
+    await this.db.collection(Collections.Raids).createIndex({ "level": -1 });
 
     await this.db
       .collection(Collections.ActivityHistory)
