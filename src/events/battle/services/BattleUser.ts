@@ -348,7 +348,7 @@ export class BattleUser {
       positionMeta.dailyMax > 0
     ) {
       if (!this.dailyPurchaseLimitExceeded(id, positionMeta.dailyMax)) {
-        this.increaseDailyPurchaseCounter(id, quantity)
+        this.increaseDailyPurchaseCounter(id, quantity);
       } else {
         //console.log("Purchase failed. Daily limit exeeded");
         return;
