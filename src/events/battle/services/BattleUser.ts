@@ -134,11 +134,14 @@ export class BattleUser {
 
   protected commitOfflineAccumulatedEnergy(): void {
     if (!isProd) console.log("[BattleUser] Check offline energy");
+
     const accumulatedEnergy = this.getAccumulatedEnergy(
       game.nowSec - this._state.counters.energy
     );
-    const tail = this._state.counters.energyAccumulated;
-    this._state.counters.energyAccumulated += accumulatedEnergy;
+
+    const tail = (this._state.counters.energyAccumulated ?? 0);
+    this._state.counters.energyAccumulated = tail + accumulatedEnergy;
+
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
       if (!isProd)
         console.log("[BattleUser] Have a portion, debit", {
@@ -156,7 +159,9 @@ export class BattleUser {
   protected commitOnlineAccumulatedEnergy(): void {
     if (!isProd) console.log("[BattleUser] Check online energy");
     const accumulatedEnergy = this.getAccumulatedEnergy(ENERGY_WATCH_CYCLE_SEC);
-    this._state.counters.energyAccumulated += accumulatedEnergy;
+
+    this._state.counters.energyAccumulated = (this._state.counters.energyAccumulated ?? 0) + accumulatedEnergy;
+
     if (!isProd) {
       console.log("[BattleUser] Tick", {
         add: accumulatedEnergy,
@@ -218,8 +223,8 @@ export class BattleUser {
       this._state.counters.energyAccumulated = 0;
     } else {
       this._state.counters.energyAccumulated =
-        this._state.counters.energyAccumulated -
-        Math.floor(this._state.counters.energyAccumulated);
+        (this._state.counters.energyAccumulated ?? 0) -
+        Math.floor(this._state.counters.energyAccumulated ?? 0);
     }
 
     if (!isProd) {
@@ -335,7 +340,7 @@ export class BattleUser {
     }
 
     const itemEntry = this.getItem(id);
-    const quantity = itemEntry ? itemEntry.quantity : 1;
+    const quantity = itemEntry ? (itemEntry.quantity ?? 1) : 1;
 
     // Check daily purchase limits
     if (
@@ -569,15 +574,18 @@ export class BattleUser {
     if (positionMeta.dailyMax) {
       const date = moment.utc().format("DD/MM/YYYY");
       const dateEntry = this._state.counters.purchase[date];
-      const newCount = (dateEntry ? dateEntry[id] : 0) + count;
+      let newCount = (dateEntry ? dateEntry[id] : 0) + count;
+      if (!Number.isInteger(newCount)) {
+        newCount = 1;
+      }
       // Overhead
       if (newCount > positionMeta.dailyMax) {
         return false;
-        // Increase counter
+      // Increase counter
       } else {
         this._state.counters.purchase[date] = {
           ...dateEntry,
-          [id]: newCount,
+          [id]: newCount
         };
         /*console.log(
           "Increased daily counter",
