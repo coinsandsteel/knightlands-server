@@ -94,7 +94,7 @@ class Raid extends EventEmitter {
             participants: {
                 [summonerId]: 0
             },
-            participantsArr: [summonerId],
+            participantsArr: [summonerId.toHexString()],
             counter: {
                 [summonerId]: 0
             },
