@@ -661,7 +661,7 @@ class Raid extends EventEmitter {
 
         this._data.loot[userId] = value;
         if (value === true) {
-            updateQuery.$addToSet = { usersClaimedLoot: userId };
+            updateQuery.$addToSet = { usersClaimedLoot: userId.toHexString() };
         }
 
         await this._db.collection(Collections.Raids).updateOne({ _id: new ObjectId(this.id) }, updateQuery);

@@ -37,7 +37,6 @@ class RaidManager {
 
     async init() {
         let settings = await this._db.collection(Collections.RaidsDktMeta).find({}).toArray();
-        let meta = await this._db.collection(Collections.RaidsDktMeta).find({}).toArray();
 
         this._factorSettings = {};
         settings.forEach(setting => {
