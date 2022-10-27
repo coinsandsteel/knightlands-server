@@ -242,9 +242,9 @@ export interface BattleUnitAttribute {
 
 export interface BattleBuff extends BattleEffectMeta {
   source: "terrain" | "pvp" | "squad";
-  sourceId: string;
+  sourceId?: string;
   mode: "stack" | "constant" | "burst";
-  activated: boolean;
+  activated?: boolean;
 
   caseId?: number;
   targetFighterId?: string;

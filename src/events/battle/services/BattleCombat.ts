@@ -161,7 +161,6 @@ export class BattleCombat extends BattleService {
     draws.forEach((draw) => {
       draw.forEach((effect) => {
         const buff = {
-          name: effect.name,
           target: effect.target,
           subEffect: effect.subEffect,
           operation: effect.operation,
@@ -232,11 +231,14 @@ export class BattleCombat extends BattleService {
     this.log("Attack", { abilityClass });
 
     const abilityData = source.abilities.getAbilityByClass(abilityClass);
-    const dmgBase = abilityData.value;
+    let dmgBase = abilityData.value;
     if (!_.isNumber(dmgBase)) {
       this.log("[Error data]", { abilityData });
       throw Error("dmgBase value is not a number. Abort.");
     }
+
+    dmgBase *= source.buffs.getCriticalHitModifier();
+
     const defBase = target.defence;
     const percentBlocked =
       (100 * (defBase * 0.05)) / (1 + defBase * 0.05) / 100;
@@ -382,7 +384,7 @@ export class BattleCombat extends BattleService {
         );
         canAttackFrom.push({
           index: parseInt(moveCell),
-          totalRange: attackPath.length + 1 + movePathLength
+          totalRange: attackPath.length + 1 + movePathLength,
         });
       }
     }
@@ -391,7 +393,11 @@ export class BattleCombat extends BattleService {
     if (canAttackFrom.length) {
       // Move to attack spot
       const targetIndex = _.head(_.sortBy(canAttackFrom, "totalRange"));
-      this._core.game.movement.moveFighter(fighter, ABILITY_MOVE, targetIndex.index);
+      this._core.game.movement.moveFighter(
+        fighter,
+        ABILITY_MOVE,
+        targetIndex.index
+      );
       this.log(`Approaching enemy onto index ${targetIndex}`);
     }
   }

@@ -1,5 +1,6 @@
 import _ from "lodash";
 import {
+  BattleBuff,
   BattleEnemySquadDifficultyMeta,
   BattleFighter,
   BattleInitiativeRatingEntry,
@@ -339,7 +340,15 @@ export class BattleSquad extends BattleService {
         if (tierCount >= 2) {
           const tier = parseInt(fighterTier);
           for (let i = 0; i < tier; i++) {
-            bonuses.push(SQUAD_BONUSES[fighterTribe][i][tierCount - 2]);
+            const sourceId = fighterTribe;
+            const caseId = tierCount - 2;
+            bonuses.push({
+              source: BUFF_SOURCE_SQUAD,
+              sourceId,
+              caseId,
+              subEffect: 'no',
+              ...SQUAD_BONUSES[sourceId][i][caseId]
+            } as BattleBuff);
           }
         }
       });
@@ -349,12 +358,11 @@ export class BattleSquad extends BattleService {
     this.fighters.forEach((fighter) => {
       fighter.buffs.reset(true);
       bonuses.forEach((bonus) =>
-        fighter.buffs.addBuff({ source: BUFF_SOURCE_SQUAD, ...bonus }, false)
+        fighter.buffs.addBuff(bonus, false)
       );
     });
 
     this._state.bonuses = bonuses;
-    // this.log("Squad bonuses", { bonuses });
   }
 
   public setPower(): void {

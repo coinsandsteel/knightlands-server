@@ -563,7 +563,7 @@ export class BattleGame extends BattleService {
       }
 
       // Counter-attack
-      if (!target.isDead && target.launchCounterAttack) {
+      if (!fighter.isDead && !target.isDead && target.buffs.launchCounterAttack()) {
         this.log("Target ia trying to counter-attack...", {
           fighter: fighter.fighterId,
           target: target.fighterId,

@@ -77,25 +77,22 @@ export class Fighter {
   get speed(): number {
     const bonusDelta = this.buffs.getBonusDelta("speed");
     return (
-      Math.round(this.unit.speed * this.buffs.modifiers.speed) +
-      bonusDelta
+      Math.round(this.unit.speed * this.buffs.modifiers.speed) + bonusDelta
     );
   }
 
   get initiative(): number {
     const bonusDelta = this.buffs.getBonusDelta("initiative");
     return (
-      Math.round(
-        this.unit.initiative * this.buffs.modifiers.initiative
-      ) + bonusDelta
+      Math.round(this.unit.initiative * this.buffs.modifiers.initiative) +
+      bonusDelta
     );
   }
 
   get defence(): number {
     const bonusDelta = this.buffs.getBonusDelta("defence");
     return (
-      Math.round(this.unit.defence * this.buffs.modifiers.defence) +
-      bonusDelta
+      Math.round(this.unit.defence * this.buffs.modifiers.defence) + bonusDelta
     );
   }
 
@@ -118,15 +115,6 @@ export class Fighter {
     return this.buffs
       .getBuffs({ subEffect: "agro" })
       .map((buff) => buff.targetFighterId);
-  }
-
-  get launchCounterAttack(): boolean {
-    return (
-      !this.isStunned &&
-      this.buffs
-        .getBuffs({ subEffect: "counter_attack" })
-        .some((buff) => Math.random() <= buff.probability)
-    );
   }
 
   constructor(blueprint: BattleFighter, events: BattleEvents) {
@@ -198,7 +186,7 @@ export class Fighter {
       index: this._index,
       hp: this._hp,
       buffs: this.buffs.serialize(),
-      characteristics: this.characteristics
+      characteristics: this.characteristics,
     } as BattleFighter;
     return _.cloneDeep(fighter);
   }
@@ -241,7 +229,7 @@ export class Fighter {
     this.buffs.update(initial);
     this.abilities.update({
       speed: this.speed,
-      damage: this.damage
+      damage: this.damage,
     });
   }
 
