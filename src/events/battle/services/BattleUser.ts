@@ -546,7 +546,7 @@ export class BattleUser {
     const date = moment.utc().format("DD/MM/YYYY");
     const dateEntry = this._state.counters.purchase[date];
     if (dateEntry) {
-      const idPurchases = dateEntry[id] || 0;
+      const idPurchases = dateEntry[id] ?? 0;
       if (idPurchases >= max) {
         return true;
       }
@@ -587,7 +587,7 @@ export class BattleUser {
     if (positionMeta.dailyMax) {
       const date = moment.utc().format("DD/MM/YYYY");
       const dateEntry = this._state.counters.purchase[date];
-      let newCount = (dateEntry ? dateEntry[id] : 0) + count;
+      let newCount = (dateEntry ? (dateEntry[id] ?? 0) : 0) + count;
       if (!Number.isInteger(newCount)) {
         newCount = 1;
       }
