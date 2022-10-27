@@ -364,29 +364,29 @@ class PlayerController extends IPaymentListener {
 
         this.address = null;
 
-        if (this.simpleDungeon) {
-            await this.simpleDungeon.dispose();
-            this.simpleDungeon = null
-        }
+        // if (this.simpleDungeon) {
+        //     await this.simpleDungeon.dispose();
+        //     this.simpleDungeon = null
+        // }
 
-        if (this.xmas) {
-            this.xmas = null
-        }
+        // if (this.xmas) {
+        //     this.xmas = null
+        // }
 
-        if (this.lunar) {
-            await this.lunar.dispose();
-            this.lunar = null
-        }
+        // if (this.lunar) {
+        //     await this.lunar.dispose();
+        //     this.lunar = null
+        // }
 
-        if (this.march) {
-            await this.march.dispose();
-            this.march = null
-        }
+        // if (this.march) {
+        //     await this.march.dispose();
+        //     this.march = null
+        // }
 
-        if (this.april) {
-            await this.april.dispose();
-            this.april = null
-        }
+        // if (this.april) {
+        //     await this.april.dispose();
+        //     this.april = null
+        // }
 
         if (this.battle) {
             await this.battle.dispose();
@@ -2282,53 +2282,53 @@ class PlayerController extends IPaymentListener {
 
     // Battle
     async _battleAddDailyReward() {
-      return this.battle.addDailyReward();
+        return this.battle.addDailyReward();
     }
 
     async _battleLoad() {
-      return this.battle.load();
+        return this.battle.load();
     }
 
     async _battleClaimReward(_, { type, tribe }) {
         if (!isString(type) || (tribe && !isString(tribe))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.claimReward(type, tribe);
+        return this.battle.claimReward(type, tribe);
     }
 
     async _battlePurchase(_, { id, tribe }) {
         if (!isNumber(parseInt(id)) || (tribe && !isString(tribe))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.purchase(id, tribe);
+        return this.battle.purchase(id, tribe);
     }
 
     async _battleFillSquadSlot(_, { unitId, index }) {
         if (!isNumber(parseInt(index)) || !isString(unitId)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.fillSquadSlot(unitId, index);
+        return this.battle.fillSquadSlot(unitId, index);
     }
 
     async _battleClearSquadSlot(_, { index }) {
         if (!isNumber(parseInt(index))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.clearSquadSlot(index);
+        return this.battle.clearSquadSlot(index);
     }
 
     async _battleUpgradeUnitLevel(_, { unitId }) {
         if (!isString(unitId)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.upgradeUnitLevel(unitId);
+        return this.battle.upgradeUnitLevel(unitId);
     }
 
     async _battleUpgradeUnitAbility(_, { unitId, ability }) {
         if (!isString(unitId) || !isString(ability)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.upgradeUnitAbility(unitId, ability);
+        return this.battle.upgradeUnitAbility(unitId, ability);
     }
 
     async _battleSetAdventuresDifficulty(_, { difficulty }) {
@@ -2342,39 +2342,39 @@ class PlayerController extends IPaymentListener {
         if (!isString(abilityClass)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.chooseAbility(abilityClass);
+        return this.battle.chooseAbility(abilityClass);
     }
 
     async _battleApply(_, { index, ability }) {
         if (!isString(ability)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.apply(
-        typeof index === 'undefined' ? null : index,
-        ability
-      );
+        return this.battle.apply(
+            typeof index === 'undefined' ? null : index,
+            ability
+        );
     }
 
     async _battleSkip() {
-      return this.battle.skip();
+        return this.battle.skip();
     }
 
     async _battleEnterLevel(_, { location, level }) {
         if (!isNumber(parseInt(location)) || !isNumber(parseInt(level))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.enterLevel(location, level);
+        return this.battle.enterLevel(location, level);
     }
 
     async _battleEnterDuel(_, { difficulty }) {
         if (!isString(difficulty)) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.enterDuel(difficulty);
+        return this.battle.enterDuel(difficulty);
     }
 
     async _battleFetchDuelOptions(_) {
-      return this.battle.getDuelOptions();
+        return this.battle.getDuelOptions();
     }
 
     async _battleRankings(user, { mode }) {
@@ -2390,22 +2390,22 @@ class PlayerController extends IPaymentListener {
     }
 
     async _battleRestart() {
-      return this.battle.restart();
+        return this.battle.restart();
     }
 
     async _battleExit() {
-      return this.battle.exit();
+        return this.battle.exit();
     }
 
     async _battleMerge(_, { template }) {
         if (!isNumber(parseInt(template))) {
             throw Errors.IncorrectArguments;
         }
-      return this.battle.merge(template);
+        return this.battle.merge(template);
     }
 
     async _battleTestAction(_, data) {
-      return this.battle.testAction(data);
+        return this.battle.testAction(data);
     }
 }
 
