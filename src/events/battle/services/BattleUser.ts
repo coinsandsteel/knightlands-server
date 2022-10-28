@@ -40,8 +40,8 @@ export class BattleUser {
     if (state) {
       this._state = state;
       // State patch
-      if (!Number.isInteger(this._state.counters.energyAccumulated)) {
-        this._state.counters.energyAccumulated = 0;
+      if (Number.isNaN(this._state.counters.energyAccumulated)) {
+        this._state.counters.energyAccumulated = 32;
       }
     } else {
       this.setInitialState();
@@ -53,7 +53,7 @@ export class BattleUser {
   }
 
   get energyAccumulated(): number {
-    return this._state.counters.energyAccumulated ?? 0;
+    return this._state.counters.energyAccumulated || 0;
   }
 
   get coins(): number {
