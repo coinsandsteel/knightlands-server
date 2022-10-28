@@ -585,7 +585,7 @@ class Raid extends EventEmitter {
             } else {
                 let winLoot = user.isFreeAccount ? baseLoot.winnerLootFree : baseLoot.winnerLootNormal;
                 rewards.items.push(...await Game.lootGenerator.getLootFromTable(winLoot));
-                if (Game.marchManager.eventIsInProgress()) {
+                if (false && Game.marchManager.eventIsInProgress()) {
                     const isGetMarchReward = Random.range(0, 1) < (user.isFreeAccount ? 0.05 : 0.3) * chosenLoot.damageThreshold;
                     isGetMarchReward && rewards.items.push(Game.marchManager.getRaidReward());
                 }
