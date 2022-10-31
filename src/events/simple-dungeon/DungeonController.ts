@@ -53,6 +53,10 @@ export class DungeonController {
             this._saveData.data.power = 1;
         }
 
+        if (!this._saveData.state.user.balance) {
+            this._saveData.data.power = 1;
+        }
+
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
         }
@@ -130,7 +134,8 @@ export class DungeonController {
         let floor = 1;
         let isFree = true;
         let userState = {
-            balance: { levels: 0 },
+            balance: { dungeons: 0, energy: 0 },
+            prices: { dungeon: 0, energy: 0 },
             level: 0,
             energy: meta.mode.dailyEnergy,
             cell: 0,
@@ -175,7 +180,8 @@ export class DungeonController {
 
         if (force) {
             userState = {
-                balance: { levels: 0 },
+                balance: { dungeons: 0, energy: 0 },
+                prices: { dungeon: 0, energy: 0 },
                 level: 1,
                 energy: meta.mode.dailyEnergy,
                 cell: 0,
@@ -222,6 +228,7 @@ export class DungeonController {
 
         this._dungeonUser.resetHealth();
         this._dungeonUser.resetEnergy();
+        this._dungeonUser.updatePrices();
 
         this._saveData.state.user.lastEnergyRegen = Game.nowSec;
         this._saveData.state.user.lastHpRegen = Game.nowSec;
@@ -229,6 +236,23 @@ export class DungeonController {
         await Game.dungeonManager.saveProgress(this._user.id, this._saveData);
 
         return this.getState();
+    }
+
+    async purchase(type: string) {
+        let price = this._dungeonUser.getPrice(type);
+        if (this._user.dkt < price) {
+            return;
+        }
+
+        this._user.addDkt(-price);
+        if (type === "energy") {
+            this._dungeonUser.resetEnergy();
+        } else if (type === "dungeon") {
+            await this.nextFloor();
+        }
+
+        this._dungeonUser.updateInvisibility();
+        this._dungeonUser.syncFinance();
     }
 
     getState(): DungeonClientData {
@@ -272,7 +296,7 @@ export class DungeonController {
 
         const meta = Game.dungeonManager.getMeta();
         const now = Game.nowSec;
-        const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400) + this._saveData.state.user.balance.levels;
+        const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400) + this._saveData.state.user.balance.dungeons;
         if (totalFloorsAllowed <= 0 || totalFloorsAllowed <= this._saveData.state.floor) {
             throw errors.IncorrectArguments;
         }
@@ -837,7 +861,7 @@ export class DungeonController {
 
     private initPlayer() {
         if (!this._dungeonUser) {
-            this._dungeonUser = new DungeonUser(this._saveData.state.user, this._events, Game.dungeonManager.getMeta().progression);
+            this._dungeonUser = new DungeonUser(this._user, this._saveData.state.user, this._events, Game.dungeonManager.getMeta().progression);
             this._combat = new DungeonCombat(this._dungeonUser, this._events);
         }
     }

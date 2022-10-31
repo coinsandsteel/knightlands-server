@@ -1,15 +1,18 @@
 import game from "../../game";
 import { AltarType } from "../../knightlands-shared/dungeon_types";
 import errors from "../../knightlands-shared/errors";
+import User from "../../user";
 import { DungeonEvents } from "./DungeonEvents";
 import { AltarData, DungeonUserState, ProgressionData, TrapData } from "./types";
 
 export class DungeonUser {
+    private _user: User;
     private _state: DungeonUserState;
     private _events: DungeonEvents;
     private _progression: ProgressionData;
 
-    constructor(state: DungeonUserState, events: DungeonEvents, progression: ProgressionData) {
+    constructor(user: User, state: DungeonUserState, events: DungeonEvents, progression: ProgressionData) {
+        this._user = user;
         this._state = state;
         this._events = events;
         this._progression = progression;
@@ -32,6 +35,7 @@ export class DungeonUser {
         }
 
         this.updateHealthAndEnergy();
+        this.updatePrices();
     }
 
     get position() {
@@ -46,7 +50,7 @@ export class DungeonUser {
         return Math.ceil(this._progression.baseHealth + (1.4 * this._state.stats.str) + (1.15 * this._state.stats.sta));
     }
 
-    get defense() { // Base Defense+(1,5 * значение параметра Ловкость)+(1,25 * значение параметра Выносливость). 
+    get defense() { // Base Defense+(1,5 * значение параметра Ловкость)+(1,25 * значение параметра Выносливость).
         return Math.ceil(this._progression.baseDefense + (1.5 * this._state.stats.dex) + (1.25 * this._state.stats.sta));
     }
 
@@ -87,7 +91,7 @@ export class DungeonUser {
             if (!peek) {
                 this._state.died = false;
             }
-            
+
             return true;
         }
 
@@ -134,6 +138,23 @@ export class DungeonUser {
         }
     }
 
+    getPrice(type: string): number {
+        return this._state.prices[type];
+    }
+
+    updatePrices() {
+        if (!this._state.balance) {
+            this._state.balance = { dungeons: 0, energy: 0 };
+        }
+
+        if (!this._state.prices) {
+            this._state.prices = { dungeon: 0, energy: 0 };
+        }
+
+        this._state.prices.dungeon = game.dungeonManager.getDungeonPriceFlesh(this._state.balance.dungeons);
+        this._state.prices.energy = game.dungeonManager.getEnergyPriceFlesh(this._state.balance.energy);
+    }
+
     die(newPosition: number) {
         this._state.died = true;
         this.moveTo(newPosition);
@@ -154,6 +175,11 @@ export class DungeonUser {
         }
 
         this._events.invisibility(this._state.invis);
+    }
+
+    syncFinance(): void {
+        this.updatePrices();
+        this._events.finance(this._state.balance, this._state.prices);
     }
 
     resetEnergy() {
@@ -229,7 +255,7 @@ export class DungeonUser {
 
         if (this._state.energy < 0) {
             this._state.energy = 0;
-        } 
+        }
         this._events.energyChanged(this._state.energy);
     }
 

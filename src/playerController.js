@@ -261,7 +261,8 @@ class PlayerController extends IPaymentListener {
         this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
         this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
         this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
-        this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwa.bind(this)));
+        this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwal.bind(this)));
+        this._socket.on(Operations.SDungeonPurchase, this._gameHandler(this._sDungeonPurchase.bind(this)));
 
         // Xmas
         // this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
@@ -2068,12 +2069,20 @@ class PlayerController extends IPaymentListener {
         return Game.xmasManager.cpoints.getLatestState();
     }
 
-    async _sDungeonWithdrwa(_, data) {
+    async _sDungeonWithdrwal(_, data) {
         if (typeof data.to !== 'string') {
             throw Errors.IncorrectArguments;
         }
 
         return this.simpleDungeon.withdrawReward(data.to);
+    }
+
+    async _sDungeonPurchase(_, data) {
+        if (!data.type || !["dungeon", "energy"].includes(data.type)) {
+            throw Errors.IncorrectArguments;
+        }
+
+        return this.simpleDungeon.purchase(data.type);
     }
 
     // Lunar

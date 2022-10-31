@@ -60,6 +60,14 @@ export class DungeonManager {
         return this._meta;
     }
 
+    getEnergyPriceFlesh(purchaseIndex: number) {
+        return this._meta.prices.energyBaseCost * Math.pow(this._meta.prices.energyBaseCostMultiplier, purchaseIndex + 1);
+    }
+
+    getDungeonPriceFlesh(purchaseIndex: number) {
+        return this._meta.prices.dungeonBaseCost * Math.pow(this._meta.prices.dungeonBaseCostMultiplier, purchaseIndex + 1);
+    }
+
     getEnemyData(enemyId: number) {
         return this.getMeta().enemies.enemiesById[enemyId];
     }

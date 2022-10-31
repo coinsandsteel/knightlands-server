@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { NumericLiteral } from "typescript";
 import game from "../../game";
 import events from "../../knightlands-shared/events";
 import { CombatOutcome } from "./DungeonCombat";
@@ -24,6 +25,11 @@ export class DungeonEvents {
             this._events.cell = [];
         }
         this._events.cell.push(cell);
+    }
+
+    finance(balance: { dungeons: number; energy: number; }, prices: { dungeon: number; energy: number; }) {
+        this._events.balance = balance;
+        this._events.prices = prices;
     }
 
     energyChanged(value: number) {

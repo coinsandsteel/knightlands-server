@@ -74,7 +74,12 @@ export interface DungeonFloorData {
 
 export interface DungeonUserState {
     balance: {
-        levels: number;
+        energy: number;
+        dungeons: number;
+    };
+    prices: {
+        energy: number;
+        dungeon: number;
     };
     level: number;
     cell: number;
@@ -198,6 +203,13 @@ export interface EnergyCostSettings {
     enemy: number;
 }
 
+export interface FleshPrices {
+    dungeonBaseCost: number;
+    dungeonBaseCostMultiplier: number;
+    energyBaseCost: number;
+    energyBaseCostMultiplier: number;
+}
+
 export interface AltarData {
     id: number;
     type: number;
@@ -242,6 +254,7 @@ export interface DungeonMeta {
     iap: string;
     startTime: number;
     costs: EnergyCostSettings;
+    prices: FleshPrices;
     mode: ModeSettings;
     dungeons: DungeonData;
     enemies: EnemiesData;
