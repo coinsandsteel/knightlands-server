@@ -35,7 +35,6 @@ export class DungeonUser {
         }
 
         this.updateHealthAndEnergy();
-        this.updatePrices();
     }
 
     get position() {
@@ -142,19 +141,6 @@ export class DungeonUser {
         return this._state.prices[type];
     }
 
-    updatePrices() {
-        if (!this._state.balance) {
-            this._state.balance = { dungeons: 0, energy: 0 };
-        }
-
-        if (!this._state.prices) {
-            this._state.prices = { dungeon: 0, energy: 0 };
-        }
-
-        this._state.prices.dungeon = game.dungeonManager.getDungeonPriceFlesh(this._state.balance.dungeons);
-        this._state.prices.energy = game.dungeonManager.getEnergyPriceFlesh(this._state.balance.energy);
-    }
-
     die(newPosition: number) {
         this._state.died = true;
         this.moveTo(newPosition);
@@ -175,11 +161,6 @@ export class DungeonUser {
         }
 
         this._events.invisibility(this._state.invis);
-    }
-
-    syncFinance(): void {
-        this.updatePrices();
-        this._events.finance(this._state.balance, this._state.prices);
     }
 
     resetEnergy() {

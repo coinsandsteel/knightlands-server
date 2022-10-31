@@ -365,10 +365,10 @@ class PlayerController extends IPaymentListener {
 
         this.address = null;
 
-        // if (this.simpleDungeon) {
-        //     await this.simpleDungeon.dispose();
-        //     this.simpleDungeon = null
-        // }
+        if (this.simpleDungeon) {
+            await this.simpleDungeon.dispose();
+            this.simpleDungeon = null
+        }
 
         // if (this.xmas) {
         //     this.xmas = null

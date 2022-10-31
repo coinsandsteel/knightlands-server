@@ -12,6 +12,7 @@ import { DungeonEvents } from "./DungeonEvents";
 import { DungeonGenerator, cellToIndex } from "./DungeonGenerator";
 import { DungeonUser } from "./DungeonUser";
 import { Cell, CellEnemy, DungeonClientData, DungeonFloorConfig, DungeonSaveData } from "./types";
+import game from "../../game";
 
 const IAP_TAG = "hallowen";
 
@@ -53,13 +54,26 @@ export class DungeonController {
             this._saveData.data.power = 1;
         }
 
-        if (!this._saveData.state.user.balance) {
-            this._saveData.data.power = 1;
-        }
-
         if (this._saveData.state.combat) {
             this._combat.load(this._saveData.state.combat);
         }
+
+        this.updatePrices();
+    }
+
+    updatePrices() {
+        if (!this._saveData.state.user.balance) {
+            this._saveData.state.user.balance = { dungeons: 0, energy: 0 };
+        }
+
+        if (!this._saveData.state.user.prices) {
+            this._saveData.state.user.prices = { dungeon: 0, energy: 0 };
+        }
+
+        this._saveData.state.user.prices.dungeon = game.dungeonManager.getDungeonPriceFlesh(this._saveData.state.user.balance.dungeons);
+        this._saveData.state.user.prices.energy = game.dungeonManager.getEnergyPriceFlesh(this._saveData.state.user.balance.energy);
+
+        this._events.finance(this._saveData.state.user.balance, this._saveData.state.user.prices);
     }
 
     get isFree() {
@@ -87,27 +101,7 @@ export class DungeonController {
             this._events.playerLevel(1);
             this._events.notFree();
             this._events.flush();
-        }/* else if (this.isFree) {
-            const { iap } = Game.dungeonManager.getMeta();
-            const userId = this._user.id;
-            let iapContext = {
-                userId
-            };
-
-            let hasPendingPayment = await Game.paymentProcessor.hasPendingRequestByContext(userId, iapContext, IAP_TAG);
-            if (hasPendingPayment) {
-                return hasPendingPayment;
-            }
-
-            return Game.paymentProcessor.requestPayment(
-                userId,
-                iap,
-                IAP_TAG,
-                iapContext,
-                address,
-                chain
-            );
-        }*/
+        }
     }
 
     async dispose() {
@@ -228,7 +222,7 @@ export class DungeonController {
 
         this._dungeonUser.resetHealth();
         this._dungeonUser.resetEnergy();
-        this._dungeonUser.updatePrices();
+        this.updatePrices();
 
         this._saveData.state.user.lastEnergyRegen = Game.nowSec;
         this._saveData.state.user.lastHpRegen = Game.nowSec;
@@ -245,14 +239,18 @@ export class DungeonController {
         }
 
         this._user.addDkt(-price);
+
         if (type === "energy") {
+            this._saveData.state.user.balance.energy++;
             this._dungeonUser.resetEnergy();
         } else if (type === "dungeon") {
+            this._saveData.state.user.balance.dungeons++;
             await this.nextFloor();
         }
 
         this._dungeonUser.updateInvisibility();
-        this._dungeonUser.syncFinance();
+        this.updatePrices();
+        this._events.flush();
     }
 
     getState(): DungeonClientData {
@@ -676,6 +674,7 @@ export class DungeonController {
     }
 
     private getCell(cellId: number) {
+        //return this._saveData.data.cells.find(c => c.exit);
         return this._saveData.data.cells[cellId];
     }
 
