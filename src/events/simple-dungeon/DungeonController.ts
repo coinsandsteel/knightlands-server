@@ -130,6 +130,7 @@ export class DungeonController {
         let floor = 1;
         let isFree = true;
         let userState = {
+            balance: { levels: 0 },
             level: 0,
             energy: meta.mode.dailyEnergy,
             cell: 0,
@@ -174,6 +175,7 @@ export class DungeonController {
 
         if (force) {
             userState = {
+                balance: { levels: 0 },
                 level: 1,
                 energy: meta.mode.dailyEnergy,
                 cell: 0,
@@ -270,7 +272,7 @@ export class DungeonController {
 
         const meta = Game.dungeonManager.getMeta();
         const now = Game.nowSec;
-        const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400);
+        const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400) + this._saveData.state.user.balance.levels;
         if (totalFloorsAllowed <= 0 || totalFloorsAllowed <= this._saveData.state.floor) {
             throw errors.IncorrectArguments;
         }

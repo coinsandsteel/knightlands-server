@@ -1,4 +1,5 @@
 rm -rf ./dump
+mongodump --db=knightlands --collection=meta
 mongodump --db=knightlands --collection=items
 mongodump --db=knightlands --collection=battle_classes
 mongodump --db=knightlands --collection=battle_units

@@ -73,6 +73,9 @@ export interface DungeonFloorData {
 }
 
 export interface DungeonUserState {
+    balance: {
+        levels: number;
+    };
     level: number;
     cell: number;
     energy: number;
