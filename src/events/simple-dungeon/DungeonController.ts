@@ -63,7 +63,7 @@ export class DungeonController {
     }
 
     get isComplete() {
-        return this._saveData.data.enemiesLeft <= 0; 
+        return this._saveData.data.enemiesLeft <= 0;
     }
 
     async getEntranceStatus() {
@@ -83,7 +83,7 @@ export class DungeonController {
             this._events.playerLevel(1);
             this._events.notFree();
             this._events.flush();
-        } else if (this.isFree) {
+        }/* else if (this.isFree) {
             const { iap } = Game.dungeonManager.getMeta();
             const userId = this._user.id;
             let iapContext = {
@@ -95,7 +95,7 @@ export class DungeonController {
                 return hasPendingPayment;
             }
 
-            return Game.paymentProcessor.requestPayment( 
+            return Game.paymentProcessor.requestPayment(
                 userId,
                 iap,
                 IAP_TAG,
@@ -103,7 +103,7 @@ export class DungeonController {
                 address,
                 chain
             );
-        }
+        }*/
     }
 
     async dispose() {
@@ -217,10 +217,10 @@ export class DungeonController {
 
         this.indexRevealedCells();
         this.initPlayer();
-        
+
         this._dungeonUser.resetHealth();
         this._dungeonUser.resetEnergy();
-        
+
         this._saveData.state.user.lastEnergyRegen = Game.nowSec;
         this._saveData.state.user.lastHpRegen = Game.nowSec;
 
@@ -247,15 +247,15 @@ export class DungeonController {
             width: this._saveData.data.width,
             height: Math.round(this._saveData.data.cells.length / this._saveData.data.width),
             enemiesLeft: this._saveData.data.enemiesLeft,
-            totalEnemies: this._saveData.data.totalEnemies 
+            totalEnemies: this._saveData.data.totalEnemies
         };
 
-        if (this._saveData.state.combat) { 
+        if (this._saveData.state.combat) {
             state.combat = {
                 outcome: this._saveData.state.combat.outcome,
                 enemyHealth: this._saveData.state.combat.enemyHealth,
                 enemyId: this._saveData.state.combat.enemyId
-            }; 
+            };
         }
 
         return state;
@@ -268,7 +268,7 @@ export class DungeonController {
             throw errors.IncorrectArguments;
         }
 
-        const meta = Game.dungeonManager.getMeta(); 
+        const meta = Game.dungeonManager.getMeta();
         const now = Game.nowSec;
         const totalFloorsAllowed = Math.ceil((now - meta.startTime) / 86400);
         if (totalFloorsAllowed <= 0 || totalFloorsAllowed <= this._saveData.state.floor) {
@@ -283,13 +283,13 @@ export class DungeonController {
         return Game.dungeonManager.createOrGetWithdrawRequest(this._user.id, to);
     }
 
-    // reveal and move 
+    // reveal and move
     async reveal(cellId: number) {
         this.assertNotFinished();
         this.assertAllowedToPlayer();
         this.assertNotInCombat();
         this.assertNotInTrap();
-        
+
         if (this._dungeonUser.revive(true)) {
             throw errors.IncorrectArguments;
         }
@@ -404,9 +404,9 @@ export class DungeonController {
     /**
      * Collect loot
      * Attack enemy
-     * 
-     * @param cellId 
-     * 
+     *
+     * @param cellId
+     *
      */
     async useCell(cellId: number) {
         this.assertNotFinished();
@@ -468,7 +468,7 @@ export class DungeonController {
                 throw errors.IncorrectArguments;
             }
         }
-        
+
         if (oHand > 0) {
             if (!meta.items[oHand].defensive) {
                 throw errors.IncorrectArguments;
@@ -478,7 +478,7 @@ export class DungeonController {
         this._dungeonUser.equip(mHand, oHand);
 
         if (this._saveData.state.combat) {
-            this._combat.resolveOutcome(-1, this._saveData.data.power); // auto damage 
+            this._combat.resolveOutcome(-1, this._saveData.data.power); // auto damage
         }
 
         this._events.flush();
@@ -530,11 +530,11 @@ export class DungeonController {
             this._events.combatFinished(CombatOutcome.PlayerWon);
             this._saveData.state.combat = null;
             this._dungeonUser.updateHealthAndEnergy(true);
-            outcomes = { 
+            outcomes = {
                 enemyMove: 0
             }
         }
-        
+
 
         this._events.flush();
 
@@ -578,7 +578,7 @@ export class DungeonController {
         } else {
             energyRequired += (finalPath.length * meta.costs.move - energyRequired);
         }
-        
+
         return {
             energyRequired,
             path: finalPath
@@ -596,7 +596,7 @@ export class DungeonController {
     commitStats(stats: object) {
         const passedStats = _.pick(stats, ['str','dex','int','sta']);
         const statsSum = _.sum(Object.values(passedStats));
-        
+
         // Regular update
         if (statsSum !== 0) {
           if (!this._dungeonUser.canUpdateStats(statsSum)) {
@@ -870,7 +870,7 @@ export class DungeonController {
         if (revealed) {
             this._dungeonUser.addScroll(-1);
         }
-        
+
         return revealed;
     }
 

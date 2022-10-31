@@ -23,7 +23,7 @@ export class DungeonManager {
     private _meta: DungeonMeta;
     private _collection: Collection;
     private _saveCollection: Collection;
-    
+
     constructor() {
         this._saveCollection = Game.db.collection(Collections.HalloweenUsers);
 
@@ -36,17 +36,6 @@ export class DungeonManager {
         this._collection.createIndex({ order: 1 });
 
         this._meta = await Game.db.collection(Collections.Meta).findOne({ _id: "simple_dungeon_meta" });
-
-        // preprocess some data
-        for (const enemyId in this._meta.enemies.enemiesById) {
-            const enemy = this._meta.enemies.enemiesById[enemyId];
-
-            let index = 0;
-            for (const set of enemy.moves) {
-                set.index = index;
-                index++;
-            }
-        }
 
         iapExecutor.registerAction(this._meta.iap, async context => {
             return this._allowEntrance(context.iap, context.userId);
@@ -151,7 +140,7 @@ export class DungeonManager {
         } else {
             await controller.enterHalloween();
         }
-        
+
     }
 
     async isClaimedReward(userId: ObjectId) {
@@ -184,7 +173,7 @@ export class DungeonManager {
                 withdrawalId: record._id.toHexString(),
                 signature: record.data.signature,
                 amount: record.data.amount
-            }; 
+            };
         }
         if (!receipt) {
             receipt = await Game.dbClient.withTransaction(async (db: Db) => {
@@ -194,7 +183,7 @@ export class DungeonManager {
                 let withdrawalId = (
                     await Game.activityHistory.save(db, userId, "halloween", blockchainId, {
                         user: userId,
-                        chain: blockchainId, 
+                        chain: blockchainId,
                         currency: "usdc",
                         date: Game.nowSec,
                         pending: true,

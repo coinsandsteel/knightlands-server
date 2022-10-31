@@ -1987,16 +1987,16 @@ class PlayerController extends IPaymentListener {
     }
 
     async _sDungeonEnter(_, data) {
-        if (data.status) {
+        /*if (data.status) {
             return this.simpleDungeon.getEntranceStatus();
         }
 
         if (data.free) {
             this.simpleDungeon.enter(true, true);
             return;
-        }
+        }*/
 
-        return this.simpleDungeon.enter(false, false, data.chain, data.address);
+        this.simpleDungeon.enter(true, false);
     }
 
     async _sDungeonCommitStats(_, data) {

@@ -101,8 +101,6 @@ export interface CombatState {
     turn: number;
     enemyHealth: number;
     enemyId: number;
-    moveSetId: number;
-    moveIndex: number;
 }
 
 export interface DungeonClientState {
@@ -177,7 +175,7 @@ export interface EnemyData {
     health: number;
     defense: number;
     attack: number;
-    moves: EnemyMoveSet[];
+    moveScheme: { [move: string]: number; };
     isAggressive: boolean;
 }
 
