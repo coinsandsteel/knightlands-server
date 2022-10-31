@@ -288,9 +288,9 @@ export class DungeonController {
     async nextFloor() {
         this.assertNotFinished();
 
-        if (!this.isComplete) {
+        /*if (!this.isComplete) {
             throw errors.IncorrectArguments;
-        }
+        }*/
 
         const meta = Game.dungeonManager.getMeta();
         const now = Game.nowSec;
