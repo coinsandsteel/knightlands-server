@@ -240,17 +240,22 @@ export class DungeonController {
 
         this._user.addDkt(-price);
 
+        let response = null;
         if (type === "energy") {
             this._saveData.state.user.balance.energy++;
             this._dungeonUser.resetEnergy();
         } else if (type === "dungeon") {
             this._saveData.state.user.balance.dungeons++;
-            await this.nextFloor();
+            response = await this.nextFloor();
         }
 
         this._dungeonUser.updateInvisibility();
         this.updatePrices();
         this._events.flush();
+
+        if (response) {
+            return response;
+        }
     }
 
     getState(): DungeonClientData {

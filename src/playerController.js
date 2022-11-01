@@ -249,20 +249,21 @@ class PlayerController extends IPaymentListener {
             this._socket.on(Operations.SDungeonTestAction, this._gameHandler(this._sDungeonTestAction.bind(this)));
         }
 
-        this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
-        this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
-        this._socket.on(Operations.SDungeonLoad, this._gameHandler(this._sDungeonLoad.bind(this)));
-        this._socket.on(Operations.SDunegonCombatAction, this._gameHandler(this._sDungeonCombatAction.bind(this)));
-        this._socket.on(Operations.SDungeonMove, this._gameHandler(this._sDungeonMove.bind(this)));
-        this._socket.on(Operations.SDungeonUseItem, this._gameHandler(this._sDungeonUseItem.bind(this)));
-        this._socket.on(Operations.SDungeonNextFloor, this._gameHandler(this._sDungeonNextFloor.bind(this)));
-        this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
-        this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
-        this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
-        this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
-        this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
-        this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwal.bind(this)));
-        this._socket.on(Operations.SDungeonPurchase, this._gameHandler(this._sDungeonPurchase.bind(this)));
+        // Halloween
+        // this._socket.on(Operations.SDungeonRevealCell, this._gameHandler(this._sDungeonReveal.bind(this)));
+        // this._socket.on(Operations.SDungeonUseCell, this._gameHandler(this._sDungeonUseCell.bind(this)));
+        // this._socket.on(Operations.SDungeonLoad, this._gameHandler(this._sDungeonLoad.bind(this)));
+        // this._socket.on(Operations.SDunegonCombatAction, this._gameHandler(this._sDungeonCombatAction.bind(this)));
+        // this._socket.on(Operations.SDungeonMove, this._gameHandler(this._sDungeonMove.bind(this)));
+        // this._socket.on(Operations.SDungeonUseItem, this._gameHandler(this._sDungeonUseItem.bind(this)));
+        // this._socket.on(Operations.SDungeonNextFloor, this._gameHandler(this._sDungeonNextFloor.bind(this)));
+        // this._socket.on(Operations.SDungeonEquip, this._gameHandler(this._sDungeonEquip.bind(this)));
+        // this._socket.on(Operations.SDungeonPath, this._gameHandler(this._sDungeonPath.bind(this)));
+        // this._socket.on(Operations.SDungeonRank, this._gameHandler(this._sDungeonRank.bind(this)));
+        // this._socket.on(Operations.SDungeonEnter, this._gameHandler(this._sDungeonEnter.bind(this)));
+        // this._socket.on(Operations.SDunegonCommitStats, this._gameHandler(this._sDungeonCommitStats.bind(this)));
+        // this._socket.on(Operations.SDungeonWithdraw, this._gameHandler(this._sDungeonWithdrwal.bind(this)));
+        // this._socket.on(Operations.SDungeonPurchase, this._gameHandler(this._sDungeonPurchase.bind(this)));
 
         // Xmas
         // this._socket.on(Operations.XmasLoad, this._gameHandler(this._xmasLoad.bind(this)));
