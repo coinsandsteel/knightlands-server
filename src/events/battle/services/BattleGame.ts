@@ -168,8 +168,19 @@ export class BattleGame extends BattleService {
     // Combat started
     if (this.combatStarted) {
       this.log("Resuming combat");
+
+      // Set active fighgter in case of it's missing
+      if (this.noActiveFighter()) {
+        this.setInitiativeRating();
+        this.setActiveFighter(null);
+      }
+
       this.launchFighter();
     }
+  }
+
+  protected noActiveFighter(): boolean {
+    return !this._state.combat.activeFighterId || !this.getActiveFighter();
   }
 
   protected getActiveFighter(): Fighter | null {
@@ -366,7 +377,7 @@ export class BattleGame extends BattleService {
     this.log("Choosing the next fighter...", {});
 
     // No active fighter. Launch the first fighter.
-    if (!this._state.combat.activeFighterId) {
+    if (this.noActiveFighter()) {
       this.log("No active fighter. Choosing the first one.");
       this.setActiveFighter(null);
 
