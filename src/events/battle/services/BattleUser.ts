@@ -62,6 +62,7 @@ export class BattleUser {
 
   public setInitialState() {
     this._state = {
+      powerScore: 0,
       pvpScore: 0,
       balance: {
         [CURRENCY_ENERGY]: ENERGY_MAX,
@@ -115,6 +116,7 @@ export class BattleUser {
 
     this.purgePreviousDates();
     this.updatePvpScore();
+    this.updatePowerScore();
   }
 
   protected getAccumulatedEnergy(time: number): number {
@@ -254,6 +256,14 @@ export class BattleUser {
     this._core.events.squadRewards(this._state.rewards.squadRewards);
 
     return rewardItems;
+  }
+
+  public async updatePowerScore(): Promise<any> {
+    const rankData = await game.battleManager.getUserRankData(
+      this._core.gameUser.id
+    );
+    this._state.powerScore = (rankData ? rankData.power : null) || 0;
+    this._core.events.powerScore(this._state.powerScore);
   }
 
   public async updatePvpScore(): Promise<any> {

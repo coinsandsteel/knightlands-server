@@ -47,10 +47,14 @@ export class BattleInventory extends BattleService {
 
   public handleInventoryChanged(): void {
     const totalPower = this._units.reduce(
-      (prev: number, current: Unit) => prev + current.power,
+      (prev: number, unit: Unit) => {
+        const modifiers = { 1: 1, 2: 3, 3: 9 };
+        return prev + (unit.power * modifiers[unit.tier]);
+      },
       0
     );
     game.battleManager.updateRank(this._core.gameUser.id, 'power', totalPower);
+    this._core.user.updatePowerScore();
   }
 
   public merge(template: number): BattleUnit {

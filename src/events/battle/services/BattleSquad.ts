@@ -372,6 +372,10 @@ export class BattleSquad extends BattleService {
     }
 
     this._state.power = _.sumBy(this.fighters, "power");
+
+    if (!this._isEnemy) {
+      this._core.user.updatePowerScore();
+    }
   }
 
   public includesUnit(unitId: string): boolean {
