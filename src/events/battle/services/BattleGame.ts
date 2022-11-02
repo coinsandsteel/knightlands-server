@@ -586,6 +586,10 @@ export class BattleGame extends BattleService {
       }
     }
 
+    if (this._state.combat.result) {
+      return;
+    }
+
     // Apply effects
     if (abilityMeta && abilityMeta.effects.length) {
       this.combat.applyEffect(fighter, target, abilityClass);
