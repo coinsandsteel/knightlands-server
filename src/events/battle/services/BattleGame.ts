@@ -509,7 +509,7 @@ export class BattleGame extends BattleService {
     }
 
     this.handleAction(fighter, index, ability);
-    this.handleActionCallback(false);
+    this.handleActionCallback(fighter.isEnemy);
   }
 
   public autoMove(fighter: Fighter): void {
@@ -527,7 +527,7 @@ export class BattleGame extends BattleService {
     }
 
     this.handleAction(fighter, index, ability);
-    this.handleActionCallback(true);
+    this.handleActionCallback(fighter.isEnemy);
   }
 
   public handleAction(
@@ -575,12 +575,13 @@ export class BattleGame extends BattleService {
 
       // Counter-attack
       if (!fighter.isDead && !target.isDead && target.buffs.launchCounterAttack()) {
-        this.log("Target ia trying to counter-attack...", {
+        this.log("Target is trying to counter-attack...", {
           fighter: fighter.fighterId,
           target: target.fighterId,
         });
         if (this.combat.acceptableRangeForAttack(target, fighter, ABILITY_ATTACK)) {
-          this.combat.handleHpChange(target, fighter, ABILITY_ATTACK);
+          this.handleAction(target, fighter.index, ABILITY_ATTACK);
+          this.handleActionCallback(false);
         }
       }
     }
@@ -612,10 +613,8 @@ export class BattleGame extends BattleService {
 
     if (!combatFinished) {
       this._core.events.flush();
-    }
 
-    // Launch next unit turn
-    if (!combatFinished) {
+      // Launch next unit turn
       if (timeout) {
         const self = this;
         this._aiMoveTimeout = setTimeout(function () {

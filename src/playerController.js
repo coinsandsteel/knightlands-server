@@ -406,20 +406,20 @@ class PlayerController extends IPaymentListener {
         Game.on(this.id, this._handleEventBind);
 
         const user = await this.getUser();
-        this.simpleDungeon = new DungeonController(user);
-        await this.simpleDungeon.init();
+        //this.simpleDungeon = new DungeonController(user);
+        //await this.simpleDungeon.init();
 
-        this.xmas = new XmasController(user);
-        await this.xmas.init();
+        //this.xmas = new XmasController(user);
+        //await this.xmas.init();
 
-        this.lunar = new LunarController(user);
-        await this.lunar.init();
+        //this.lunar = new LunarController(user);
+        //await this.lunar.init();
 
-        this.march = new MarchController(user);
-        await this.march.init();
+        //this.march = new MarchController(user);
+        //await this.march.init();
 
-        this.april = new AprilController(user);
-        await this.april.init();
+        //this.april = new AprilController(user);
+        //await this.april.init();
 
         this.battle = new BattleController(user);
         await this.battle.init();
