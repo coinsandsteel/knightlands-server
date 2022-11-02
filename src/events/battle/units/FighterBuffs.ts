@@ -137,10 +137,13 @@ export default class UnitBuffs {
     }
   }
 
-  public removeBuffs(params: { source?: string; target?: string }): void {
-    //this.log(`Remove buffs`, params);
+  public disableInfiniteTerrainBuffs(): void {
     this._buffs = this._buffs.filter((buff) => {
-      return !(buff.source === params.source && buff.target === params.target);
+      return !(
+        buff.source === "terrain"
+        &&
+        buff.duration === Infinity
+      );
     });
   }
 
@@ -303,21 +306,18 @@ export default class UnitBuffs {
       case TERRAIN_HILL:
       case TERRAIN_WOODS: {
         // Remove existing TERRAIN_ICE and TERRAIN_SWAMP effects
-        this.removeBuffs({
-          source: "terrain",
-          target: SETTINGS.terrain[terrain].target,
-        });
+        this.disableInfiniteTerrainBuffs();
 
         // Hills, highlands - Increase damage to enemies by 25%
         // Forest - Increases unit's defense by 25%
+        const duration = [TERRAIN_ICE, TERRAIN_SWAMP].includes(terrain) ? 1 : Infinity;
         this.addBuff({
           target: SETTINGS.terrain[terrain].target,
           subEffect: "no",
           operation: "multiply",
           probability: 1,
           value: this.getTerrainModifier(terrain),
-          duration: Infinity,
-
+          duration,
           source: "terrain",
           sourceId: terrain,
           mode: "constant",
@@ -327,9 +327,7 @@ export default class UnitBuffs {
         break;
       }
       default: {
-        this.removeBuffs({
-          source: "terrain",
-        });
+        this.disableInfiniteTerrainBuffs();
         break;
       }
     }

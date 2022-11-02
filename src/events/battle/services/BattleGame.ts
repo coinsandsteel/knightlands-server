@@ -274,13 +274,21 @@ export class BattleGame extends BattleService {
       return;
     }
 
+    this.cleanup();
+
     this._enemySquad.setFighters(enemyFighters);
     this._enemySquad.prepare();
     this._userSquad.prepare();
-    this.setInitiativeRating();
 
-    // Start combat
+    this.setInitiativeRating();
     this.setCombatStarted(true);
+    this.setCombatResult(null);
+    this.setCombatRewards({
+      coins: 0,
+      crystals: 0,
+      xp: 0,
+      rank: 0
+    });
 
     // Sync & flush
     this.sync();
@@ -350,33 +358,32 @@ export class BattleGame extends BattleService {
     }
   }
 
-  public nextFighter(skipLaunch?: boolean): void {
+  public nextFighter(): void {
     if (!this._state.initiativeRating || !this._state.initiativeRating.length) {
       throw Error("No initiative rating. Cannot choose next fighter.");
     }
 
-    this.log("Choosing the next fighter...", { skipLaunch });
+    this.log("Choosing the next fighter...", {});
 
-    // No active fighter
-    if (!this.getActiveFighter()) {
+    // No active fighter. Launch the first fighter.
+    if (!this._state.combat.activeFighterId) {
       this.log("No active fighter. Choosing the first one.");
       this.setActiveFighter(null);
-      // Next fighter
-    } else {
+
+    // Next fighter found. Launch it.
+    } else if (this.getNextFighterId()) {
       const nextFighterId = this.getNextFighterId();
       this.log(`[Game] Now active fighter is ${nextFighterId}`);
       this.setActiveFighter(nextFighterId);
+
+    // No next fighter. Draw finished. Launch the first fighter.
+    } else {
+      this.log("Draw finished");
+      this.callbackDrawFinished();
+      this.setActiveFighter(null);
     }
 
-    const activeFighter = this.getActiveFighter();
-    if (activeFighter.isDead) {
-      this.log("Active fighter is dead. Choosing the next one.");
-      this.nextFighter(true);
-    }
-
-    if (!skipLaunch) {
-      this.launchFighter();
-    }
+    this.launchFighter();
   }
 
   public launchFighter(): void {
@@ -413,12 +420,6 @@ export class BattleGame extends BattleService {
 
     this.setTargetCells([]);
     this.setAttackCells([]);
-
-    // No next fighter id = draw finished
-    if (!this.getNextFighterId()) {
-      this.log("Draw finished");
-      this.callbackDrawFinished();
-    }
 
     this._core.events.flush();
   }
@@ -558,8 +559,7 @@ export class BattleGame extends BattleService {
       this.combat.handleHpChange(fighter, target, abilityClass);
 
       if (target.isDead) {
-        this._state.initiativeRating = this._state.initiativeRating.filter(entry => entry.fighterId !== target.fighterId);
-        this._core.events.initiativeRating(this._state.initiativeRating);
+        this.setInitiativeRating();
       }
 
       // Counter-attack
@@ -641,7 +641,7 @@ export class BattleGame extends BattleService {
 
     this.setDifficulty(null);
     this.setCombatResult("win");
-    this.stop();
+    this.cleanup();
     this._core.events.flush();
   }
 
@@ -660,7 +660,7 @@ export class BattleGame extends BattleService {
 
     this.setDifficulty(null);
     this.setCombatResult("loose");
-    this.stop();
+    this.cleanup();
     this._core.events.flush();
   }
 
@@ -757,7 +757,7 @@ export class BattleGame extends BattleService {
     this.nextFighter();
   }
 
-  public exit(result?: null | string): void {
+  public exit(): void {
     clearTimeout(this._aiMoveTimeout);
 
     this.setMode(null);
@@ -766,7 +766,7 @@ export class BattleGame extends BattleService {
     this.setMoveCells([]);
     this.setAttackCells([]);
     this.setTargetCells([]);
-    this.setCombatResult(result || null);
+    this.setCombatResult(null);
     this.setCombatRewards({
       coins: 0,
       crystals: 0,
@@ -784,7 +784,7 @@ export class BattleGame extends BattleService {
     this.log("Exit");
   }
 
-  public stop() {
+  public cleanup() {
     clearTimeout(this._aiMoveTimeout);
 
     this.setActiveFighterId(null);
