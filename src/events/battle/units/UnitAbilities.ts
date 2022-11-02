@@ -223,8 +223,9 @@ export default class UnitAbilities {
       if (ability.cooldown && ability.cooldown.estimate > 0) {
         ability.cooldown.estimate--;
 
-        if (ability.cooldown.estimate === 0) {
+        if (ability.cooldown.estimate <= 0) {
           ability.cooldown.enabled = false;
+          ability.cooldown.estimate = 0;
         }
 
         /*console.log(
