@@ -175,7 +175,17 @@ export class BattleGame extends BattleService {
         this.setActiveFighter(null);
       }
 
-      this.launchFighter();
+      if (!this._enemySquad.liveFighters.length) {
+        // Enemy loose
+        this.win();
+
+      } else if (!this._userSquad.liveFighters.length) {
+        // User loose
+        this.loose();
+
+      } else {
+        this.launchFighter();
+      }
     }
   }
 
