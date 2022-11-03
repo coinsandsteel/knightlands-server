@@ -58,8 +58,8 @@ export interface BattleAdventureLevelDifficultyMeta {
 }
 
 export interface BattleUserState {
-  powerScore: 0,
-  pvpScore: 0,
+  powerScore: number;
+  pvpScore: number;
   balance: {
     energy: number;
     coins: number;

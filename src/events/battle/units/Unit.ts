@@ -177,7 +177,8 @@ export class Unit {
       this.speed;
 
     const abilitySum = this.abilities.getPower();
-    this._power = (statsSum + abilitySum) * 2;
+    const modifiers = { 1: 1, 2: 3, 3: 9 };
+    this._power = (statsSum + abilitySum) * 2 * modifiers[this.tier];
   }
 
   public serialize(): BattleUnit {

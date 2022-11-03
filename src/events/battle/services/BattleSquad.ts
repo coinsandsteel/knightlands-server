@@ -365,17 +365,20 @@ export class BattleSquad extends BattleService {
     this._state.bonuses = bonuses;
   }
 
-  public setPower(): void {
+  public updatePower() {
     if (!this.fighters.length) {
       this._state.power = 0;
       return;
     }
 
-    this._state.power = _.sumBy(this.fighters, "power");
-
-    if (!this._isEnemy) {
-      this._core.user.updatePowerScore();
-    }
+    const totalPower = this.fighters.reduce(
+      (prev: number, figher: Fighter) => {
+        const modifiers = { 1: 1, 2: 3, 3: 9 };
+        return prev + (figher.unit.power * modifiers[figher.unit.tier]);
+      },
+      0
+    );
+    this._state.power = totalPower;
   }
 
   public includesUnit(unitId: string): boolean {
@@ -387,7 +390,7 @@ export class BattleSquad extends BattleService {
 
   public updateStat(): void {
     this.setBonuses();
-    this.setPower();
+    this.updatePower();
   }
 
   public prepare(): void {
@@ -429,13 +432,13 @@ export class BattleSquad extends BattleService {
 
   public setTier(tier: number): void {
     this.fighters.forEach((fighter) => fighter.unit.setTier(tier));
-    this.setPower();
+    this.updatePower();
     this.sync();
   }
 
   public maximize(): void {
     this.fighters.forEach((fighter) => fighter.unit.maximize());
-    this.setPower();
+    this.updatePower();
     this.sync();
   }
 }

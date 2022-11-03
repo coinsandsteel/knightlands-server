@@ -27,6 +27,7 @@ export class BattleInventory extends BattleService {
   public async load() {
     //console.log('Inventory load');
     this.createUnits();
+    await this.updatePower();
   }
 
   protected createUnits(): void {
@@ -45,16 +46,22 @@ export class BattleInventory extends BattleService {
     return this._state;
   }
 
-  public handleInventoryChanged(): void {
+  public async handleInventoryChanged(): Promise<any> {
+    await this.updatePower();
+  }
+
+  public async updatePower() {
+    this._units.forEach(entry => entry.setPower());
+
     const totalPower = this._units.reduce(
       (prev: number, unit: Unit) => {
-        const modifiers = { 1: 1, 2: 3, 3: 9 };
-        return prev + (unit.power * modifiers[unit.tier]);
+        return prev + (unit.power * unit.quantity);
       },
       0
     );
+
     game.battleManager.updateRank(this._core.gameUser.id, 'power', totalPower);
-    this._core.user.updatePowerScore();
+    await this._core.user.updatePowerScore(totalPower);
   }
 
   public merge(template: number): BattleUnit {

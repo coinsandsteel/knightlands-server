@@ -258,11 +258,14 @@ export class BattleUser {
     return rewardItems;
   }
 
-  public async updatePowerScore(): Promise<any> {
-    const rankData = await game.battleManager.getUserRankData(
-      this._core.gameUser.id
-    );
-    this._state.powerScore = (rankData ? rankData.power : null) || 0;
+  public async updatePowerScore(value?: number): Promise<any> {
+    if (!value && value !== 0) {
+      const rankData = await game.battleManager.getUserRankData(
+        this._core.gameUser.id
+      );
+      value = (rankData ? rankData.power : 0);
+    }
+    this._state.powerScore = value || 0;
     this._core.events.powerScore(this._state.powerScore);
   }
 
