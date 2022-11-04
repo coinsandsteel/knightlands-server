@@ -169,21 +169,18 @@ export class BattleGame extends BattleService {
     if (this.combatStarted) {
       this.log("Resuming combat");
 
-      // Set active fighgter in case of it's missing
-      if (this.noActiveFighter()) {
-        this.setInitiativeRating();
-        this.setActiveFighter(null);
-      }
-
       if (!this._enemySquad.liveFighters.length) {
         // Enemy loose
         this.win();
-
       } else if (!this._userSquad.liveFighters.length) {
         // User loose
         this.loose();
-
       } else {
+        // Set active fighgter in case of it's missing
+        if (this.noActiveFighter()) {
+          this.setInitiativeRating();
+          this.setActiveFighter(null);
+        }
         this.launchFighter();
       }
     }
@@ -384,22 +381,22 @@ export class BattleGame extends BattleService {
       throw Error("No initiative rating. Cannot choose next fighter.");
     }
 
-    this.log("Choosing the next fighter...", {});
+    this.log("(`>>>>> Choosing the next fighter...", {});
 
     // No active fighter. Launch the first fighter.
     if (this.noActiveFighter()) {
-      this.log("No active fighter. Choosing the first one.");
+      this.log("(`>>>>> No active fighter. Choosing the first one.");
       this.setActiveFighter(null);
 
     // Next fighter found. Launch it.
     } else if (this.getNextFighterId()) {
       const nextFighterId = this.getNextFighterId();
-      this.log(`[Game] Now active fighter is ${nextFighterId}`);
+      this.log(`>>>>> Next fighter found. Now active fighter is ${nextFighterId}`);
       this.setActiveFighter(nextFighterId);
 
     // No next fighter. Draw finished. Launch the first fighter.
     } else {
-      this.log("Draw finished");
+      this.log("(`>>>>> Draw finished");
       this.callbackDrawFinished();
       this.setActiveFighter(null);
     }
@@ -413,9 +410,9 @@ export class BattleGame extends BattleService {
       return;
     }
 
-    if (activeFighter.isStunned) {
+    if (activeFighter.isStunned || activeFighter.isDead) {
       this.log(
-        `[Game] Active fighter ${this._state.combat.activeFighterId} is stunned. Skip...`
+        `[Game] Active fighter ${this._state.combat.activeFighterId} is stunned or dead. Skip...`
       );
       this.skip();
       return;
@@ -578,10 +575,6 @@ export class BattleGame extends BattleService {
     if (abilityMeta && abilityMeta.affectHp) {
       this.log("Trying to modify enemy's HP...");
       this.combat.handleHpChange(fighter, target, abilityClass);
-
-      if (target.isDead) {
-        this.setInitiativeRating();
-      }
 
       // Counter-attack
       if (!fighter.isDead && !target.isDead && target.buffs.launchCounterAttack()) {

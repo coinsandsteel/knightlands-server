@@ -27,7 +27,7 @@ export class BattleCombat extends BattleService {
 
     // Check if unit is dead
     if (fighter.isStunned || fighter.isDead) {
-      this.log("Fighter cannot attack. Abort.");
+      this.log("Fighter cannot attack. Abort.", { stunned: fighter.isStunned, dead: fighter.isDead});
       return false;
     }
 

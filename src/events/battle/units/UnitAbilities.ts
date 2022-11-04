@@ -229,7 +229,7 @@ export default class UnitAbilities {
         }
 
         /*console.log(
-          `Ability "${ability.abilityClass}" cooldown`,
+          `[UnitAbilities] Ability "${ability.abilityClass}" cooldown set`,
           ability.cooldown
         );*/
       }
@@ -497,6 +497,7 @@ export default class UnitAbilities {
 
     const unitMeta = game.battleManager.getUnitMeta(this._unit.template); // .find(unitData => unitData.template === this._unit.template);
     if (!unitMeta.abilityList.includes(abilityClass)) {
+      // console.log('[UnitAbilities] Unit don`t have this ability. Abort.');
       return false;
     }
 
@@ -509,6 +510,7 @@ export default class UnitAbilities {
       abilityEntry.cooldown &&
       abilityEntry.cooldown.enabled
     ) {
+      // console.log('[UnitAbilities] Cooldown is enabled. Abort.');
       return false;
     }
 
