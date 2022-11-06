@@ -268,7 +268,7 @@ export class BattleManager {
 
     await this._rewardCollection.updateOne(
       { _id: userId },
-      { $set: { items, [`ranks.${mode}`]: rank } },
+      { $set: { items, [`ranks.${mode}`]: rank, claimed: false } },
       { upsert: true }
     );
   }
