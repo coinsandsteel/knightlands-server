@@ -69,6 +69,7 @@ export interface BattleUserState {
   counters: {
     energy: number;
     energyAccumulated: number;
+    progressivePrices: { [id: number]: number };
     purchase: {
       [date: string]: { [id: number]: number }
     },
@@ -265,10 +266,7 @@ export interface BattleShopItemMeta {
   price: {
     currency: string;
     amount?: number;
-    progression?: {
-      multiplier: number;
-      baseCost: number;
-    }
+    progression?: BattleShopItemMetaPriceProgression;
   } | null;
   content: {
     units?: number;
@@ -279,6 +277,11 @@ export interface BattleShopItemMeta {
     description: string[];
   };
   dailyMax: number|null;
+}
+
+export interface BattleShopItemMetaPriceProgression {
+  multiplier: number;
+  baseCost: number;
 }
 
 export interface BattleEnemySquadMeta {

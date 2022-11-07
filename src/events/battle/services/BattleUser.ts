@@ -4,6 +4,7 @@ import * as moment from "moment";
 import {
   BattleItem,
   BattleShopItemMeta,
+  BattleShopItemMetaPriceProgression,
   BattleUnit,
   BattleUserState,
 } from "../types";
@@ -41,7 +42,7 @@ export class BattleUser {
       this._state = state;
       // State patch
       if (Number.isNaN(this._state.counters.energyAccumulated)) {
-        this._state.counters.energyAccumulated = 32;
+        this._state.counters.energyAccumulated = ENERGY_MAX;
       }
     } else {
       this.setInitialState();
@@ -81,6 +82,7 @@ export class BattleUser {
       counters: {
         energy: game.nowSec,
         energyAccumulated: 0,
+        progressivePrices: this.getProgressivePrices(),
         purchase: {},
         duels: {},
       },
@@ -158,10 +160,7 @@ export class BattleUser {
           tail,
           accumulatedEnergy,
         });
-      this.modifyBalance(
-        CURRENCY_ENERGY,
-        Math.floor(this.energyAccumulated)
-      );
+      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this.energyAccumulated));
     }
     this.resetEnergyCounter();
   }
@@ -170,7 +169,8 @@ export class BattleUser {
     if (!isProd) console.log("[BattleUser] Check online energy");
     const accumulatedEnergy = this.getAccumulatedEnergy(ENERGY_WATCH_CYCLE_SEC);
 
-    this._state.counters.energyAccumulated = this.energyAccumulated + accumulatedEnergy;
+    this._state.counters.energyAccumulated =
+      this.energyAccumulated + accumulatedEnergy;
 
     if (!isProd) {
       console.log("[BattleUser] Tick", {
@@ -181,10 +181,7 @@ export class BattleUser {
 
     // Granted a portion, debit
     if (this._state.counters.energyAccumulated >= ENERGY_AMOUNT_TICK) {
-      this.modifyBalance(
-        CURRENCY_ENERGY,
-        Math.floor(this.energyAccumulated)
-      );
+      this.modifyBalance(CURRENCY_ENERGY, Math.floor(this.energyAccumulated));
       if (!isProd) {
         console.log("[BattleUser] Tick finished", {
           add: Math.floor(this.energyAccumulated),
@@ -313,7 +310,7 @@ export class BattleUser {
       const rankData = await game.battleManager.getUserRankData(
         this._core.gameUser.id
       );
-      value = (rankData ? rankData.power : 0);
+      value = rankData ? rankData.power : 0;
     }
     this._state.powerScore = value || 0;
     this._core.events.powerScore(this._state.powerScore);
@@ -356,15 +353,17 @@ export class BattleUser {
     const positionMeta = _.cloneDeep(
       SHOP.find((entry) => entry.id === id)
     ) as BattleShopItemMeta;
+
     if (!positionMeta) {
       return;
     }
 
     const itemEntry = this.getItem(id);
-    const quantity = itemEntry ? (itemEntry.quantity ?? 1) : 1;
+    const quantity = itemEntry ? itemEntry.quantity ?? 1 : 1;
 
     // Check daily purchase limits
     if (
+      !positionMeta.price.progression &&
       positionMeta.dailyMax &&
       positionMeta.dailyMax > 0
     ) {
@@ -376,6 +375,12 @@ export class BattleUser {
       }
     }
 
+    // Increase counter for entries which have progressive price
+    if (positionMeta.price.progression && !positionMeta.dailyMax) {
+      this.increaseDailyPurchaseCounter(id, quantity);
+      this._state.counters.progressivePrices = this.getProgressivePrices();
+    }
+
     // Check if can claim
     if (positionMeta.claimable && !this.hasItem(id)) {
       //console.log("Purchase failed. Nothing to claim");
@@ -383,33 +388,60 @@ export class BattleUser {
     }
 
     // Check if enough money
-    if (positionMeta.price && positionMeta.price.amount > 0) {
+    if (
+      positionMeta.price &&
+      ((positionMeta.price.amount && positionMeta.price.amount > 0) ||
+        positionMeta.price.progression)
+    ) {
+      const amount = positionMeta.price.amount || this.getProgressivePrice(id);
+
       // Flesh
       if (
         positionMeta.price.currency === "flesh" &&
-        this._core.gameUser.dkt >= positionMeta.price.amount
+        this._core.gameUser.dkt >= amount
       ) {
-        this._core.gameUser.addDkt(-positionMeta.price.amount);
+        this._core.gameUser.addDkt(-amount);
 
         // Event currency
       } else if (
         [CURRENCY_COINS, CURRENCY_CRYSTALS].includes(
           positionMeta.price.currency
         ) &&
-        this._state.balance[positionMeta.price.currency] >=
-          positionMeta.price.amount
+        this._state.balance[positionMeta.price.currency] >= amount
       ) {
-        this.modifyBalance(
-          positionMeta.price.currency,
-          -positionMeta.price.amount
-        );
+        this.modifyBalance(positionMeta.price.currency, -amount);
       } else {
         //console.log("Purchase failed. Not enough currency");
         throw errors.NotEnoughCurrency;
       }
     }
 
+    this._core.events.counters(this._state.counters);
+
     return this.activate(positionMeta, quantity, tribe);
+  }
+
+  protected getProgressivePrice(id: number) {
+    const purchasesMadeToday = this.getTodayPurchasesCount(id);
+    const entryMeta = SHOP.find((entry) => entry.id === id);
+    return Math.floor(
+      entryMeta.price.progression.baseCost *
+      Math.pow(entryMeta.price.progression.multiplier, purchasesMadeToday)
+    );
+  }
+
+  protected getProgressivePrices() {
+    const result = {};
+    const progressiveEntries = _.filter(
+      SHOP,
+      (entry) => entry.price && entry.price.progression
+    );
+
+    for (let entry of progressiveEntries) {
+      result[entry.id] = this.getProgressivePrice(entry.id);
+    }
+
+    return result;
   }
 
   protected activateLootbox(
@@ -535,6 +567,7 @@ export class BattleUser {
       this._state.counters.duels,
       currentDate
     );
+    this._state.counters.progressivePrices = this.getProgressivePrices();
     this._core.events.counters(this._state.counters);
   }
 
@@ -551,15 +584,14 @@ export class BattleUser {
   }
 
   protected dailyPurchaseLimitExceeded(id: number, max: number): boolean {
+    const purchasesMadeToday = this.getTodayPurchasesCount(id);
+    return purchasesMadeToday >= max;
+  }
+
+  protected getTodayPurchasesCount(id: number): number {
     const date = moment.utc().format("DD/MM/YYYY");
     const dateEntry = this._state.counters.purchase[date];
-    if (dateEntry) {
-      const idPurchases = dateEntry[id] ?? 0;
-      if (idPurchases >= max) {
-        return true;
-      }
-    }
-    return false;
+    return (dateEntry ? dateEntry[id] : null) || 0;
   }
 
   public increaseDailyDuelsCounter(): boolean {
@@ -592,21 +624,26 @@ export class BattleUser {
       return false;
     }
 
-    if (positionMeta.dailyMax) {
+    if (
+      positionMeta.dailyMax ||
+      (positionMeta.price && positionMeta.price.progression)
+    ) {
       const date = moment.utc().format("DD/MM/YYYY");
       const dateEntry = this._state.counters.purchase[date];
-      let newCount = (dateEntry ? (dateEntry[id] ?? 0) : 0) + count;
+      let newCount = this.getTodayPurchasesCount(id) + count;
+
       if (!Number.isInteger(newCount)) {
         newCount = 1;
       }
+
       // Overhead
-      if (newCount > positionMeta.dailyMax) {
+      if (positionMeta.dailyMax && newCount > positionMeta.dailyMax) {
         return false;
-      // Increase counter
+        // Increase counter
       } else {
         this._state.counters.purchase[date] = {
           ...dateEntry,
-          [id]: newCount
+          [id]: newCount,
         };
         /*console.log(
           "Increased daily counter",
@@ -614,8 +651,6 @@ export class BattleUser {
         );*/
       }
     }
-
-    this._core.events.counters(this._state.counters);
 
     return true;
   }
