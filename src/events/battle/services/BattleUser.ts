@@ -375,12 +375,6 @@ export class BattleUser {
       }
     }
 
-    // Increase counter for entries which have progressive price
-    if (positionMeta.price.progression && !positionMeta.dailyMax) {
-      this.increaseDailyPurchaseCounter(id, quantity);
-      this._state.counters.progressivePrices = this.getProgressivePrices();
-    }
-
     // Check if can claim
     if (positionMeta.claimable && !this.hasItem(id)) {
       //console.log("Purchase failed. Nothing to claim");
@@ -414,6 +408,12 @@ export class BattleUser {
         //console.log("Purchase failed. Not enough currency");
         throw errors.NotEnoughCurrency;
       }
+    }
+
+    // Increase counter for entries which have progressive price
+    if (positionMeta.price.progression && !positionMeta.dailyMax) {
+      this.increaseDailyPurchaseCounter(id, quantity);
+      this._state.counters.progressivePrices = this.getProgressivePrices();
     }
 
     this._core.events.counters(this._state.counters);
