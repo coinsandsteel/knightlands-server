@@ -17,9 +17,13 @@ import {
 } from "./units/MetaDB";
 
 const isProd = process.env.ENV == "prod";
-const RANKING_WATCHER_PERIOD_MILSECONDS = 5 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 30 * 1000;
 
 export class BattleManager {
+  protected _debugPersonalEmail: string;
+  protected _debug: boolean = true;
+  protected _resetPeriod: string;
+
   protected _meta: BattleMeta;
   protected _abilityTypes: { [abilityClass: string]: string };
 
@@ -38,6 +42,9 @@ export class BattleManager {
       Collections.BattleFinalRanks
     );
     this._abilityTypes = {};
+
+    this._resetPeriod = this.debug ? "minute" : "week";
+    this._debugPersonalEmail = this.debug ? "uniwertz@gmail.com" : "";
   }
 
   get eventStartDate(): number {
@@ -61,7 +68,7 @@ export class BattleManager {
   }
 
   get resetTimeLeft() {
-    let secondsLeft = this.nextWeekResetDate - Game.nowSec;
+    let secondsLeft = this.nextResetDate - Game.nowSec;
     if (secondsLeft < 0) {
       secondsLeft = 0;
     }
@@ -77,17 +84,29 @@ export class BattleManager {
   }
 
   // This friday
-  get thisWeekResetDate() {
-    return moment().utc().day(1).second(0).minute(0).hour(0).unix();
+  get currentResetDate() {
+    if (this._resetPeriod === "week") {
+      return moment().utc().day(1).second(0).minute(0).hour(0).unix();
+    } else if (this._resetPeriod === "minute") {
+      return moment().utc().second(0).unix();
+    }
   }
 
   // Next friday
-  get nextWeekResetDate() {
-    return moment().utc().day(8).second(0).minute(0).hour(0).unix();
+  get nextResetDate() {
+    if (this._resetPeriod === "week") {
+      return moment().utc().day(8).second(0).minute(0).hour(0).unix();
+    } else if (this._resetPeriod === "minute") {
+      return moment().utc().second(0).add(1, 'minutes').unix();
+    }
   }
 
   get meta() {
     return this._meta;
+  }
+
+  get debug() {
+    return !isProd && this._debug;
   }
 
   async init() {
@@ -108,19 +127,28 @@ export class BattleManager {
       settings: values[4] || [],
     };
 
-    // this.testMeta();
-    /*if (!isProd) {
-      await this._rankCollection.deleteMany({});
-      await this.addTestRatings();
-      await this.distributeRewards();
-    }*/
+    if (this.debug) {
+      this.testMeta();
+      await this.resetTestRatings();
+    }
 
     // Retrieve lastReset from meta. Once.
     // Since this moment we'll be updating memory variable only.
-    this._lastRankingsReset = this.thisWeekResetDate;
-    //console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+    this._lastRankingsReset = this.currentResetDate;
+
+    if (this.debug) {
+      console.log(`[BattleManager] Initial last reset`, { _lastRankingsReset: this._lastRankingsReset });
+    }
 
     await this.watchResetRankings();
+  }
+
+  protected async resetTestRatings() {
+    if (!this.debug) {
+      return;
+    }
+    await this._rankCollection.deleteMany({});
+    await this.addTestRatings();
   }
 
   public eventFinished() {
@@ -130,12 +158,16 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
-    //console.log('Battle.loadProgress');
+    if (this.debug) {
+      console.log('Battle.loadProgress');
+    }
     return this._saveCollection.findOne({ _id: userId });
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
-    //console.log('Battle.saveProgress');
+    if (this.debug) {
+      console.log('Battle.saveProgress');
+    }
     return this._saveCollection.updateOne(
       { _id: userId },
       { $set: saveData },
@@ -146,29 +178,37 @@ export class BattleManager {
   async watchResetRankings() {
     setInterval(async () => {
       await this.commitResetRankings();
+      await this.restoreRewards();
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
   async commitResetRankings() {
-    //console.log('Battle.commitResetRankings');
+    if (this.debug) {
+      console.log('Battle.commitResetRankings');
+    }
 
-    const resetDate = this. thisWeekResetDate;
+    const resetDate = this.currentResetDate;
     // Last rankings reset was after monday? Skip then.
     if (resetDate <= this._lastRankingsReset) {
-      /*console.log(
-        `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= resetDate(${resetDate})`
-      );*/
+      if (this.debug) {
+        console.log(
+          `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= resetDate(${resetDate})`
+          );
+        console.log("");
+      }
       return;
     }
 
-    /*console.log(
-      `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
-    );*/
+    if (this.debug) {
+      console.log(
+        `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
+      );
+    }
 
     // Distribute rewards for winners
     await this.distributeRewards();
 
-    // Last reset was more that day ago? Launch reset.
+    // Reset ratings table
     await Game.dbClient.withTransaction(async (db) => {
       await db.collection(Collections.BattleRanks).deleteMany({});
       await db
@@ -183,41 +223,138 @@ export class BattleManager {
     // Update reset time.
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = resetDate;
-    /*console.log(`[BattleManager] Rankings reset FINISH.`, {
-      _lastRankingsReset: this._lastRankingsReset,
-    });*/
+
+    if (this.debug) {
+      await this.resetTestRatings();
+      console.log(`[BattleManager] Rankings reset FINISH.`, {
+        _lastRankingsReset: this._lastRankingsReset,
+      });
+    }
   }
 
   async distributeRewards() {
-    //console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
-
-    const dateRanks = {};
-    const modes = ["pvp", "power"];
-    for await (const mode of modes) {
-      const modeRankings = await this.getRankingsByMode(mode);
-      let rankIndex = 0;
-      for await (const rankingEntry of modeRankings) {
-        if (+rankingEntry.score == 0) {
-          continue;
-        }
-        await this.debitUserReward(rankingEntry.id, mode, rankIndex + 1);
-        rankIndex++;
-      }
-      dateRanks[mode] = modeRankings;
+    if (this.debug) {
+      console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
     }
 
-    await this._finalRankCollection.insertOne({
+    const rankSections = {};
+    const modes = ["pvp", "power"];
+
+    // Gather ranking tables by mode
+    for await (const mode of modes) {
+      rankSections[mode] = await this.getRankingsByMode(mode);
+    }
+
+    // Save winners list (final reward entry)
+    const finalRewardsEntry = await this._finalRankCollection.insertOne({
       date: Game.nowSec,
-      ranks: dateRanks,
+      ranks: rankSections,
+      distributed: false
     });
 
-    //console.log(`[BattleManager] Rankings distribution FINISHED.`);
+    if (this.debug) {
+      // console.log(`[BattleManager] Winners`, rankSections);
+    }
+
+    // Bounce if no final reward entry created
+    if (!finalRewardsEntry.insertedId) {
+      return;
+    }
+
+    // Debit reward by place for every winner
+    for await (const mode of modes) {
+      await this.debitRewardsByMode(rankSections[mode], mode);
+    }
+
+    // Mark final reward entry successfully distributed
+    await this._finalRankCollection.updateOne(
+      { _id: new ObjectId(finalRewardsEntry.insertedId.toHexString()) },
+      { $set: { distributed: true } },
+      { upsert: false }
+    );
+
+    if (this.debug) {
+      console.log(`[BattleManager] Rankings distribution FINISHED.`);
+    }
   }
 
-  async debitUserReward(userId: ObjectId, mode: string, rank: number) {
+  async debitRewardsByMode(rankingTable: any, mode: string, force?: boolean) {
+    let rankIndex = 0;
+    for await (const rankingEntry of rankingTable) {
+      if (+rankingEntry.score == 0) {
+        continue;
+      }
+      await this.debitUserReward(rankingEntry.id, mode, rankIndex + 1, force);
+      rankIndex++;
+    }
+  }
+
+  async restoreRewards() {
+    // [Prod] Set distributed _id 6366f906955106e8a87b077e
+    const updated = await this._finalRankCollection.updateOne(
+      { _id: new ObjectId('6366f906955106e8a87b077e') },
+      { $set: { distributed: true } },
+      { upsert: false }
+    );
+
+    if (this.debug) {
+      console.log(
+        '[BattleManager] Updated first prod entry',
+        updated
+      );
+    }
+
+    // Retrieve all final reward entities
+    const undestribituedFinalRewards = await this._finalRankCollection.find({
+      distributed: { $not: { $eq: true } }
+    }).toArray();
+
+    if (!undestribituedFinalRewards || !undestribituedFinalRewards.length) {
+      if (this.debug) {
+        console.log(
+          '[BattleManager] No undestributed entries'
+        );
+      }
+      return;
+    }
+
+    if (this.debug) {
+      console.log(
+        '[BattleManager] Undestributed entries found',
+        { undestribituedFinalRewards }
+      );
+    }
+
+    // Loop through final entry
+    for await (let finalEntry of undestribituedFinalRewards) {
+      //  Continue if distributed
+      if (finalEntry.distributed) {
+        continue;
+      }
+
+      // Debit reward for user (ignore previuos rewards in rewardCollection)
+      const modes = ["pvp", "power"];
+      for await (const mode of modes) {
+        await this.debitRewardsByMode(finalEntry.ranks[mode], mode, true);
+      }
+
+      // Mark as distributed
+      const entryId = finalEntry._id.toHexString();
+      await this._finalRankCollection.updateOne(
+        { _id: new ObjectId(entryId) },
+        { $set: { distributed: true } },
+        { upsert: false }
+      );
+    }
+  }
+
+  async debitUserReward(userId: ObjectId, mode: string, rank: number, force?: boolean) {
     let rewardsEntry =
       (await this._rewardCollection.findOne({ _id: userId })) || {};
     let items = rewardsEntry.items || [];
+    if (force) {
+      items = [];
+    }
 
     let rewardIndex = null;
     if (rank >= 1 && rank <= 4) {
@@ -230,7 +367,7 @@ export class BattleManager {
 
     const rewardItems = this.rankingRewards[rewardIndex].items;
 
-    if (!isProd) {
+    if (this.debug) {
       /*console.log(`[BattleManager] Rewards BEFORE debit`, {
         userId,
         mode,
@@ -238,6 +375,7 @@ export class BattleManager {
         items,
       });*/
     }
+
     rewardItems.forEach((itemEntry) => {
       let receivedItemIndex = items.findIndex(
         (receivedItem) => receivedItem.item === itemEntry.item
@@ -246,7 +384,7 @@ export class BattleManager {
         items.push(_.cloneDeep(itemEntry));
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
-        if (!isProd) {
+        if (this.debug) {
           /*console.log(`[BattleManager] Quantity increased`, {
             userId,
             mode,
@@ -256,7 +394,8 @@ export class BattleManager {
         }
       }
     });
-    if (!isProd) {
+
+    if (this.debug) {
       /*console.log(`[BattleManager] Rewards AFTER debit`, {
         userId,
         mode,
@@ -392,7 +531,7 @@ export class BattleManager {
     for await (const mode of ["pvp", "power"]) {
       const me = await Game.db
         .collection(Collections.Users)
-        .findOne({ address: "" });
+        .findOne({ address: this._debugPersonalEmail });
 
       if (me) {
         await this.updateRank(me._id, mode, 2985);
@@ -403,7 +542,9 @@ export class BattleManager {
       }
     }
 
-    //console.log(`[BattleManager] Test ratings were created`);
+    if (this.debug) {
+      console.log(`[BattleManager] Test ratings were created`);
+    }
   }
 
   // #######################################################################
@@ -566,18 +707,13 @@ export class BattleManager {
     return unitMeta;
   }
 
-  // Test
-
+  // Test meta
   public testMeta() {
     for (const unitId in this._meta.units) {
       this.loadUnitMeta(parseInt(unitId));
     }
     for (const abilityClass in this._meta.abilities) {
       this.loadAbilityMeta(abilityClass);
-      /*console.log({
-        class: abilityMeta.abilityClass,
-        type: abilityMeta.abilityType,
-      });*/
     }
   }
 }
