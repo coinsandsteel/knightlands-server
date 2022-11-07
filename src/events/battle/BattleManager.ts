@@ -17,7 +17,7 @@ import {
 } from "./units/MetaDB";
 
 const isProd = process.env.ENV == "prod";
-const RANKING_WATCHER_PERIOD_MILSECONDS = 30 * 1000;
+const RANKING_WATCHER_PERIOD_MILSECONDS = 15 * 1000;
 
 export class BattleManager {
   protected _debugPersonalEmail: string;
@@ -149,6 +149,7 @@ export class BattleManager {
     }
     await this._rankCollection.deleteMany({});
     await this.addTestRatings();
+    console.log('[BattleManager] Test rating were reset');
   }
 
   public eventFinished() {
@@ -158,16 +159,10 @@ export class BattleManager {
   }
 
   async loadProgress(userId: ObjectId) {
-    if (this.debug) {
-      console.log('Battle.loadProgress');
-    }
     return this._saveCollection.findOne({ _id: userId });
   }
 
   async saveProgress(userId: ObjectId, saveData: any) {
-    if (this.debug) {
-      console.log('Battle.saveProgress');
-    }
     return this._saveCollection.updateOne(
       { _id: userId },
       { $set: saveData },
@@ -177,16 +172,15 @@ export class BattleManager {
 
   async watchResetRankings() {
     setInterval(async () => {
+      console.log('[BattleManager] Watcher START');
       await this.commitResetRankings();
       await this.restoreRewards();
+      console.log('[BattleManager] Watcher END');
+      console.log("");
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
   async commitResetRankings() {
-    if (this.debug) {
-      console.log('Battle.commitResetRankings');
-    }
-
     const resetDate = this.currentResetDate;
     // Last rankings reset was after monday? Skip then.
     if (resetDate <= this._lastRankingsReset) {
@@ -194,14 +188,13 @@ export class BattleManager {
         console.log(
           `[BattleManager] Rankings reset ABORT. _lastRankingsReset(${this._lastRankingsReset}) >= resetDate(${resetDate})`
           );
-        console.log("");
       }
       return;
     }
 
     if (this.debug) {
       console.log(
-        `[BattleManager] Rankings reset LAUNCH. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
+        `[BattleManager] Rankings reset START. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
       );
     }
 
@@ -226,7 +219,7 @@ export class BattleManager {
 
     if (this.debug) {
       await this.resetTestRatings();
-      console.log(`[BattleManager] Rankings reset FINISH.`, {
+      console.log(`[BattleManager] Rankings reset END`, {
         _lastRankingsReset: this._lastRankingsReset,
       });
     }
@@ -234,7 +227,7 @@ export class BattleManager {
 
   async distributeRewards() {
     if (this.debug) {
-      console.log(`[BattleManager] Rankings distribution LAUNCHED.`);
+      console.log(`[BattleManager] Rankings distribution START.`);
     }
 
     const rankSections = {};
@@ -274,7 +267,7 @@ export class BattleManager {
     );
 
     if (this.debug) {
-      console.log(`[BattleManager] Rankings distribution FINISHED.`);
+      console.log(`[BattleManager] Rankings distribution END.`);
     }
   }
 
@@ -290,19 +283,18 @@ export class BattleManager {
   }
 
   async restoreRewards() {
+    if (this.debug) {
+      console.log(
+        '[BattleManager] Rewards restoration START'
+      );
+    }
+
     // [Prod] Set distributed _id 6366f906955106e8a87b077e
     const updated = await this._finalRankCollection.updateOne(
       { _id: new ObjectId('6366f906955106e8a87b077e') },
       { $set: { distributed: true } },
       { upsert: false }
     );
-
-    if (this.debug) {
-      console.log(
-        '[BattleManager] Updated first prod entry',
-        updated
-      );
-    }
 
     // Retrieve all final reward entities
     const undestribituedFinalRewards = await this._finalRankCollection.find({
@@ -312,7 +304,7 @@ export class BattleManager {
     if (!undestribituedFinalRewards || !undestribituedFinalRewards.length) {
       if (this.debug) {
         console.log(
-          '[BattleManager] No undestributed entries'
+          '[BattleManager] Rewards restoration END (no undestributed entries)'
         );
       }
       return;
@@ -320,7 +312,7 @@ export class BattleManager {
 
     if (this.debug) {
       console.log(
-        '[BattleManager] Undestributed entries found',
+        '[BattleManager] Undestributed entries found!',
         { undestribituedFinalRewards }
       );
     }
@@ -345,10 +337,30 @@ export class BattleManager {
         { $set: { distributed: true } },
         { upsert: false }
       );
+
+      if (this.debug) {
+        console.log(
+          `[BattleManager] Entry ${entryId} restored, rewards distributed`
+        );
+      }
+    }
+
+    if (this.debug) {
+      console.log(
+        '[BattleManager] Rewards restoration END'
+      );
     }
   }
 
   async debitUserReward(userId: ObjectId, mode: string, rank: number, force?: boolean) {
+    if (this.debug) {
+      console.log(`[BattleManager] Debit user reward`, {
+        userId,
+        mode,
+        rank
+      });
+    }
+
     let rewardsEntry =
       (await this._rewardCollection.findOne({ _id: userId })) || {};
     let items = rewardsEntry.items || [];
