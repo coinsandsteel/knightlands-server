@@ -262,7 +262,14 @@ export interface BattleShopItemMeta {
   name: string;
   commodity: string;
   claimable: boolean;
-  price: { currency: string; amount: number; } | null;
+  price: {
+    currency: string;
+    amount?: number;
+    progression?: {
+      multiplier: number;
+      baseCost: number;
+    }
+  } | null;
   content: {
     units?: number;
     unitClasses?: { [unitClass: string]: number; };
