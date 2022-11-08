@@ -43,7 +43,7 @@ export class BattleManager {
     );
     this._abilityTypes = {};
 
-    this._resetPeriod = this.debug ? "1 min" : "week";
+    this._resetPeriod = this.debug ? "20 min" : "week";
     this._debugPersonalEmail = this.debug ? "yuventushovana1989@gmail.com" : "";
   }
 
@@ -504,6 +504,7 @@ export class BattleManager {
     const records = await this._rankCollection
       .aggregate([
         { $sort: { [mode]: -1, order: 1 } },
+        { $match: { [mode]: { $gt: 0 } } },
         { $limit: 10 },
         {
           $lookup: {
