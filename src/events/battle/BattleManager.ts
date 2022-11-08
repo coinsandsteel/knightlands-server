@@ -21,7 +21,7 @@ const RANKING_WATCHER_PERIOD_MILSECONDS = 15 * 1000;
 
 export class BattleManager {
   protected _debugPersonalEmail: string;
-  protected _debug: boolean = true;
+  protected _debug: boolean = false;
   protected _resetPeriod: string;
 
   protected _meta: BattleMeta;
