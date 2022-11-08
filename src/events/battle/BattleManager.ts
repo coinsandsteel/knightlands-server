@@ -43,7 +43,7 @@ export class BattleManager {
     );
     this._abilityTypes = {};
 
-    this._resetPeriod = this.debug ? "20 min" : "week";
+    this._resetPeriod = this.debug ? "1 min" : "week";
     this._debugPersonalEmail = this.debug ? "yuventushovana1989@gmail.com" : "";
   }
 
@@ -179,7 +179,7 @@ export class BattleManager {
     if (!this.debug) {
       return;
     }
-    await this._rankCollection.deleteMany({});
+    //await this._rankCollection.deleteMany({});
     //await this.addTestRatings();
     console.log('[BattleManager] Test rating were reset');
   }
@@ -244,7 +244,7 @@ export class BattleManager {
 
     // Reset ratings table
     await Game.dbClient.withTransaction(async (db) => {
-      await db.collection(Collections.BattleRanks).deleteMany({});
+      await db.collection(Collections.BattleRanks).updateMany({}, { $set: { pvp: 0 } });
       await db
         .collection(Collections.Meta)
         .updateOne(
@@ -259,7 +259,7 @@ export class BattleManager {
     this._lastRankingsReset = resetDate;
 
     if (this.debug) {
-      await this.resetTestRatings();
+      //await this.resetTestRatings();
       console.log(`[BattleManager] Rankings reset END`, {
         _lastRankingsReset: this._lastRankingsReset,
       });
