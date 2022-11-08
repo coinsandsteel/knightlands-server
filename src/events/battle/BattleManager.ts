@@ -43,8 +43,8 @@ export class BattleManager {
     );
     this._abilityTypes = {};
 
-    this._resetPeriod = this.debug ? "minute" : "week";
-    this._debugPersonalEmail = this.debug ? "uniwertz@gmail.com" : "";
+    this._resetPeriod = this.debug ? "20 min" : "week";
+    this._debugPersonalEmail = this.debug ? "yuventushovana1989@gmail.com" : "";
   }
 
   get eventStartDate(): number {
@@ -87,8 +87,23 @@ export class BattleManager {
   get currentResetDate() {
     if (this._resetPeriod === "week") {
       return moment().utc().day(1).second(0).minute(0).hour(0).unix();
-    } else if (this._resetPeriod === "minute") {
+
+    } else if (this._resetPeriod === "1 min") {
       return moment().utc().second(0).unix();
+
+    } else if (this._resetPeriod === "20 min") {
+      const minute = moment().utc().minute();
+
+      let targetMinute = 0;
+      if (minute >= 0 && minute < 20) {
+        targetMinute = 0;
+      } else if (minute >= 20 && minute < 40) {
+        targetMinute = 20;
+      } else if (minute >= 40 && minute <= 59) {
+        targetMinute = 40;
+      }
+
+      return moment().utc().second(0).minute(targetMinute).unix();
     }
   }
 
@@ -96,8 +111,25 @@ export class BattleManager {
   get nextResetDate() {
     if (this._resetPeriod === "week") {
       return moment().utc().day(8).second(0).minute(0).hour(0).unix();
-    } else if (this._resetPeriod === "minute") {
+
+    } else if (this._resetPeriod === "1 min") {
       return moment().utc().second(0).add(1, 'minutes').unix();
+
+    } else if (this._resetPeriod === "20 min") {
+      const minute = moment().utc().minute();
+
+      let targetMinute = 0;
+      let addHours = 0;
+      if (minute >= 0 && minute < 20) {
+        targetMinute = 20;
+      } else if (minute >= 20 && minute < 40) {
+        targetMinute = 40;
+      } else if (minute >= 40 && minute <= 59) {
+        targetMinute = 0;
+        addHours = 1;
+      }
+
+      return moment().utc().second(0).minute(targetMinute).add(addHours, 'hours').unix();
     }
   }
 
@@ -148,7 +180,7 @@ export class BattleManager {
       return;
     }
     await this._rankCollection.deleteMany({});
-    await this.addTestRatings();
+    //await this.addTestRatings();
     console.log('[BattleManager] Test rating were reset');
   }
 
@@ -182,6 +214,15 @@ export class BattleManager {
 
   async commitResetRankings() {
     const resetDate = this.currentResetDate;
+    if (this.debug) {
+      console.log(
+        `[BattleManager] Check boundaries`, {
+          currentResetDate: moment.utc(this.currentResetDate * 1000).format(),
+          nextResetDate: moment.utc(this.nextResetDate * 1000).format()
+        }
+      );
+    }
+
     // Last rankings reset was after monday? Skip then.
     if (resetDate <= this._lastRankingsReset) {
       if (this.debug) {
