@@ -204,11 +204,15 @@ export class BattleManager {
 
   async watchResetRankings() {
     setInterval(async () => {
-      console.log('[BattleManager] Watcher START');
+      if (this.debug) {
+        console.log('[BattleManager] Watcher START');
+      }
       await this.commitResetRankings();
       await this.restoreRewards();
-      console.log('[BattleManager] Watcher END');
-      console.log("");
+      if (this.debug) {
+        console.log('[BattleManager] Watcher END');
+        console.log("");
+      }
     }, RANKING_WATCHER_PERIOD_MILSECONDS);
   }
 
@@ -233,11 +237,9 @@ export class BattleManager {
       return;
     }
 
-    if (this.debug) {
-      console.log(
-        `[BattleManager] Rankings reset START. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
-      );
-    }
+    console.log(
+      `[BattleManager] Rankings reset START. _lastRankingsReset(${this._lastRankingsReset}) < resetDate(${resetDate})`
+    );
 
     // Distribute rewards for winners
     await this.distributeRewards();
@@ -258,18 +260,14 @@ export class BattleManager {
     // Meta was updated already. It's nothing to do with meta.
     this._lastRankingsReset = resetDate;
 
-    if (this.debug) {
-      //await this.resetTestRatings();
-      console.log(`[BattleManager] Rankings reset END`, {
-        _lastRankingsReset: this._lastRankingsReset,
-      });
-    }
+    //await this.resetTestRatings();
+    console.log(`[BattleManager] Rankings reset END`, {
+      _lastRankingsReset: this._lastRankingsReset,
+    });
   }
 
   async distributeRewards() {
-    if (this.debug) {
-      console.log(`[BattleManager] Rankings distribution START.`);
-    }
+    console.log(`[BattleManager] Rankings distribution START.`);
 
     const rankSections = {};
     const modes = ["pvp", "power"];
@@ -307,9 +305,7 @@ export class BattleManager {
       { upsert: false }
     );
 
-    if (this.debug) {
-      console.log(`[BattleManager] Rankings distribution END.`);
-    }
+    console.log(`[BattleManager] Rankings distribution END.`);
   }
 
   async debitRewardsByMode(rankingTable: any, mode: string, force?: boolean) {
@@ -394,13 +390,11 @@ export class BattleManager {
   }
 
   async debitUserReward(userId: ObjectId, mode: string, rank: number, force?: boolean) {
-    if (this.debug) {
-      console.log(`[BattleManager] Debit user reward`, {
-        userId,
-        mode,
-        rank
-      });
-    }
+    console.log(`[BattleManager] Debit user reward`, {
+      userId,
+      mode,
+      rank
+    });
 
     let rewardsEntry =
       (await this._rewardCollection.findOne({ _id: userId })) || {};
@@ -421,12 +415,12 @@ export class BattleManager {
     const rewardItems = this.rankingRewards[rewardIndex].items;
 
     if (this.debug) {
-      /*console.log(`[BattleManager] Rewards BEFORE debit`, {
+      console.log(`[BattleManager] Rewards BEFORE debit`, {
         userId,
         mode,
         rank,
         items,
-      });*/
+      });
     }
 
     rewardItems.forEach((itemEntry) => {
@@ -438,25 +432,23 @@ export class BattleManager {
       } else {
         items[receivedItemIndex].quantity += itemEntry.quantity;
         if (this.debug) {
-          /*console.log(`[BattleManager] Quantity increased`, {
+          console.log(`[BattleManager] Quantity increased`, {
             userId,
             mode,
             rank,
             ...itemEntry,
-          });*/
+          });
         }
       }
     });
 
-    if (this.debug) {
-      /*console.log(`[BattleManager] Rewards AFTER debit`, {
-        userId,
-        mode,
-        rank,
-        items,
-      });
-      console.log("");*/
-    }
+    console.log(`[BattleManager] Rewards AFTER debit`, {
+      userId,
+      mode,
+      rank,
+      items,
+    });
+    console.log("");
 
     await this._rewardCollection.updateOne(
       { _id: userId },
