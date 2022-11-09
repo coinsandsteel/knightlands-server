@@ -483,9 +483,9 @@ export class BattleManager {
       return;
     }
 
-    await this._rankCollection.updateOne({ _id: userId }, request, {
-      upsert: true,
-    });
+    await this._rankCollection.updateOne({ _id: userId }, request, { upsert: true });
+    await this._rankCollection.updateMany({ pvp: { $lt: 0 }}, { $set: { pvp: 0 }});
+    await this._rankCollection.updateMany({ power: { $lt: 0 }}, { $set: { power: 0 }});
   }
 
   public async getUserRankData(userId: ObjectId): Promise<Document> {
