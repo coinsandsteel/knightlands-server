@@ -60,7 +60,7 @@ export class BattleInventory extends BattleService {
       0
     );
 
-    game.battleManager.updateRank(this._core.gameUser.id, 'power', totalPower);
+    await game.battleManager.updateRank(this._core.gameUser.id, 'power', totalPower);
     await this._core.user.updatePowerScore(totalPower);
   }
 

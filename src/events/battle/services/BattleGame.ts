@@ -633,7 +633,7 @@ export class BattleGame extends BattleService {
     }
   }
 
-  public win(): void {
+  public async win(): Promise<any> {
     if (this._state.mode === GAME_MODE_ADVENTURE) {
       const reward = this._core.adventures.getCurrentLevelReward();
 
@@ -652,7 +652,7 @@ export class BattleGame extends BattleService {
         xp: 0,
         rank: DUEL_REWARDS[this.difficulty].win.rank
       });
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].win.rank);
+      await game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].win.rank);
       this._core.user.updatePvpScore();
     }
 
@@ -662,9 +662,9 @@ export class BattleGame extends BattleService {
     this._core.events.flush();
   }
 
-  public loose(): void {
+  public async loose(): Promise<any> {
     if (this._state.mode === GAME_MODE_DUEL) {
-      game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].loose.rank);
+      await game.battleManager.updateRank(this._core.gameUser.id, 'pvp', DUEL_REWARDS[this.difficulty].loose.rank);
       this._core.user.modifyBalance(CURRENCY_CRYSTALS, DUEL_REWARDS[this.difficulty].loose.crystals);
       this.setCombatRewards({
         coins: 0,
