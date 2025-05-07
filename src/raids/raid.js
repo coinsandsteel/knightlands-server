@@ -365,6 +365,11 @@ class Raid extends EventEmitter {
             }
         }
 
+        const armyDamageInRaidElement = combatUnit.getArmyDamageInRaidElement(this._data.weakness.current.element);
+        if (armyDamageInRaidElement) {
+            bonusDamage *= 1 + armyDamageInRaidElement;
+        }
+
         combatUnit.updateStats(this._data.weakness.current.element)
 
         const army = await Game.armyManager.createCombatLegion(attacker, legionIndex);
